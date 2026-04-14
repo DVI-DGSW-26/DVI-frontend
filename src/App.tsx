@@ -1,4 +1,4 @@
-import SignupForm from "./components/auth/SignupForm"
+import SignupForm from "./features/auth/ui/SignupForm"
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 function App() {

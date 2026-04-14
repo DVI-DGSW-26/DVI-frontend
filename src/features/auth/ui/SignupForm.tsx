@@ -1,7 +1,8 @@
-import authBackground from "../../assets/authBackground.png";
-import authLogo from "../../assets/authLogo.svg";
-import Logo from "../../assets/Logo1.svg";
+import authBackground from "../../../assets/authBackground.png";
+import authLogo from "../../../assets/authLogo.svg";
+import Logo from "../../../assets/Logo.svg";
 import Select from "react-select";
+import Button from "../../../components/Button";
 
 const departmentOptions = [
   { value: "dev", label: "개발팀" },
@@ -58,7 +59,10 @@ export default function Signup() {
       {/* 오른쪽 스크롤 영역 */}
       <div className="fixed right-0 top-0 w-1/2 h-screen bg-white flex flex-col items-center justify-center">
         <div className="flex flex-col w-160">
-          <div className="flex flex-col items-center gap-2" style={{ marginBottom: "60px" }}>
+          <div
+            className="flex flex-col items-center gap-2"
+            style={{ marginBottom: "60px" }}
+          >
             <img src={Logo} className="w-90" />
             <span className="text-[#931B82] font-medium text-[22px]">
               정밀 생산으로 완성되는 기술력
@@ -101,12 +105,9 @@ export default function Signup() {
                 />
               </div>
             </div>
-            <button
-              style={{ marginTop: "30px" }}
-              className="w-full bg-[#931B82] text-white rounded-md h-15 hover:bg-[#7A1565] transition-colors"
-            >
-              회원가입
-            </button>
+            <div style={{ marginTop: "35px" }}>
+              <Button>회원가입</Button>
+            </div>
           </div>
         </div>
       </div>
