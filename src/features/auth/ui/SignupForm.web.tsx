@@ -46,30 +46,28 @@ export default function SignupFormWeb({
   return (
     <div className="flex h-screen w-full">
       {/* 왼쪽 고정 이미지 */}
-      <div className="fixed left-0 top-0 w-1/2 h-screen overflow-hidden">
+      <div className="fixed left-0 top-0 w-1/2 h-screen overflow-hidden lg:block hidden">
         <img src={authBackground} className="w-full h-full object-cover" />
         <img src={authLogo} className="absolute top-10 left-8 w-44" />
         <div className="absolute inset-0 flex flex-col justify-center left-12 gap-6">
-          <span className="text-[66px] font-bold text-white leading-23">
-            Built Locally,
-            <br />
-            Delivered Globally
-          </span>
-          <span className="text-[24px] font-medium text-white">
-            설계부터 생산, 수출까지 신뢰를 바탕으로 완성한 <br />
-            알루미늄 솔루션을 전 세계에 전달합니다.
+          <div className="flex flex-col gap-0 leading-tight">
+            <span className="text-[40px] xl:text-[46px] text-white font-semibold">A social enterprise that cares about </span>
+            <span className="text-[64px] xl:text-[70px] text-white font-black leading-tight">people, technology, and<br/>the environment</span>
+          </div>
+          <span className="text-[18px] xl:text-[24px] font-medium text-white">
+            사람, 기술, 환경을 중시하는 사회적 기업
           </span>
         </div>
       </div>
 
       {/* 오른쪽 스크롤 영역 */}
-      <div className="fixed right-0 top-0 w-1/2 h-screen bg-white flex flex-col items-center justify-center">
-        <div className="flex flex-col w-160">
+      <div className="fixed right-0 top-0 w-full lg:w-1/2 h-screen bg-white flex flex-col items-center justify-center">
+        <div className="flex flex-col w-full max-w-md px-6 lg:px-0 xl:max-w-xl 2xl:max-w-2xl">
           <div
             className="flex flex-col items-center gap-2"
             style={{ marginBottom: "60px" }}
           >
-            <img src={Logo} className="w-90" />
+            <img src={Logo} className="w-60 xl:w-90" />
           </div>
           <div className="flex flex-col gap-3">
             <input
@@ -77,7 +75,7 @@ export default function SignupFormWeb({
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               style={{ paddingLeft: "13px" }}
-              className="w-full border border-[#A8A8A8] rounded-lg h-15 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
+              className="w-full border border-[#A8A8A8] rounded-lg h-12 xl:h-15 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
             />
             <input
               placeholder="비밀번호를 입력하세요."
@@ -85,7 +83,7 @@ export default function SignupFormWeb({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               style={{ paddingLeft: "13px" }}
-              className="w-full border border-[#A8A8A8] rounded-lg h-15 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
+              className="w-full border border-[#A8A8A8] rounded-lg h-12 xl:h-15 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
             />
             <input
               placeholder="비밀번호를 재입력하세요."
@@ -93,7 +91,7 @@ export default function SignupFormWeb({
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               style={{ paddingLeft: "13px" }}
-              className="w-full border border-[#A8A8A8] rounded-lg h-15 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
+              className="w-full border border-[#A8A8A8] rounded-lg h-12 xl:h-15 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
             />
             <div className="flex gap-4">
               <input
@@ -101,7 +99,7 @@ export default function SignupFormWeb({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 style={{ paddingLeft: "13px" }}
-                className="w-1/2 border border-[#A8A8A8] rounded-lg h-15 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
+                className="w-1/2 border border-[#A8A8A8] rounded-lg h-12 xl:h-15 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
               />
               <div className="w-1/2">
                 <Select
