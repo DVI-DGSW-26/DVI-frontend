@@ -17,6 +17,8 @@ function App() {
           <Route path="/userSearch" element={<div className="p-6">사용자 검색</div>} />
           <Route path="/approval" element={<div className="p-6">가입승인</div>} />
           <Route path="/reports" element={<div className="p-6">검사보고서</div>} />
+          <Route path="/calendar" element={<div className="p-6">캘린더</div>} />
+          <Route path="/settings" element={<div className="p-6">설정</div>} />
         </Route>
       </Routes>
     </BrowserRouter>

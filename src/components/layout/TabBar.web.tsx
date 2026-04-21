@@ -36,32 +36,32 @@ const TabBarWeb = () => {
   const visibleTabs = TABS.filter((tab) => tab.roles.includes(CURRENT_ROLE));
 
   return (
-    <aside className="flex h-screen w-60 flex-col bg-white">
-      <div className="flex items-center px-4 py-8 text-lg font-bold">
-        <img src={Logo} className="w-14 xl:w-37" />
-      </div>
+  <aside className="flex h-screen w-60 flex-col bg-white">
+    <div className="flex items-center px-4 py-8 text-lg font-bold">
+      <img src={Logo} className="w-14 xl:w-37" />
+    </div>
 
-      <nav className="flex flex-1 flex-col gap-1 w-full px-4">
-        {visibleTabs.map((tab) => (
-          <NavLink
-            key={tab.to}
-            to={tab.to}
-            end
-            className={({ isActive }) =>
-              `flex items-center gap-2 rounded-lg w-full py-4 pl-2 text-[20px] font-regular transition-colors ${
-                isActive
-                  ? "bg-[#F3E8F7] text-[#931B82]"
-                  : "bg-white text-black hover:text-[#931B82]"
-              }`
-            }
-          >
-            <Icon icon={tab.icon} width={25} height={25} />
-            <span>{tab.label}</span>
-          </NavLink>
-        ))}
-      </nav>
-    </aside>
-  );
+    <nav className="flex flex-1 flex-col gap-1 w-full px-4">
+      {visibleTabs.map((tab) => (
+        <NavLink
+          key={tab.to}
+          to={tab.to}
+          end
+          className={({ isActive }) =>
+            `flex items-center gap-2 rounded-lg w-full py-4 pl-2 text-sm font-medium transition-colors ${
+              isActive
+                ? "bg-[#F3E8F7] text-[#931B82]"
+                : "text-black hover:text-[#931B82]"
+            }`
+          }
+        >
+          <Icon icon={tab.icon} width={20} height={20} />
+          <span>{tab.label}</span>
+        </NavLink>
+      ))}
+    </nav>
+  </aside>
+);
 };
 
 export default TabBarWeb;
