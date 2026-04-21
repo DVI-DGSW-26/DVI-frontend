@@ -4,7 +4,7 @@ import { Icon } from "@iconify/react";
 import authBackground from "../../../assets/authBackground.png";
 import authLogo from "../../../assets/authLogo.svg";
 import Logo from "../../../assets/Logo.svg";
-import Button from "../../../components/Button";
+import Button from "../../../components/shared/Button";
 import type { LoginFormProps } from "./LoginForm";
 
 export default function LoginFormWeb({
