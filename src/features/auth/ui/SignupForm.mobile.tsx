@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import Select from "react-select";
 import Logo from "../../../assets/Logo.svg";
-import Button from "../../../components/Button";
+import Button from "../../../components/shared/Button";
 import type { SignupFormProps } from "./SignupForm";
 
 const departmentOptions = [

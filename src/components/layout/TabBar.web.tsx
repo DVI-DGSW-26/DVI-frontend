@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { Icon } from "@iconify/react";
+import Logo from "../../assets/Logo.svg";
 
 export type Role =
   | "SUPER_ADMIN"
@@ -36,8 +37,8 @@ const TabBarWeb = () => {
 
   return (
     <aside className="flex h-screen w-60 flex-col bg-white">
-      <div className="flex items-center px-4 py-4 text-lg font-bold">
-        로고
+      <div className="flex items-center px-4 py-8 text-lg font-bold">
+        <img src={Logo} className="w-14 xl:w-37" />
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 w-full px-4">
@@ -47,14 +48,14 @@ const TabBarWeb = () => {
             to={tab.to}
             end
             className={({ isActive }) =>
-              `flex items-center gap-2 rounded-lg bg-white w-full py-4 pl-2 text-sm font-medium transition-colors ${
+              `flex items-center gap-2 rounded-lg w-full py-4 pl-2 text-[20px] font-regular transition-colors ${
                 isActive
-                  ? "bg-[#F3E8F7] text-blue-600"
-                  : "text-black hover:bg-[#F3E8F7]"
+                  ? "bg-[#F3E8F7] text-[#931B82]"
+                  : "bg-white text-black hover:text-[#931B82]"
               }`
             }
           >
-            <Icon icon={tab.icon} width={20} height={20} />
+            <Icon icon={tab.icon} width={25} height={25} />
             <span>{tab.label}</span>
           </NavLink>
         ))}
