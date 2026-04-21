@@ -79,7 +79,7 @@ export default function LoginFormWeb({
                 onChange={(e) => setKeepLoggedIn(e.target.checked)}
                 className="w-4 h-4 rounded border-[#A8A8A8] accent-[#931B82] cursor-pointer"
               />
-              <span className="text-sm text-[#737373]">로그인 유지</span>
+              <span className="text-sm text-[#A8A8A8]">로그인 유지</span>
             </label>
             <div style={{ marginTop: "35px" }}>
               <Button onClick={onSubmit}>로그인</Button>
