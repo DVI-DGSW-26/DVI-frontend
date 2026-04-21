@@ -2,7 +2,7 @@ import authBackground from "../../../assets/authBackground.png";
 import authLogo from "../../../assets/authLogo.svg";
 import Logo from "../../../assets/Logo.svg";
 import Select from "react-select";
-import Button from "../../../components/Button";
+import Button from "../../../components/shared/Button";
 import type { SignupFormProps } from "./SignupForm";
 
 const departmentOptions = [
