@@ -40,6 +40,7 @@ export default function SignupFormMobile({
   onSubmit,
 }: SignupFormProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleBack = () => {
@@ -96,14 +97,35 @@ export default function SignupFormMobile({
             style={{ ...inputBaseStyle, top: "412px" }}
             className={inputClass}
           />
-          <input
-            placeholder="비밀번호를 재입력하세요."
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            style={{ ...inputBaseStyle, top: "480px" }}
-            className={inputClass}
-          />
+          <div
+            className="relative"
+            style={{
+              position: "absolute",
+              left: "24px",
+              top: "480px",
+              width: "calc(100% - 48px)",
+            }}
+          >
+            <input
+              placeholder="비밀번호를 재입력하세요."
+              type={showConfirmPassword ? "text" : "password"}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              style={{ paddingLeft: "13px", paddingRight: "48px" }}
+              className={`${inputClass} w-full`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword((v) => !v)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#A8A8A8]"
+              aria-label={showConfirmPassword ? "비밀번호 숨기기" : "비밀번호 보이기"}
+            >
+              <Icon
+                icon={showConfirmPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"}
+                width="20"
+              />
+            </button>
+          </div>
 
           <div
             style={{
@@ -173,9 +195,7 @@ export default function SignupFormMobile({
             style={{ top: "300px" }}
           >
             <img src={Logo} style={{ width: "300px", height: "57px" }} />
-            <span className="mt-3 text-sm font-semibold text-[#931B82]">
-              정밀 생산으로 완성되는 기술력
-            </span>
+
           </div>
 
           <div
