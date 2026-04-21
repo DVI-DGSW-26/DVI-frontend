@@ -1,9 +1,30 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
+import Select from "react-select";
 import Logo from "../../../assets/Logo.svg";
 import Button from "../../../components/Button";
 import type { SignupFormProps } from "./SignupForm";
+
+const departmentOptions = [
+  { value: "QUALITY", label: "품질" },
+  { value: "PRODUCTION", label: "생산" }
+];
+
+const selectStyles = {
+  control: (base: any) => ({
+    ...base,
+    height: "60px",
+    minHeight: "60px",
+    borderColor: "#A8A8A8",
+    borderRadius: "8px",
+    paddingLeft: "5px",
+    boxShadow: "none",
+    "&:hover": { borderColor: "#A8A8A8" },
+  }),
+  dropdownIndicator: (base: any) => ({ ...base, paddingRight: "12px" }),
+  indicatorSeparator: () => ({ display: "none" }),
+};
 
 export default function SignupFormMobile({
   username,
@@ -115,13 +136,22 @@ export default function SignupFormMobile({
             style={{ ...inputBaseStyle, top: "344px" }}
             className={inputClass}
           />
-          <input
-            placeholder="부서를 입력하세요 (예: 품질, 생산)"
-            value={department}
-            onChange={(e) => setDepartment(e.target.value)}
-            style={{ ...inputBaseStyle, top: "412px" }}
-            className={inputClass}
-          />
+          <div
+            style={{
+              position: "absolute",
+              left: "24px",
+              top: "412px",
+              width: "calc(100% - 48px)",
+            }}
+          >
+            <Select
+              placeholder="부서를 선택하세요."
+              options={departmentOptions}
+              value={departmentOptions.find((o) => o.value === department)}
+              onChange={(selected) => setDepartment(selected?.value ?? "")}
+              styles={selectStyles}
+            />
+          </div>
 
           <div
             style={{

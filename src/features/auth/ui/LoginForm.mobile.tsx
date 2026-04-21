@@ -23,9 +23,6 @@ export default function LoginFormMobile({
         style={{ top: "176px" }}
       >
         <img src={Logo} style={{ width: "360px", height: "68px" }} />
-        <span className="mt-3 text-sm font-semibold text-[#931B82]">
-          정밀 생산으로 완성되는 기술력
-        </span>
       </div>
 
       <input
@@ -39,7 +36,7 @@ export default function LoginFormMobile({
           width: "calc(100% - 60px)",
           paddingLeft: "13px",
         }}
-        className="border border-[#A8A8A8] rounded-lg h-[60px] focus:outline-none focus:ring-1 focus:ring-[#931B82]"
+        className="border border-[#A8A8A8] rounded-lg h-15focus:outline-none focus:ring-1 focus:ring-[#931B82]"
       />
 
       <div
@@ -56,7 +53,7 @@ export default function LoginFormMobile({
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           style={{ paddingLeft: "13px" }}
-          className="w-full border border-[#A8A8A8] rounded-lg h-[60px] pr-12 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
+          className="w-full border border-[#A8A8A8] rounded-lg h-15 pr-12 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
         />
         <button
           type="button"
