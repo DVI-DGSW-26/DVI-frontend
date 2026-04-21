@@ -6,9 +6,8 @@ import Button from "../../../components/Button";
 import type { SignupFormProps } from "./SignupForm";
 
 const departmentOptions = [
-  { value: "dev", label: "개발팀" },
-  { value: "design", label: "디자인팀" },
-  { value: "marketing", label: "마케팅팀" },
+  { value: "PRODUCTION", label: "생산" },
+  { value: "QUALITY", label: "품질" },
 ];
 
 const selectStyles = {

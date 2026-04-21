@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
+import { login, tokenStorage, AuthError } from "../api";
 import LoginFormWeb from "./LoginForm.web";
 import LoginFormMobile from "./LoginForm.mobile";
 
@@ -16,9 +18,21 @@ export default function Login() {
   const [password, setPassword] = useState("");
 
   const isMobile = useMediaQuery("(max-width: 767px)");
+  const navigate = useNavigate();
 
-  const handleSubmit = () => {
-    // TODO: API 호출
+  const handleSubmit = async () => {
+    try {
+      const tokens = await login({ loginId: username, password });
+      tokenStorage.save(tokens);
+      navigate("/");
+    } catch (err) {
+      if (err instanceof AuthError) {
+        alert(err.message);
+      } else {
+        console.error(err);
+        alert("로그인 중 오류가 발생했습니다. 다시 시도해주세요.");
+      }
+    }
   };
 
   const props: LoginFormProps = {
