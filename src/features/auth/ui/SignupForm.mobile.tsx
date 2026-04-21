@@ -1,9 +1,30 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
+import Select from "react-select";
 import Logo from "../../../assets/Logo.svg";
 import Button from "../../../components/Button";
 import type { SignupFormProps } from "./SignupForm";
+
+const departmentOptions = [
+  { value: "QUALITY", label: "품질" },
+  { value: "PRODUCTION", label: "생산" }
+];
+
+const selectStyles = {
+  control: (base: any) => ({
+    ...base,
+    height: "60px",
+    minHeight: "60px",
+    borderColor: "#A8A8A8",
+    borderRadius: "8px",
+    paddingLeft: "5px",
+    boxShadow: "none",
+    "&:hover": { borderColor: "#A8A8A8" },
+  }),
+  dropdownIndicator: (base: any) => ({ ...base, paddingRight: "12px" }),
+  indicatorSeparator: () => ({ display: "none" }),
+};
 
 export default function SignupFormMobile({
   username,
@@ -19,6 +40,7 @@ export default function SignupFormMobile({
   onSubmit,
 }: SignupFormProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleBack = () => {
@@ -75,14 +97,35 @@ export default function SignupFormMobile({
             style={{ ...inputBaseStyle, top: "412px" }}
             className={inputClass}
           />
-          <input
-            placeholder="비밀번호를 재입력하세요."
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            style={{ ...inputBaseStyle, top: "480px" }}
-            className={inputClass}
-          />
+          <div
+            className="relative"
+            style={{
+              position: "absolute",
+              left: "24px",
+              top: "480px",
+              width: "calc(100% - 48px)",
+            }}
+          >
+            <input
+              placeholder="비밀번호를 재입력하세요."
+              type={showConfirmPassword ? "text" : "password"}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              style={{ paddingLeft: "13px", paddingRight: "48px" }}
+              className={`${inputClass} w-full`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword((v) => !v)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#A8A8A8]"
+              aria-label={showConfirmPassword ? "비밀번호 숨기기" : "비밀번호 보이기"}
+            >
+              <Icon
+                icon={showConfirmPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"}
+                width="20"
+              />
+            </button>
+          </div>
 
           <div
             style={{
@@ -115,13 +158,22 @@ export default function SignupFormMobile({
             style={{ ...inputBaseStyle, top: "344px" }}
             className={inputClass}
           />
-          <input
-            placeholder="부서를 입력하세요 (예: 품질, 생산)"
-            value={department}
-            onChange={(e) => setDepartment(e.target.value)}
-            style={{ ...inputBaseStyle, top: "412px" }}
-            className={inputClass}
-          />
+          <div
+            style={{
+              position: "absolute",
+              left: "24px",
+              top: "412px",
+              width: "calc(100% - 48px)",
+            }}
+          >
+            <Select
+              placeholder="부서를 선택하세요."
+              options={departmentOptions}
+              value={departmentOptions.find((o) => o.value === department)}
+              onChange={(selected) => setDepartment(selected?.value ?? "")}
+              styles={selectStyles}
+            />
+          </div>
 
           <div
             style={{
@@ -143,9 +195,7 @@ export default function SignupFormMobile({
             style={{ top: "300px" }}
           >
             <img src={Logo} style={{ width: "300px", height: "57px" }} />
-            <span className="mt-3 text-sm font-semibold text-[#931B82]">
-              정밀 생산으로 완성되는 기술력
-            </span>
+
           </div>
 
           <div

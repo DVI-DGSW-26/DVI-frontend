@@ -14,7 +14,12 @@ const departmentOptions = [
 const selectStyles = {
   control: (base: any) => ({
     ...base,
-    height: "60px",
+    height: "48px",
+    minHeight: "48px",
+    "@media (min-width: 1280px)": {
+      height: "60px",
+      minHeight: "60px",
+    },
     borderColor: "#A8A8A8",
     borderRadius: "6px",
     paddingLeft: "5px",
