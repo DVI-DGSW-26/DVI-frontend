@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
+import { signup, type Department } from "../api";
 import SignupFormWeb from "./SignupForm.web";
 import SignupFormMobile from "./SignupForm.mobile";
 
@@ -18,26 +19,6 @@ export interface SignupFormProps {
   onSubmit: () => void;
 }
 
-interface SignupRequest {
-  username: string;
-  password: string;
-  name: string;
-  department: string;
-}
-
-const SIGNUP_ENDPOINT = "/api/auth/signup";
-
-async function requestSignup(body: SignupRequest): Promise<void> {
-  const response = await fetch(SIGNUP_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!response.ok) {
-    throw new Error(`Signup failed: ${response.status}`);
-  }
-}
-
 export default function Signup() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -53,18 +34,22 @@ export default function Signup() {
       alert("비밀번호가 일치하지 않습니다.");
       return;
     }
-
-    const body: SignupRequest = { username, password, name, department };
+    if (department !== "PRODUCTION" && department !== "QUALITY") {
+      alert("부서를 선택해주세요.");
+      return;
+    }
 
     try {
-      // TODO: 서버 연결 준비되면 주석 해제
-      // await requestSignup(body);
-      void requestSignup;
-      void body;
-
+      await signup({
+        loginId: username,
+        password,
+        name,
+        department: department as Department,
+      });
       alert("관리자 승인 요청이 전송되었습니다.");
       navigate("/login");
     } catch (err) {
+      console.error(err);
       alert("요청 중 오류가 발생했습니다. 다시 시도해주세요.");
     }
   };
