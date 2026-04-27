@@ -1,12 +1,8 @@
 import { NavLink } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import Logo from "../../assets/Logo.svg";
-
-export type Role =
-  | "SUPER_ADMIN"
-  | "QUALITY_MANAGER"
-  | "WORKER"
-  | "QUALITY_STAFF";
+import { useAuth } from "../../features/auth/AuthContext";
+import type { Role } from "../../features/auth/api";
 
 type TabItem = {
   label: string;
@@ -15,25 +11,21 @@ type TabItem = {
   roles: Role[];
 };
 
-const ALL_ROLES: Role[] = [
-  "SUPER_ADMIN",
-  "QUALITY_MANAGER",
-  "WORKER",
-  "QUALITY_STAFF",
-];
-
 const TABS: TabItem[] = [
-  { label: "대시보드", to: "/dashboard", icon: "flowbite:home-solid", roles: ALL_ROLES },
-  { label: "사용자 검색", to: "/userSearch", icon: "mdi:people", roles: ["SUPER_ADMIN"] },
-  { label: "가입승인", to: "/approval", icon: "fluent:shield-task-48-filled", roles: ["SUPER_ADMIN"] },
-  { label: "검사보고서", to: "/reports", icon: "basil:document-solid", roles: ["SUPER_ADMIN", "QUALITY_MANAGER", "QUALITY_STAFF"] },
+  { label: "대시보드", to: "/dashboard", icon: "flowbite:home-solid", roles: ["ADMIN"] },
+  { label: "사용자 검색", to: "/userSearch", icon: "mdi:people", roles: ["ADMIN"] },
+  { label: "가입승인", to: "/approval", icon: "fluent:shield-task-48-filled", roles: ["ADMIN"] },
+  { label: "검사보고서", to: "/reports", icon: "basil:document-solid", roles: ["ADMIN"] },
+  { label: "검사지시관리", to: "/inspection-orders", icon: "mdi:clipboard-text", roles: ["QUALITY_ADMIN"] },
+  { label: "승인관리", to: "/approval-management", icon: "fluent:shield-task-48-filled", roles: ["QUALITY_ADMIN"] },
+  { label: "보고서", to: "/qm-reports", icon: "basil:document-solid", roles: ["QUALITY_ADMIN"] },
 ];
-
-// TODO: 서버 연동 후 로그인 응답에서 받은 역할로 교체
-const CURRENT_ROLE: Role = "SUPER_ADMIN";
 
 const TabBarWeb = () => {
-  const visibleTabs = TABS.filter((tab) => tab.roles.includes(CURRENT_ROLE));
+  const { user } = useAuth();
+  const visibleTabs = user
+    ? TABS.filter((tab) => tab.roles.includes(user.role))
+    : [];
 
   return (
   <aside className="flex h-screen w-60 flex-col bg-white">

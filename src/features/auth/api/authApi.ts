@@ -9,7 +9,30 @@ import {
 } from "./types";
 
 export async function signup(body: SignupRequest): Promise<void> {
-  await http.post("/auth/signup", body);
+  try {
+    await http.post("/auth/signup", body);
+  } catch (err) {
+    if (err instanceof AxiosError) {
+      const serverMessage =
+        (err.response?.data as { message?: string } | undefined)?.message;
+      if (err.response?.status === 400) {
+        throw new AuthError(
+          "UNKNOWN",
+          serverMessage ?? "입력값을 확인해주세요.",
+        );
+      }
+      if (err.response?.status === 409) {
+        throw new AuthError(
+          "UNKNOWN",
+          serverMessage ?? "이미 존재하는 아이디입니다.",
+        );
+      }
+      if (serverMessage) {
+        throw new AuthError("UNKNOWN", serverMessage);
+      }
+    }
+    throw new AuthError("UNKNOWN", "회원가입 중 오류가 발생했습니다.");
+  }
 }
 
 export async function login(body: LoginRequest): Promise<TokenData> {
