@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
-import { signup, type Department } from "../api";
+import { signup, AuthError, type SignupRole } from "../api";
 import SignupFormWeb from "./SignupForm.web";
 import SignupFormMobile from "./SignupForm.mobile";
 
@@ -39,18 +39,24 @@ export default function Signup() {
       return;
     }
 
+    const payload = {
+      loginId: username,
+      password,
+      name,
+      role: department as SignupRole,
+    };
+
     try {
-      await signup({
-        loginId: username,
-        password,
-        name,
-        department: department as Department,
-      });
+      await signup(payload);
       alert("관리자 승인 요청이 전송되었습니다.");
       navigate("/login");
     } catch (err) {
-      console.error(err);
-      alert("요청 중 오류가 발생했습니다. 다시 시도해주세요.");
+      console.error("signup failed", { payload, err });
+      if (err instanceof AuthError) {
+        alert(err.message);
+      } else {
+        alert("요청 중 오류가 발생했습니다. 다시 시도해주세요.");
+      }
     }
   };
 

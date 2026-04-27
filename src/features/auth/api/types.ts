@@ -9,13 +9,28 @@ export interface TokenData {
   refreshToken: string;
 }
 
-export type Department = "PRODUCTION" | "QUALITY";
+export type SignupRole = "PRODUCTION" | "QUALITY";
+
+/** @deprecated use SignupRole — 서버 필드명이 role 로 바뀌어서 명칭만 정리 */
+export type Department = SignupRole;
+
+export type Role = "ADMIN" | "QUALITY_ADMIN" | "PRODUCTION" | "QUALITY";
+
+export type UserStatus = "ACTIVE" | "PENDING" | "INACTIVE";
+
+export interface User {
+  id: number;
+  loginId: string;
+  name: string;
+  role: Role;
+  status: UserStatus;
+}
 
 export interface SignupRequest {
   loginId: string;
   password: string;
   name: string;
-  department: Department;
+  role: SignupRole;
 }
 
 export interface LoginRequest {

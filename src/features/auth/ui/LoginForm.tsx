@@ -1,9 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
-import { login, tokenStorage, AuthError } from "../api";
+import { AuthError } from "../api";
+import type { Role } from "../api";
+import { useAuth } from "../AuthContext";
 import LoginFormWeb from "./LoginForm.web";
 import LoginFormMobile from "./LoginForm.mobile";
+
+const ROLE_HOME: Record<Role, string> = {
+  ADMIN: "/dashboard",
+  QUALITY_ADMIN: "/inspection-orders",
+  PRODUCTION: "/",
+  QUALITY: "/",
+};
 
 export interface LoginFormProps {
   username: string;
@@ -19,12 +28,12 @@ export default function Login() {
 
   const isMobile = useMediaQuery("(max-width: 767px)");
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async () => {
     try {
-      const tokens = await login({ loginId: username, password });
-      tokenStorage.save(tokens);
-      navigate("/");
+      const me = await login({ loginId: username, password });
+      navigate(ROLE_HOME[me.role] ?? "/");
     } catch (err) {
       if (err instanceof AuthError) {
         alert(err.message);
