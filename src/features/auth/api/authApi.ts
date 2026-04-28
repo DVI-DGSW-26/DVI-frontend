@@ -6,7 +6,7 @@ import {
   type LoginRequest,
   type SignupRequest,
   type TokenData,
-} from "./types";
+} from "../type/types";
 
 export async function signup(body: SignupRequest): Promise<void> {
   try {
