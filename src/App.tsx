@@ -4,6 +4,7 @@ import LoginForm from "./features/auth/ui/LoginForm"
 import Layout from "./components/layout/Layout"
 import RouteGuard from "./features/auth/RouteGuard"
 import DevRoleSwitcher from "./features/auth/DevRoleSwitcher"
+import ApprovalManagementPage from "./features/incomplete/ui/ApprovalManagementPage"
 
 function App() {
 
@@ -27,7 +28,7 @@ function App() {
 
             <Route element={<RouteGuard roles={["QUALITY_ADMIN"]} />}>
               <Route path="/inspection-orders" element={<div className="p-6">검사지시관리</div>} />
-              <Route path="/approval-management" element={<div className="p-6">승인관리</div>} />
+              <Route path="/approval-management" element={<ApprovalManagementPage />} />
               <Route path="/qm-reports" element={<div className="p-6">보고서</div>} />
             </Route>
           </Route>
