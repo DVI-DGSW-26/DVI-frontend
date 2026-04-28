@@ -4,6 +4,7 @@ import LoginForm from "./features/auth/ui/LoginForm"
 import Layout from "./components/layout/Layout"
 import RouteGuard from "./features/auth/RouteGuard"
 import DevRoleSwitcher from "./features/auth/DevRoleSwitcher"
+import NotificationPage from "./features/notification/ui/NotificationPage"
 
 function App() {
 
@@ -17,6 +18,7 @@ function App() {
         <Route element={<RouteGuard />}>
           <Route element={<Layout/>}>
             <Route path="/" element={<div className="p-6">홈</div>} />
+            <Route path="/notifications" element={<NotificationPage />} />
 
             <Route element={<RouteGuard roles={["ADMIN"]} />}>
               <Route path="/dashboard" element={<div className="p-6">대시보드</div>} />
