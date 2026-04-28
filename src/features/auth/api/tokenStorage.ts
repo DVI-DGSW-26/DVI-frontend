@@ -1,4 +1,4 @@
-import type { TokenData } from "./types";
+import type { TokenData } from "../type/types";
 
 const ACCESS_KEY = "accessToken";
 const REFRESH_KEY = "refreshToken";
