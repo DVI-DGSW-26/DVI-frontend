@@ -2,7 +2,7 @@ export { signup, login, reissue } from "./authApi";
 export { getMe } from "./userApi";
 export { tokenStorage } from "./tokenStorage";
 export { installAuthInterceptors } from "./interceptors";
-export { AuthError } from "./types";
+export { AuthError } from "../type/types";
 export type {
   ApiResponse,
   TokenData,
@@ -14,4 +14,4 @@ export type {
   Role,
   UserStatus,
   User,
-} from "./types";
+} from "../type/types";
