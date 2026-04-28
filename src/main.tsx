@@ -6,13 +6,16 @@ import App from './App.tsx'
 import { installAuthInterceptors } from './features/auth/api'
 import { AuthProvider } from './features/auth/AuthContext'
 
+// axios interceptor 설치
 installAuthInterceptors()
 
+// React Query 설정
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60,
-      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60, // 60초 캐싱
+      retry: 1, // 네트워크 불안정 대비
+      refetchOnWindowFocus: false, // 포커스 시 자동 refetch 방지
     },
   },
 })
