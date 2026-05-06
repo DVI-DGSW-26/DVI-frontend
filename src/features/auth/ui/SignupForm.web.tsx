@@ -56,7 +56,7 @@ export default function SignupFormWeb({
         <div className="absolute inset-0 flex flex-col justify-center left-12 gap-6">
           <div className="flex flex-col gap-0 leading-tight">
             <span className="text-[40px] xl:text-[46px] text-white font-semibold">A social enterprise that cares about </span>
-            <span className="text-[64px] xl:text-[70px] text-white font-black leading-tight">people, technology, and<br/>the environment</span>
+            <span className="text-[58px] xl:text-[64px] text-white font-black leading-tight">people, technology, and<br/>the environment</span>
           </div>
           <span className="text-[18px] xl:text-[24px] font-medium text-white">
             사람, 기술, 환경을 중시하는 사회적 기업
