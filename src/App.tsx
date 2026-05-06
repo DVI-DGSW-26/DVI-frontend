@@ -6,6 +6,7 @@ import RouteGuard from "./features/auth/RouteGuard"
 import DevRoleSwitcher from "./features/auth/DevRoleSwitcher"
 import NotificationPage from "./features/notification/ui/NotificationPage"
 import ApprovalManagementPage from "./features/incomplete/ui/ApprovalManagementPage"
+import AccountApprovalPage from "./features/account-approval/ui/AccountApprovalPage"
 import InspectionOrdersPage from "./features/inspection-orders/ui/InspectionOrdersPage"
 
 function App() {
@@ -25,7 +26,7 @@ function App() {
             <Route element={<RouteGuard roles={["ADMIN"]} />}>
               <Route path="/dashboard" element={<div className="p-6">대시보드</div>} />
               <Route path="/userSearch" element={<div className="p-6">사용자 검색</div>} />
-              <Route path="/approval" element={<div className="p-6">가입승인</div>} />
+              <Route path="/approval" element={<AccountApprovalPage />} />
               <Route path="/reports" element={<div className="p-6">검사보고서</div>} />
             </Route>
 
