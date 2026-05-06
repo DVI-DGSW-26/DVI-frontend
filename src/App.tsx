@@ -7,6 +7,7 @@ import DevRoleSwitcher from "./features/auth/DevRoleSwitcher"
 import NotificationPage from "./features/notification/ui/NotificationPage"
 import ApprovalManagementPage from "./features/incomplete/ui/ApprovalManagementPage"
 import InspectionOrdersPage from "./features/inspection-orders/ui/InspectionOrdersPage"
+import ReportPage from "./features/report/ui/ReportPage"
 
 function App() {
 
@@ -32,7 +33,7 @@ function App() {
             <Route element={<RouteGuard roles={["QUALITY_ADMIN"]} />}>
               <Route path="/inspection-orders" element={<InspectionOrdersPage />} />
               <Route path="/approval-management" element={<ApprovalManagementPage />} />
-              <Route path="/qm-reports" element={<div className="p-6">보고서</div>} />
+              <Route path="/qm-reports" element={<ReportPage />} />
             </Route>
           </Route>
         </Route>
