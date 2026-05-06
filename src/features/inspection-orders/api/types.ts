@@ -33,10 +33,10 @@ export interface CreateInspectionOrderRequest {
 }
 
 export type InspectionOrderStatus =
-  | "PENDING"
-  | "IN_PROGRESS"
+  | "DRAFT"
+  | "INCOMPLETE"
+  | "INCOMPLETE_APPROVED"
   | "COMPLETED"
-  | "CANCELED"
   | string;
 
 export interface InspectionOrderProduct {
