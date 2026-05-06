@@ -7,6 +7,7 @@ import DevRoleSwitcher from "./features/auth/DevRoleSwitcher"
 import NotificationPage from "./features/notification/ui/NotificationPage"
 import ApprovalManagementPage from "./features/incomplete/ui/ApprovalManagementPage"
 import AccountApprovalPage from "./features/account-approval/ui/AccountApprovalPage"
+import InspectionOrdersPage from "./features/inspection-orders/ui/InspectionOrdersPage"
 
 function App() {
 
@@ -30,7 +31,7 @@ function App() {
             </Route>
 
             <Route element={<RouteGuard roles={["QUALITY_ADMIN"]} />}>
-              <Route path="/inspection-orders" element={<div className="p-6">검사지시관리</div>} />
+              <Route path="/inspection-orders" element={<InspectionOrdersPage />} />
               <Route path="/approval-management" element={<ApprovalManagementPage />} />
               <Route path="/qm-reports" element={<div className="p-6">보고서</div>} />
             </Route>
