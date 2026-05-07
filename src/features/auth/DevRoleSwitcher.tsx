@@ -29,7 +29,7 @@ export default function DevRoleSwitcher() {
   };
 
   return (
-    <div className="fixed bottom-3 right-3 z-50 flex items-center gap-2 rounded-lg border border-gray-200 bg-white/95 px-3 py-2 text-xs shadow-lg backdrop-blur">
+    <div className="fixed bottom-20 right-3 z-50 flex items-center gap-2 rounded-lg border border-gray-200 bg-white/95 px-3 py-2 text-xs shadow-lg backdrop-blur md:bottom-3">
       <span className="font-semibold text-gray-500">DEV role</span>
       <select
         value={user?.role ?? "ADMIN"}
