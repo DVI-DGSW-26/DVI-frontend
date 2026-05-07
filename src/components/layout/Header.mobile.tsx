@@ -1,8 +1,8 @@
 import { useLocation } from "react-router-dom";
+import { useAuth } from "../../features/auth/AuthContext";
 
 const ROUTE_TITLES: Record<string, string> = {
   "/": "홈",
-  "/dashboard": "대시보드",
   "/userSearch": "사용자 검색",
   "/approval": "가입승인",
   "/reports": "검사보고서",
@@ -13,7 +13,11 @@ const ROUTE_TITLES: Record<string, string> = {
 
 const HeaderMobile = () => {
   const { pathname } = useLocation();
-  const title = ROUTE_TITLES[pathname] ?? "";
+  const { user } = useAuth();
+  const title =
+    pathname === "/" && user?.role === "ADMIN"
+      ? "대시보드"
+      : (ROUTE_TITLES[pathname] ?? "");
 
   return (
     <header className="flex h-14 items-center justify-center border-b border-[#E5E7EB] bg-white px-4">

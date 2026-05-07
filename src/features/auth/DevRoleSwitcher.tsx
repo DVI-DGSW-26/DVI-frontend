@@ -10,7 +10,7 @@ const ROLE_LABEL: Record<Role, string> = {
 };
 
 const ROLE_HOME: Record<Role, string> = {
-  ADMIN: "/dashboard",
+  ADMIN: "/",
   QUALITY_ADMIN: "/inspection-orders",
   PRODUCTION: "/",
   QUALITY: "/",
