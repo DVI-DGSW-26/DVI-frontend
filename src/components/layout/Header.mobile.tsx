@@ -9,8 +9,8 @@ const ROUTE_TITLES: Record<string, string> = {
   "/inspection-orders": "검사지시관리",
   "/approval-management": "승인관리",
   "/qm-reports": "보고서",
-  "/inspections": "검사이력",
-  "/scan": "스캔",
+  "/inspections": "현황",
+  "/scan": "품질검사시스템",
 };
 
 const HeaderMobile = () => {
