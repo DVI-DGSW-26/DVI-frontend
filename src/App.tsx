@@ -11,7 +11,6 @@ import InspectionOrdersPage from "./features/inspection-orders/ui/InspectionOrde
 import ReportPage from "./features/report/ui/ReportPage"
 
 function App() {
-
   return (
     <BrowserRouter>
       <DevRoleSwitcher />
