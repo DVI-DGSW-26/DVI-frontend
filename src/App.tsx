@@ -35,6 +35,11 @@ function App() {
               <Route path="/approval-management" element={<ApprovalManagementPage />} />
               <Route path="/qm-reports" element={<ReportPage />} />
             </Route>
+
+            <Route element={<RouteGuard roles={["PRODUCTION"]} />}>
+              <Route path="/inspections" element={<div className="p-6">검사이력</div>} />
+              <Route path="/scan" element={<div className="p-6">스캔</div>} />
+            </Route>
           </Route>
         </Route>
       </Routes>
