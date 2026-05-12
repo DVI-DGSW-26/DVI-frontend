@@ -9,6 +9,9 @@ import ApprovalManagementPage from "./features/incomplete/ui/ApprovalManagementP
 import AccountApprovalPage from "./features/account-approval/ui/AccountApprovalPage"
 import InspectionOrdersPage from "./features/inspection-orders/ui/InspectionOrdersPage"
 import ReportPage from "./features/report/ui/ReportPage"
+import ProductsPage from "./features/products/ui/ProductsPage"
+import EquipmentPage from "./features/equipment/ui/EquipmentPage"
+import CustomersPage from "./features/customers/ui/CustomersPage"
 
 import AdminUserSearchPage from "./features/user-search/ui/AdminUserSearchPage"
 import AdminReportPage from "./features/report/ui/AdminReportPage"
@@ -51,6 +54,9 @@ function App() {
               <Route path="/inspection-orders" element={<InspectionOrdersPage />} />
               <Route path="/approval-management" element={<ApprovalManagementPage />} />
               <Route path="/qm-reports" element={<ReportPage />} />
+              <Route path="/products" element={<ProductsPage />} />
+              <Route path="/equipment" element={<EquipmentPage />} />
+              <Route path="/customers" element={<CustomersPage />} />
             </Route>
           </Route>
         </Route>
