@@ -1,10 +1,10 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useUnreadCount } from "../../features/notification/api";
+import { useAuth } from "../../features/auth/AuthContext";
 
 const ROUTE_TITLES: Record<string, string> = {
   "/": "홈",
-  "/dashboard": "대시보드",
   "/userSearch": "사용자 검색",
   "/approval": "가입승인",
   "/reports": "검사보고서",
@@ -18,8 +18,13 @@ const HeaderMobile = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { data: unreadCount = 0 } = useUnreadCount();
+  const { user } = useAuth();
 
-  const title = ROUTE_TITLES[pathname] ?? "";
+  const title =
+    pathname === "/" && user?.role === "ADMIN"
+      ? "대시보드"
+      : (ROUTE_TITLES[pathname] ?? "");
+
   const hasUnread = unreadCount > 0;
   const isNotificationsPage = pathname === "/notifications";
 

@@ -12,7 +12,7 @@ type TabItem = {
 };
 
 const TABS: TabItem[] = [
-  { label: "대시보드", to: "/dashboard", icon: "flowbite:home-solid", roles: ["ADMIN"] },
+  { label: "대시보드", to: "/", icon: "flowbite:home-solid", roles: ["ADMIN"] },
   { label: "사용자 검색", to: "/userSearch", icon: "mdi:people", roles: ["ADMIN"] },
   { label: "가입승인", to: "/approval", icon: "fluent:shield-task-48-filled", roles: ["ADMIN"] },
   { label: "검사보고서", to: "/reports", icon: "basil:document-solid", roles: ["ADMIN"] },
