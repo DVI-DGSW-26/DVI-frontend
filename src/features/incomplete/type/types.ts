@@ -1,4 +1,4 @@
-export type Decision = "APPROVE" | "REJECT";
+export type Decision = "APPROVE";
 
 export type InspectionType = "DAY_1" | "DAY_2" | "DAY_3" | "DAY_4" | "DAY_5";
 
