@@ -32,7 +32,7 @@ const UserCard = ({ user, completedSlots = 0, onClick }: Props) => {
     <button
       type="button"
       onClick={() => onClick?.(user)}
-      className="flex flex-col gap-3 rounded-2xl bg-white px-5 py-4 text-left shadow-sm transition-shadow hover:shadow-md"
+      className="flex cursor-default flex-col gap-3 rounded-2xl bg-white px-5 py-4 text-left shadow-sm"
     >
       <div className="flex items-center gap-4">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#F3F4F6] text-base font-semibold text-[#6B7280]">
