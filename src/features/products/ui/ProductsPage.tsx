@@ -5,6 +5,7 @@ import {
   useDeleteProduct,
   useProductList,
 } from "../api";
+import { useCustomerList } from "../../customers/api";
 import type { ProductListItem } from "../api";
 import { PROCESS_OPTIONS, processLabel } from "../lib/processLabels";
 import ProductFormDrawer from "./ProductFormDrawer";
@@ -45,6 +46,7 @@ export default function ProductsPage() {
 
   const isMobile = useMediaQuery("(max-width: 767px)");
   const { data: products = [], isLoading, isError } = useProductList();
+  const { data: customers = [] } = useCustomerList();
   const { mutate: remove, isPending: isDeleting } = useDeleteProduct();
 
   const filtered = useMemo(() => {
@@ -61,12 +63,15 @@ export default function ProductsPage() {
   }, [products, filter, keyword]);
 
   const customerOptions = useMemo(() => {
+    if (customers.length > 0) {
+      return customers.map((c) => ({ id: c.id, name: c.name }));
+    }
     const map = new Map<number, string>();
     for (const p of products) {
       if (!map.has(p.customer.id)) map.set(p.customer.id, p.customer.name);
     }
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
-  }, [products]);
+  }, [customers, products]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {
