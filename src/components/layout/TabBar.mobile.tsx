@@ -18,6 +18,9 @@ const TABS: TabItem[] = [
   { label: "검사지시관리", to: "/inspection-orders", icon: "mdi:clipboard-text", roles: ["QUALITY_ADMIN"] },
   { label: "승인관리", to: "/approval-management", icon: "fluent:shield-task-48-filled", roles: ["QUALITY_ADMIN"] },
   { label: "보고서", to: "/qm-reports", icon: "basil:document-solid", roles: ["QUALITY_ADMIN"] },
+  { label: "제품관리", to: "/products", icon: "mdi:cube", roles: ["QUALITY_ADMIN"] },
+  { label: "설비관리", to: "/equipment", icon: "mdi:factory", roles: ["QUALITY_ADMIN"] },
+  { label: "고객사 관리", to: "/customers", icon: "mdi:office-building", roles: ["QUALITY_ADMIN"] },
 ];
 
 const TabBarMobile = () => {
