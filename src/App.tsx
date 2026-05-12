@@ -9,6 +9,8 @@ import ApprovalManagementPage from "./features/incomplete/ui/ApprovalManagementP
 import AccountApprovalPage from "./features/account-approval/ui/AccountApprovalPage"
 import InspectionOrdersPage from "./features/inspection-orders/ui/InspectionOrdersPage"
 import ReportPage from "./features/report/ui/ReportPage"
+
+import AdminUserSearchPage from "./features/user-search/ui/AdminUserSearchPage"
 import AdminReportPage from "./features/report/ui/AdminReportPage"
 import AdminReportDetailPage from "./features/report/ui/AdminReportDetailPage"
 import DashboardPage from "./features/dashboard/ui/DashboardPage"
@@ -16,7 +18,10 @@ import { useAuth } from "./features/auth/AuthContext"
 
 function HomePage() {
   const { user } = useAuth();
-  return user?.role === "ADMIN" ? <DashboardPage /> : <div className="p-6">홈</div>;
+
+  return user?.role === "ADMIN"
+    ? <DashboardPage />
+    : <div className="p-6">홈</div>;
 }
 
 function App() {
@@ -24,17 +29,20 @@ function App() {
     <BrowserRouter>
       <DevRoleSwitcher />
       <Routes>
-        <Route path="/signup" element={<SignupForm/>} />
-        <Route path="/login" element={<LoginForm/>} />
+        <Route path="/signup" element={<SignupForm />} />
+        <Route path="/login" element={<LoginForm />} />
 
         <Route element={<RouteGuard />}>
-          <Route element={<Layout/>}>
+          <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/notifications" element={<NotificationPage />} />
 
             <Route element={<RouteGuard roles={["ADMIN"]} />}>
-              <Route path="/userSearch" element={<div className="p-6">사용자 검색</div>} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/userSearch" element={<AdminUserSearchPage />} />
+
               <Route path="/approval" element={<AccountApprovalPage />} />
+
               <Route path="/reports" element={<AdminReportPage />} />
               <Route path="/reports/:reportId" element={<AdminReportDetailPage />} />
             </Route>
