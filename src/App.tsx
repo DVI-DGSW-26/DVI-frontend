@@ -9,6 +9,7 @@ import ApprovalManagementPage from "./features/incomplete/ui/ApprovalManagementP
 import AccountApprovalPage from "./features/account-approval/ui/AccountApprovalPage"
 import InspectionOrdersPage from "./features/inspection-orders/ui/InspectionOrdersPage"
 import ReportPage from "./features/report/ui/ReportPage"
+import AdminUserSearchPage from "./features/user-search/ui/AdminUserSearchPage"
 
 function App() {
   return (
@@ -25,7 +26,7 @@ function App() {
 
             <Route element={<RouteGuard roles={["ADMIN"]} />}>
               <Route path="/dashboard" element={<div className="p-6">대시보드</div>} />
-              <Route path="/userSearch" element={<div className="p-6">사용자 검색</div>} />
+              <Route path="/userSearch" element={<AdminUserSearchPage />} />
               <Route path="/approval" element={<AccountApprovalPage />} />
               <Route path="/reports" element={<div className="p-6">검사보고서</div>} />
             </Route>

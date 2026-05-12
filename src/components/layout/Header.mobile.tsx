@@ -1,4 +1,6 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Icon } from "@iconify/react";
+import { useUnreadCount } from "../../features/notification/api";
 
 const ROUTE_TITLES: Record<string, string> = {
   "/": "홈",
@@ -9,15 +11,44 @@ const ROUTE_TITLES: Record<string, string> = {
   "/inspection-orders": "검사지시관리",
   "/approval-management": "승인관리",
   "/qm-reports": "보고서",
+  "/notifications": "알림",
 };
 
 const HeaderMobile = () => {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { data: unreadCount = 0 } = useUnreadCount();
+
   const title = ROUTE_TITLES[pathname] ?? "";
+  const hasUnread = unreadCount > 0;
+  const isNotificationsPage = pathname === "/notifications";
 
   return (
-    <header className="flex h-14 items-center justify-center border-b border-[#E5E7EB] bg-white px-4">
+    <header className="relative flex h-14 items-center justify-center border-b border-[#E5E7EB] bg-white px-4">
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        aria-label="뒤로가기"
+        className="absolute left-4 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center text-[#212121]"
+      >
+        <Icon icon="solar:alt-arrow-left-linear" width={24} height={24} />
+      </button>
+
       <h1 className="text-base font-semibold">{title}</h1>
+
+      {!isNotificationsPage && (
+        <button
+          type="button"
+          onClick={() => navigate("/notifications")}
+          aria-label="알림"
+          className="absolute right-4 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center text-[#212121]"
+        >
+          <Icon icon="solar:bell-linear" width={22} height={22} />
+          {hasUnread && (
+            <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#EF4444]" />
+          )}
+        </button>
+      )}
     </header>
   );
 };
