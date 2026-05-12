@@ -2,7 +2,6 @@ import { useState } from "react";
 import { AxiosError } from "axios";
 import IncompleteList from "./incompleteList";
 import { useIncompleteDecision } from "../model/useIncompleteDecision";
-import type { Decision } from "../type/types";
 
 function ApprovalManagementPage() {
   const [checked, setChecked] = useState<Set<number>>(new Set());
@@ -20,11 +19,11 @@ function ApprovalManagementPage() {
   const selectedIds = Array.from(checked);
   const hasSelection = selectedIds.length > 0;
 
-  const submit = (decision: Decision) => {
+  const submit = () => {
     if (!hasSelection || isPending) return;
 
     mutate(
-      { inspectionIds: selectedIds, decision },
+      { inspectionIds: selectedIds, decision: "APPROVE" },
       {
         onSuccess: () => {
           setChecked(new Set());
@@ -54,19 +53,11 @@ function ApprovalManagementPage() {
       <div className="flex justify-end gap-2 pt-2">
         <button
           type="button"
-          onClick={() => submit("APPROVE")}
+          onClick={submit}
           disabled={!hasSelection || isPending}
           className="px-5 py-2 rounded-lg bg-[#931B82] text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed"
         >
           승인 {hasSelection && `(${selectedIds.length})`}
-        </button>
-        <button
-          type="button"
-          onClick={() => submit("REJECT")}
-          disabled={!hasSelection || isPending}
-          className="px-5 py-2 rounded-lg border border-[#EF4444] text-[#EF4444] font-medium disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          반려
         </button>
       </div>
     </div>
