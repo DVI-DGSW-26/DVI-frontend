@@ -111,7 +111,7 @@ const AdminUserSearchPageMobile = () => {
               <li key={u.id}>
                 <button
                   type="button"
-                  className="flex w-full items-stretch gap-3 rounded-2xl bg-white px-5 py-4 text-left shadow-sm"
+                  className="flex w-full cursor-default items-stretch gap-3 rounded-2xl bg-white px-5 py-4 text-left shadow-sm"
                 >
                   <div className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate text-base font-bold text-[#212121]">
