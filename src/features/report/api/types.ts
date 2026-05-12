@@ -1,4 +1,8 @@
-export type ReportProcess = "EXTRUSION" | "INJECTION" | "INOUT" | string;
+export type ReportProcess =
+  | "EXTRUSION"
+  | "AL_CUTTING"
+  | "ST_CUTTING"
+  | "MACHINING";
 
 export type ReportInspectionType =
   | "DAY_1"
@@ -6,11 +10,18 @@ export type ReportInspectionType =
   | "DAY_3"
   | "DAY_4"
   | "DAY_5"
-  | string;
+  | "NIGHT_1"
+  | "NIGHT_2"
+  | "NIGHT_3"
+  | "NIGHT_4"
+  | "NIGHT_5";
+
+export type JudgeResult = "PASS" | "FAIL";
 
 export interface ReportSummary {
   id: number;
   reportNumber: string;
+  result: JudgeResult;
   customerName: string;
   productName: string;
   productCode: string;
