@@ -8,6 +8,7 @@ type TabItem = {
   to: string;
   icon: string;
   roles: Role[];
+  iconSize?: number;
 };
 
 const TABS: TabItem[] = [
@@ -21,6 +22,9 @@ const TABS: TabItem[] = [
   { label: "제품관리", to: "/products", icon: "mdi:cube", roles: ["QUALITY_ADMIN"] },
   { label: "설비관리", to: "/equipment", icon: "mdi:factory", roles: ["QUALITY_ADMIN"] },
   { label: "고객사 관리", to: "/customers", icon: "mdi:office-building", roles: ["QUALITY_ADMIN"] },
+  { label: "홈", to: "/", icon: "flowbite:home-solid", roles: ["PRODUCTION"], iconSize: 34 },
+  { label: "검사이력", to: "/inspections", icon: "icon-park-outline:big-clock", roles: ["PRODUCTION"] },
+  { label: "스캔", to: "/scan", icon: "carbon:scan-alt", roles: ["PRODUCTION"] },
 ];
 
 const TabBarMobile = () => {
@@ -43,7 +47,7 @@ const TabBarMobile = () => {
             }`
           }
         >
-          <Icon icon={tab.icon} width={28} height={28} />
+          <Icon icon={tab.icon} width={tab.iconSize ?? 28} height={tab.iconSize ?? 28} />
         </NavLink>
       ))}
     </nav>

@@ -9,6 +9,8 @@ import ApprovalManagementPage from "./features/incomplete/ui/ApprovalManagementP
 import AccountApprovalPage from "./features/account-approval/ui/AccountApprovalPage"
 import InspectionOrdersPage from "./features/inspection-orders/ui/InspectionOrdersPage"
 import ReportPage from "./features/report/ui/ReportPage"
+import MyInspectionPage from "./features/my-inspection/ui/MyInspectionPage"
+import ProductionHomePage from "./features/my-inspection/ui/ProductionHomePage"
 import ProductsPage from "./features/products/ui/ProductsPage"
 import EquipmentPage from "./features/equipment/ui/EquipmentPage"
 import CustomersPage from "./features/customers/ui/CustomersPage"
@@ -21,10 +23,9 @@ import { useAuth } from "./features/auth/AuthContext"
 
 function HomePage() {
   const { user } = useAuth();
-
-  return user?.role === "ADMIN"
-    ? <DashboardPage />
-    : <div className="p-6">홈</div>;
+  if (user?.role === "PRODUCTION") return <ProductionHomePage />;
+  if (user?.role === "ADMIN") return <DashboardPage />;
+  return <div className="p-6">홈</div>;
 }
 
 function App() {
@@ -57,6 +58,11 @@ function App() {
               <Route path="/products" element={<ProductsPage />} />
               <Route path="/equipment" element={<EquipmentPage />} />
               <Route path="/customers" element={<CustomersPage />} />
+            </Route>
+
+            <Route element={<RouteGuard roles={["PRODUCTION"]} />}>
+              <Route path="/inspections" element={<MyInspectionPage />} />
+              <Route path="/scan" element={<div className="p-6">스캔</div>} />
             </Route>
           </Route>
         </Route>
