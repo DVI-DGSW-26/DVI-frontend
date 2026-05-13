@@ -9,6 +9,15 @@ import ApprovalManagementPage from "./features/incomplete/ui/ApprovalManagementP
 import AccountApprovalPage from "./features/account-approval/ui/AccountApprovalPage"
 import InspectionOrdersPage from "./features/inspection-orders/ui/InspectionOrdersPage"
 import ReportPage from "./features/report/ui/ReportPage"
+import MyInspectionPage from "./features/my-inspection/ui/MyInspectionPage"
+import ProductionHomePage from "./features/my-inspection/ui/ProductionHomePage"
+import { useAuth } from "./features/auth/AuthContext"
+
+function HomePage() {
+  const { user } = useAuth();
+  if (user?.role === "PRODUCTION") return <ProductionHomePage />;
+  return <div className="p-6">홈</div>;
+}
 
 function App() {
   return (
@@ -20,7 +29,7 @@ function App() {
 
         <Route element={<RouteGuard />}>
           <Route element={<Layout/>}>
-            <Route path="/" element={<div className="p-6">홈</div>} />
+            <Route path="/" element={<HomePage />} />
             <Route path="/notifications" element={<NotificationPage />} />
 
             <Route element={<RouteGuard roles={["ADMIN"]} />}>
@@ -37,7 +46,7 @@ function App() {
             </Route>
 
             <Route element={<RouteGuard roles={["PRODUCTION"]} />}>
-              <Route path="/inspections" element={<div className="p-6">검사이력</div>} />
+              <Route path="/inspections" element={<MyInspectionPage />} />
               <Route path="/scan" element={<div className="p-6">스캔</div>} />
             </Route>
           </Route>
