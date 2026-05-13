@@ -11,11 +11,20 @@ import InspectionOrdersPage from "./features/inspection-orders/ui/InspectionOrde
 import ReportPage from "./features/report/ui/ReportPage"
 import MyInspectionPage from "./features/my-inspection/ui/MyInspectionPage"
 import ProductionHomePage from "./features/my-inspection/ui/ProductionHomePage"
+import ProductsPage from "./features/products/ui/ProductsPage"
+import EquipmentPage from "./features/equipment/ui/EquipmentPage"
+import CustomersPage from "./features/customers/ui/CustomersPage"
+
+import AdminUserSearchPage from "./features/user-search/ui/AdminUserSearchPage"
+import AdminReportPage from "./features/report/ui/AdminReportPage"
+import AdminReportDetailPage from "./features/report/ui/AdminReportDetailPage"
+import DashboardPage from "./features/dashboard/ui/DashboardPage"
 import { useAuth } from "./features/auth/AuthContext"
 
 function HomePage() {
   const { user } = useAuth();
   if (user?.role === "PRODUCTION") return <ProductionHomePage />;
+  if (user?.role === "ADMIN") return <DashboardPage />;
   return <div className="p-6">홈</div>;
 }
 
@@ -24,25 +33,31 @@ function App() {
     <BrowserRouter>
       <DevRoleSwitcher />
       <Routes>
-        <Route path="/signup" element={<SignupForm/>} />
-        <Route path="/login" element={<LoginForm/>} />
+        <Route path="/signup" element={<SignupForm />} />
+        <Route path="/login" element={<LoginForm />} />
 
         <Route element={<RouteGuard />}>
-          <Route element={<Layout/>}>
+          <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/notifications" element={<NotificationPage />} />
 
             <Route element={<RouteGuard roles={["ADMIN"]} />}>
-              <Route path="/dashboard" element={<div className="p-6">대시보드</div>} />
-              <Route path="/userSearch" element={<div className="p-6">사용자 검색</div>} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/userSearch" element={<AdminUserSearchPage />} />
+
               <Route path="/approval" element={<AccountApprovalPage />} />
-              <Route path="/reports" element={<div className="p-6">검사보고서</div>} />
+
+              <Route path="/reports" element={<AdminReportPage />} />
+              <Route path="/reports/:reportId" element={<AdminReportDetailPage />} />
             </Route>
 
             <Route element={<RouteGuard roles={["QUALITY_ADMIN"]} />}>
               <Route path="/inspection-orders" element={<InspectionOrdersPage />} />
               <Route path="/approval-management" element={<ApprovalManagementPage />} />
               <Route path="/qm-reports" element={<ReportPage />} />
+              <Route path="/products" element={<ProductsPage />} />
+              <Route path="/equipment" element={<EquipmentPage />} />
+              <Route path="/customers" element={<CustomersPage />} />
             </Route>
 
             <Route element={<RouteGuard roles={["PRODUCTION"]} />}>

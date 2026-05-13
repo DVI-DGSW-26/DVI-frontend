@@ -76,21 +76,21 @@ export default function ReportPage() {
   const [appliedSearch, setAppliedSearch] = useState("");
 
   const [draftDate, setDraftDate] = useState("");
-  const [draftProcess, setDraftProcess] = useState<Option | null>(null);
+  const [draftEquipment, setDraftEquipment] = useState<Option | null>(null);
   const [draftProduct, setDraftProduct] = useState<Option | null>(null);
 
   const [appliedDate, setAppliedDate] = useState("");
-  const [appliedProcess, setAppliedProcess] = useState("");
+  const [appliedEquipmentName, setAppliedEquipmentName] = useState("");
   const [appliedProductCode, setAppliedProductCode] = useState("");
 
-  const processOptions = useMemo<Option[]>(() => {
-    const set = new Set<string>();
-    for (const e of equipment) if (e.process) set.add(e.process);
-    for (const p of products) if (p.process) set.add(p.process);
-    return Array.from(set)
-      .sort()
-      .map((p) => ({ value: p, label: p }));
-  }, [equipment, products]);
+  const equipmentOptions = useMemo<Option[]>(
+    () =>
+      equipment.map((e) => ({
+        value: e.name,
+        label: e.name,
+      })),
+    [equipment],
+  );
 
   const productOptions = useMemo<Option[]>(
     () =>
@@ -104,19 +104,37 @@ export default function ReportPage() {
   const filtered = useMemo(() => {
     const q = appliedSearch.trim().toLowerCase();
     return reports.filter((r) => {
-      if (q && !r.reportNumber.toLowerCase().includes(q)) return false;
+      if (q) {
+        const haystacks = [
+          r.customerName,
+          r.productName,
+          r.equipmentName,
+          r.productionName,
+          r.qualityName,
+          r.approvedByName,
+        ];
+        const hit = haystacks.some((v) => v?.toLowerCase().includes(q));
+        if (!hit) return false;
+      }
       if (appliedDate && r.targetDate !== appliedDate) return false;
-      if (appliedProcess && r.process !== appliedProcess) return false;
+      if (appliedEquipmentName && r.equipmentName !== appliedEquipmentName)
+        return false;
       if (appliedProductCode && r.productCode !== appliedProductCode)
         return false;
       return true;
     });
-  }, [reports, appliedSearch, appliedDate, appliedProcess, appliedProductCode]);
+  }, [
+    reports,
+    appliedSearch,
+    appliedDate,
+    appliedEquipmentName,
+    appliedProductCode,
+  ]);
 
   const hasAppliedFilter =
     appliedSearch !== "" ||
     appliedDate !== "" ||
-    appliedProcess !== "" ||
+    appliedEquipmentName !== "" ||
     appliedProductCode !== "";
 
   const handleSearchSubmit = (e: { preventDefault: () => void }) => {
@@ -126,16 +144,16 @@ export default function ReportPage() {
 
   const handleApply = () => {
     setAppliedDate(draftDate);
-    setAppliedProcess(draftProcess?.value ?? "");
+    setAppliedEquipmentName(draftEquipment?.value ?? "");
     setAppliedProductCode(draftProduct?.value ?? "");
   };
 
   const handleReset = () => {
     setDraftDate("");
-    setDraftProcess(null);
+    setDraftEquipment(null);
     setDraftProduct(null);
     setAppliedDate("");
-    setAppliedProcess("");
+    setAppliedEquipmentName("");
     setAppliedProductCode("");
   };
 
@@ -148,7 +166,7 @@ export default function ReportPage() {
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="보고서 번호로 검색 (예: DV-MA-IR-260506-001)"
+              placeholder="이름으로 검색 (고객사 / 제품 / 설비 / 작업자 / 검사자 / 승인자)"
               className="h-10 w-full rounded-lg bg-white pl-3 pr-16 text-sm focus:outline-none"
             />
             <button
@@ -179,10 +197,10 @@ export default function ReportPage() {
 
           <div className="w-44">
             <Select<Option, false>
-              value={draftProcess}
-              onChange={(opt) => setDraftProcess(opt)}
-              options={processOptions}
-              placeholder="공정 전체"
+              value={draftEquipment}
+              onChange={(opt) => setDraftEquipment(opt)}
+              options={equipmentOptions}
+              placeholder="설비 전체"
               isClearable
               styles={filterSelectStyles}
             />

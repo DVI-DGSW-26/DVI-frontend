@@ -1,14 +1,16 @@
 import { useLocation } from "react-router-dom";
 
 const ROUTE_TITLES: Record<string, string> = {
-  "/": "홈",
-  "/dashboard": "대시보드",
+  "/": "대시보드",
   "/userSearch": "사용자 검색",
   "/approval": "가입승인",
   "/reports": "검사보고서",
   "/inspection-orders": "검사지시관리",
   "/approval-management": "승인관리",
   "/qm-reports": "보고서",
+  "/products": "제품관리",
+  "/equipment": "설비관리",
+  "/customers": "고객사 관리",
 };
 
 const HeaderWeb = () => {
