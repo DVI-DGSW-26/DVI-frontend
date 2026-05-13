@@ -58,15 +58,6 @@ function summaryKeyOf(status: InspectionOrderStatus): SummaryKey | null {
   return null;
 }
 
-type DateFilter = "today" | "yesterday" | "thisWeek" | "all";
-
-const DATE_FILTERS: { value: DateFilter; label: string }[] = [
-  { value: "today", label: "오늘" },
-  { value: "yesterday", label: "어제" },
-  { value: "thisWeek", label: "이번주" },
-  { value: "all", label: "전체" },
-];
-
 function statusBadge(status: InspectionOrderStatus) {
   const label = STATUS_LABEL[status] ?? status;
   const style = STATUS_STYLE[status] ?? "bg-[#F3F4F6] text-[#6B7280]";
@@ -77,49 +68,18 @@ function statusBadge(status: InspectionOrderStatus) {
   );
 }
 
-function ymd(d: Date) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function isInRange(targetDate: string, filter: DateFilter): boolean {
-  if (filter === "all") return true;
-  if (!targetDate) return false;
-  const target = targetDate.slice(0, 10);
-  const now = new Date();
-
-  if (filter === "today") return target === ymd(now);
-
-  if (filter === "yesterday") {
-    const y = new Date(now);
-    y.setDate(y.getDate() - 1);
-    return target === ymd(y);
-  }
-
-  // 월요일 시작 기준 이번 주
-  const day = now.getDay();
-  const offset = day === 0 ? 6 : day - 1;
-  const monday = new Date(now);
-  monday.setDate(monday.getDate() - offset);
-  const sunday = new Date(monday);
-  sunday.setDate(sunday.getDate() + 6);
-  return target >= ymd(monday) && target <= ymd(sunday);
-}
-
 export default function InspectionOrdersPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<InspectionOrder | null>(null);
-  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
+  const [selectedDate, setSelectedDate] = useState("");
   const isMobile = useMediaQuery("(max-width: 767px)");
   const { data: orders = [], isLoading, isError } = useInspectionOrderList();
   const { mutate: remove, isPending: isDeleting } = useDeleteInspectionOrder();
 
-  const filtered = useMemo(
-    () => orders.filter((o) => isInRange(o.targetDate, dateFilter)),
-    [orders, dateFilter],
-  );
+  const filtered = useMemo(() => {
+    if (!selectedDate) return orders;
+    return orders.filter((o) => o.targetDate?.slice(0, 10) === selectedDate);
+  }, [orders, selectedDate]);
 
   const counts = useMemo(() => {
     const c: Record<SummaryKey, number> = { DRAFT: 0, INCOMPLETE: 0, DONE: 0 };
@@ -192,24 +152,30 @@ export default function InspectionOrdersPage() {
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
-        {DATE_FILTERS.map((f) => {
-          const active = dateFilter === f.value;
-          return (
-            <button
-              key={f.value}
-              type="button"
-              onClick={() => setDateFilter(f.value)}
-              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors md:text-sm ${
-                active
-                  ? "border-[#931B82] bg-[#931B82] text-white"
-                  : "border-gray-200 bg-white text-[#6B7280] hover:border-[#931B82] hover:text-[#931B82]"
-              }`}
-            >
-              {f.label}
-            </button>
-          );
-        })}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative">
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="h-9 rounded-full border border-gray-300 bg-white pl-3 pr-8 text-xs focus:border-[#931B82] focus:outline-none [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:m-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+          />
+          <Icon
+            icon="solar:calendar-linear"
+            width={16}
+            height={16}
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280]"
+          />
+        </div>
+        {selectedDate && (
+          <button
+            type="button"
+            onClick={() => setSelectedDate("")}
+            className="h-9 rounded-full border border-gray-200 bg-white px-3 text-xs font-medium text-[#6B7280] transition-colors hover:border-[#931B82] hover:text-[#931B82]"
+          >
+            초기화
+          </button>
+        )}
       </div>
 
       {isMobile ? (
