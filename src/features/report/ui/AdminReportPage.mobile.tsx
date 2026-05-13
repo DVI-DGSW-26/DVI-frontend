@@ -25,15 +25,18 @@ const AdminReportPageMobile = () => {
     [products],
   );
 
+  const [draftKeyword, setDraftKeyword] = useState("");
   const [draftDate, setDraftDate] = useState("");
   const [draftProcesses, setDraftProcesses] = useState<string[]>([]);
   const [draftProducts, setDraftProducts] = useState<string[]>([]);
 
+  const [appliedKeyword, setAppliedKeyword] = useState("");
   const [appliedDate, setAppliedDate] = useState("");
   const [appliedProcesses, setAppliedProcesses] = useState<string[]>([]);
   const [appliedProducts, setAppliedProducts] = useState<string[]>([]);
 
   const filtered = useMemo(() => {
+    const kw = appliedKeyword.trim().toLowerCase();
     return reports.filter((r) => {
       if (appliedDate && r.targetDate !== appliedDate) return false;
       if (
@@ -46,23 +49,48 @@ const AdminReportPageMobile = () => {
         !appliedProducts.includes(r.productCode)
       )
         return false;
+      if (kw) {
+        const haystack = [
+          r.reportNumber,
+          r.productName,
+          r.productCode,
+          r.productionName,
+          r.qualityName,
+          r.approvedByName,
+          r.customerName,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(kw)) return false;
+      }
       return true;
     });
-  }, [reports, appliedDate, appliedProcesses, appliedProducts]);
+  }, [reports, appliedKeyword, appliedDate, appliedProcesses, appliedProducts]);
 
   const handleApply = () => {
+    setAppliedKeyword(draftKeyword);
     setAppliedDate(draftDate);
     setAppliedProcesses(draftProcesses);
     setAppliedProducts(draftProducts);
   };
 
   const handleReset = () => {
+    setDraftKeyword("");
     setDraftDate("");
     setDraftProcesses([]);
     setDraftProducts([]);
+    setAppliedKeyword("");
     setAppliedDate("");
     setAppliedProcesses([]);
     setAppliedProducts([]);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleApply();
+    }
   };
 
   const processLabel =
@@ -84,6 +112,23 @@ const AdminReportPageMobile = () => {
   return (
     <div className="flex min-h-full flex-col gap-4 bg-[#F5F5F5] px-4 pb-21 pt-5">
       <div className="rounded-2xl bg-white p-4 shadow-sm">
+        <div className="relative mb-3">
+          <Icon
+            icon="solar:magnifer-linear"
+            width={16}
+            height={16}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A8A8]"
+          />
+          <input
+            type="text"
+            value={draftKeyword}
+            onChange={(e) => setDraftKeyword(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="보고서 번호, 제품, 검사자, 고객사"
+            className="h-10 w-full rounded-full border border-[#E5E7EB] bg-white pl-9 pr-3 text-sm text-[#212121] placeholder:text-[#A8A8A8] focus:border-[#931B82] focus:outline-none"
+          />
+        </div>
+
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <input

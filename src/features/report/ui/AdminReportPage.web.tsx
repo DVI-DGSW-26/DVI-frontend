@@ -35,17 +35,20 @@ const AdminReportPageWeb = () => {
     [products],
   );
 
+  const [draftKeyword, setDraftKeyword] = useState("");
   const [draftDate, setDraftDate] = useState("");
   const [draftProcesses, setDraftProcesses] = useState<string[]>([]);
   const [draftProducts, setDraftProducts] = useState<string[]>([]);
   const [draftResults, setDraftResults] = useState<string[]>([]);
 
+  const [appliedKeyword, setAppliedKeyword] = useState("");
   const [appliedDate, setAppliedDate] = useState("");
   const [appliedProcesses, setAppliedProcesses] = useState<string[]>([]);
   const [appliedProducts, setAppliedProducts] = useState<string[]>([]);
   const [appliedResults, setAppliedResults] = useState<string[]>([]);
 
   const filtered = useMemo(() => {
+    const kw = appliedKeyword.trim().toLowerCase();
     return reports.filter((r) => {
       if (appliedDate && r.targetDate !== appliedDate) return false;
       if (
@@ -60,10 +63,26 @@ const AdminReportPageWeb = () => {
         return false;
       if (appliedResults.length > 0 && !appliedResults.includes(r.result))
         return false;
+      if (kw) {
+        const haystack = [
+          r.reportNumber,
+          r.productName,
+          r.productCode,
+          r.productionName,
+          r.qualityName,
+          r.approvedByName,
+          r.customerName,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(kw)) return false;
+      }
       return true;
     });
   }, [
     reports,
+    appliedKeyword,
     appliedDate,
     appliedProcesses,
     appliedProducts,
@@ -71,6 +90,7 @@ const AdminReportPageWeb = () => {
   ]);
 
   const handleApply = () => {
+    setAppliedKeyword(draftKeyword);
     setAppliedDate(draftDate);
     setAppliedProcesses(draftProcesses);
     setAppliedProducts(draftProducts);
@@ -78,14 +98,23 @@ const AdminReportPageWeb = () => {
   };
 
   const handleReset = () => {
+    setDraftKeyword("");
     setDraftDate("");
     setDraftProcesses([]);
     setDraftProducts([]);
     setDraftResults([]);
+    setAppliedKeyword("");
     setAppliedDate("");
     setAppliedProcesses([]);
     setAppliedProducts([]);
     setAppliedResults([]);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleApply();
+    }
   };
 
   const processLabel =
@@ -115,6 +144,23 @@ const AdminReportPageWeb = () => {
   return (
     <div className="flex flex-col gap-4 p-6">
       <div className="rounded-2xl bg-white p-4 shadow-sm">
+        <div className="relative mb-3">
+          <Icon
+            icon="solar:magnifer-linear"
+            width={16}
+            height={16}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A8A8]"
+          />
+          <input
+            type="text"
+            value={draftKeyword}
+            onChange={(e) => setDraftKeyword(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="보고서 번호, 제품, 검사자, 고객사로 검색"
+            className="h-10 w-full rounded-full border border-[#E5E7EB] bg-white pl-9 pr-3 text-sm text-[#212121] placeholder:text-[#A8A8A8] focus:border-[#931B82] focus:outline-none"
+          />
+        </div>
+
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
             <input
