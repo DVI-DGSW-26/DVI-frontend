@@ -28,7 +28,11 @@ const HeaderMobile = () => {
   const title =
     pathname === "/" && user?.role === "ADMIN"
       ? "대시보드"
-      : (ROUTE_TITLES[pathname] ?? "");
+      : /^\/inspection\/\d+\/measure$/.test(pathname)
+        ? "품질 검사 시스템"
+        : pathname.startsWith("/inspection/")
+          ? "측정 항목 확인"
+          : (ROUTE_TITLES[pathname] ?? "");
 
   const hasUnread = unreadCount > 0;
   const isNotificationsPage = pathname === "/notifications";

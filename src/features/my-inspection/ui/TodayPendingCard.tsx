@@ -1,12 +1,28 @@
+import { useNavigate } from "react-router-dom";
 import type { InspectionOrder } from "../../inspection-orders/api";
+import type { InspectionProcess } from "../../inspection/type/types";
+import type { MyInspection } from "../type/types";
 import { getStatusBadge } from "../lib/inspectionStatus";
 
 interface Props {
   orders: InspectionOrder[];
+  inspections: MyInspection[];
 }
 
-export default function TodayPendingCard({ orders }: Props) {
+export default function TodayPendingCard({ orders, inspections }: Props) {
+  const navigate = useNavigate();
   const badge = getStatusBadge("PENDING");
+
+  const handleSelect = (order: InspectionOrder) => {
+    navigate("/scan", {
+      state: {
+        orderId: order.id,
+        process: order.product.process as InspectionProcess,
+        inspections: inspections.filter((i) => i.orderId === order.id),
+        qualityName: order.quality?.name,
+      },
+    });
+  };
 
   return (
     <>
@@ -25,24 +41,27 @@ export default function TodayPendingCard({ orders }: Props) {
         ) : (
           <ul className="flex flex-col divide-y divide-gray-100">
             {orders.map((order) => (
-              <li
-                key={order.id}
-                className="flex items-center justify-between gap-2 py-2 first:pt-0 last:pb-0"
-              >
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium text-[#212121]">
-                    {order.product.name}
-                  </div>
-                  <div className="truncate text-xs text-[#6B7280]">
-                    {order.customer.name} · {order.equipment.name}
-                  </div>
-                </div>
-                <span
-                  className={`inline-flex shrink-0 items-center gap-1 text-xs font-medium ${badge.text}`}
+              <li key={order.id} className="first:pt-0 last:pb-0">
+                <button
+                  type="button"
+                  onClick={() => handleSelect(order)}
+                  className="flex w-full items-center justify-between gap-2 py-2 text-left hover:bg-gray-50"
                 >
-                  <span className={`h-1.5 w-1.5 rounded-full ${badge.dot}`} />
-                  {badge.label}
-                </span>
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium text-[#212121]">
+                      {order.product.name}
+                    </div>
+                    <div className="truncate text-xs text-[#6B7280]">
+                      {order.customer.name} · {order.equipment.name}
+                    </div>
+                  </div>
+                  <span
+                    className={`inline-flex shrink-0 items-center gap-1 text-xs font-medium ${badge.text}`}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${badge.dot}`} />
+                    {badge.label}
+                  </span>
+                </button>
               </li>
             ))}
           </ul>
