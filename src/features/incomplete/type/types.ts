@@ -18,7 +18,7 @@ export interface IncompleteEquipment {
   process: Process;
 }
 
-export interface IncompleteWorker {
+export interface IncompleteProduction {
   id: number;
   name: string;
 }
@@ -31,7 +31,7 @@ export interface Incomplete {
   inspectionTime: string;
   product: IncompleteProduct;
   equipment: IncompleteEquipment;
-  worker: IncompleteWorker;
+  production: IncompleteProduction;
   incompleteReason: string;
   createdAt: string;
 }
