@@ -4,6 +4,7 @@ import {
   getInspectionDetail,
   getInspectionSlots,
   incompleteInspection,
+  ocrInspectionImage,
   saveInspectionResults,
   startInspection,
   uploadInspectionImage,
@@ -59,6 +60,12 @@ export function useStartInspection() {
 export function useUploadInspectionImage() {
   return useMutation({
     mutationFn: (blob: Blob) => uploadInspectionImage(blob),
+  });
+}
+
+export function useOcrInspectionImage() {
+  return useMutation({
+    mutationFn: (blob: Blob) => ocrInspectionImage(blob),
   });
 }
 

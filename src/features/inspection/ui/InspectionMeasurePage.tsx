@@ -4,6 +4,7 @@ import { AxiosError } from "axios";
 import { useAuth } from "../../auth/AuthContext";
 import {
   useInspectionDetail,
+  useOcrInspectionImage,
   useSaveInspectionResults,
   useUploadInspectionImage,
 } from "../api";
@@ -65,9 +66,15 @@ export default function InspectionMeasurePage() {
   const [phase, setPhase] = useState<Phase>("capture");
   const [capturedFile, setCapturedFile] = useState<File | null>(null);
   const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+  const [ocrSuggestedValue, setOcrSuggestedValue] = useState<string | null>(
+    null,
+  );
+  const [isPreparing, setIsPreparing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const uploadImage = useUploadInspectionImage();
+  const ocrImage = useOcrInspectionImage();
   const saveResults = useSaveInspectionResults(inspectionId);
 
   useEffect(() => {
@@ -127,11 +134,14 @@ export default function InspectionMeasurePage() {
   const persistedDoneSteps = sortedResults.slice(0, startIdx).map(toCompletedStep);
   const allStepResults = [...persistedDoneSteps, ...sessionResults];
 
-  const isSaving = uploadImage.isPending || saveResults.isPending;
+  const isSaving = saveResults.isPending;
 
   const resetForNextDim = () => {
     setCapturedFile(null);
     setCroppedBlob(null);
+    setUploadedImageUrl(null);
+    setOcrSuggestedValue(null);
+    setIsPreparing(false);
     setPhase("capture");
   };
 
@@ -147,17 +157,55 @@ export default function InspectionMeasurePage() {
     });
   };
 
+  const handleCropConfirm = async (blob: Blob) => {
+    console.info("[crop] confirm — blob size:", blob.size, "type:", blob.type);
+    setCroppedBlob(blob);
+    setUploadedImageUrl(null);
+    setOcrSuggestedValue(null);
+    setIsPreparing(true);
+    setPhase("input");
+
+    const [imageRes, ocrRes] = await Promise.allSettled([
+      uploadImage.mutateAsync(blob),
+      ocrImage.mutateAsync(blob),
+    ]);
+
+    console.info(
+      "[crop] image:",
+      imageRes.status,
+      imageRes.status === "fulfilled" ? imageRes.value : imageRes.reason,
+    );
+    console.info(
+      "[crop] ocr:",
+      ocrRes.status,
+      ocrRes.status === "fulfilled" ? ocrRes.value : ocrRes.reason,
+    );
+
+    if (imageRes.status === "rejected") {
+      setToast(toErrorMessage(imageRes.reason));
+      setCroppedBlob(null);
+      setPhase("crop");
+      setIsPreparing(false);
+      return;
+    }
+
+    setUploadedImageUrl(imageRes.value);
+    setOcrSuggestedValue(
+      ocrRes.status === "fulfilled" ? ocrRes.value : null,
+    );
+    setIsPreparing(false);
+  };
+
   const handleSubmitMeasured = async (measuredValue: number) => {
-    if (!currentDim || !croppedBlob) return;
+    if (!currentDim || !uploadedImageUrl) return;
 
     try {
-      const imageUrl = await uploadImage.mutateAsync(croppedBlob);
       await saveResults.mutateAsync({
         results: [
           {
             resultId: currentDim.resultId,
             measuredValue,
-            imageUrl,
+            imageUrl: uploadedImageUrl,
           },
         ],
       });
@@ -170,7 +218,7 @@ export default function InspectionMeasurePage() {
         toleranceMinus: currentDim.toleranceMinus,
         status: "completed",
         measuredValue,
-        imageUrl,
+        imageUrl: uploadedImageUrl,
       };
 
       if (isLastDim) {
@@ -280,10 +328,7 @@ export default function InspectionMeasurePage() {
               setCapturedFile(null);
               setPhase("capture");
             }}
-            onConfirm={(blob) => {
-              setCroppedBlob(blob);
-              setPhase("input");
-            }}
+            onConfirm={handleCropConfirm}
             onError={setToast}
           />
         )}
@@ -293,9 +338,14 @@ export default function InspectionMeasurePage() {
             blob={croppedBlob}
             isLastDim={isLastDim}
             isSaving={isSaving}
+            isPreparing={isPreparing}
+            suggestedValue={ocrSuggestedValue}
             onRetake={() => {
               setCroppedBlob(null);
               setCapturedFile(null);
+              setUploadedImageUrl(null);
+              setOcrSuggestedValue(null);
+              setIsPreparing(false);
               setPhase("capture");
             }}
             onSubmit={handleSubmitMeasured}

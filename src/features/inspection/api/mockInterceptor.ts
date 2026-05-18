@@ -331,6 +331,8 @@ function tryMock(
     }
   }
 
+  // /api/ocr 은 mock 하지 않고 실제 백엔드로 패스스루 (vite.config.ts 의 프록시 룰 참고)
+
   if (method === "post" && url === "/image") {
     let imageUrl = `https://placehold.co/600x400?text=measure-${Date.now()}`;
     const form = config.data;

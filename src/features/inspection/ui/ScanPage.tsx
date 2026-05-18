@@ -36,7 +36,7 @@ export default function ScanPage() {
   const slotsQuery = useInspectionSlots(process);
   const startMutation = useStartInspection();
 
-  const slots = slotsQuery.data ?? [];
+  const slots = useMemo(() => slotsQuery.data ?? [], [slotsQuery.data]);
 
   const inspectionByType = useMemo(() => {
     const map = new Map<string, MyInspection>();
@@ -46,13 +46,30 @@ export default function ScanPage() {
     return map;
   }, [inspections, orderId]);
 
-  const getSlotStatus = (type: string): SlotStatus => {
-    const ins = inspectionByType.get(type);
-    if (!ins) return "NONE";
-    if (ins.status === "COMPLETED") return "COMPLETED";
-    if (ins.status === "DRAFT") return "DRAFT";
-    return "NONE";
-  };
+  // 시점 순서는 GET /inspection/slots 응답 순서를 따른다.
+  // 자기 자신 이전의 모든 시점이 COMPLETED 여야 새로 시작 가능 — 아니면 LOCKED.
+  // DRAFT/COMPLETED 인 시점은 본인 상태를 우선 표시 (이어하기/완료).
+  const slotStatusByType = useMemo(() => {
+    const map = new Map<string, SlotStatus>();
+    let allPrevCompleted = true;
+    for (const s of slots) {
+      const ins = inspectionByType.get(s.type);
+      if (ins?.status === "COMPLETED") {
+        map.set(s.type, "COMPLETED");
+      } else if (ins?.status === "DRAFT") {
+        map.set(s.type, "DRAFT");
+      } else if (allPrevCompleted) {
+        map.set(s.type, "NONE");
+      } else {
+        map.set(s.type, "LOCKED");
+      }
+      if (ins?.status !== "COMPLETED") allPrevCompleted = false;
+    }
+    return map;
+  }, [slots, inspectionByType]);
+
+  const getSlotStatus = (type: string): SlotStatus =>
+    slotStatusByType.get(type) ?? "NONE";
 
   const selectedInspection = selectedType
     ? inspectionByType.get(selectedType)
@@ -71,6 +88,15 @@ export default function ScanPage() {
 
   const handleStart = () => {
     if (!orderId || !selectedType) return;
+
+    // 방어: 어쩌다 LOCKED 슬롯이 선택돼 있어도 호출하지 않음.
+    if (getSlotStatus(selectedType) === "LOCKED") {
+      setPageError({
+        code: "PREVIOUS_INSPECTION_NOT_COMPLETED",
+        message: "이전 시점 검사를 먼저 완료해주세요",
+      });
+      return;
+    }
 
     if (selectedInspection?.status === "DRAFT") {
       navigate(`/inspection/${selectedInspection.inspectionId}`, {
@@ -215,6 +241,12 @@ function toPageError(err: unknown): PageError {
       return {
         code: "NOT_ASSIGNED_PRODUCTION",
         message: "배정된 작업자가 아닙니다.",
+      };
+    }
+    if (code === "PREVIOUS_INSPECTION_NOT_COMPLETED") {
+      return {
+        code: "PREVIOUS_INSPECTION_NOT_COMPLETED",
+        message: "이전 시점 검사를 먼저 완료해주세요",
       };
     }
     if (status === 400 || code === "INVALID_INSPECTION_TYPE") {

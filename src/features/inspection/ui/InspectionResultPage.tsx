@@ -5,8 +5,9 @@ import { Icon } from "@iconify/react";
 import {
   useCompleteInspection,
   useIncompleteInspection,
+  useSaveInspectionResults,
 } from "../api";
-import type { ApiErrorData, StepResult } from "../type/types";
+import type { AppearanceResult, ApiErrorData, StepResult } from "../type/types";
 import { formatStandardWithTolerance } from "../lib/format";
 import Toast from "./Toast";
 
@@ -42,9 +43,11 @@ export default function InspectionResultPage() {
 
   const completeMut = useCompleteInspection(inspectionId);
   const incompleteMut = useIncompleteInspection(inspectionId);
+  const saveMut = useSaveInspectionResults(inspectionId);
 
   const [reasonKey, setReasonKey] = useState<string>("");
   const [customReason, setCustomReason] = useState("");
+  const [appearance, setAppearance] = useState<AppearanceResult | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const hasSkipped = useMemo(
@@ -55,8 +58,10 @@ export default function InspectionResultPage() {
   const finalReason =
     reasonKey === OTHER_REASON ? customReason.trim() : reasonKey;
   const canSubmitIncomplete = !!finalReason;
+  const canSubmitComplete = appearance !== null;
 
-  const isBusy = completeMut.isPending || incompleteMut.isPending;
+  const isBusy =
+    completeMut.isPending || incompleteMut.isPending || saveMut.isPending;
 
   if (results.length === 0) {
     return (
@@ -78,16 +83,16 @@ export default function InspectionResultPage() {
     );
   }
 
-  const handleComplete = () => {
-    completeMut.mutate(undefined, {
-      onSuccess: () => {
-        setToast("검사가 완료되었습니다");
-        setTimeout(() => navigate("/", { replace: true }), 1200);
-      },
-      onError: (err) => {
-        setToast(toErrorMessage(err));
-      },
-    });
+  const handleComplete = async () => {
+    if (!appearance) return;
+    try {
+      await saveMut.mutateAsync({ results: [], appearanceResult: appearance });
+      await completeMut.mutateAsync();
+      setToast("검사가 완료되었습니다");
+      setTimeout(() => navigate("/", { replace: true }), 1200);
+    } catch (err) {
+      setToast(toErrorMessage(err));
+    }
   };
 
   const handleIncomplete = () => {
@@ -127,6 +132,39 @@ export default function InspectionResultPage() {
             </li>
           ))}
         </ul>
+
+        <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4">
+          <div className="text-xs font-medium text-[#6B7280]">외관 검사</div>
+          <div
+            role="radiogroup"
+            aria-label="외관 검사 결과"
+            className="mt-2 grid grid-cols-2 gap-2"
+          >
+            {(["OK", "NG"] as const).map((opt) => {
+              const selected = appearance === opt;
+              const isOk = opt === "OK";
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => setAppearance(opt)}
+                  disabled={isBusy}
+                  className={`h-11 rounded-md border text-sm font-semibold transition-colors disabled:opacity-60 ${
+                    selected
+                      ? isOk
+                        ? "border-[#22C55E] bg-[#ECFDF5] text-[#15803D]"
+                        : "border-[#EF4444] bg-[#FEF2F2] text-[#B91C1C]"
+                      : "border-gray-300 bg-white text-[#6B7280] hover:bg-gray-50"
+                  }`}
+                >
+                  {isOk ? "OK (합격)" : "NG (불합격)"}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {hasSkipped && (
           <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4">
@@ -181,10 +219,12 @@ export default function InspectionResultPage() {
           <button
             type="button"
             onClick={handleComplete}
-            disabled={isBusy}
+            disabled={!canSubmitComplete || isBusy}
             className="h-12 w-full rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
           >
-            {completeMut.isPending ? "처리 중..." : "검사 완료"}
+            {saveMut.isPending || completeMut.isPending
+              ? "처리 중..."
+              : "검사 완료"}
           </button>
         )}
       </div>

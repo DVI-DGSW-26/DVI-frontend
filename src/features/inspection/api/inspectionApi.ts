@@ -1,3 +1,4 @@
+import { AxiosError } from "axios";
 import { http } from "../../../lib/http";
 import type { ApiResponse } from "../../auth/type/types";
 import type {
@@ -7,6 +8,7 @@ import type {
   InspectionProcess,
   InspectionSlot,
   InspectionSlotsResponse,
+  OcrApiResponse,
   SaveResultsRequest,
   StartInspectionApiResponse,
   StartInspectionRequest,
@@ -36,11 +38,33 @@ export async function getInspectionDetail(
 export async function startInspection(
   body: StartInspectionRequest,
 ): Promise<StartInspectionResponse> {
-  const { data } = await http.post<StartInspectionApiResponse>(
-    "/inspection",
-    body,
+  // TEMP DEBUG: 검사 시작 요청 원인 파악용. 정상화되면 제거.
+  console.log("[startInspection] request body:", body);
+  console.log(
+    "[startInspection] field types:",
+    Object.fromEntries(
+      Object.entries(body).map(([k, v]) => [k, `${typeof v} (${JSON.stringify(v)})`]),
+    ),
   );
-  return data.data;
+  try {
+    const { data } = await http.post<StartInspectionApiResponse>(
+      "/inspection",
+      body,
+    );
+    return data.data;
+  } catch (err) {
+    if (err instanceof AxiosError) {
+      console.error("[startInspection] failed", {
+        status: err.response?.status,
+        responseBody: err.response?.data,
+        requestUrl: err.config?.url,
+        requestData: err.config?.data,
+      });
+    } else {
+      console.error("[startInspection] non-axios error:", err);
+    }
+    throw err;
+  }
 }
 
 export async function uploadInspectionImage(blob: Blob): Promise<string> {
@@ -61,6 +85,22 @@ export async function uploadInspectionImage(blob: Blob): Promise<string> {
     transformRequest: [(d) => d],
   });
   return data.data.url;
+}
+
+export async function ocrInspectionImage(blob: Blob): Promise<string | null> {
+  const form = new FormData();
+  const file =
+    blob instanceof File
+      ? blob
+      : new File([blob], "measurement.jpg", {
+          type: blob.type || "image/jpeg",
+        });
+  form.append("file", file);
+  const { data } = await http.post<OcrApiResponse>("/api/ocr", form, {
+    headers: { "Content-Type": undefined },
+    transformRequest: [(d) => d],
+  });
+  return data.data.value;
 }
 
 export async function saveInspectionResults(

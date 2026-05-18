@@ -48,7 +48,8 @@ export type StartInspectionApiResponse = ApiResponse<StartInspectionResponse>;
 export type StartInspectionErrorCode =
   | "NOT_ASSIGNED_PRODUCTION"
   | "INVALID_INSPECTION_TYPE"
-  | "INSPECTION_ALREADY_EXISTS";
+  | "INSPECTION_ALREADY_EXISTS"
+  | "PREVIOUS_INSPECTION_NOT_COMPLETED";
 
 export interface StartInspectionErrorData {
   code?: StartInspectionErrorCode;
@@ -67,14 +68,23 @@ export type UploadImageErrorCode =
   | "INVALID_EXTENSION"
   | "UPLOAD_FAILED";
 
+export interface OcrResponseData {
+  value: string | null;
+}
+
+export type OcrApiResponse = ApiResponse<OcrResponseData>;
+
 export interface InspectionResultPayload {
   resultId: number;
   measuredValue: number;
   imageUrl: string;
 }
 
+export type AppearanceResult = "OK" | "NG";
+
 export interface SaveResultsRequest {
   results: InspectionResultPayload[];
+  appearanceResult?: AppearanceResult;
 }
 
 export type CompleteInspectionErrorCode = "RESULTS_NOT_COMPLETE";
