@@ -22,12 +22,14 @@ import AdminUserSearchPage from "./features/user-search/ui/AdminUserSearchPage"
 import AdminReportPage from "./features/report/ui/AdminReportPage"
 import AdminReportDetailPage from "./features/report/ui/AdminReportDetailPage"
 import DashboardPage from "./features/dashboard/ui/DashboardPage"
+import QualityHomePage from "./features/cross-check/ui/QualityHomePage"
 import { useAuth } from "./features/auth/AuthContext"
 
 function HomePage() {
   const { user } = useAuth();
   if (user?.role === "PRODUCTION") return <ProductionHomePage />;
   if (user?.role === "ADMIN") return <DashboardPage />;
+  if (user?.role === "QUALITY") return <QualityHomePage />;
   return <div className="p-6">홈</div>;
 }
 

@@ -25,6 +25,7 @@ const TABS: TabItem[] = [
   { label: "홈", to: "/", icon: "flowbite:home-solid", roles: ["PRODUCTION"], iconSize: 34 },
   { label: "검사이력", to: "/inspections", icon: "icon-park-outline:big-clock", roles: ["PRODUCTION"] },
   { label: "스캔", to: "/scan", icon: "carbon:scan-alt", roles: ["PRODUCTION"] },
+  { label: "홈", to: "/", icon: "flowbite:home-solid", roles: ["QUALITY"], iconSize: 34 },
 ];
 
 const TabBarMobile = () => {
@@ -37,7 +38,7 @@ const TabBarMobile = () => {
     <nav className="fixed bottom-0 left-0 right-0 flex h-16 items-center justify-around border-t border-[#E5E7EB] bg-white">
       {visibleTabs.map((tab) => (
         <NavLink
-          key={tab.to}
+          key={`${tab.roles.join(",")}-${tab.to}`}
           to={tab.to}
           end
           aria-label={tab.label}
