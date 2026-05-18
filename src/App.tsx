@@ -22,6 +22,7 @@ import AdminUserSearchPage from "./features/user-search/ui/AdminUserSearchPage"
 import AdminReportPage from "./features/report/ui/AdminReportPage"
 import AdminReportDetailPage from "./features/report/ui/AdminReportDetailPage"
 import DashboardPage from "./features/dashboard/ui/DashboardPage"
+import QualitySystemStatusPage from "./features/cross-check/ui/QualitySystemStatusPage"
 import { useAuth } from "./features/auth/AuthContext"
 
 function HomePage() {
@@ -60,6 +61,10 @@ function App() {
               <Route path="/products" element={<ProductsPage />} />
               <Route path="/equipment" element={<EquipmentPage />} />
               <Route path="/customers" element={<CustomersPage />} />
+            </Route>
+
+            <Route element={<RouteGuard roles={["QUALITY"]} />}>
+              <Route path="/quality-status" element={<QualitySystemStatusPage />} />
             </Route>
 
             <Route element={<RouteGuard roles={["PRODUCTION"]} />}>
