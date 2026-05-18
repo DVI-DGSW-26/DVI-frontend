@@ -7,14 +7,6 @@ import { useMyInspectionList } from "../api";
 import type { MyInspection } from "../type/types";
 import TodayPendingCard from "./TodayPendingCard";
 
-function todayYmd(): string {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
 export default function ProductionHomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -23,12 +15,8 @@ export default function ProductionHomePage() {
 
   const todayPending = useMemo(() => {
     if (!user) return [];
-    const today = todayYmd();
     return (ordersQuery.data ?? []).filter(
-      (o) =>
-        o.production.id === user.id &&
-        o.targetDate?.slice(0, 10) === today &&
-        o.status === "PENDING",
+      (o) => o.production.id === user.id && o.status === "PENDING",
     );
   }, [ordersQuery.data, user]);
 

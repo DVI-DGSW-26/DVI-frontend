@@ -38,7 +38,7 @@ export default function Login() {
       if (err instanceof AuthError) {
         alert(err.message);
       } else {
-        console.error(err);
+        console.error("[login] failed:", err);
         alert("로그인 중 오류가 발생했습니다. 다시 시도해주세요.");
       }
     }

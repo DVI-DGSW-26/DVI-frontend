@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LoginForm from "./features/auth/ui/LoginForm"
 import Layout from "./components/layout/Layout"
 import RouteGuard from "./features/auth/RouteGuard"
-import DevRoleSwitcher from "./features/auth/DevRoleSwitcher"
 import NotificationPage from "./features/notification/ui/NotificationPage"
 import ApprovalManagementPage from "./features/incomplete/ui/ApprovalManagementPage"
 import AccountApprovalPage from "./features/account-approval/ui/AccountApprovalPage"
@@ -35,7 +34,6 @@ function HomePage() {
 function App() {
   return (
     <BrowserRouter>
-      <DevRoleSwitcher />
       <Routes>
         <Route path="/signup" element={<SignupForm />} />
         <Route path="/login" element={<LoginForm />} />

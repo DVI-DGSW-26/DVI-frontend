@@ -14,13 +14,26 @@ export default function CapturePhase({ onCaptured, onError, onSkip }: Props) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
-    if (!file) return;
+    if (!file) {
+      console.warn("[capture] no file from input");
+      return;
+    }
+    console.info(
+      "[capture] file:",
+      file.name,
+      "type:",
+      file.type,
+      "size:",
+      file.size,
+    );
 
     if (!isAllowedImageFile(file)) {
-      onError("PNG/JPG 이미지만 업로드할 수 있습니다.");
+      console.warn("[capture] rejected — disallowed type:", file.type);
+      onError(`PNG/JPG 이미지만 업로드할 수 있습니다. (현재: ${file.type || "unknown"})`);
       return;
     }
     if (file.size > MAX_UPLOAD_BYTES) {
+      console.warn("[capture] rejected — too large:", file.size);
       onError("최대 10MB 이하의 이미지만 업로드할 수 있습니다.");
       return;
     }

@@ -4,6 +4,8 @@ interface Props {
   blob: Blob;
   isLastDim: boolean;
   isSaving: boolean;
+  isPreparing: boolean;
+  suggestedValue: string | null;
   onRetake: () => void;
   onSubmit: (measuredValue: number) => void;
 }
@@ -12,6 +14,8 @@ export default function InputPhase({
   blob,
   isLastDim,
   isSaving,
+  isPreparing,
+  suggestedValue,
   onRetake,
   onSubmit,
 }: Props) {
@@ -24,14 +28,53 @@ export default function InputPhase({
   }, [blob]);
 
   const [value, setValue] = useState("");
+  const [autoFilled, setAutoFilled] = useState(false);
+
+  // preparing 이 끝나는 시점에 OCR 결과를 한 번만 인풋에 반영한다.
+  // 사용자가 이후에 수정하면 그 값을 유지.
+  useEffect(() => {
+    if (isPreparing || autoFilled) return;
+    if (suggestedValue) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- async OCR suggestion 이 부모에서 비동기로 도착한 후 1회만 controlled input 을 시드한다 (cascading render 아님)
+      setValue(suggestedValue);
+    }
+    setAutoFilled(true);
+  }, [isPreparing, autoFilled, suggestedValue]);
+
   const numeric = Number(value);
   const isValid = value.trim() !== "" && Number.isFinite(numeric);
 
-  const buttonLabel = isSaving
-    ? "저장 중..."
-    : isLastDim
-      ? "완료"
-      : "저장 후 다음";
+  const inputDisabled = isSaving || isPreparing;
+  const submitDisabled = !isValid || isSaving || isPreparing;
+
+  const buttonLabel = isPreparing
+    ? "OCR 인식 중..."
+    : isSaving
+      ? "저장 중..."
+      : isLastDim
+        ? "완료"
+        : "저장 후 다음";
+
+  const hint = isPreparing
+    ? { text: "OCR로 측정값을 인식하는 중입니다…", tone: "info" as const }
+    : autoFilled && suggestedValue
+      ? {
+          text: "OCR로 자동 입력됨 — 필요하면 수정해주세요.",
+          tone: "ok" as const,
+        }
+      : autoFilled
+        ? {
+            text: "자동 인식 실패, 직접 입력해주세요.",
+            tone: "warn" as const,
+          }
+        : null;
+
+  const hintColor =
+    hint?.tone === "ok"
+      ? "text-[#931B82]"
+      : hint?.tone === "warn"
+        ? "text-[#B45309]"
+        : "text-[#6B7280]";
 
   return (
     <div className="flex flex-col gap-3">
@@ -55,17 +98,20 @@ export default function InputPhase({
           step="any"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder="예: 100.25"
-          disabled={isSaving}
+          placeholder={isPreparing ? "OCR 인식 중..." : "예: 100.25"}
+          disabled={inputDisabled}
           className="mt-1 h-11 w-full rounded-md border border-gray-300 px-3 text-base text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
         />
+        {hint && (
+          <p className={`mt-2 text-xs ${hintColor}`}>{hint.text}</p>
+        )}
       </div>
 
       <div className="flex gap-2">
         <button
           type="button"
           onClick={onRetake}
-          disabled={isSaving}
+          disabled={isSaving || isPreparing}
           className="h-11 flex-1 rounded-md border border-gray-300 bg-white text-sm font-semibold text-[#212121] disabled:opacity-60"
         >
           다시 촬영
@@ -73,7 +119,7 @@ export default function InputPhase({
         <button
           type="button"
           onClick={() => onSubmit(numeric)}
-          disabled={!isValid || isSaving}
+          disabled={submitDisabled}
           className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
         >
           {buttonLabel}
