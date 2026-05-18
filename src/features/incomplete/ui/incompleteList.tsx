@@ -44,25 +44,25 @@ function IncompleteList({ checked, onToggle }: IncompleteListProps) {
           />
           <div className="flex flex-col min-w-0">
             <span className="font-bold text-[#212121] truncate text-[18px]">
-              {item.worker.name}
+              {item.production?.name ?? "-"}
             </span>
             <div className="flex items-center gap-2">
               <span className="text-[#212121] truncate">
-                {item.equipment.name}
+                {item.equipment?.name ?? "-"}
               </span>
               <span className="w-1 h-1 rounded-full bg-[#212121]" />
               <span className="text-[#212121] truncate">
-                {item.product.name}
+                {item.product?.name ?? "-"}
               </span>
             </div>
             <span className="text-sm text-gray-500 truncate">
-              신청 : {formatDate(item.createdAt)}
+              신청 : {item.createdAt ? formatDate(item.createdAt) : "-"}
             </span>
           </div>
           <div className="ml-auto flex flex-row items-center gap-2">
             <div className="bg-[#EF4444] w-2 h-2 rounded-2xl"></div>
             <span className="text-right text-sm text-[#EF4444] truncate">
-              {item.incompleteReason}
+              {item.incompleteReason ?? "-"}
             </span>
           </div>
         </li>
