@@ -22,6 +22,7 @@ import AdminUserSearchPage from "./features/user-search/ui/AdminUserSearchPage"
 import AdminReportPage from "./features/report/ui/AdminReportPage"
 import AdminReportDetailPage from "./features/report/ui/AdminReportDetailPage"
 import DashboardPage from "./features/dashboard/ui/DashboardPage"
+import CrossCheckPendingPage from "./features/cross-check/ui/CrossCheckPendingPage"
 import { useAuth } from "./features/auth/AuthContext"
 
 function HomePage() {
@@ -64,6 +65,13 @@ function App() {
 
             <Route element={<RouteGuard roles={["PRODUCTION"]} />}>
               <Route path="/inspections" element={<MyInspectionPage />} />
+            </Route>
+
+            <Route element={<RouteGuard roles={["QUALITY"]} />}>
+              <Route path="/cross-checks" element={<CrossCheckPendingPage />} />
+            </Route>
+
+            <Route element={<RouteGuard roles={["PRODUCTION", "QUALITY"]} />}>
               <Route path="/scan" element={<ScanPage />} />
               <Route
                 path="/inspection/:inspectionId"
