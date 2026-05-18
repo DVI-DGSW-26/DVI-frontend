@@ -4,10 +4,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
 import App from './App.tsx'
 import { installAuthInterceptors } from './features/auth/api'
+import { installInspectionMocks } from './features/inspection/api/mockInterceptor'
 import { AuthProvider } from './features/auth/AuthContext'
 
 // axios interceptor 설치
 installAuthInterceptors()
+installInspectionMocks()
 
 // React Query 설정
 const queryClient = new QueryClient({

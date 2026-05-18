@@ -11,6 +11,10 @@ import InspectionOrdersPage from "./features/inspection-orders/ui/InspectionOrde
 import ReportPage from "./features/report/ui/ReportPage"
 import MyInspectionPage from "./features/my-inspection/ui/MyInspectionPage"
 import ProductionHomePage from "./features/my-inspection/ui/ProductionHomePage"
+import ScanPage from "./features/inspection/ui/ScanPage"
+import InspectionDetailPage from "./features/inspection/ui/InspectionDetailPage"
+import InspectionMeasurePage from "./features/inspection/ui/InspectionMeasurePage"
+import InspectionResultPage from "./features/inspection/ui/InspectionResultPage"
 import ProductsPage from "./features/products/ui/ProductsPage"
 import EquipmentPage from "./features/equipment/ui/EquipmentPage"
 import CustomersPage from "./features/customers/ui/CustomersPage"
@@ -62,7 +66,19 @@ function App() {
 
             <Route element={<RouteGuard roles={["PRODUCTION"]} />}>
               <Route path="/inspections" element={<MyInspectionPage />} />
-              <Route path="/scan" element={<div className="p-6">스캔</div>} />
+              <Route path="/scan" element={<ScanPage />} />
+              <Route
+                path="/inspection/:inspectionId"
+                element={<InspectionDetailPage />}
+              />
+              <Route
+                path="/inspection/:inspectionId/measure"
+                element={<InspectionMeasurePage />}
+              />
+              <Route
+                path="/inspection/:inspectionId/result"
+                element={<InspectionResultPage />}
+              />
             </Route>
           </Route>
         </Route>

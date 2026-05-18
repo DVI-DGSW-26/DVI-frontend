@@ -27,6 +27,7 @@ export interface MyInspectionCustomer {
 
 export interface MyInspectionDim {
   id: number;
+  resultId: number;
   dimNo: number;
   dimName: string;
   standardValue: number;
