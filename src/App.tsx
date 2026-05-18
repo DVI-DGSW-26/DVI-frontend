@@ -23,6 +23,7 @@ import AdminReportPage from "./features/report/ui/AdminReportPage"
 import AdminReportDetailPage from "./features/report/ui/AdminReportDetailPage"
 import DashboardPage from "./features/dashboard/ui/DashboardPage"
 
+import QualitySystemStatusPage from "./features/cross-check/ui/QualitySystemStatusPage"
 import CrossCheckPendingPage from "./features/cross-check/ui/CrossCheckPendingPage"
 import QualityHomePage from "./features/cross-check/ui/QualityHomePage"
 
@@ -68,25 +69,32 @@ function App() {
                 path="/inspection-orders"
                 element={<InspectionOrdersPage />}
               />
+
               <Route
                 path="/approval-management"
                 element={<ApprovalManagementPage />}
               />
+
               <Route path="/qm-reports" element={<ReportPage />} />
               <Route path="/products" element={<ProductsPage />} />
               <Route path="/equipment" element={<EquipmentPage />} />
               <Route path="/customers" element={<CustomersPage />} />
             </Route>
 
-            <Route element={<RouteGuard roles={["PRODUCTION"]} />}>
-              <Route path="/inspections" element={<MyInspectionPage />} />
-            </Route>
-
             <Route element={<RouteGuard roles={["QUALITY"]} />}>
+              <Route
+                path="/quality-status"
+                element={<QualitySystemStatusPage />}
+              />
+
               <Route
                 path="/cross-checks"
                 element={<CrossCheckPendingPage />}
               />
+            </Route>
+
+            <Route element={<RouteGuard roles={["PRODUCTION"]} />}>
+              <Route path="/inspections" element={<MyInspectionPage />} />
             </Route>
 
             <Route element={<RouteGuard roles={["PRODUCTION", "QUALITY"]} />}>
