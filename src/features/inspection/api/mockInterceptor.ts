@@ -150,14 +150,15 @@ function buildMockResults(
     .slice()
     .sort((a, b) => a.dimNo - b.dimNo)
     .map((d, idx) => ({
-      resultId: d.resultId,
+      resultId: d.resultId ?? d.id,
+      dimId: d.id,
       dimNo: d.dimNo,
       dimName: d.dimName,
       standardValue: d.standardValue,
       tolerancePlus: d.tolerancePlus,
       toleranceMinus: d.toleranceMinus,
-      productionValue: idx < filledCount ? d.standardValue : null,
-      productionImageUrl:
+      measuredValue: idx < filledCount ? d.standardValue : null,
+      imageUrl:
         idx < filledCount
           ? `https://placehold.co/600x400?text=mock-${inspectionId}-${d.dimNo}`
           : null,
@@ -270,7 +271,23 @@ function tryMock(
       mockMyInspections.find((i) => i.inspectionId === inspectionId) ??
       mockMyInspections[0];
     const results = buildMockResults(inspectionId, base);
-    const detail: InspectionDetail = { ...base, results };
+    const nowIso = new Date().toISOString();
+    const detail: InspectionDetail = {
+      inspectionId: base.inspectionId,
+      orderId: base.orderId,
+      type: base.type,
+      typeLabel: base.typeLabel,
+      inspectionTime: base.inspectionTime,
+      product: base.product,
+      equipment: base.equipment,
+      customer: base.customer,
+      results,
+      appearanceResult: null,
+      status: base.status,
+      incompleteReason: null,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
     return Promise.resolve(
       buildResponse(config, 200, envelope(200, detail)),
     );

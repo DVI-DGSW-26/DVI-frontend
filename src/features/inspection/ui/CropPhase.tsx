@@ -59,8 +59,12 @@ export default function CropPhase({
     setConfirming(true);
     try {
       const blob = await getCroppedBlob(imageSrc, area);
+      // TEMP DEBUG: 첫 업로드 실패 원인 추적 — blob 유효성 확인용.
+      console.log("🟠 CropPhase onConfirm 직전 blob:", blob);
+      console.log("🟠 blob.size:", blob.size, "blob.type:", blob.type);
       onConfirm(blob);
     } catch (err) {
+      console.error("🟠 CropPhase getCroppedBlob 에러:", err);
       onError(err instanceof Error ? err.message : "크롭에 실패했습니다.");
       setConfirming(false);
     }

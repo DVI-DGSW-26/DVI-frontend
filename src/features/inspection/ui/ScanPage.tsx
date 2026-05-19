@@ -9,6 +9,7 @@ import type {
 } from "../type/types";
 import type { MyInspection } from "../../my-inspection/type/types";
 import SlotItem, { type SlotStatus } from "./SlotItem";
+import Toast from "./Toast";
 
 interface ScanLocationState {
   orderId?: number;
@@ -17,10 +18,9 @@ interface ScanLocationState {
   qualityName?: string;
 }
 
-interface PageError {
+interface ToastInfo {
   message: string;
   code?: StartInspectionErrorCode;
-  existingInspectionId?: number;
 }
 
 export default function ScanPage() {
@@ -30,8 +30,8 @@ export default function ScanPage() {
   const { orderId, process, inspections, qualityName } = state;
   const hasContext = !!orderId && !!process;
 
-  const [selectedType, setSelectedType] = useState<string | null>(null);
-  const [pageError, setPageError] = useState<PageError | null>(null);
+  const [toast, setToast] = useState<ToastInfo | null>(null);
+  const [pendingType, setPendingType] = useState<string | null>(null);
 
   const slotsQuery = useInspectionSlots(process);
   const startMutation = useStartInspection();
@@ -47,23 +47,27 @@ export default function ScanPage() {
   }, [inspections, orderId]);
 
   // 시점 순서는 GET /inspection/slots 응답 순서를 따른다.
-  // 자기 자신 이전의 모든 시점이 COMPLETED 여야 새로 시작 가능 — 아니면 LOCKED.
-  // DRAFT/COMPLETED 인 시점은 본인 상태를 우선 표시 (이어하기/완료).
+  // 본인 상태 우선 — COMPLETED / DRAFT / INCOMPLETE / INCOMPLETE_APPROVED.
+  // 본인 상태가 없거나(시작 전) NONE 이면 직전까지의 시점이 모두 종결(COMPLETED 또는
+  // INCOMPLETE_APPROVED) 이어야 새로 시작 가능, 아니면 LOCKED.
   const slotStatusByType = useMemo(() => {
     const map = new Map<string, SlotStatus>();
-    let allPrevCompleted = true;
+    let allPrevDone = true;
     for (const s of slots) {
       const ins = inspectionByType.get(s.type);
-      if (ins?.status === "COMPLETED") {
-        map.set(s.type, "COMPLETED");
-      } else if (ins?.status === "DRAFT") {
-        map.set(s.type, "DRAFT");
-      } else if (allPrevCompleted) {
-        map.set(s.type, "NONE");
-      } else {
-        map.set(s.type, "LOCKED");
-      }
-      if (ins?.status !== "COMPLETED") allPrevCompleted = false;
+      let status: SlotStatus;
+      if (ins?.status === "COMPLETED") status = "COMPLETED";
+      else if (ins?.status === "DRAFT") status = "DRAFT";
+      else if (ins?.status === "INCOMPLETE") status = "INCOMPLETE";
+      else if (ins?.status === "INCOMPLETE_APPROVED")
+        status = "INCOMPLETE_APPROVED";
+      else status = allPrevDone ? "NONE" : "LOCKED";
+      map.set(s.type, status);
+
+      // 이전 시점이 "종결" 상태인지 — COMPLETED 와 INCOMPLETE_APPROVED 만 다음 진행 허용.
+      const terminal =
+        ins?.status === "COMPLETED" || ins?.status === "INCOMPLETE_APPROVED";
+      if (!terminal) allPrevDone = false;
     }
     return map;
   }, [slots, inspectionByType]);
@@ -71,67 +75,99 @@ export default function ScanPage() {
   const getSlotStatus = (type: string): SlotStatus =>
     slotStatusByType.get(type) ?? "NONE";
 
-  const selectedInspection = selectedType
-    ? inspectionByType.get(selectedType)
-    : undefined;
-  const isResume = selectedInspection?.status === "DRAFT";
-
-  const isStartDisabled = useMemo(
-    () => !selectedType || startMutation.isPending,
-    [selectedType, startMutation.isPending],
-  );
-
-  const handleSlotSelect = (type: string) => {
-    setPageError(null);
-    setSelectedType(type);
-  };
-
-  const handleStart = () => {
-    if (!orderId || !selectedType) return;
-
-    // 방어: 어쩌다 LOCKED 슬롯이 선택돼 있어도 호출하지 않음.
-    if (getSlotStatus(selectedType) === "LOCKED") {
-      setPageError({
-        code: "PREVIOUS_INSPECTION_NOT_COMPLETED",
-        message: "이전 시점 검사를 먼저 완료해주세요",
-      });
-      return;
-    }
-
-    if (selectedInspection?.status === "DRAFT") {
-      navigate(`/inspection/${selectedInspection.inspectionId}`, {
-        replace: true,
-        state: { inspection: selectedInspection, qualityName },
-      });
-      return;
-    }
-
-    setPageError(null);
-    startMutation.mutate(
-      { orderId, type: selectedType },
-      {
-        onSuccess: (inspection) => {
-          navigate(`/inspection/${inspection.inspectionId}`, {
-            replace: true,
-            state: { inspection, qualityName },
-          });
-        },
-        onError: (err) => {
-          setPageError(toPageError(err));
-        },
-      },
-    );
-  };
-
-  const handleResume = () => {
-    if (!pageError?.existingInspectionId) {
-      navigate("/inspections");
-      return;
-    }
-    navigate(`/inspection/${pageError.existingInspectionId}`, {
-      replace: true,
-      state: { qualityName },
+  const goToMeasure = (inspection: MyInspection) => {
+    navigate(`/inspection/${inspection.inspectionId}/measure`, {
+      state: { inspection, qualityName },
     });
+  };
+
+  const startNewInspection = async (type: string) => {
+    if (!orderId) return;
+    setPendingType(type);
+    try {
+      const inspection = await startMutation.mutateAsync({ orderId, type });
+      // POST 성공 — 상세 화면으로 보내서 측정 시작 전 미리보기 단계 거치게 한다.
+      navigate(`/inspection/${inspection.inspectionId}`, {
+        replace: true,
+        state: { inspection, qualityName },
+      });
+    } catch (err) {
+      handleStartError(err, type);
+    } finally {
+      setPendingType(null);
+    }
+  };
+
+  const handleStartError = (err: unknown, type: string) => {
+    if (err instanceof AxiosError) {
+      const status = err.response?.status;
+      const data = err.response?.data as StartInspectionErrorData | undefined;
+      const code = data?.code;
+
+      // 409 — 자동 이어하기. myInspections 에서 해당 type 찾아 measure 로 직행.
+      if (status === 409 || code === "INSPECTION_ALREADY_EXISTS") {
+        const existing = inspectionByType.get(type);
+        if (existing) {
+          goToMeasure(existing);
+          return;
+        }
+        // 정보가 부족하면 inspections 목록 갱신을 안내.
+        setToast({
+          code: "INSPECTION_ALREADY_EXISTS",
+          message: "이미 시작된 검사입니다. 목록을 새로고침해주세요.",
+        });
+        return;
+      }
+      if (code === "PREVIOUS_INSPECTION_NOT_COMPLETED") {
+        setToast({
+          code: "PREVIOUS_INSPECTION_NOT_COMPLETED",
+          message: "이전 시점을 먼저 완료해주세요.",
+        });
+        return;
+      }
+      if (status === 403 || code === "NOT_ASSIGNED_PRODUCTION") {
+        setToast({
+          code: "NOT_ASSIGNED_PRODUCTION",
+          message: "배정된 작업자가 아닙니다.",
+        });
+        return;
+      }
+      if (status === 400 || code === "INVALID_INSPECTION_TYPE") {
+        setToast({
+          code: "INVALID_INSPECTION_TYPE",
+          message: "이 공정에 없는 시간대입니다.",
+        });
+        return;
+      }
+    }
+    setToast({ message: "검사를 시작하지 못했습니다." });
+  };
+
+  const handleSlotTap = (type: string) => {
+    if (!orderId) return;
+    const status = getSlotStatus(type);
+    const ins = inspectionByType.get(type);
+
+    // DRAFT — POST 호출 없이 측정 페이지 직행.
+    if (status === "DRAFT" && ins) {
+      goToMeasure(ins);
+      return;
+    }
+
+    // LOCKED — 안내 토스트만.
+    if (status === "LOCKED") {
+      setToast({
+        code: "PREVIOUS_INSPECTION_NOT_COMPLETED",
+        message: "이전 시점을 먼저 완료해주세요.",
+      });
+      return;
+    }
+
+    // COMPLETED / INCOMPLETE / INCOMPLETE_APPROVED — 비활성(SlotItem 에서 이미 차단).
+    if (status !== "NONE") return;
+
+    // NONE — POST /inspection 호출.
+    startNewInspection(type);
   };
 
   if (!hasContext) {
@@ -155,13 +191,14 @@ export default function ScanPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-24">
+    <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-6">
       <div className="px-4 pt-4">
         <h2 className="text-base font-semibold text-[#212121]">
           검사 시점 선택
         </h2>
         <p className="mt-1 text-xs text-[#6B7280]">
-          시작할 검사 시간대를 선택해주세요.
+          시작할 시간대를 탭하면 바로 진행됩니다. 작성 중인 항목은 이어하기로
+          연결됩니다.
         </p>
       </div>
 
@@ -185,83 +222,23 @@ export default function ScanPage() {
                 <SlotItem
                   slot={slot}
                   status={getSlotStatus(slot.type)}
-                  selected={selectedType === slot.type}
-                  onSelect={handleSlotSelect}
+                  onTap={handleSlotTap}
                 />
               </li>
             ))}
           </ul>
         )}
 
-        {pageError && (
-          <div className="mt-4 rounded-lg border border-[#FCA5A5] bg-[#FEF2F2] p-3 text-xs text-[#B91C1C]">
-            <div>{pageError.message}</div>
-            {pageError.code === "INSPECTION_ALREADY_EXISTS" && (
-              <button
-                type="button"
-                onClick={handleResume}
-                className="mt-2 inline-flex h-8 items-center rounded-md bg-[#931B82] px-3 text-xs font-medium text-white"
-              >
-                이어하기
-              </button>
-            )}
+        {startMutation.isPending && pendingType && (
+          <div className="mt-4 rounded-lg border border-[#E5E7EB] bg-white p-3 text-center text-xs text-[#6B7280]">
+            검사 시작 중...
           </div>
         )}
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 border-t border-gray-200 bg-white p-4">
-        <button
-          type="button"
-          onClick={handleStart}
-          disabled={isStartDisabled}
-          className={`h-12 w-full rounded-md text-base font-semibold text-white transition-colors ${
-            isStartDisabled
-              ? "bg-[#D1D5DB]"
-              : "bg-[#931B82] hover:bg-[#6A0F5D]"
-          }`}
-        >
-          {startMutation.isPending
-            ? "검사 시작 중..."
-            : isResume
-              ? "이어서 검사하기"
-              : "검사 시작"}
-        </button>
-      </div>
+      {toast && (
+        <Toast message={toast.message} onDismiss={() => setToast(null)} />
+      )}
     </div>
   );
-}
-
-function toPageError(err: unknown): PageError {
-  if (err instanceof AxiosError) {
-    const status = err.response?.status;
-    const data = err.response?.data as StartInspectionErrorData | undefined;
-    const code = data?.code;
-
-    if (status === 403 || code === "NOT_ASSIGNED_PRODUCTION") {
-      return {
-        code: "NOT_ASSIGNED_PRODUCTION",
-        message: "배정된 작업자가 아닙니다.",
-      };
-    }
-    if (code === "PREVIOUS_INSPECTION_NOT_COMPLETED") {
-      return {
-        code: "PREVIOUS_INSPECTION_NOT_COMPLETED",
-        message: "이전 시점 검사를 먼저 완료해주세요",
-      };
-    }
-    if (status === 400 || code === "INVALID_INSPECTION_TYPE") {
-      return {
-        code: "INVALID_INSPECTION_TYPE",
-        message: "이 공정에 없는 시간대입니다.",
-      };
-    }
-    if (status === 409 || code === "INSPECTION_ALREADY_EXISTS") {
-      return {
-        code: "INSPECTION_ALREADY_EXISTS",
-        message: "이미 시작된 검사입니다.",
-        existingInspectionId: data?.data?.inspectionId,
-      };
-    }
-  }
-  return { message: "검사를 시작하지 못했습니다." };
 }

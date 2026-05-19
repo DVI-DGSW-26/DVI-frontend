@@ -31,7 +31,19 @@ export default function ProductionHomePage() {
   );
 
   const handleResume = (inspection: MyInspection) => {
-    navigate(`/inspection/${inspection.inspectionId}/measure`);
+    console.log("🟢 이어 작업하기 탭");
+    console.log("🟢 inspection:", inspection);
+    console.log("🟢 inspectionId:", inspection?.inspectionId);
+    const url = `/inspection/${inspection.inspectionId}/measure`;
+    console.log("🟢 navigate URL:", url);
+    if (!inspection || typeof inspection.inspectionId !== "number") {
+      console.warn("🟢 inspectionId 가 number 가 아님 — navigate 중단");
+      return;
+    }
+    // 측정 페이지에서 dims/resultId 를 잃지 않도록 inspection 전체를 state 로 전달.
+    navigate(url, {
+      state: { inspection },
+    });
   };
 
   return (
