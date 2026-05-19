@@ -57,6 +57,21 @@ export interface CrossCheckSummary {
   updatedAt?: string;
 }
 
+// GET /cross-check/assigned 응답. 아직 순회검사가 시작 안 된 자주검사들.
+// CrossCheckSummary 와 달리 crossCheckId / status / 중첩 객체가 없다.
+export interface AssignedInspection {
+  inspectionId: number;
+  productName: string;
+  productCode: string;
+  process: ProcessType;
+  equipmentName: string;
+  productionName: string;
+  type: CrossCheckType;
+  typeLabel: string;
+  inspectionTime: string;
+  completedAt: string;
+}
+
 export interface DelegationInfo {
   delegatorId: number;
   delegatorName: string;

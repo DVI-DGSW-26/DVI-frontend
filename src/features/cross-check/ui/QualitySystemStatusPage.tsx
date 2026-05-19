@@ -40,7 +40,7 @@ function formatTime(iso: string) {
 }
 
 const QualitySystemStatusPage = () => {
-  const { data: crossChecks = [], isLoading, isError } = useMyCrossChecks();
+  const { data: crossChecks = [], isLoading, isError } = useMyCrossChecks(true);
   const { data: notifications = [] } = useNotifications();
 
   const [period, setPeriod] = useState<Period>("TODAY");

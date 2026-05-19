@@ -3,7 +3,11 @@ import { Icon } from "@iconify/react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { useNotifications } from "../../notification/api";
-import { useMyCrossChecks, useMyDelegation } from "../api";
+import {
+  useAssignedCrossChecks,
+  useMyCrossChecks,
+  useMyDelegation,
+} from "../api";
 import { elapsedFrom } from "../lib/elapsed";
 
 function formatTime(iso: string) {
@@ -20,22 +24,23 @@ function formatTime(iso: string) {
 const QualityHomePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { data: crossChecks = [] } = useMyCrossChecks();
+  const { data: assigned = [] } = useAssignedCrossChecks();
+  const { data: myCrossChecks = [] } = useMyCrossChecks();
   const { data: delegation } = useMyDelegation();
   const { data: notifications = [] } = useNotifications();
 
-  const pending = useMemo(
-    () => crossChecks.filter((c) => c.status === "DRAFT"),
-    [crossChecks],
-  );
+  const pendingCount = assigned.length;
 
   const latestDraft = useMemo(
     () =>
-      [...pending].sort(
-        (a, b) =>
-          elapsedFrom(b.createdAt).minutes - elapsedFrom(a.createdAt).minutes,
-      )[0],
-    [pending],
+      [...myCrossChecks]
+        .filter((c) => c.status === "DRAFT")
+        .sort(
+          (a, b) =>
+            elapsedFrom(b.updatedAt).minutes -
+            elapsedFrom(a.updatedAt).minutes,
+        )[0],
+    [myCrossChecks],
   );
 
   const recentNotifications = useMemo(
@@ -111,7 +116,7 @@ const QualityHomePage = () => {
             미처리 순회 검사
           </span>
           <span className="mt-1 text-2xl font-bold text-[#212121]">
-            {pending.length}건
+            {pendingCount}건
           </span>
           <span className="mt-1 text-xs text-[#6B7280]">
             즉시 확인이 필요합니다.

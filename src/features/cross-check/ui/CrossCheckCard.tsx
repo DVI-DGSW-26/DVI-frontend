@@ -1,27 +1,25 @@
 import { Icon } from "@iconify/react";
-import type { CrossCheckSummary } from "../api";
+import type { AssignedInspection } from "../api";
 import { elapsedFrom, TONE_COLOR } from "../lib/elapsed";
 
 interface Props {
-  cross: CrossCheckSummary;
-  onClick?: (cross: CrossCheckSummary) => void;
+  item: AssignedInspection;
+  onClick?: (item: AssignedInspection) => void;
 }
 
-const CrossCheckCard = ({ cross, onClick }: Props) => {
-  const elapsed = elapsedFrom(cross.createdAt);
+const CrossCheckCard = ({ item, onClick }: Props) => {
+  const elapsed = elapsedFrom(item.completedAt);
   const color = TONE_COLOR[elapsed.tone];
-  const productionName = cross.production?.name ?? "—";
-  const equipmentName = cross.equipment?.name ?? "";
 
   return (
     <button
       type="button"
-      onClick={() => onClick?.(cross)}
+      onClick={() => onClick?.(item)}
       className="flex w-full items-center gap-3 rounded-2xl bg-white px-5 py-4 text-left shadow-sm"
     >
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-base font-bold text-[#212121]">
-          {cross.product?.name ?? "—"}
+          {item.productName}
         </span>
         <div className="mt-1 flex items-center gap-1.5">
           <Icon
@@ -31,12 +29,12 @@ const CrossCheckCard = ({ cross, onClick }: Props) => {
             className="text-[#A8A8A8]"
           />
           <span className="truncate text-sm text-[#6B7280]">
-            {productionName}
+            {item.productionName}
           </span>
         </div>
-        {equipmentName && (
+        {item.equipmentName && (
           <span className="mt-2 truncate text-xs text-[#A8A8A8]">
-            공정: {equipmentName}
+            공정: {item.equipmentName}
           </span>
         )}
       </div>

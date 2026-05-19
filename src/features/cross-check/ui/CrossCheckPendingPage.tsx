@@ -1,28 +1,26 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMyCrossChecks } from "../api";
-import type { CrossCheckSummary } from "../api";
+import { useAssignedCrossChecks } from "../api";
+import type { AssignedInspection } from "../api";
 import { elapsedFrom } from "../lib/elapsed";
 import CrossCheckCard from "./CrossCheckCard";
 
 const CrossCheckPendingPage = () => {
   const navigate = useNavigate();
-  const { data: crossChecks = [], isLoading, isError } = useMyCrossChecks();
+  const { data: assigned = [], isLoading, isError } = useAssignedCrossChecks();
 
-  const pending = useMemo(
+  const sorted = useMemo(
     () =>
-      [...crossChecks]
-        .filter((c) => c.status === "DRAFT")
-        .sort(
-          (a, b) =>
-            elapsedFrom(b.createdAt).minutes -
-            elapsedFrom(a.createdAt).minutes,
-        ),
-    [crossChecks],
+      [...assigned].sort(
+        (a, b) =>
+          elapsedFrom(b.completedAt).minutes -
+          elapsedFrom(a.completedAt).minutes,
+      ),
+    [assigned],
   );
 
-  const handleCardClick = (cross: CrossCheckSummary) => {
-    navigate(`/inspection/${cross.inspectionId}/measure`);
+  const handleCardClick = (item: AssignedInspection) => {
+    navigate(`/inspection/${item.inspectionId}/measure`);
   };
 
   return (
@@ -45,17 +43,17 @@ const CrossCheckPendingPage = () => {
         </p>
       )}
 
-      {!isLoading && !isError && pending.length === 0 && (
+      {!isLoading && !isError && sorted.length === 0 && (
         <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
           대기 중인 순회검사가 없습니다.
         </p>
       )}
 
-      {!isLoading && !isError && pending.length > 0 && (
+      {!isLoading && !isError && sorted.length > 0 && (
         <ul className="flex flex-col gap-3">
-          {pending.map((c) => (
-            <li key={c.crossCheckId}>
-              <CrossCheckCard cross={c} onClick={handleCardClick} />
+          {sorted.map((item) => (
+            <li key={item.inspectionId}>
+              <CrossCheckCard item={item} onClick={handleCardClick} />
             </li>
           ))}
         </ul>
