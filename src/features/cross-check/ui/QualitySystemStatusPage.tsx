@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
-import { useMyCrossChecks } from "../api";
-import type { CrossCheckSummary } from "../api";
-import { useNotifications } from "../../notification/api";
+import { useNavigate } from "react-router-dom";
+import { useAssignedCrossChecks, useMyCrossChecks } from "../api";
+import type { CrossCheckStatus } from "../api";
 
 type Period = "TODAY" | "WEEK";
 
@@ -39,9 +39,19 @@ function formatTime(iso: string) {
   return `${String(h12).padStart(2, "0")}:${mi} ${ampm}`;
 }
 
+const STATUS_META: Record<
+  CrossCheckStatus,
+  { label: string; dot: string }
+> = {
+  DRAFT: { label: "측정중", dot: "#3B82F6" },
+  APPROVED: { label: "승인됨", dot: "#22C55E" },
+  REJECTED: { label: "반려됨", dot: "#EF4444" },
+};
+
 const QualitySystemStatusPage = () => {
+  const navigate = useNavigate();
   const { data: crossChecks = [], isLoading, isError } = useMyCrossChecks(true);
-  const { data: notifications = [] } = useNotifications();
+  const { data: assigned = [] } = useAssignedCrossChecks();
 
   const [period, setPeriod] = useState<Period>("TODAY");
 
@@ -53,101 +63,98 @@ const QualitySystemStatusPage = () => {
   const counts = useMemo(() => {
     let approved = 0;
     let draft = 0;
-    let rejected = 0;
-    let latestApproved: CrossCheckSummary | undefined;
-    let latestDraft: CrossCheckSummary | undefined;
-    let latestRejected: CrossCheckSummary | undefined;
     for (const c of filtered) {
-      if (c.status === "APPROVED") {
-        approved++;
-        if (!latestApproved) latestApproved = c;
-      } else if (c.status === "DRAFT") {
-        draft++;
-        if (!latestDraft) latestDraft = c;
-      } else if (c.status === "REJECTED") {
-        rejected++;
-        if (!latestRejected) latestRejected = c;
-      }
+      if (c.status === "APPROVED") approved++;
+      else if (c.status === "DRAFT") draft++;
     }
-    return {
-      approved,
-      draft,
-      rejected,
-      total: filtered.length,
-      latestApproved,
-      latestDraft,
-      latestRejected,
-    };
-  }, [filtered]);
+    return { approved, draft, pending: assigned.length };
+  }, [filtered, assigned]);
 
-  const progressPct =
-    counts.total === 0 ? 0 : Math.round((counts.approved / counts.total) * 100);
-
-  const recentActivity = useMemo(() => notifications.slice(0, 3), [notifications]);
+  const recentActivity = useMemo(
+    () =>
+      [...crossChecks]
+        .sort(
+          (a, b) =>
+            new Date(b.updatedAt ?? b.createdAt ?? 0).getTime() -
+            new Date(a.updatedAt ?? a.createdAt ?? 0).getTime(),
+        )
+        .slice(0, 3),
+    [crossChecks],
+  );
 
   return (
-    <div className="flex min-h-full flex-col gap-4 bg-[#F5F5F5] px-4 pb-21 pt-4">
-      <div className="flex gap-2 rounded-2xl bg-[#F3F4F6] p-1">
-        <button
-          type="button"
-          onClick={() => setPeriod("TODAY")}
-          className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors ${
-            period === "TODAY"
-              ? "bg-[#931B82] text-white"
-              : "bg-transparent text-[#A8A8A8]"
-          }`}
-        >
-          오늘
-        </button>
-        <button
-          type="button"
-          onClick={() => setPeriod("WEEK")}
-          className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors ${
-            period === "WEEK"
-              ? "bg-[#931B82] text-white"
-              : "bg-transparent text-[#A8A8A8]"
-          }`}
-        >
-          이번주
-        </button>
+    <div className="flex min-h-full flex-col gap-5 bg-[#F5F5F5] px-4 pb-21 pt-4">
+      {/* 기간 토글 */}
+      <div className="flex gap-1.5 rounded-full bg-white p-1 shadow-sm">
+        {(["TODAY", "WEEK"] as const).map((p) => (
+          <button
+            key={p}
+            type="button"
+            onClick={() => setPeriod(p)}
+            className={`flex-1 rounded-full py-2 text-sm font-semibold transition-colors ${
+              period === p
+                ? "bg-[#931B82] text-white"
+                : "bg-transparent text-[#A8A8A8]"
+            }`}
+          >
+            {p === "TODAY" ? "오늘" : "이번주"}
+          </button>
+        ))}
       </div>
 
-      <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-semibold text-[#6B7280]">총 진행</h2>
-        <div className="flex items-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white px-4 py-3 shadow-sm">
-          <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-[#F3F4F6]">
-            <div
-              className="h-full rounded-full bg-[#931B82] transition-all"
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
-          <span className="shrink-0 text-lg font-bold text-[#931B82]">
-            {counts.approved}/{counts.total}
+      {/* Hero — 미처리 강조 */}
+      <button
+        type="button"
+        onClick={() => navigate("/cross-checks")}
+        className="group flex flex-col gap-3 rounded-3xl bg-linear-to-br from-[#931B82] to-[#6A0F5D] px-6 py-7 text-left text-white shadow-lg transition-transform active:scale-[0.98]"
+      >
+        <div className="flex items-center gap-2">
+          <Icon
+            icon="solar:danger-triangle-bold"
+            width={18}
+            height={18}
+            className="text-white/80"
+          />
+          <span className="text-sm font-medium text-white/90">
+            미처리 순회검사
           </span>
         </div>
-      </section>
+        <div className="flex items-end gap-2">
+          <span className="text-6xl font-extrabold leading-none">
+            {counts.pending}
+          </span>
+          <span className="mb-1 text-2xl font-bold text-white/80">건</span>
+        </div>
+        <div className="mt-1 flex items-center justify-between border-t border-white/20 pt-3">
+          <span className="text-sm text-white/85">
+            {counts.pending > 0
+              ? "지금 바로 처리해주세요"
+              : "처리 대기 중인 검사가 없어요"}
+          </span>
+          <Icon
+            icon="solar:alt-arrow-right-linear"
+            width={20}
+            height={20}
+            className="transition-transform group-active:translate-x-0.5"
+          />
+        </div>
+      </button>
 
-      <section className="grid grid-cols-3 gap-2">
-        <StatBox
+      {/* 완료/진행중 작은 통계 */}
+      <section className="grid grid-cols-2 gap-3">
+        <SmallStat
+          icon="solar:check-circle-bold"
+          iconBg="#DCFCE7"
+          iconColor="#22C55E"
           label="완료"
-          dotColor="#22C55E"
-          valueColor="#22C55E"
           value={counts.approved}
-          latestId={counts.latestApproved?.crossCheckId}
         />
-        <StatBox
+        <SmallStat
+          icon="solar:pen-bold"
+          iconBg="#DBEAFE"
+          iconColor="#3B82F6"
           label="진행중"
-          dotColor="#3B82F6"
-          valueColor="#3B82F6"
           value={counts.draft}
-          latestId={counts.latestDraft?.crossCheckId}
-        />
-        <StatBox
-          label="대기"
-          dotColor="#A8A8A8"
-          valueColor="#212121"
-          value={counts.rejected}
-          latestId={counts.latestRejected?.crossCheckId}
         />
       </section>
 
@@ -163,36 +170,43 @@ const QualitySystemStatusPage = () => {
         </p>
       )}
 
-      <section>
-        <h2 className="mb-3 text-lg font-bold text-[#212121]">최근 활동</h2>
+      {/* 최근 활동 */}
+      <section className="flex flex-col gap-3">
+        <h2 className="px-1 text-base font-bold text-[#212121]">최근 활동</h2>
         {recentActivity.length === 0 ? (
-          <p className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-[#A8A8A8]">
+          <p className="rounded-2xl bg-white px-4 py-8 text-center text-sm text-[#A8A8A8]">
             최근 활동이 없습니다.
           </p>
         ) : (
-          <ul className="flex flex-col">
-            {recentActivity.map((n, idx) => (
-              <li
-                key={n.id}
-                className={`flex items-start gap-3 py-3 ${
-                  idx < recentActivity.length - 1
-                    ? "border-b border-[#E5E7EB]"
-                    : ""
-                }`}
-              >
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#22C55E] text-white">
-                  <Icon icon="solar:check-read-linear" width={14} height={14} />
-                </span>
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="text-xs text-[#A8A8A8]">
-                    {formatTime(n.createdAt)}
+          <ul className="flex flex-col rounded-2xl bg-white shadow-sm">
+            {recentActivity.map((c, idx) => {
+              const meta = STATUS_META[c.status];
+              const when = c.updatedAt ?? c.createdAt;
+              return (
+                <li
+                  key={c.crossCheckId}
+                  className={`flex items-center gap-3 px-5 py-4 ${
+                    idx < recentActivity.length - 1
+                      ? "border-b border-[#F5F5F5]"
+                      : ""
+                  }`}
+                >
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: meta.dot }}
+                  />
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate text-sm font-semibold text-[#212121]">
+                      {c.product?.name ?? "—"}
+                    </span>
+                    <span className="text-xs text-[#A8A8A8]">{meta.label}</span>
+                  </div>
+                  <span className="shrink-0 text-xs text-[#A8A8A8]">
+                    {when ? formatTime(when) : ""}
                   </span>
-                  <span className="mt-0.5 truncate text-sm text-[#212121]">
-                    {n.title}
-                  </span>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -200,32 +214,26 @@ const QualitySystemStatusPage = () => {
   );
 };
 
-interface StatBoxProps {
+interface SmallStatProps {
+  icon: string;
+  iconBg: string;
+  iconColor: string;
   label: string;
-  dotColor: string;
-  valueColor: string;
   value: number;
-  latestId?: number;
 }
 
-const StatBox = ({ label, dotColor, valueColor, value, latestId }: StatBoxProps) => (
-  <div className="flex flex-col gap-1 rounded-2xl bg-white px-3 py-3 shadow-sm">
-    <div className="flex items-center gap-1.5 text-xs font-medium text-[#6B7280]">
-      <span
-        className="inline-block h-1.5 w-1.5 rounded-full"
-        style={{ backgroundColor: dotColor }}
-      />
-      {label}
-    </div>
+const SmallStat = ({ icon, iconBg, iconColor, label, value }: SmallStatProps) => (
+  <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-4 shadow-sm">
     <span
-      className="text-2xl font-bold"
-      style={{ color: valueColor }}
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+      style={{ backgroundColor: iconBg }}
     >
-      {value}
+      <Icon icon={icon} width={20} height={20} color={iconColor} />
     </span>
-    {latestId != null && (
-      <span className="text-xs text-[#3B82F6]">#{latestId}</span>
-    )}
+    <div className="flex min-w-0 flex-1 flex-col">
+      <span className="text-xs text-[#A8A8A8]">{label}</span>
+      <span className="text-xl font-bold text-[#212121]">{value}</span>
+    </div>
   </div>
 );
 
