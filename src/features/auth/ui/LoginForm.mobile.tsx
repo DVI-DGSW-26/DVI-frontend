@@ -36,7 +36,7 @@ export default function LoginFormMobile({
           width: "calc(100% - 60px)",
           paddingLeft: "13px",
         }}
-        className="border border-[#A8A8A8] rounded-lg h-15focus:outline-none focus:ring-1 focus:ring-[#931B82]"
+        className="border border-[#A8A8A8] rounded-lg h-15 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
       />
 
       <div
