@@ -1,5 +1,4 @@
 import { Icon } from "@iconify/react";
-import { useNavigate } from "react-router-dom";
 import {
   useMarkAllAsRead,
   useMarkAsRead,
@@ -70,7 +69,6 @@ function groupByDay(items: NotificationResponse[]) {
 }
 
 const NotificationPage = () => {
-  const navigate = useNavigate();
   const { data: items = [], isLoading, isError } = useNotifications();
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
@@ -84,27 +82,18 @@ const NotificationPage = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-20">
-      <header className="sticky top-0 z-10 flex h-14 items-center justify-between bg-white px-4">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          aria-label="뒤로가기"
-          className="text-[#212121]"
-        >
-          <Icon icon="mdi:chevron-left" width={28} height={28} />
-        </button>
-        <h1 className="text-base font-semibold text-[#212121]">알림</h1>
-        <button
-          type="button"
-          onClick={() => markAllAsRead.mutate()}
-          disabled={markAllAsRead.isPending}
-          className="text-sm text-[#A8A8A8] disabled:opacity-50"
-        >
-          모두 읽음
-        </button>
-      </header>
+      <div className="flex flex-col gap-6 px-4 pb-5 pt-3">
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => markAllAsRead.mutate()}
+            disabled={markAllAsRead.isPending || items.length === 0}
+            className="text-sm font-medium text-[#931B82] disabled:text-[#A8A8A8] disabled:opacity-50"
+          >
+            모두 읽음
+          </button>
+        </div>
 
-      <div className="flex flex-col gap-6 px-4 py-5">
         {isLoading && (
           <p className="py-10 text-center text-sm text-[#A8A8A8]">불러오는 중...</p>
         )}

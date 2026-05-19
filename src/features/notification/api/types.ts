@@ -1,4 +1,4 @@
-import type { ApiResponse } from "../../auth/api/types";
+import type { ApiResponse } from "../../auth/type/types";
 
 export interface NotificationResponse {
   id: number;
