@@ -15,7 +15,6 @@ import type {
   SaveResultsRequest,
 } from "../type/types";
 import { myInspectionKeys } from "../../my-inspection/api";
-import { inspectionOrderKeys } from "../../inspection-orders/api";
 
 export const inspectionKeys = {
   all: ["inspection"] as const,
@@ -51,8 +50,8 @@ export function useStartInspection() {
   return useMutation({
     mutationFn: startInspection,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: myInspectionKeys.list() });
-      qc.invalidateQueries({ queryKey: inspectionOrderKeys.list() });
+      // assigned/list 양쪽 다 무효화하기 위해 prefix 단위로.
+      qc.invalidateQueries({ queryKey: myInspectionKeys.all });
     },
   });
 }
@@ -75,7 +74,7 @@ export function useSaveInspectionResults(inspectionId: number) {
     mutationFn: (body: SaveResultsRequest) =>
       saveInspectionResults(inspectionId, body),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: myInspectionKeys.list() });
+      qc.invalidateQueries({ queryKey: myInspectionKeys.all });
     },
   });
 }
@@ -85,8 +84,7 @@ export function useCompleteInspection(inspectionId: number) {
   return useMutation({
     mutationFn: () => completeInspection(inspectionId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: myInspectionKeys.list() });
-      qc.invalidateQueries({ queryKey: inspectionOrderKeys.list() });
+      qc.invalidateQueries({ queryKey: myInspectionKeys.all });
     },
   });
 }
@@ -97,8 +95,7 @@ export function useIncompleteInspection(inspectionId: number) {
     mutationFn: (body: IncompleteRequest) =>
       incompleteInspection(inspectionId, body),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: myInspectionKeys.list() });
-      qc.invalidateQueries({ queryKey: inspectionOrderKeys.list() });
+      qc.invalidateQueries({ queryKey: myInspectionKeys.all });
     },
   });
 }
