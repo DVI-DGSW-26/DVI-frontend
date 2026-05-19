@@ -18,7 +18,14 @@ export interface StatusBadge {
 export const STATUS_BADGE: Record<string, StatusBadge> = {
   PENDING: { label: "대기", text: "text-[#F59E0B]", dot: "bg-[#F59E0B]" },
   IN_PROGRESS: { label: "진행 중", text: "text-[#3B82F6]", dot: "bg-[#3B82F6]" },
+  DRAFT: { label: "진행 중", text: "text-[#3B82F6]", dot: "bg-[#3B82F6]" },
   COMPLETED: { label: "완료", text: "text-[#22C55E]", dot: "bg-[#22C55E]" },
+  INCOMPLETE: { label: "검토 대기", text: "text-[#F59E0B]", dot: "bg-[#F59E0B]" },
+  INCOMPLETE_APPROVED: {
+    label: "미완료 승인됨",
+    text: "text-[#6B7280]",
+    dot: "bg-[#9CA3AF]",
+  },
 };
 
 export const FALLBACK_BADGE: StatusBadge = {

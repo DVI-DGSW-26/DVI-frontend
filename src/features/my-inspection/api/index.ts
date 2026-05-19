@@ -1,2 +1,10 @@
-export { getMyInspections } from "./myInspectionApi";
-export { useMyInspectionList, myInspectionKeys } from "./queries";
+export {
+  getMyInspections,
+  getAssignedInspections,
+  type MyInspectionsOptions,
+} from "./myInspectionApi";
+export {
+  useMyInspectionList,
+  useMyAssignedInspections,
+  myInspectionKeys,
+} from "./queries";

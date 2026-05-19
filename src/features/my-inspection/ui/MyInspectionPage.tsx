@@ -1,55 +1,67 @@
 import { useMemo, useState } from "react";
-import { useAuth } from "../../auth/AuthContext";
-import { useInspectionOrderList } from "../../inspection-orders/api";
-import { useMyInspectionList } from "../api";
+import { useMyAssignedInspections, useMyInspectionList } from "../api";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import type { Tab } from "../lib/inspectionStatus";
 import TabBar from "./TabBar";
 import PullToRefreshIndicator from "./PullToRefreshIndicator";
 import EmptyState from "./EmptyState";
-import OrderCard from "./OrderCard";
+import OrderCard, { type SlotEntry } from "./OrderCard";
 
 export default function MyInspectionPage() {
-  const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("ALL");
 
-  const ordersQuery = useInspectionOrderList();
-  const inspectionsQuery = useMyInspectionList();
+  const inspectionsQuery = useMyInspectionList({ includeFinished: true });
+  const assignedQuery = useMyAssignedInspections();
 
-  const isLoading = ordersQuery.isLoading || inspectionsQuery.isLoading;
-  const isError = ordersQuery.isError || inspectionsQuery.isError;
+  const isLoading = inspectionsQuery.isLoading || assignedQuery.isLoading;
+  const isError = inspectionsQuery.isError || assignedQuery.isError;
 
-  const myOrders = useMemo(() => {
-    if (!user) return [];
-    return (ordersQuery.data ?? []).filter((o) => o.production.id === user.id);
-  }, [ordersQuery.data, user]);
+  const myInspections = useMemo(
+    () => inspectionsQuery.data ?? [],
+    [inspectionsQuery.data],
+  );
+  const assignedSlots = useMemo(
+    () => assignedQuery.data ?? [],
+    [assignedQuery.data],
+  );
 
-  const inspections = inspectionsQuery.data ?? [];
-
-  const counts = useMemo(() => {
-    const c: Record<Tab, number> = {
-      ALL: myOrders.length,
-      PENDING: 0,
-      IN_PROGRESS: 0,
-      COMPLETED: 0,
+  const counts = useMemo<Record<Tab, number>>(() => {
+    return {
+      ALL: assignedSlots.length + myInspections.length,
+      PENDING: assignedSlots.length,
+      IN_PROGRESS: myInspections.filter((i) => i.status === "DRAFT").length,
+      COMPLETED: myInspections.filter((i) => i.status === "COMPLETED").length,
     };
-    for (const o of myOrders) {
-      if (o.status === "PENDING") c.PENDING += 1;
-      else if (o.status === "IN_PROGRESS") c.IN_PROGRESS += 1;
-      else if (o.status === "COMPLETED") c.COMPLETED += 1;
-    }
-    return c;
-  }, [myOrders]);
+  }, [assignedSlots, myInspections]);
 
-  const filtered = useMemo(() => {
-    if (tab === "ALL") return myOrders;
-    return myOrders.filter((o) => o.status === tab);
-  }, [myOrders, tab]);
+  const entries = useMemo<SlotEntry[]>(() => {
+    const assignedEntries: SlotEntry[] = assignedSlots.map((slot) => ({
+      kind: "assigned",
+      slot,
+    }));
+    const myEntries: SlotEntry[] = myInspections.map((inspection) => ({
+      kind: "my",
+      inspection,
+    }));
+    if (tab === "ALL") return [...assignedEntries, ...myEntries];
+    if (tab === "PENDING") return assignedEntries;
+    if (tab === "IN_PROGRESS")
+      return myEntries.filter(
+        (e) => e.kind === "my" && e.inspection.status === "DRAFT",
+      );
+    if (tab === "COMPLETED")
+      return myEntries.filter(
+        (e) => e.kind === "my" && e.inspection.status === "COMPLETED",
+      );
+    return [];
+  }, [tab, assignedSlots, myInspections]);
 
-  const { scrollRef, pullY, refreshing, triggerReady, bind } = usePullToRefresh({
-    onRefresh: () =>
-      Promise.all([ordersQuery.refetch(), inspectionsQuery.refetch()]),
-  });
+  const { scrollRef, pullY, refreshing, triggerReady, bind } = usePullToRefresh(
+    {
+      onRefresh: () =>
+        Promise.all([assignedQuery.refetch(), inspectionsQuery.refetch()]),
+    },
+  );
 
   return (
     <div
@@ -69,26 +81,28 @@ export default function MyInspectionPage() {
           <EmptyState label="불러오는 중..." />
         ) : isError ? (
           <EmptyState label="목록을 불러오지 못했습니다." error />
-        ) : filtered.length === 0 ? (
+        ) : entries.length === 0 ? (
           <EmptyState
             label={
               tab === "ALL"
-                ? "배정된 검사 지시가 없습니다."
-                : "해당 조건의 검사 지시가 없습니다."
+                ? "배정된 검사가 없습니다."
+                : "해당 조건의 검사가 없습니다."
             }
           />
         ) : (
           <div className="flex flex-col gap-2.5">
-            {filtered.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                inspections={inspections}
-              />
+            {entries.map((entry) => (
+              <OrderCard key={entryKey(entry)} entry={entry} />
             ))}
           </div>
         )}
       </div>
     </div>
   );
+}
+
+function entryKey(entry: SlotEntry): string {
+  return entry.kind === "assigned"
+    ? `a-${entry.slot.orderId}-${entry.slot.type}`
+    : `m-${entry.inspection.inspectionId}`;
 }

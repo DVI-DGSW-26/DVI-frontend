@@ -2,27 +2,26 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useAuth } from "../../auth/AuthContext";
-import { useInspectionOrderList } from "../../inspection-orders/api";
-import { useMyInspectionList } from "../api";
+import { useMyAssignedInspections, useMyInspectionList } from "../api";
 import type { MyInspection } from "../type/types";
 import TodayPendingCard from "./TodayPendingCard";
 
 export default function ProductionHomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const ordersQuery = useInspectionOrderList();
-  const inspectionsQuery = useMyInspectionList();
 
-  const todayPending = useMemo(() => {
-    if (!user) return [];
-    return (ordersQuery.data ?? []).filter(
-      (o) => o.production.id === user.id && o.status === "PENDING",
-    );
-  }, [ordersQuery.data, user]);
+  // 홈 화면은 종결된 검사 제외 (트래픽 절약). 탭/현황 페이지에서는 includeFinished=true.
+  const inspectionsQuery = useMyInspectionList();
+  const assignedQuery = useMyAssignedInspections();
 
   const inspections = useMemo(
     () => inspectionsQuery.data ?? [],
     [inspectionsQuery.data],
+  );
+
+  const assignedSlots = useMemo(
+    () => assignedQuery.data ?? [],
+    [assignedQuery.data],
   );
 
   const latestDraft: MyInspection | undefined = useMemo(
@@ -31,17 +30,7 @@ export default function ProductionHomePage() {
   );
 
   const handleResume = (inspection: MyInspection) => {
-    console.log("🟢 이어 작업하기 탭");
-    console.log("🟢 inspection:", inspection);
-    console.log("🟢 inspectionId:", inspection?.inspectionId);
-    const url = `/inspection/${inspection.inspectionId}/measure`;
-    console.log("🟢 navigate URL:", url);
-    if (!inspection || typeof inspection.inspectionId !== "number") {
-      console.warn("🟢 inspectionId 가 number 가 아님 — navigate 중단");
-      return;
-    }
-    // 측정 페이지에서 dims/resultId 를 잃지 않도록 inspection 전체를 state 로 전달.
-    navigate(url, {
+    navigate(`/inspection/${inspection.inspectionId}/measure`, {
       state: { inspection },
     });
   };
@@ -81,7 +70,7 @@ export default function ProductionHomePage() {
       </div>
 
       <div className="px-4 pt-4">
-        <TodayPendingCard orders={todayPending} inspections={inspections} />
+        <TodayPendingCard slots={assignedSlots} />
       </div>
     </div>
   );

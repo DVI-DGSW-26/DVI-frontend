@@ -51,3 +51,20 @@ export interface MyInspection {
 }
 
 export type MyInspectionListResponse = ApiResponse<MyInspection[]>;
+
+// GET /inspection/assigned — 내게 배정된 자주검사 중 아직 시작 안 한 슬롯.
+// 슬롯 단위로 펼쳐서 응답. 시퀀스 룰은 시작 시점에 검증되고 목록에는 모두 포함.
+export interface AssignedSlot {
+  orderId: number;
+  productName: string;
+  productCode: string;
+  process: string;
+  equipmentName: string;
+  customerName: string;
+  targetDate: string;
+  type: string;
+  typeLabel: string;
+  inspectionTime: string;
+}
+
+export type AssignedSlotListResponse = ApiResponse<AssignedSlot[]>;

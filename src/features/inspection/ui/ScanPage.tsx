@@ -8,13 +8,13 @@ import type {
   StartInspectionErrorData,
 } from "../type/types";
 import type { MyInspection } from "../../my-inspection/type/types";
+import { useMyInspectionList } from "../../my-inspection/api";
 import SlotItem, { type SlotStatus } from "./SlotItem";
 import Toast from "./Toast";
 
 interface ScanLocationState {
   orderId?: number;
   process?: InspectionProcess;
-  inspections?: MyInspection[];
   qualityName?: string;
 }
 
@@ -27,24 +27,27 @@ export default function ScanPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state ?? {}) as ScanLocationState;
-  const { orderId, process, inspections, qualityName } = state;
+  const { orderId, process, qualityName } = state;
   const hasContext = !!orderId && !!process;
 
   const [toast, setToast] = useState<ToastInfo | null>(null);
   const [pendingType, setPendingType] = useState<string | null>(null);
 
   const slotsQuery = useInspectionSlots(process);
+  // 슬롯 상태(잠금/이어하기 등) 정확히 계산하려면 COMPLETED/INCOMPLETE_APPROVED 등
+  // 종결된 검사 정보도 필요 — 홈에서 안 받는 케이스가 있어 ScanPage 가 자체 조회.
+  const myInspectionsQuery = useMyInspectionList({ includeFinished: true });
   const startMutation = useStartInspection();
 
   const slots = useMemo(() => slotsQuery.data ?? [], [slotsQuery.data]);
 
   const inspectionByType = useMemo(() => {
     const map = new Map<string, MyInspection>();
-    for (const ins of inspections ?? []) {
+    for (const ins of myInspectionsQuery.data ?? []) {
       if (ins.orderId === orderId) map.set(ins.type, ins);
     }
     return map;
-  }, [inspections, orderId]);
+  }, [myInspectionsQuery.data, orderId]);
 
   // 시점 순서는 GET /inspection/slots 응답 순서를 따른다.
   // 본인 상태 우선 — COMPLETED / DRAFT / INCOMPLETE / INCOMPLETE_APPROVED.
@@ -203,7 +206,7 @@ export default function ScanPage() {
       </div>
 
       <div className="flex-1 px-4 pt-4">
-        {slotsQuery.isLoading ? (
+        {slotsQuery.isLoading || myInspectionsQuery.isLoading ? (
           <div className="py-10 text-center text-xs text-[#A8A8A8]">
             불러오는 중...
           </div>

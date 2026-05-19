@@ -1,25 +1,22 @@
 import { useNavigate } from "react-router-dom";
-import type { InspectionOrder } from "../../inspection-orders/api";
 import type { InspectionProcess } from "../../inspection/type/types";
-import type { MyInspection } from "../type/types";
+import type { AssignedSlot } from "../type/types";
 import { getStatusBadge } from "../lib/inspectionStatus";
+import { formatSlotTime } from "../../inspection/lib/format";
 
 interface Props {
-  orders: InspectionOrder[];
-  inspections: MyInspection[];
+  slots: AssignedSlot[];
 }
 
-export default function TodayPendingCard({ orders, inspections }: Props) {
+export default function TodayPendingCard({ slots }: Props) {
   const navigate = useNavigate();
   const badge = getStatusBadge("PENDING");
 
-  const handleSelect = (order: InspectionOrder) => {
+  const handleSelect = (slot: AssignedSlot) => {
     navigate("/scan", {
       state: {
-        orderId: order.id,
-        process: order.product.process as InspectionProcess,
-        inspections: inspections.filter((i) => i.orderId === order.id),
-        qualityName: order.quality?.name,
+        orderId: slot.orderId,
+        process: slot.process as InspectionProcess,
       },
     });
   };
@@ -27,32 +24,38 @@ export default function TodayPendingCard({ orders, inspections }: Props) {
   return (
     <>
       <div className="mb-2 flex items-baseline justify-between">
-        <h2 className="text-sm font-semibold text-[#212121]">오늘 할 검사</h2>
+        <h2 className="text-sm font-semibold text-[#212121]">대기 검사</h2>
         <span className={`text-xs font-medium ${badge.text}`}>
-          {orders.length}건 대기 중
+          {slots.length}건 대기 중
         </span>
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-        {orders.length === 0 ? (
+        {slots.length === 0 ? (
           <div className="py-6 text-center text-xs text-[#A8A8A8]">
-            오늘 대기 중인 검사가 없습니다.
+            대기 중인 검사가 없습니다.
           </div>
         ) : (
           <ul className="flex flex-col divide-y divide-gray-100">
-            {orders.map((order) => (
-              <li key={order.id} className="first:pt-0 last:pb-0">
+            {slots.map((slot) => (
+              <li
+                key={`${slot.orderId}-${slot.type}`}
+                className="first:pt-0 last:pb-0"
+              >
                 <button
                   type="button"
-                  onClick={() => handleSelect(order)}
+                  onClick={() => handleSelect(slot)}
                   className="flex w-full items-center justify-between gap-2 py-2 text-left hover:bg-gray-50"
                 >
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium text-[#212121]">
-                      {order.product.name}
+                      {slot.productName}
                     </div>
                     <div className="truncate text-xs text-[#6B7280]">
-                      {order.customer.name} · {order.equipment.name}
+                      {slot.customerName} · {slot.equipmentName}
+                    </div>
+                    <div className="mt-0.5 text-xs text-[#6B7280]">
+                      {slot.typeLabel} · {formatSlotTime(slot.inspectionTime)}
                     </div>
                   </div>
                   <span
