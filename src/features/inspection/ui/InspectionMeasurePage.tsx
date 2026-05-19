@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useAuth } from "../../auth/AuthContext";
 import {
@@ -8,11 +8,8 @@ import {
   useSaveInspectionResults,
   useUploadInspectionImage,
 } from "../api";
-import type {
-  ApiErrorData,
-  InspectionDetailResult,
-  StepResult,
-} from "../type/types";
+import type { ApiErrorData, StepResult } from "../type/types";
+import type { MyInspection } from "../../my-inspection/type/types";
 import { formatStandardWithTolerance } from "../lib/format";
 import CapturePhase from "./CapturePhase";
 import CropPhase from "./CropPhase";
@@ -21,46 +18,94 @@ import Toast from "./Toast";
 
 type Phase = "capture" | "crop" | "input";
 
-function isResultDone(r: InspectionDetailResult): boolean {
-  return r.productionValue != null && !!r.productionImageUrl;
+// 두 진입 경로(POST 응답의 dims / GET 응답의 results)를 모두 받기 위한 정규화 형태.
+interface MeasureItem {
+  resultId: number;
+  dimNo: number;
+  dimName: string;
+  standardValue: number;
+  tolerancePlus: number;
+  toleranceMinus: number;
+  measuredValue?: number;
+  imageUrl?: string;
 }
 
-function toCompletedStep(r: InspectionDetailResult): StepResult {
+interface MeasureLocationState {
+  inspection?: MyInspection;
+  qualityName?: string;
+}
+
+function isItemDone(item: MeasureItem): boolean {
+  return item.measuredValue != null && !!item.imageUrl;
+}
+
+function toCompletedStep(item: MeasureItem): StepResult {
   return {
-    dimNo: r.dimNo,
-    dimName: r.dimName,
-    standardValue: r.standardValue,
-    tolerancePlus: r.tolerancePlus,
-    toleranceMinus: r.toleranceMinus,
+    dimNo: item.dimNo,
+    dimName: item.dimName,
+    standardValue: item.standardValue,
+    tolerancePlus: item.tolerancePlus,
+    toleranceMinus: item.toleranceMinus,
     status: "completed",
-    measuredValue: r.productionValue ?? undefined,
-    imageUrl: r.productionImageUrl ?? undefined,
+    measuredValue: item.measuredValue,
+    imageUrl: item.imageUrl,
   };
 }
 
 export default function InspectionMeasurePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const params = useParams<{ inspectionId: string }>();
   const inspectionId = Number(params.inspectionId);
   const { user } = useAuth();
 
+  // 측정 페이지 진입 직후 detail 도착 전까지 빈 화면 방지를 위한 임시 메타 정보 소스.
+  // 실제 측정 항목은 detail.results 로만 산출한다.
+  const stateInspection = useMemo<MyInspection | undefined>(() => {
+    const s = (location.state ?? {}) as MeasureLocationState;
+    return s.inspection?.inspectionId === inspectionId ? s.inspection : undefined;
+  }, [location.state, inspectionId]);
+
   const detailQuery = useInspectionDetail(inspectionId);
   const detail = detailQuery.data;
 
-  const sortedResults = useMemo<InspectionDetailResult[]>(
-    () =>
-      detail ? [...detail.results].sort((a, b) => a.dimNo - b.dimNo) : [],
-    [detail],
+  // TEMP DEBUG: 흰 화면 원인 추적용.
+  console.log("🟠 측정 페이지 진입");
+  console.log("🟠 location.state:", location.state);
+  console.log(
+    "🟠 detailQuery 상태:",
+    detailQuery.status,
+    "isLoading:",
+    detailQuery.isLoading,
+    "isFetching:",
+    detailQuery.isFetching,
   );
+
+  // GET /inspection/{id} 응답의 results 가 측정 항목의 single source of truth.
+  // 신규 검사도 백엔드가 results 를 미리 채워서 내려준다 (measuredValue/imageUrl=null).
+  const items = useMemo<MeasureItem[]>(() => {
+    if (!detail?.results?.length) return [];
+    return detail.results
+      .map<MeasureItem>((r) => ({
+        resultId: r.resultId,
+        dimNo: r.dimNo,
+        dimName: r.dimName,
+        standardValue: r.standardValue,
+        tolerancePlus: r.tolerancePlus,
+        toleranceMinus: r.toleranceMinus,
+        measuredValue: r.measuredValue ?? undefined,
+        imageUrl: r.imageUrl ?? undefined,
+      }))
+      .sort((a, b) => a.dimNo - b.dimNo);
+  }, [detail]);
 
   const firstEmptyIdx = useMemo(
-    () => sortedResults.findIndex((r) => !isResultDone(r)),
-    [sortedResults],
+    () => items.findIndex((it) => !isItemDone(it)),
+    [items],
   );
 
-  const allDone =
-    sortedResults.length > 0 && firstEmptyIdx === -1;
-  const startIdx = firstEmptyIdx === -1 ? sortedResults.length : firstEmptyIdx;
+  const allDone = items.length > 0 && firstEmptyIdx === -1;
+  const startIdx = firstEmptyIdx === -1 ? items.length : firstEmptyIdx;
 
   const [sessionResults, setSessionResults] = useState<StepResult[]>([]);
   const [phase, setPhase] = useState<Phase>("capture");
@@ -77,20 +122,24 @@ export default function InspectionMeasurePage() {
   const ocrImage = useOcrInspectionImage();
   const saveResults = useSaveInspectionResults(inspectionId);
 
+  // 메타 정보(설비명/제품명) 는 detail 우선, 없으면 location.state.inspection 에서.
+  const info = detail ?? stateInspection;
+
   useEffect(() => {
-    if (!detail || !allDone) return;
+    if (!info || !allDone) return;
     navigate(`/inspection/${inspectionId}/result`, {
       replace: true,
       state: {
-        results: sortedResults.map(toCompletedStep),
-        equipmentName: detail.equipment.name,
-        productName: detail.product.name,
+        results: items.map(toCompletedStep),
+        equipmentName: info.equipment.name,
+        productName: info.product.name,
         inspectorName: user?.name ?? "-",
       },
     });
-  }, [detail, allDone, sortedResults, inspectionId, navigate, user]);
+  }, [info, allDone, items, inspectionId, navigate, user]);
 
-  if (detailQuery.isLoading) {
+  // detail 이 아직 도착하지 않았으면 어떤 케이스든 로딩 UI. (stateInspection 만으로 항목 렌더하면 빈 화면 깜빡)
+  if (detailQuery.isLoading || (!detail && !detailQuery.isError)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
         불러오는 중...
@@ -98,7 +147,7 @@ export default function InspectionMeasurePage() {
     );
   }
 
-  if (!detail) {
+  if (!info) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
         <div className="text-sm font-medium text-[#212121]">
@@ -123,15 +172,16 @@ export default function InspectionMeasurePage() {
     );
   }
 
-  const totalSteps = sortedResults.length;
+  const totalSteps = items.length;
   const stepIndex = startIdx + sessionResults.length;
-  const currentDim = sortedResults[stepIndex];
+  const currentDim = items[stepIndex];
   const isLastDim = stepIndex === totalSteps - 1;
+  // 진행률은 "완료한 DIM 수" 기준 — 시작 직전 0%, 마지막 DIM 완료 시 100%.
   const progressPercent = totalSteps === 0
     ? 0
-    : Math.round(((stepIndex + 1) / totalSteps) * 100);
+    : Math.round((stepIndex / totalSteps) * 100);
 
-  const persistedDoneSteps = sortedResults.slice(0, startIdx).map(toCompletedStep);
+  const persistedDoneSteps = items.slice(0, startIdx).map(toCompletedStep);
   const allStepResults = [...persistedDoneSteps, ...sessionResults];
 
   const isSaving = saveResults.isPending;
@@ -150,14 +200,15 @@ export default function InspectionMeasurePage() {
       replace: true,
       state: {
         results: finalResults,
-        equipmentName: detail.equipment.name,
-        productName: detail.product.name,
+        equipmentName: info.equipment.name,
+        productName: info.product.name,
         inspectorName: user?.name ?? "-",
       },
     });
   };
 
   const handleCropConfirm = async (blob: Blob) => {
+    console.log("🟠 handleCropConfirm 진입 blob:", blob);
     console.info("[crop] confirm — blob size:", blob.size, "type:", blob.type);
     setCroppedBlob(blob);
     setUploadedImageUrl(null);
@@ -267,9 +318,9 @@ export default function InspectionMeasurePage() {
   return (
     <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-24">
       <section className="border-b border-gray-200 bg-white px-4 py-4">
-        <InfoRow label="기계명" value={detail.equipment.name} />
+        <InfoRow label="기계명" value={info.equipment.name} />
         <div className="mt-2 grid grid-cols-2 gap-2">
-          <Stat label="제품명" value={detail.product.name} />
+          <Stat label="제품명" value={info.product.name} />
           <Stat label="담당자" value={user?.name ?? "-"} />
         </div>
       </section>

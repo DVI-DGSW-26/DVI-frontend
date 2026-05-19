@@ -1,23 +1,42 @@
 import type { ApiResponse } from "../../auth/type/types";
 import type {
   MyInspection,
+  MyInspectionCustomer,
+  MyInspectionEquipment,
+  MyInspectionProduct,
   MyInspectionStatus,
 } from "../../my-inspection/type/types";
 
+// GET /inspection/{id} 응답의 results 한 항목.
 export interface InspectionDetailResult {
   resultId: number;
+  dimId: number;
   dimNo: number;
   dimName: string;
   standardValue: number;
   tolerancePlus: number;
   toleranceMinus: number;
-  productionValue: number | null;
-  productionImageUrl: string | null;
+  measuredValue: number | null;
+  imageUrl: string | null;
 }
 
-export type InspectionDetail = MyInspection & {
+// GET /inspection/{id} 응답 본체. MyInspection 과는 별개 (dims 없음, results 와 부가 필드 있음).
+export interface InspectionDetail {
+  inspectionId: number;
+  orderId: number;
+  type: string;
+  typeLabel: string;
+  inspectionTime: string | null;
+  product: MyInspectionProduct;
+  equipment: MyInspectionEquipment;
+  customer: MyInspectionCustomer;
   results: InspectionDetailResult[];
-};
+  appearanceResult: AppearanceResult | null;
+  status: MyInspectionStatus;
+  incompleteReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export type InspectionDetailApiResponse = ApiResponse<InspectionDetail>;
 

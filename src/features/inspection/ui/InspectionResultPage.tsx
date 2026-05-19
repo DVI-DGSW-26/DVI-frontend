@@ -1,12 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
 import {
   useCompleteInspection,
   useIncompleteInspection,
+  useInspectionDetail,
   useSaveInspectionResults,
 } from "../api";
+import { useAuth } from "../../auth/AuthContext";
 import type { AppearanceResult, ApiErrorData, StepResult } from "../type/types";
 import { formatStandardWithTolerance } from "../lib/format";
 import Toast from "./Toast";
@@ -34,12 +36,57 @@ export default function InspectionResultPage() {
   const location = useLocation();
   const params = useParams<{ inspectionId: string }>();
   const inspectionId = Number(params.inspectionId);
+  const { user } = useAuth();
 
   const state = (location.state ?? {}) as ResultLocationState;
-  const results = useMemo(() => state.results ?? [], [state.results]);
-  const equipmentName = state.equipmentName ?? "-";
-  const productName = state.productName ?? "-";
-  const inspectorName = state.inspectorName ?? "-";
+  const stateResults = useMemo(() => state.results ?? [], [state.results]);
+
+  // location.state 가 비어 있어도 (새로고침/뒤로가기/race 등) 동작하도록 detail 폴백.
+  const needsFallback = stateResults.length === 0;
+  const detailQuery = useInspectionDetail(
+    needsFallback ? inspectionId : undefined,
+  );
+  const detail = detailQuery.data;
+
+  // detail.results 를 StepResult[] 형태로 재구성 (MeasurePage items 매핑과 동일 규약).
+  const fallbackResults = useMemo<StepResult[]>(() => {
+    if (!needsFallback || !detail?.results?.length) return [];
+    return detail.results
+      .map<StepResult>((r) => {
+        const measured = r.measuredValue ?? undefined;
+        const imageUrl = r.imageUrl ?? undefined;
+        const done = measured != null && !!imageUrl;
+        return {
+          dimNo: r.dimNo,
+          dimName: r.dimName,
+          standardValue: r.standardValue,
+          tolerancePlus: r.tolerancePlus,
+          toleranceMinus: r.toleranceMinus,
+          status: done ? "completed" : "skipped",
+          measuredValue: measured,
+          imageUrl,
+        };
+      })
+      .sort((a, b) => a.dimNo - b.dimNo);
+  }, [needsFallback, detail]);
+
+  const results = needsFallback ? fallbackResults : stateResults;
+  const equipmentName =
+    state.equipmentName ?? detail?.equipment.name ?? "-";
+  const productName = state.productName ?? detail?.product.name ?? "-";
+  const inspectorName = state.inspectorName ?? user?.name ?? "-";
+
+  useEffect(() => {
+    console.log("🟢 결과 페이지 location.state:", location.state);
+    console.log("🟢 URL params:", params);
+    console.log("🟢 inspectionId:", inspectionId);
+    console.log("🟢 needsFallback:", needsFallback);
+    console.log("🟢 detail 데이터:", detail);
+    console.log("🟢 detailQuery.error:", detailQuery.error);
+    console.log("🟢 최종 results:", results);
+    // 의도적으로 빈 deps: mount 시 한 번. 이후 변화는 위의 다른 console.log 로 추적.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const completeMut = useCompleteInspection(inspectionId);
   const incompleteMut = useIncompleteInspection(inspectionId);
@@ -62,6 +109,14 @@ export default function InspectionResultPage() {
 
   const isBusy =
     completeMut.isPending || incompleteMut.isPending || saveMut.isPending;
+
+  if (needsFallback && detailQuery.isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
+        결과를 불러오는 중...
+      </div>
+    );
+  }
 
   if (results.length === 0) {
     return (

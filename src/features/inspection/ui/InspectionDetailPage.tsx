@@ -22,7 +22,8 @@ export default function InspectionDetailPage() {
 
   const myInspectionsQuery = useMyInspectionList();
   const inspection = useMemo<MyInspection | undefined>(() => {
-    if (state.inspection?.inspectionId === inspectionId) return state.inspection;
+    if (state.inspection?.inspectionId === inspectionId)
+      return state.inspection;
     return myInspectionsQuery.data?.find(
       (i) => i.inspectionId === inspectionId,
     );
@@ -30,7 +31,9 @@ export default function InspectionDetailPage() {
 
   const sortedDims = useMemo(
     () =>
-      inspection ? [...inspection.dims].sort((a, b) => a.dimNo - b.dimNo) : [],
+      inspection
+        ? [...(inspection.dims ?? [])].sort((a, b) => a.dimNo - b.dimNo)
+        : [],
     [inspection],
   );
 

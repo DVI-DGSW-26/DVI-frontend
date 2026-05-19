@@ -33,6 +33,15 @@ export default defineConfig({
       [BACKEND_PROXY_RE]: {
         target: 'http://112.146.55.78:3378',
         changeOrigin: true,
+        // 브라우저 네비게이션(HTML 요청)은 백엔드로 보내지 않고 SPA fallback 으로 처리.
+        // 예: /inspection/5/measure 는 React Router 라우트인데 prefix 가 /inspection 이라
+        // 그대로 proxy 하면 백엔드가 401/404 를 반환함.
+        bypass: (req) => {
+          if (req.method === 'GET' && req.headers.accept?.includes('text/html')) {
+            return req.url;
+          }
+          return null;
+        },
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq) => {
             proxyReq.removeHeader('origin');
