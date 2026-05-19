@@ -2,7 +2,8 @@ import { useMemo } from "react";
 import { Icon } from "@iconify/react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
-import { useNotifications } from "../../notification/api";
+import { useMarkAsRead, useNotifications } from "../../notification/api";
+import type { NotificationResponse } from "../../notification/api";
 import {
   useAssignedCrossChecks,
   useMyCrossChecks,
@@ -28,8 +29,18 @@ const QualityHomePage = () => {
   const { data: myCrossChecks = [] } = useMyCrossChecks();
   const { data: delegation } = useMyDelegation();
   const { data: notifications = [] } = useNotifications();
+  const markAsRead = useMarkAsRead();
 
   const pendingCount = assigned.length;
+
+  const handleNotificationClick = (n: NotificationResponse) => {
+    if (!n.isRead) markAsRead.mutate(n.id);
+    if (/순회검사|확인/.test(n.title)) {
+      navigate("/cross-checks");
+    } else {
+      navigate("/notifications");
+    }
+  };
 
   const latestDraft = useMemo(
     () =>
@@ -144,7 +155,8 @@ const QualityHomePage = () => {
             {recentNotifications.map((n) => (
               <li
                 key={n.id}
-                className="flex items-start gap-3 rounded-2xl bg-white p-3 shadow-sm"
+                onClick={() => handleNotificationClick(n)}
+                className="flex cursor-pointer items-start gap-3 rounded-2xl bg-white p-3 shadow-sm transition-colors hover:bg-[#F9FAFB]"
               >
                 <Icon
                   icon={

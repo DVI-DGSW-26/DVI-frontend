@@ -7,6 +7,8 @@ import tailwindcss from '@tailwindcss/vite'
 const BACKEND_PREFIXES = [
   'inspection-order',
   'inspection',
+  'cross-check',
+  'delegation',
   'notification',
   'incomplete',
   'equipment',
