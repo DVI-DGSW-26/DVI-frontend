@@ -10,7 +10,7 @@ import {
 } from "../api";
 import { useAuth } from "../../auth/AuthContext";
 import type { AppearanceResult, ApiErrorData, StepResult } from "../type/types";
-import { formatStandardWithTolerance } from "../lib/format";
+import { dimDisplayName, formatStandardWithTolerance } from "../lib/format";
 import Toast from "./Toast";
 
 interface ResultLocationState {
@@ -95,6 +95,7 @@ export default function InspectionResultPage() {
   const [reasonKey, setReasonKey] = useState<string>("");
   const [customReason, setCustomReason] = useState("");
   const [appearance, setAppearance] = useState<AppearanceResult | null>(null);
+  const [note, setNote] = useState<string>("");
   const [toast, setToast] = useState<string | null>(null);
 
   const hasSkipped = useMemo(
@@ -140,8 +141,14 @@ export default function InspectionResultPage() {
 
   const handleComplete = async () => {
     if (!appearance) return;
+    const trimmedNote = note.trim();
     try {
-      await saveMut.mutateAsync({ results: [], appearanceResult: appearance });
+      await saveMut.mutateAsync({
+        results: [],
+        appearanceResult: appearance,
+        // 빈 문자열은 보내지 않는다 — 백엔드가 optional 처리하므로.
+        ...(trimmedNote ? { note: trimmedNote } : {}),
+      });
       await completeMut.mutateAsync();
       setToast("검사가 완료되었습니다");
       setTimeout(() => navigate("/", { replace: true }), 1200);
@@ -219,6 +226,29 @@ export default function InspectionResultPage() {
               );
             })}
           </div>
+        </div>
+
+        <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4">
+          <label
+            htmlFor="inspection-note"
+            className="block text-xs font-medium text-[#6B7280]"
+          >
+            비고 (선택)
+          </label>
+          <p className="mt-0.5 text-[11px] text-[#9CA3AF]">
+            설비 이상이나 측정 특이사항을 적어두면 보고서 비고란에 그대로
+            표시됩니다.
+          </p>
+          <textarea
+            id="inspection-note"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="예: 게이지 교체 직후 측정"
+            disabled={isBusy}
+            rows={3}
+            maxLength={500}
+            className="mt-2 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+          />
         </div>
 
         {hasSkipped && (
@@ -303,7 +333,7 @@ function StepResultCard({ step, result }: { step: number; result: StepResult }) 
           Step {step}
         </span>
         <span className="text-sm font-medium text-[#212121]">
-          {result.dimName}
+          {dimDisplayName(result)}
         </span>
       </div>
       <div className="mt-1 text-sm text-[#6B7280]">{dimText}</div>
@@ -314,7 +344,7 @@ function StepResultCard({ step, result }: { step: number; result: StepResult }) 
             <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-[#F9FAFB]">
               <img
                 src={result.imageUrl}
-                alt={`${result.dimName} 측정 사진`}
+                alt={`${dimDisplayName(result)} 측정 사진`}
                 className="block aspect-square w-full object-contain"
               />
             </div>
@@ -368,6 +398,8 @@ function toErrorMessage(err: unknown): string {
     const data = err.response?.data as ApiErrorData | undefined;
     const code = data?.code;
     if (code === "RESULTS_NOT_COMPLETE") return "미입력 측정값이 있습니다";
+    if (code === "APPEARANCE_REQUIRED")
+      return "외관 검사 결과를 선택해주세요.";
     return data?.message ?? "요청 처리 중 오류가 발생했습니다.";
   }
   if (err instanceof Error) return err.message;

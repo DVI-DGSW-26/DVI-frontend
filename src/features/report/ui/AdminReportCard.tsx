@@ -5,6 +5,7 @@ const PROCESS_LABEL: Record<ReportProcess, string> = {
   AL_CUTTING: "AL절단공정",
   ST_CUTTING: "ST절단공정",
   MACHINING: "가공공정",
+  PRESS: "프레스공정",
 };
 
 function formatDateTime(iso: string) {

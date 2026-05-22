@@ -10,6 +10,7 @@ const PROCESS_LABEL: Record<ReportProcess, string> = {
   AL_CUTTING: "AL절단",
   ST_CUTTING: "ST절단",
   MACHINING: "가공",
+  PRESS: "프레스",
 };
 
 const INSPECTION_CATEGORIES = [

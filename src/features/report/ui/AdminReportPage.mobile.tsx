@@ -10,6 +10,7 @@ const PROCESS_OPTIONS: MultiOption[] = [
   { value: "AL_CUTTING", label: "AL절단" },
   { value: "ST_CUTTING", label: "ST절단" },
   { value: "MACHINING", label: "가공" },
+  { value: "PRESS", label: "프레스" },
 ];
 
 const AdminReportPageMobile = () => {

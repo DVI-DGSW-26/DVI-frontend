@@ -13,7 +13,9 @@ import SlotItem, { type SlotStatus } from "./SlotItem";
 import Toast from "./Toast";
 
 interface ScanLocationState {
-  orderId?: number;
+  // POST /inspection 에 필요한 필수 컨텍스트.
+  productId?: number;
+  equipmentId?: number;
   process?: InspectionProcess;
   qualityName?: string;
 }
@@ -27,8 +29,9 @@ export default function ScanPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state ?? {}) as ScanLocationState;
-  const { orderId, process, qualityName } = state;
-  const hasContext = !!orderId && !!process;
+  const { productId, equipmentId, process, qualityName } = state;
+  // POST /inspection 명세상 productId/equipmentId/type 이 필수.
+  const hasContext = !!productId && !!equipmentId && !!process;
 
   const [toast, setToast] = useState<ToastInfo | null>(null);
   const [pendingType, setPendingType] = useState<string | null>(null);
@@ -41,13 +44,19 @@ export default function ScanPage() {
 
   const slots = useMemo(() => slotsQuery.data ?? [], [slotsQuery.data]);
 
+  // 같은 제품/설비 콘텍스트의 기존 검사를 시점별로 매핑.
   const inspectionByType = useMemo(() => {
     const map = new Map<string, MyInspection>();
     for (const ins of myInspectionsQuery.data ?? []) {
-      if (ins.orderId === orderId) map.set(ins.type, ins);
+      if (
+        ins.product?.id === productId &&
+        ins.equipment?.id === equipmentId
+      ) {
+        map.set(ins.type, ins);
+      }
     }
     return map;
-  }, [myInspectionsQuery.data, orderId]);
+  }, [myInspectionsQuery.data, productId, equipmentId]);
 
   // 시점 순서는 GET /inspection/slots 응답 순서를 따른다.
   // 본인 상태 우선 — COMPLETED / DRAFT / INCOMPLETE / INCOMPLETE_APPROVED.
@@ -85,10 +94,14 @@ export default function ScanPage() {
   };
 
   const startNewInspection = async (type: string) => {
-    if (!orderId) return;
+    if (!productId || !equipmentId) return;
     setPendingType(type);
     try {
-      const inspection = await startMutation.mutateAsync({ orderId, type });
+      const inspection = await startMutation.mutateAsync({
+        productId,
+        equipmentId,
+        type,
+      });
       // POST 성공 — 상세 화면으로 보내서 측정 시작 전 미리보기 단계 거치게 한다.
       navigate(`/inspection/${inspection.inspectionId}`, {
         replace: true,
@@ -142,12 +155,26 @@ export default function ScanPage() {
         });
         return;
       }
+      if (code === "PRODUCT_NOT_FOUND") {
+        setToast({
+          code: "PRODUCT_NOT_FOUND",
+          message: "선택한 제품을 찾을 수 없습니다.",
+        });
+        return;
+      }
+      if (code === "EQUIPMENT_NOT_FOUND") {
+        setToast({
+          code: "EQUIPMENT_NOT_FOUND",
+          message: "선택한 설비를 찾을 수 없습니다.",
+        });
+        return;
+      }
     }
     setToast({ message: "검사를 시작하지 못했습니다." });
   };
 
   const handleSlotTap = (type: string) => {
-    if (!orderId) return;
+    if (!productId || !equipmentId) return;
     const status = getSlotStatus(type);
     const ins = inspectionByType.get(type);
 
@@ -177,17 +204,18 @@ export default function ScanPage() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
         <div className="text-sm font-medium text-[#212121]">
-          시작할 검사 지시를 먼저 선택해주세요.
+          제품과 설비를 먼저 선택해주세요.
         </div>
         <p className="mt-1 text-xs text-[#6B7280]">
-          홈 화면의 "오늘 할 검사"에서 검사 항목을 탭하면 시간대 선택으로 이동합니다.
+          "검사 시작" 화면에서 제품 → 설비를 선택하면 시간대 선택으로
+          이동합니다.
         </p>
         <button
           type="button"
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/start-inspection", { replace: true })}
           className="mt-4 h-10 rounded-md bg-[#931B82] px-4 text-sm font-medium text-white hover:bg-[#6A0F5D]"
         >
-          홈으로 가기
+          검사 시작 화면으로
         </button>
       </div>
     );

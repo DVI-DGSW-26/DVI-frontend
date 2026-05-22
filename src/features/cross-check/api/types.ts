@@ -16,7 +16,8 @@ export type ProcessType =
   | "EXTRUSION"
   | "AL_CUTTING"
   | "ST_CUTTING"
-  | "MACHINING";
+  | "MACHINING"
+  | "PRESS";
 
 export interface ProductInfo {
   id: number;

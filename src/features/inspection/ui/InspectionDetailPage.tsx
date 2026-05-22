@@ -3,7 +3,11 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { useMyInspectionList } from "../../my-inspection/api";
 import type { MyInspection } from "../../my-inspection/type/types";
-import { formatInspectionTime, formatTolerance } from "../lib/format";
+import {
+  dimDisplayName,
+  formatInspectionTime,
+  formatTolerance,
+} from "../lib/format";
 import { getProcessLabel } from "../lib/process";
 import SketchImage from "./SketchImage";
 
@@ -130,7 +134,7 @@ export default function InspectionDetailPage() {
                     DIM {dim.dimNo}
                   </span>
                   <span className="truncate text-sm font-medium text-[#212121]">
-                    {dim.dimName}
+                    {dimDisplayName(dim)}
                   </span>
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-2 text-xs">

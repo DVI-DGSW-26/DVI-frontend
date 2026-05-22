@@ -3,11 +3,13 @@
  * /inspection-order, /inspection/slots, POST /inspection, /inspection/my
  * 4개 엔드포인트를 가짜 응답으로 처리한다.
  *
- * 홈 카드 트리거 (orderId 별 동작):
+ * POST /inspection 트리거 (productId 별 동작):
  *  - 9001  → POST 성공
  *  - 9403  → 403 NOT_ASSIGNED_PRODUCTION
  *  - 9400  → 400 INVALID_INSPECTION_TYPE
  *  - 9409  → 409 INSPECTION_ALREADY_EXISTS (existingInspectionId 8888)
+ *  - 9404  → 404 PRODUCT_NOT_FOUND
+ *  - 9405  → 404 EQUIPMENT_NOT_FOUND
  */
 import axios, { AxiosError } from "axios";
 import type {
@@ -78,10 +80,12 @@ const baseSlots: InspectionSlot[] = [
 ];
 
 const mockSlotsByProcess: Record<InspectionProcess, InspectionSlot[]> = {
-  EXTRUSION: baseSlots,
+  EXTRUSION: baseSlots.slice(0, 3),
   AL_CUTTING: baseSlots,
   ST_CUTTING: baseSlots,
-  MACHINING: baseSlots.slice(0, 3),
+  MACHINING: baseSlots,
+  // PRESS 는 EXTRUSION 과 동일하게 DAY_1~3 만.
+  PRESS: baseSlots.slice(0, 3),
 };
 
 function makeMyInspection(
@@ -296,11 +300,9 @@ function tryMock(
   if (method === "post" && url === "/inspection") {
     const body = parseBody<StartInspectionRequest>(config.data);
     const slot = baseSlots.find((s) => s.type === body.type) ?? baseSlots[0];
-    const order = mockOrders.find((o) => o.id === body.orderId);
-    const process =
-      (order?.product.process as InspectionProcess) ?? "EXTRUSION";
 
-    switch (body.orderId) {
+    // mock 트리거: productId 로 에러 케이스 시뮬레이션. 9001 / 9400 / 9403 / 9409 동일.
+    switch (body.productId) {
       case 9403:
         return Promise.reject(
           (() =>
@@ -332,10 +334,33 @@ function tryMock(
               { inspectionId: 8888 },
             ))(),
         );
+      case 9404:
+        return Promise.reject(
+          (() =>
+            rejectMock(
+              config,
+              404,
+              "PRODUCT_NOT_FOUND",
+              "선택한 제품을 찾을 수 없습니다.",
+            ))(),
+        );
+      case 9405:
+        return Promise.reject(
+          (() =>
+            rejectMock(
+              config,
+              404,
+              "EQUIPMENT_NOT_FOUND",
+              "선택한 설비를 찾을 수 없습니다.",
+            ))(),
+        );
       default: {
+        const order = mockOrders.find((o) => o.id === body.productId);
+        const process =
+          (order?.product.process as InspectionProcess) ?? "EXTRUSION";
         const inspection = makeMyInspection(
           Math.floor(Math.random() * 9000) + 1000,
-          body.orderId,
+          body.productId,
           body.type,
           slot.label,
           slot.time,

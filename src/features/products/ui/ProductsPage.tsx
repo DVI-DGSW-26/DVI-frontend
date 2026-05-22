@@ -10,7 +10,7 @@ import type { ProductListItem } from "../api";
 import { PROCESS_OPTIONS, processLabel } from "../lib/processLabels";
 import ProductFormDrawer from "./ProductFormDrawer";
 
-type ProcessFilter = "ALL" | "EXTRUSION" | "AL_CUTTING" | "ST_CUTTING" | "MACHINING";
+type ProcessFilter = "ALL" | "EXTRUSION" | "AL_CUTTING" | "ST_CUTTING" | "MACHINING" | "PRESS";
 
 const FILTERS: { value: ProcessFilter; label: string }[] = [
   { value: "ALL", label: "전체" },
@@ -22,6 +22,7 @@ const PROCESS_BADGE_STYLE: Record<string, string> = {
   AL_CUTTING: "bg-[#DCFCE7] text-[#15803D]",
   ST_CUTTING: "bg-[#FEF3C7] text-[#B45309]",
   MACHINING: "bg-[#F3E8F7] text-[#931B82]",
+  PRESS: "bg-[#FFE4E6] text-[#BE123C]",
 };
 
 function processBadge(process: string) {
@@ -79,6 +80,7 @@ export default function ProductsPage() {
       AL_CUTTING: 0,
       ST_CUTTING: 0,
       MACHINING: 0,
+      PRESS: 0,
     };
     for (const p of products) {
       if (p.process in c) c[p.process] += 1;
