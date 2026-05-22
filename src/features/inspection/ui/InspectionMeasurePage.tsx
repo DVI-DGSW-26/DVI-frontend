@@ -10,7 +10,7 @@ import {
 } from "../api";
 import type { ApiErrorData, StepResult } from "../type/types";
 import type { MyInspection } from "../../my-inspection/type/types";
-import { formatStandardWithTolerance } from "../lib/format";
+import { dimDisplayName, formatStandardWithTolerance } from "../lib/format";
 import CapturePhase from "./CapturePhase";
 import CropPhase from "./CropPhase";
 import InputPhase from "./InputPhase";
@@ -19,10 +19,11 @@ import Toast from "./Toast";
 type Phase = "capture" | "crop" | "input";
 
 // 두 진입 경로(POST 응답의 dims / GET 응답의 results)를 모두 받기 위한 정규화 형태.
+// dimName 은 응답에 빠질 수 있어 optional — 표시 시 dimDisplayName() 으로 fallback.
 interface MeasureItem {
   resultId: number;
   dimNo: number;
-  dimName: string;
+  dimName?: string;
   standardValue: number;
   tolerancePlus: number;
   toleranceMinus: number;
@@ -347,7 +348,7 @@ export default function InspectionMeasurePage() {
               DIM {currentDim.dimNo}
             </span>
             <span className="text-sm font-medium text-[#212121]">
-              {currentDim.dimName}
+              {dimDisplayName(currentDim)}
             </span>
           </div>
           <div className="mt-1 text-base font-semibold text-[#212121]">

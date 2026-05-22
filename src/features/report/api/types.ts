@@ -2,7 +2,8 @@ export type ReportProcess =
   | "EXTRUSION"
   | "AL_CUTTING"
   | "ST_CUTTING"
-  | "MACHINING";
+  | "MACHINING"
+  | "PRESS";
 
 export type ReportInspectionType =
   | "DAY_1"

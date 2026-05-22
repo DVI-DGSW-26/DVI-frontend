@@ -30,3 +30,14 @@ export function formatStandardWithTolerance(
   if (plus === minus) return `${fmt(standard)} ±${fmt(plus)}`;
   return `${fmt(standard)} +${fmt(plus)}/-${fmt(minus)}`;
 }
+
+// 응답에 dimName 이 빠질 수 있어 화면 표시용 fallback.
+// `DIM 1` 처럼 dimNo 기반 라벨로 대체. 빈 문자열도 "없음"으로 본다.
+export function dimDisplayName(dim: {
+  dimName?: string | null;
+  dimNo: number;
+}): string {
+  const name = dim.dimName?.trim();
+  if (name) return name;
+  return `DIM ${dim.dimNo}`;
+}

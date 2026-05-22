@@ -1,7 +1,5 @@
 import { http } from "../../../lib/http";
 import type {
-  AssignedSlot,
-  AssignedSlotListResponse,
   MyInspection,
   MyInspectionListResponse,
 } from "../type/types";
@@ -17,11 +15,5 @@ export async function getMyInspections(
   const { data } = await http.get<MyInspectionListResponse>("/inspection/my", {
     params: opts.includeFinished ? { includeFinished: true } : undefined,
   });
-  return data.data ?? [];
-}
-
-export async function getAssignedInspections(): Promise<AssignedSlot[]> {
-  const { data } =
-    await http.get<AssignedSlotListResponse>("/inspection/assigned");
   return data.data ?? [];
 }

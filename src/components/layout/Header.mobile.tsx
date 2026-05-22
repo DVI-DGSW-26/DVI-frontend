@@ -13,6 +13,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/qm-reports": "보고서",
   "/inspections": "현황",
   "/scan": "품질검사시스템",
+  "/start-inspection": "검사 시작",
   "/products": "제품관리",
   "/equipment": "설비관리",
   "/customers": "고객사 관리",

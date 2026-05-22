@@ -1,12 +1,14 @@
 import type { MyInspection } from "../type/types";
 
-export type Tab = "ALL" | "PENDING" | "IN_PROGRESS" | "COMPLETED";
+// /inspection/assigned 제거 이후 탭 구성: 전체 / 진행 중 / 완료 / 미완료.
+// INCOMPLETE 탭은 status === "INCOMPLETE" || "INCOMPLETE_APPROVED" 둘 다 포함.
+export type Tab = "ALL" | "IN_PROGRESS" | "COMPLETED" | "INCOMPLETE";
 
 export const TABS: { key: Tab; label: string }[] = [
   { key: "ALL", label: "전체" },
-  { key: "PENDING", label: "대기" },
   { key: "IN_PROGRESS", label: "진행 중" },
   { key: "COMPLETED", label: "완료" },
+  { key: "INCOMPLETE", label: "미완료" },
 ];
 
 export interface StatusBadge {
