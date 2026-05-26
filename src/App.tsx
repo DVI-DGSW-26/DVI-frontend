@@ -12,6 +12,8 @@ import InspectionResultPage from "./features/inspection/ui/InspectionResultPage"
 
 import QualitySystemStatusPage from "./features/cross-check/ui/QualitySystemStatusPage"
 import CrossCheckPendingPage from "./features/cross-check/ui/CrossCheckPendingPage"
+import CrossCheckMeasurePage from "./features/cross-check/ui/CrossCheckMeasurePage"
+import CrossCheckResultPage from "./features/cross-check/ui/CrossCheckResultPage"
 import QualityHomePage from "./features/cross-check/ui/QualityHomePage"
 
 function App() {
@@ -35,6 +37,16 @@ function App() {
               <Route
                 path="/cross-checks"
                 element={<CrossCheckPendingPage />}
+              />
+
+              <Route
+                path="/cross-check/:crossCheckId/measure"
+                element={<CrossCheckMeasurePage />}
+              />
+
+              <Route
+                path="/cross-check/:crossCheckId/result"
+                element={<CrossCheckResultPage />}
               />
 
               <Route path="/scan" element={<ScanPage />} />
