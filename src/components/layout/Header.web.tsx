@@ -11,6 +11,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/products": "제품관리",
   "/equipment": "설비관리",
   "/customers": "고객사 관리",
+  "/my-page": "마이페이지",
 };
 
 const HeaderWeb = () => {

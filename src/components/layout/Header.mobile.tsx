@@ -20,6 +20,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/notifications": "알림",
   "/cross-checks": "순회검사 대기",
   "/quality-status": "품질 시스템 현황",
+  "/my-page": "마이페이지",
 };
 
 const HeaderMobile = () => {
