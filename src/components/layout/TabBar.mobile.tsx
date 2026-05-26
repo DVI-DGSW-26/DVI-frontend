@@ -12,6 +12,22 @@ type TabItem = {
 };
 
 const TABS: TabItem[] = [
+  { label: "대시보드", to: "/", icon: "flowbite:home-solid", roles: ["ADMIN"] },
+  { label: "사용자 검색", to: "/userSearch", icon: "mdi:people", roles: ["ADMIN"] },
+  { label: "가입승인", to: "/approval", icon: "fluent:shield-task-48-filled", roles: ["ADMIN"] },
+  { label: "검사보고서", to: "/reports", icon: "basil:document-solid", roles: ["ADMIN"] },
+
+  { label: "검사지시관리", to: "/inspection-orders", icon: "mdi:clipboard-text", roles: ["QUALITY_ADMIN"] },
+  { label: "승인관리", to: "/approval-management", icon: "fluent:shield-task-48-filled", roles: ["QUALITY_ADMIN"] },
+  { label: "보고서", to: "/qm-reports", icon: "basil:document-solid", roles: ["QUALITY_ADMIN"] },
+  { label: "제품관리", to: "/products", icon: "mdi:cube", roles: ["QUALITY_ADMIN"] },
+  { label: "설비관리", to: "/equipment", icon: "mdi:factory", roles: ["QUALITY_ADMIN"] },
+  { label: "고객사 관리", to: "/customers", icon: "mdi:office-building", roles: ["QUALITY_ADMIN"] },
+
+  { label: "홈", to: "/", icon: "flowbite:home-solid", roles: ["PRODUCTION"], iconSize: 34 },
+  { label: "검사이력", to: "/inspections", icon: "icon-park-outline:big-clock", roles: ["PRODUCTION"] },
+  { label: "스캔", to: "/scan", icon: "carbon:scan-alt", roles: ["PRODUCTION"] },
+
   { label: "홈", to: "/", icon: "flowbite:home-solid", roles: ["QUALITY"], iconSize: 34 },
   { label: "품질 시스템 현황", to: "/quality-status", icon: "mdi:chart-line", roles: ["QUALITY"] },
   { label: "순회검사 대기", to: "/cross-checks", icon: "icon-park-outline:big-clock", roles: ["QUALITY"] },
