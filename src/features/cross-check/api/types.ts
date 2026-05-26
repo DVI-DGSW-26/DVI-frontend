@@ -90,6 +90,9 @@ export interface CrossCheckResultInfo {
   standardValue: number;
   tolerancePlus: number;
   toleranceMinus: number;
+  // 자주검사 단계에서 작업자가 입력한 측정값/사진. 순회검사 측정 시 참고용.
+  productionValue: number | null;
+  productionImageUrl: string | null;
   measuredValue: number | null;
   imageUrl: string | null;
 }
