@@ -19,6 +19,8 @@ export type ReportInspectionType =
 
 export type JudgeResult = "PASS" | "FAIL";
 
+export type AppearanceResult = "OK" | "NG";
+
 export interface ReportSummary {
   id: number;
   reportNumber: string;
@@ -47,10 +49,13 @@ export interface ReportResultItem {
   qualityValue: number;
   productionImageUrl: string;
   qualityImageUrl: string;
+  result: JudgeResult;
 }
 
 export interface ReportDetail extends ReportSummary {
   sketchUrl: string;
   inspectionTime: string;
+  productionAppearanceResult: AppearanceResult | null;
+  qualityAppearanceResult: AppearanceResult | null;
   results: ReportResultItem[];
 }
