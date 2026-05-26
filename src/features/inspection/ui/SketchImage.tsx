@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Icon } from "@iconify/react";
+import { toBackendImageUrl } from "../../../lib/imageUrl";
 
 interface Props {
   src: string;
@@ -7,7 +8,8 @@ interface Props {
 }
 
 export default function SketchImage({ src, alt }: Props) {
-  return <SketchImageInner key={src} src={src} alt={alt} />;
+  const resolved = toBackendImageUrl(src) ?? "";
+  return <SketchImageInner key={resolved} src={resolved} alt={alt} />;
 }
 
 function SketchImageInner({ src, alt }: Props) {

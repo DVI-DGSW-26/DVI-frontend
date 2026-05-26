@@ -9,6 +9,7 @@ import type {
   ReportResultItem,
 } from "../api/types";
 import { downloadReportPdf } from "../lib/downloadReportPdf";
+import { toBackendImageUrl } from "../../../lib/imageUrl";
 
 const PROCESS_LABEL: Record<ReportProcess, string> = {
   EXTRUSION: "압출",
@@ -138,7 +139,7 @@ const MeasureCard = ({
       <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#F5F5F5]">
         {imageUrl ? (
           <img
-            src={imageUrl}
+            src={toBackendImageUrl(imageUrl)}
             alt={`DIM ${item.dimNo} 측정 사진`}
             className="h-full w-full object-cover"
           />
@@ -284,7 +285,7 @@ const AdminReportDetailPageWeb = () => {
           <div className="flex aspect-4/3 w-full items-center justify-center overflow-hidden rounded-xl bg-[#F5F5F5]">
             {data.sketchUrl ? (
               <img
-                src={data.sketchUrl}
+                src={toBackendImageUrl(data.sketchUrl)}
                 alt={`${data.reportNumber} 스케치`}
                 className="h-full w-full object-contain"
               />

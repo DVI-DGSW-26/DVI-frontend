@@ -14,6 +14,7 @@ import {
 import Toast from "../../inspection/ui/Toast";
 import { useCrossCheckDetail, useSaveCrossCheckResults } from "../api";
 import type { AppearanceResult } from "../api";
+import { toBackendImageUrl } from "../../../lib/imageUrl";
 
 interface ResultLocationState {
   results?: StepResult[];
@@ -293,7 +294,7 @@ function StepResultCard({
           {result.imageUrl && (
             <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-[#F9FAFB]">
               <img
-                src={result.imageUrl}
+                src={toBackendImageUrl(result.imageUrl)}
                 alt={`${dimDisplayName(result)} 측정 사진`}
                 className="block aspect-square w-full object-contain"
               />
