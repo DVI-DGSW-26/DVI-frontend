@@ -32,7 +32,10 @@ export default function Login() {
 
   const handleSubmit = async () => {
     try {
-      const me = await login({ loginId: username, password });
+      const me = await login({
+        loginId: username.trim(),
+        password: password.trim(),
+      });
       navigate(ROLE_HOME[me.role] ?? "/");
     } catch (err) {
       if (err instanceof AuthError) {
