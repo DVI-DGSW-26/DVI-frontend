@@ -1,6 +1,7 @@
 import SignupForm from "./features/auth/ui/SignupForm";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LoginForm from "./features/auth/ui/LoginForm";
+import MyPage from "./features/auth/ui/MyPage";
 import Layout from "./components/layout/Layout";
 import RouteGuard from "./features/auth/RouteGuard";
 import NotificationPage from "./features/notification/ui/NotificationPage";
@@ -53,6 +54,7 @@ function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/notifications" element={<NotificationPage />} />
+            <Route path="/my-page" element={<MyPage />} />
 
             <Route element={<RouteGuard roles={["ADMIN"]} />}>
               <Route path="/dashboard" element={<DashboardPage />} />
