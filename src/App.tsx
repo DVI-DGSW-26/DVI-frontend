@@ -1,121 +1,145 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import SignupForm from "./features/auth/ui/SignupForm";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import LoginForm from "./features/auth/ui/LoginForm";
+import MyPage from "./features/auth/ui/MyPage";
+import Layout from "./components/layout/Layout";
+import RouteGuard from "./features/auth/RouteGuard";
+import NotificationPage from "./features/notification/ui/NotificationPage";
+import ApprovalManagementPage from "./features/incomplete/ui/ApprovalManagementPage";
+import AccountApprovalPage from "./features/account-approval/ui/AccountApprovalPage";
+import InspectionOrdersPage from "./features/inspection-orders/ui/InspectionOrdersPage";
+import ReportPage from "./features/report/ui/ReportPage";
+import MyInspectionPage from "./features/my-inspection/ui/MyInspectionPage";
+import ProductionHomePage from "./features/my-inspection/ui/ProductionHomePage";
+import ScanPage from "./features/inspection/ui/ScanPage";
+import StartInspectionPage from "./features/inspection/ui/StartInspectionPage";
+import InspectionDetailPage from "./features/inspection/ui/InspectionDetailPage";
+import InspectionMeasurePage from "./features/inspection/ui/InspectionMeasurePage";
+import InspectionResultPage from "./features/inspection/ui/InspectionResultPage";
+import ProductsPage from "./features/products/ui/ProductsPage";
+import EquipmentPage from "./features/equipment/ui/EquipmentPage";
+import CustomersPage from "./features/customers/ui/CustomersPage";
 
-function App() {
-  const [count, setCount] = useState(0)
+import AdminUserSearchPage from "./features/user-search/ui/AdminUserSearchPage";
+import AdminReportPage from "./features/report/ui/AdminReportPage";
+import AdminReportDetailPage from "./features/report/ui/AdminReportDetailPage";
+import DashboardPage from "./features/dashboard/ui/DashboardPage";
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+import QualitySystemStatusPage from "./features/cross-check/ui/QualitySystemStatusPage";
+import CrossCheckPendingPage from "./features/cross-check/ui/CrossCheckPendingPage";
+import CrossCheckMeasurePage from "./features/cross-check/ui/CrossCheckMeasurePage";
+import CrossCheckResultPage from "./features/cross-check/ui/CrossCheckResultPage";
+import QualityHomePage from "./features/cross-check/ui/QualityHomePage";
 
-      <div className="ticks"></div>
+import { useAuth } from "./features/auth/AuthContext";
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+function HomePage() {
+  const { user } = useAuth();
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+  if (user?.role === "PRODUCTION") return <ProductionHomePage />;
+  if (user?.role === "ADMIN") return <DashboardPage />;
+  if (user?.role === "QUALITY") return <QualityHomePage />;
+
+  return <div className="p-6">홈</div>;
 }
 
-export default App
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/signup" element={<SignupForm />} />
+        <Route path="/login" element={<LoginForm />} />
+
+        <Route element={<RouteGuard />}>
+          <Route element={<Layout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/notifications" element={<NotificationPage />} />
+            <Route path="/my-page" element={<MyPage />} />
+
+            <Route element={<RouteGuard roles={["ADMIN"]} />}>
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/userSearch" element={<AdminUserSearchPage />} />
+
+              <Route path="/approval" element={<AccountApprovalPage />} />
+
+              <Route path="/reports" element={<AdminReportPage />} />
+              <Route
+                path="/reports/:reportId"
+                element={<AdminReportDetailPage />}
+              />
+            </Route>
+
+            <Route element={<RouteGuard roles={["QUALITY_ADMIN"]} />}>
+              <Route
+                path="/inspection-orders"
+                element={<InspectionOrdersPage />}
+              />
+
+              <Route
+                path="/approval-management"
+                element={<ApprovalManagementPage />}
+              />
+
+              <Route path="/qm-reports" element={<ReportPage />} />
+              <Route path="/products" element={<ProductsPage />} />
+              <Route path="/equipment" element={<EquipmentPage />} />
+              <Route path="/customers" element={<CustomersPage />} />
+            </Route>
+
+            <Route element={<RouteGuard roles={["QUALITY"]} />}>
+              <Route
+                path="/quality-status"
+                element={<QualitySystemStatusPage />}
+              />
+
+              <Route
+                path="/cross-checks"
+                element={<CrossCheckPendingPage />}
+              />
+
+              <Route
+                path="/cross-check/:crossCheckId/measure"
+                element={<CrossCheckMeasurePage />}
+              />
+
+              <Route
+                path="/cross-check/:crossCheckId/result"
+                element={<CrossCheckResultPage />}
+              />
+            </Route>
+
+            <Route element={<RouteGuard roles={["PRODUCTION"]} />}>
+              <Route path="/inspections" element={<MyInspectionPage />} />
+            </Route>
+
+            <Route element={<RouteGuard roles={["PRODUCTION", "QUALITY"]} />}>
+              <Route path="/scan" element={<ScanPage />} />
+
+              <Route
+                path="/start-inspection"
+                element={<StartInspectionPage />}
+              />
+
+              <Route
+                path="/inspection/:inspectionId"
+                element={<InspectionDetailPage />}
+              />
+
+              <Route
+                path="/inspection/:inspectionId/measure"
+                element={<InspectionMeasurePage />}
+              />
+
+              <Route
+                path="/inspection/:inspectionId/result"
+                element={<InspectionResultPage />}
+              />
+            </Route>
+          </Route>
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;
