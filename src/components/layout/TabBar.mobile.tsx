@@ -43,7 +43,7 @@ const TabBarMobile = () => {
     : [];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 flex h-16 items-center justify-around border-t border-[#E5E7EB] bg-white">
+    <nav className="fixed bottom-0 left-0 right-0 z-30 flex h-16 items-center justify-around border-t border-[#E5E7EB] bg-white">
       {visibleTabs.map((tab) => (
         <NavLink
           key={`${tab.label}-${tab.to}`}
