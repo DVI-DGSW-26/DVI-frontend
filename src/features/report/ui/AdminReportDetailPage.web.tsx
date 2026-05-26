@@ -2,7 +2,12 @@ import { useState } from "react";
 import { Icon } from "@iconify/react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useReportDetail } from "../api";
-import type { ReportProcess } from "../api/types";
+import type {
+  AppearanceResult,
+  JudgeResult,
+  ReportProcess,
+  ReportResultItem,
+} from "../api/types";
 import { downloadReportPdf } from "../lib/downloadReportPdf";
 
 const PROCESS_LABEL: Record<ReportProcess, string> = {
@@ -12,14 +17,6 @@ const PROCESS_LABEL: Record<ReportProcess, string> = {
   MACHINING: "가공",
   PRESS: "프레스",
 };
-
-const INSPECTION_CATEGORIES = [
-  { key: "dimension", label: "치수 검사" },
-  { key: "appearance", label: "외관 검사" },
-  { key: "hardness", label: "경도 검사" },
-  { key: "production", label: "자주 검사" },
-  { key: "cross", label: "순회 검사" },
-] as const;
 
 function formatDateTime(iso: string) {
   const d = new Date(iso);
@@ -32,32 +29,143 @@ function formatDateTime(iso: string) {
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
 }
 
-type BadgeTone = "pass" | "fail" | "muted";
+function formatTolerance(plus: number, minus: number) {
+  return `+${plus} / -${minus}`;
+}
 
-const BadgeDot = ({
-  tone,
-  label,
+function formatMeasured(value: number | null | undefined) {
+  if (value == null || Number.isNaN(value)) return "—";
+  return String(value);
+}
+
+function isWithinTolerance(item: ReportResultItem, value: number | null | undefined) {
+  if (value == null) return null;
+  const min = item.standardValue - item.toleranceMinus;
+  const max = item.standardValue + item.tolerancePlus;
+  return value >= min && value <= max;
+}
+
+const Section = ({
+  title,
+  trailing,
+  children,
+  className = "",
 }: {
-  tone: BadgeTone;
-  label: string;
-}) => {
-  const color =
-    tone === "pass"
-      ? "text-[#22C55E]"
-      : tone === "fail"
-        ? "text-[#EF4444]"
-        : "text-[#A8A8A8]";
-  const dot =
-    tone === "pass"
-      ? "bg-[#22C55E]"
-      : tone === "fail"
-        ? "bg-[#EF4444]"
-        : "bg-[#A8A8A8]";
+  title: string;
+  trailing?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <section className={`rounded-2xl bg-white p-5 shadow-sm ${className}`}>
+    <div className="mb-3 flex items-center justify-between">
+      <h3 className="text-sm font-semibold text-[#212121]">{title}</h3>
+      {trailing}
+    </div>
+    {children}
+  </section>
+);
+
+const InfoCell = ({ label, value }: { label: string; value: string }) => (
+  <div className="flex flex-col gap-1">
+    <dt className="text-xs text-[#A8A8A8]">{label}</dt>
+    <dd className="font-medium text-[#212121]">{value || "—"}</dd>
+  </div>
+);
+
+const JudgeBadge = ({ value }: { value: JudgeResult }) => {
+  const isPass = value === "PASS";
   return (
-    <span className={`flex items-center gap-1.5 text-xs font-medium ${color}`}>
-      <span className={`inline-block h-1.5 w-1.5 rounded-full ${dot}`} />
-      {label}
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+        isPass
+          ? "bg-[#DCFCE7] text-[#15803D]"
+          : "bg-[#FEE2E2] text-[#B91C1C]"
+      }`}
+    >
+      <Icon
+        icon={isPass ? "solar:check-circle-bold" : "solar:close-circle-bold"}
+        width={12}
+        height={12}
+      />
+      {isPass ? "합격" : "불합격"}
     </span>
+  );
+};
+
+const AppearanceBadge = ({ value }: { value: AppearanceResult | null }) => {
+  if (value === "OK") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-[#DCFCE7] px-2.5 py-1 text-xs font-semibold text-[#15803D]">
+        <Icon icon="solar:check-circle-bold" width={14} height={14} />
+        OK
+      </span>
+    );
+  }
+  if (value === "NG") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-[#FEE2E2] px-2.5 py-1 text-xs font-semibold text-[#B91C1C]">
+        <Icon icon="solar:close-circle-bold" width={14} height={14} />
+        NG
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-[#F5F5F5] px-2.5 py-1 text-xs font-medium text-[#A8A8A8]">
+      미입력
+    </span>
+  );
+};
+
+const MeasureCard = ({
+  item,
+  measuredValue,
+  imageUrl,
+}: {
+  item: ReportResultItem;
+  measuredValue: number | null | undefined;
+  imageUrl: string | null | undefined;
+}) => {
+  const within = isWithinTolerance(item, measuredValue);
+  const valueColor =
+    within === null
+      ? "text-[#A8A8A8]"
+      : within
+        ? "text-[#15803D]"
+        : "text-[#B91C1C]";
+
+  return (
+    <li className="flex gap-3 rounded-xl border border-[#E5E7EB] p-3">
+      <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#F5F5F5]">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={`DIM ${item.dimNo} 측정 사진`}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <Icon icon="mdi:image-off-outline" width={22} height={22} className="text-[#A8A8A8]" />
+        )}
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
+              DIM {item.dimNo}
+            </span>
+            <span className="truncate text-sm font-medium text-[#212121]">
+              {item.dimName}
+            </span>
+          </div>
+          <JudgeBadge value={item.result} />
+        </div>
+        <div className="text-xs text-[#A8A8A8]">
+          기준 {item.standardValue} ({formatTolerance(item.tolerancePlus, item.toleranceMinus)})
+        </div>
+        <div className={`text-base font-semibold ${valueColor}`}>
+          {formatMeasured(measuredValue)}
+        </div>
+      </div>
+    </li>
   );
 };
 
@@ -113,15 +221,11 @@ const AdminReportDetailPageWeb = () => {
 
   const isPass = data.result === "PASS";
   const processLabel = PROCESS_LABEL[data.process] ?? String(data.process ?? "");
-  const inspectorName =
-    data.productionName || data.qualityName || data.approvedByName || "—";
-  const departmentLabel = data.productionName
-    ? "생산부"
-    : data.qualityName
-      ? "품질부"
-      : data.approvedByName
-        ? "관리부"
-        : "—";
+  const inspectionBadge = (
+    <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
+      {data.inspectionLabel || "—"}
+    </span>
+  );
 
   return (
     <div className="flex flex-col gap-4 p-6">
@@ -143,10 +247,22 @@ const AdminReportDetailPageWeb = () => {
             <span className="text-xl font-bold text-[#212121]">
               {data.reportNumber}
             </span>
-            <BadgeDot
-              tone={isPass ? "pass" : "fail"}
-              label={isPass ? "승인" : "반려"}
-            />
+            <span
+              className={`flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-white ${
+                isPass ? "bg-[#22C55E]" : "bg-[#EF4444]"
+              }`}
+            >
+              <Icon
+                icon={
+                  isPass
+                    ? "solar:check-circle-bold"
+                    : "solar:close-circle-bold"
+                }
+                width={14}
+                height={14}
+              />
+              {isPass ? "승인" : "반려"}
+            </span>
           </div>
           <span className="text-sm text-[#A8A8A8]">
             {formatDateTime(data.createdAt)}
@@ -154,15 +270,17 @@ const AdminReportDetailPageWeb = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-[#212121]">스케치</h3>
-            <BadgeDot
-              tone={isPass ? "pass" : "fail"}
-              label={isPass ? "합격" : "불합격"}
-            />
-          </div>
+      <Section title="기본 정보">
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm lg:grid-cols-4">
+          <InfoCell label="공정" value={processLabel} />
+          <InfoCell label="설비" value={data.equipmentName} />
+          <InfoCell label="작업자" value={data.productionName} />
+          <InfoCell label="검사자" value={data.qualityName} />
+        </dl>
+      </Section>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Section title="도면" className="lg:col-span-2">
           <div className="flex aspect-4/3 w-full items-center justify-center overflow-hidden rounded-xl bg-[#F5F5F5]">
             {data.sketchUrl ? (
               <img
@@ -174,57 +292,60 @@ const AdminReportDetailPageWeb = () => {
               <span className="text-sm text-[#A8A8A8]">스케치 없음</span>
             )}
           </div>
-        </div>
+        </Section>
 
-        <div className="flex flex-col gap-4">
-          <div className="rounded-2xl bg-white p-5 shadow-sm">
-            <h3 className="mb-3 text-sm font-semibold text-[#212121]">
-              검사 결과
-            </h3>
-            <ul className="flex flex-col divide-y divide-[#E5E7EB]">
-              {INSPECTION_CATEGORIES.map((c) => (
-                <li
-                  key={c.key}
-                  className="flex items-center justify-between py-2.5"
-                >
-                  <span className="text-sm text-[#212121]">{c.label}</span>
-                  <BadgeDot tone="muted" label="데이터 없음" />
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="rounded-2xl bg-white p-5 shadow-sm">
-            <h3 className="mb-3 text-sm font-semibold text-[#212121]">
-              기본 정보
-            </h3>
-            <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-              <div className="flex flex-col gap-0.5">
-                <dt className="text-xs text-[#A8A8A8]">공정</dt>
-                <dd className="text-[#212121]">{processLabel}</dd>
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <dt className="text-xs text-[#A8A8A8]">검사자</dt>
-                <dd className="text-[#212121]">{inspectorName}</dd>
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <dt className="text-xs text-[#A8A8A8]">부서</dt>
-                <dd className="text-[#212121]">{departmentLabel}</dd>
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <dt className="text-xs text-[#A8A8A8]">검사일시</dt>
-                <dd className="text-[#212121]">
-                  {formatDateTime(data.createdAt)}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </div>
+        <Section title="외관 검사">
+          <ul className="flex flex-col divide-y divide-[#E5E7EB]">
+            <li className="flex items-center justify-between py-3 first:pt-0">
+              <span className="text-sm text-[#212121]">자주검사 외관</span>
+              <AppearanceBadge value={data.productionAppearanceResult} />
+            </li>
+            <li className="flex items-center justify-between py-3 last:pb-0">
+              <span className="text-sm text-[#212121]">순회검사 외관</span>
+              <AppearanceBadge value={data.qualityAppearanceResult} />
+            </li>
+          </ul>
+        </Section>
       </div>
 
-      <div className="rounded-2xl bg-white p-5 shadow-sm">
-        <h3 className="mb-2 text-sm font-semibold text-[#212121]">비고</h3>
-        <p className="text-sm text-[#A8A8A8]">비고 데이터가 없습니다.</p>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Section title="자주검사" trailing={inspectionBadge}>
+          {data.results.length === 0 ? (
+            <p className="rounded-xl bg-[#F5F5F5] px-4 py-6 text-center text-xs text-[#A8A8A8]">
+              측정 데이터 없음
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {data.results.map((r) => (
+                <MeasureCard
+                  key={`prod-${r.dimNo}`}
+                  item={r}
+                  measuredValue={r.productionValue}
+                  imageUrl={r.productionImageUrl}
+                />
+              ))}
+            </ul>
+          )}
+        </Section>
+
+        <Section title="순회검사" trailing={inspectionBadge}>
+          {data.results.length === 0 ? (
+            <p className="rounded-xl bg-[#F5F5F5] px-4 py-6 text-center text-xs text-[#A8A8A8]">
+              측정 데이터 없음
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {data.results.map((r) => (
+                <MeasureCard
+                  key={`qual-${r.dimNo}`}
+                  item={r}
+                  measuredValue={r.qualityValue}
+                  imageUrl={r.qualityImageUrl}
+                />
+              ))}
+            </ul>
+          )}
+        </Section>
       </div>
 
       <div className="flex justify-end">
