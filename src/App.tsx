@@ -1,34 +1,36 @@
-import SignupForm from "./features/auth/ui/SignupForm"
+import SignupForm from "./features/auth/ui/SignupForm";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import LoginForm from "./features/auth/ui/LoginForm"
-import Layout from "./components/layout/Layout"
-import RouteGuard from "./features/auth/RouteGuard"
-import NotificationPage from "./features/notification/ui/NotificationPage"
-import ApprovalManagementPage from "./features/incomplete/ui/ApprovalManagementPage"
-import AccountApprovalPage from "./features/account-approval/ui/AccountApprovalPage"
-import InspectionOrdersPage from "./features/inspection-orders/ui/InspectionOrdersPage"
-import ReportPage from "./features/report/ui/ReportPage"
-import MyInspectionPage from "./features/my-inspection/ui/MyInspectionPage"
-import ProductionHomePage from "./features/my-inspection/ui/ProductionHomePage"
-import ScanPage from "./features/inspection/ui/ScanPage"
-import StartInspectionPage from "./features/inspection/ui/StartInspectionPage"
-import InspectionDetailPage from "./features/inspection/ui/InspectionDetailPage"
-import InspectionMeasurePage from "./features/inspection/ui/InspectionMeasurePage"
-import InspectionResultPage from "./features/inspection/ui/InspectionResultPage"
-import ProductsPage from "./features/products/ui/ProductsPage"
-import EquipmentPage from "./features/equipment/ui/EquipmentPage"
-import CustomersPage from "./features/customers/ui/CustomersPage"
+import LoginForm from "./features/auth/ui/LoginForm";
+import Layout from "./components/layout/Layout";
+import RouteGuard from "./features/auth/RouteGuard";
+import NotificationPage from "./features/notification/ui/NotificationPage";
+import ApprovalManagementPage from "./features/incomplete/ui/ApprovalManagementPage";
+import AccountApprovalPage from "./features/account-approval/ui/AccountApprovalPage";
+import InspectionOrdersPage from "./features/inspection-orders/ui/InspectionOrdersPage";
+import ReportPage from "./features/report/ui/ReportPage";
+import MyInspectionPage from "./features/my-inspection/ui/MyInspectionPage";
+import ProductionHomePage from "./features/my-inspection/ui/ProductionHomePage";
+import ScanPage from "./features/inspection/ui/ScanPage";
+import StartInspectionPage from "./features/inspection/ui/StartInspectionPage";
+import InspectionDetailPage from "./features/inspection/ui/InspectionDetailPage";
+import InspectionMeasurePage from "./features/inspection/ui/InspectionMeasurePage";
+import InspectionResultPage from "./features/inspection/ui/InspectionResultPage";
+import ProductsPage from "./features/products/ui/ProductsPage";
+import EquipmentPage from "./features/equipment/ui/EquipmentPage";
+import CustomersPage from "./features/customers/ui/CustomersPage";
 
-import AdminUserSearchPage from "./features/user-search/ui/AdminUserSearchPage"
-import AdminReportPage from "./features/report/ui/AdminReportPage"
-import AdminReportDetailPage from "./features/report/ui/AdminReportDetailPage"
-import DashboardPage from "./features/dashboard/ui/DashboardPage"
+import AdminUserSearchPage from "./features/user-search/ui/AdminUserSearchPage";
+import AdminReportPage from "./features/report/ui/AdminReportPage";
+import AdminReportDetailPage from "./features/report/ui/AdminReportDetailPage";
+import DashboardPage from "./features/dashboard/ui/DashboardPage";
 
-import QualitySystemStatusPage from "./features/cross-check/ui/QualitySystemStatusPage"
-import CrossCheckPendingPage from "./features/cross-check/ui/CrossCheckPendingPage"
-import QualityHomePage from "./features/cross-check/ui/QualityHomePage"
+import QualitySystemStatusPage from "./features/cross-check/ui/QualitySystemStatusPage";
+import CrossCheckPendingPage from "./features/cross-check/ui/CrossCheckPendingPage";
+import CrossCheckMeasurePage from "./features/cross-check/ui/CrossCheckMeasurePage";
+import CrossCheckResultPage from "./features/cross-check/ui/CrossCheckResultPage";
+import QualityHomePage from "./features/cross-check/ui/QualityHomePage";
 
-import { useAuth } from "./features/auth/AuthContext"
+import { useAuth } from "./features/auth/AuthContext";
 
 function HomePage() {
   const { user } = useAuth();
@@ -92,6 +94,16 @@ function App() {
                 path="/cross-checks"
                 element={<CrossCheckPendingPage />}
               />
+
+              <Route
+                path="/cross-check/:crossCheckId/measure"
+                element={<CrossCheckMeasurePage />}
+              />
+
+              <Route
+                path="/cross-check/:crossCheckId/result"
+                element={<CrossCheckResultPage />}
+              />
             </Route>
 
             <Route element={<RouteGuard roles={["PRODUCTION"]} />}>
@@ -100,6 +112,7 @@ function App() {
 
             <Route element={<RouteGuard roles={["PRODUCTION", "QUALITY"]} />}>
               <Route path="/scan" element={<ScanPage />} />
+
               <Route
                 path="/start-inspection"
                 element={<StartInspectionPage />}
@@ -124,7 +137,7 @@ function App() {
         </Route>
       </Routes>
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
+export default App;

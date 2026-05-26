@@ -1,13 +1,18 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { AxiosError } from "axios";
 import { useNavigate } from "react-router-dom";
-import { useAssignedCrossChecks } from "../api";
+import { useAssignedCrossChecks, useCreateCrossCheck } from "../api";
 import type { AssignedInspection } from "../api";
 import { elapsedFrom } from "../lib/elapsed";
 import CrossCheckCard from "./CrossCheckCard";
+import Toast from "../../inspection/ui/Toast";
 
 const CrossCheckPendingPage = () => {
   const navigate = useNavigate();
   const { data: assigned = [], isLoading, isError } = useAssignedCrossChecks();
+  const createMut = useCreateCrossCheck();
+  const [toast, setToast] = useState<string | null>(null);
+  const [startingId, setStartingId] = useState<number | null>(null);
 
   const sorted = useMemo(
     () =>
@@ -19,8 +24,23 @@ const CrossCheckPendingPage = () => {
     [assigned],
   );
 
-  const handleCardClick = (item: AssignedInspection) => {
-    navigate(`/inspection/${item.inspectionId}/measure`);
+  const handleCardClick = async (item: AssignedInspection) => {
+    if (createMut.isPending) return;
+    setStartingId(item.inspectionId);
+    try {
+      const detail = await createMut.mutateAsync({
+        inspectionId: item.inspectionId,
+      });
+      navigate(`/cross-check/${detail.crossCheckId}/measure`);
+    } catch (err) {
+      const msg =
+        err instanceof AxiosError
+          ? err.response?.data?.message ?? "순회검사 시작에 실패했습니다."
+          : "순회검사 시작에 실패했습니다.";
+      setToast(msg);
+    } finally {
+      setStartingId(null);
+    }
   };
 
   return (
@@ -53,11 +73,17 @@ const CrossCheckPendingPage = () => {
         <ul className="flex flex-col gap-3">
           {sorted.map((item) => (
             <li key={item.inspectionId}>
-              <CrossCheckCard item={item} onClick={handleCardClick} />
+              <CrossCheckCard
+                item={item}
+                onClick={handleCardClick}
+                isStarting={startingId === item.inspectionId}
+              />
             </li>
           ))}
         </ul>
       )}
+
+      {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
   );
 };

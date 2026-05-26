@@ -5,9 +5,11 @@ import { elapsedFrom, TONE_COLOR } from "../lib/elapsed";
 interface Props {
   item: AssignedInspection;
   onClick?: (item: AssignedInspection) => void;
+  // 카드 단위로 POST /cross-check 진행 중일 때 비활성화 + 로딩 표시용.
+  isStarting?: boolean;
 }
 
-const CrossCheckCard = ({ item, onClick }: Props) => {
+const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
   const elapsed = elapsedFrom(item.completedAt);
   const color = TONE_COLOR[elapsed.tone];
 
@@ -15,7 +17,8 @@ const CrossCheckCard = ({ item, onClick }: Props) => {
     <button
       type="button"
       onClick={() => onClick?.(item)}
-      className="flex w-full items-center gap-3 rounded-2xl bg-white px-5 py-4 text-left shadow-sm"
+      disabled={isStarting}
+      className="flex w-full items-center gap-3 rounded-2xl bg-white px-5 py-4 text-left shadow-sm disabled:opacity-60"
     >
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-base font-bold text-[#212121]">
