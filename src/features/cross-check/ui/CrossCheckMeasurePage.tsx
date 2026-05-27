@@ -2,30 +2,37 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useAuth } from "../../auth/AuthContext";
+import {
+  useOcrInspectionImage,
+  useUploadInspectionImage,
+} from "../../inspection/api";
 import type { ApiErrorData, StepResult } from "../../inspection/type/types";
 import {
   dimDisplayName,
   formatStandardWithTolerance,
 } from "../../inspection/lib/format";
+import CapturePhase from "../../inspection/ui/CapturePhase";
+import CropPhase from "../../inspection/ui/CropPhase";
+import InputPhase from "../../inspection/ui/InputPhase";
 import Toast from "../../inspection/ui/Toast";
 import { useCrossCheckDetail, useSaveCrossCheckResults } from "../api";
 
-// 순회검사 측정 항목. 품질 담당자는 작업자 측정값/사진을 참고만 하므로 자체 촬영은 하지 않는다.
+type Phase = "capture" | "crop" | "input";
+
+// 순회검사 측정 항목. CrossCheckResultInfo 와 표시·완료 판단을 위해 정규화.
 interface MeasureItem {
   resultId: number;
-  dimId: number;
   dimNo: number;
   dimName?: string;
   standardValue: number;
   tolerancePlus: number;
   toleranceMinus: number;
-  productionValue?: number;
-  productionImageUrl?: string;
   measuredValue?: number;
+  imageUrl?: string;
 }
 
 function isItemDone(item: MeasureItem): boolean {
-  return item.measuredValue != null;
+  return item.measuredValue != null && !!item.imageUrl;
 }
 
 function toCompletedStep(item: MeasureItem): StepResult {
@@ -37,6 +44,7 @@ function toCompletedStep(item: MeasureItem): StepResult {
     toleranceMinus: item.toleranceMinus,
     status: "completed",
     measuredValue: item.measuredValue,
+    imageUrl: item.imageUrl,
   };
 }
 
@@ -54,15 +62,13 @@ export default function CrossCheckMeasurePage() {
     return detail.results
       .map<MeasureItem>((r) => ({
         resultId: r.resultId,
-        dimId: r.dimId,
         dimNo: r.dimNo,
         dimName: r.dimName,
         standardValue: r.standardValue,
         tolerancePlus: r.tolerancePlus,
         toleranceMinus: r.toleranceMinus,
-        productionValue: r.productionValue ?? undefined,
-        productionImageUrl: r.productionImageUrl ?? undefined,
         measuredValue: r.measuredValue ?? undefined,
+        imageUrl: r.imageUrl ?? undefined,
       }))
       .sort((a, b) => a.dimNo - b.dimNo);
   }, [detail]);
@@ -76,9 +82,18 @@ export default function CrossCheckMeasurePage() {
   const startIdx = firstEmptyIdx === -1 ? items.length : firstEmptyIdx;
 
   const [sessionResults, setSessionResults] = useState<StepResult[]>([]);
-  const [inputValue, setInputValue] = useState("");
+  const [phase, setPhase] = useState<Phase>("capture");
+  const [capturedFile, setCapturedFile] = useState<File | null>(null);
+  const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+  const [ocrSuggestedValue, setOcrSuggestedValue] = useState<string | null>(
+    null,
+  );
+  const [isPreparing, setIsPreparing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
+  const uploadImage = useUploadInspectionImage();
+  const ocrImage = useOcrInspectionImage();
   const saveResults = useSaveCrossCheckResults(crossCheckId);
 
   useEffect(() => {
@@ -139,9 +154,15 @@ export default function CrossCheckMeasurePage() {
   const allStepResults = [...persistedDoneSteps, ...sessionResults];
 
   const isSaving = saveResults.isPending;
-  const numeric = Number(inputValue);
-  const isValid = inputValue.trim() !== "" && Number.isFinite(numeric);
-  const submitDisabled = !isValid || isSaving;
+
+  const resetForNextDim = () => {
+    setCapturedFile(null);
+    setCroppedBlob(null);
+    setUploadedImageUrl(null);
+    setOcrSuggestedValue(null);
+    setIsPreparing(false);
+    setPhase("capture");
+  };
 
   const goToResult = (finalResults: StepResult[]) => {
     navigate(`/cross-check/${crossCheckId}/result`, {
@@ -156,15 +177,41 @@ export default function CrossCheckMeasurePage() {
     });
   };
 
-  const handleSubmit = async () => {
-    if (!currentDim || !isValid) return;
+  const handleCropConfirm = async (blob: Blob) => {
+    setCroppedBlob(blob);
+    setUploadedImageUrl(null);
+    setOcrSuggestedValue(null);
+    setIsPreparing(true);
+    setPhase("input");
+
+    const [imageRes, ocrRes] = await Promise.allSettled([
+      uploadImage.mutateAsync(blob),
+      ocrImage.mutateAsync(blob),
+    ]);
+
+    if (imageRes.status === "rejected") {
+      setToast(toErrorMessage(imageRes.reason));
+      setCroppedBlob(null);
+      setPhase("crop");
+      setIsPreparing(false);
+      return;
+    }
+
+    setUploadedImageUrl(imageRes.value);
+    setOcrSuggestedValue(ocrRes.status === "fulfilled" ? ocrRes.value : null);
+    setIsPreparing(false);
+  };
+
+  const handleSubmitMeasured = async (measuredValue: number) => {
+    if (!currentDim || !uploadedImageUrl) return;
 
     try {
       await saveResults.mutateAsync({
         results: [
           {
             resultId: currentDim.resultId,
-            measuredValue: numeric,
+            measuredValue,
+            imageUrl: uploadedImageUrl,
           },
         ],
       });
@@ -176,7 +223,8 @@ export default function CrossCheckMeasurePage() {
         tolerancePlus: currentDim.tolerancePlus,
         toleranceMinus: currentDim.toleranceMinus,
         status: "completed",
-        measuredValue: numeric,
+        measuredValue,
+        imageUrl: uploadedImageUrl,
       };
 
       if (isLastDim) {
@@ -185,10 +233,28 @@ export default function CrossCheckMeasurePage() {
       }
 
       setSessionResults((prev) => [...prev, next]);
-      setInputValue("");
+      resetForNextDim();
     } catch (err) {
       setToast(toErrorMessage(err));
     }
+  };
+
+  const handleSkip = () => {
+    if (!currentDim) return;
+    const next: StepResult = {
+      dimNo: currentDim.dimNo,
+      dimName: currentDim.dimName,
+      standardValue: currentDim.standardValue,
+      tolerancePlus: currentDim.tolerancePlus,
+      toleranceMinus: currentDim.toleranceMinus,
+      status: "skipped",
+    };
+    if (isLastDim) {
+      goToResult([...allStepResults, next]);
+      return;
+    }
+    setSessionResults((prev) => [...prev, next]);
+    resetForNextDim();
   };
 
   if (totalSteps === 0) {
@@ -241,58 +307,51 @@ export default function CrossCheckMeasurePage() {
               currentDim.toleranceMinus,
             )}
           </div>
-          <ProductionReference
-            value={currentDim.productionValue}
-            standard={currentDim.standardValue}
-            plus={currentDim.tolerancePlus}
-            minus={currentDim.toleranceMinus}
-          />
-          {currentDim.productionImageUrl && (
-            <div className="mt-3">
-              <div className="mb-1.5 text-xs font-medium text-[#6B7280]">
-                작업자 측정 사진
-              </div>
-              <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-                <img
-                  src={currentDim.productionImageUrl}
-                  alt={`DIM ${currentDim.dimNo} 작업자 측정 사진`}
-                  className="block aspect-square w-full object-contain"
-                />
-              </div>
-            </div>
-          )}
         </div>
       </section>
 
       <section className="flex-1 px-4 pt-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
-          <label
-            htmlFor="cross-check-measured-value"
-            className="block text-xs font-medium text-[#6B7280]"
-          >
-            측정값
-          </label>
-          <input
-            id="cross-check-measured-value"
-            type="number"
-            inputMode="decimal"
-            step="any"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="예: 100.25"
-            disabled={isSaving}
-            className="mt-1 h-11 w-full rounded-md border border-gray-300 px-3 text-base text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+        {phase === "capture" && (
+          <CapturePhase
+            onCaptured={(file) => {
+              setCapturedFile(file);
+              setPhase("crop");
+            }}
+            onError={setToast}
+            onSkip={handleSkip}
           />
-        </div>
+        )}
 
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={submitDisabled}
-          className="mt-3 h-11 w-full rounded-md bg-[#931B82] text-sm font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
-        >
-          {isSaving ? "저장 중..." : isLastDim ? "완료" : "저장 후 다음"}
-        </button>
+        {phase === "crop" && capturedFile && (
+          <CropPhase
+            file={capturedFile}
+            onRetake={() => {
+              setCapturedFile(null);
+              setPhase("capture");
+            }}
+            onConfirm={handleCropConfirm}
+            onError={setToast}
+          />
+        )}
+
+        {phase === "input" && croppedBlob && (
+          <InputPhase
+            blob={croppedBlob}
+            isLastDim={isLastDim}
+            isSaving={isSaving}
+            isPreparing={isPreparing}
+            suggestedValue={ocrSuggestedValue}
+            onRetake={() => {
+              setCroppedBlob(null);
+              setCapturedFile(null);
+              setUploadedImageUrl(null);
+              setOcrSuggestedValue(null);
+              setIsPreparing(false);
+              setPhase("capture");
+            }}
+            onSubmit={handleSubmitMeasured}
+          />
+        )}
       </section>
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
@@ -311,45 +370,6 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-interface ProductionReferenceProps {
-  value: number | undefined;
-  standard: number;
-  plus: number;
-  minus: number;
-}
-
-function ProductionReference({
-  value,
-  standard,
-  plus,
-  minus,
-}: ProductionReferenceProps) {
-  if (value == null) {
-    return (
-      <div className="mt-2 text-xs text-[#A8A8A8]">
-        작업자 측정값: <span className="font-medium">미입력</span>
-      </div>
-    );
-  }
-  const inTolerance = value >= standard - minus && value <= standard + plus;
-  const tone = inTolerance ? "#16A34A" : "#DC2626";
-  const label = inTolerance ? "허용 범위 내" : "허용 범위 벗어남";
-  const fmt = Number.isInteger(value) ? String(value) : value.toString();
-  return (
-    <div className="mt-2 flex items-baseline gap-2 text-xs">
-      <span className="text-[#6B7280]">작업자 측정값</span>
-      <span
-        className="text-sm font-semibold"
-        style={{ color: tone }}
-      >
-        {fmt}
-      </span>
-      <span className="text-[#A8A8A8]">·</span>
-      <span style={{ color: tone }}>{label}</span>
-    </div>
-  );
-}
-
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg bg-[#F9FAFB] px-3 py-2">
@@ -364,7 +384,17 @@ function Stat({ label, value }: { label: string; value: string }) {
 function toErrorMessage(err: unknown): string {
   if (err instanceof AxiosError) {
     const data = err.response?.data as ApiErrorData | undefined;
-    return data?.message ?? "요청 처리 중 오류가 발생했습니다.";
+    const code = data?.code;
+    switch (code) {
+      case "EMPTY_FILE":
+        return "이미지가 비어있습니다.";
+      case "INVALID_EXTENSION":
+        return "PNG/JPG 이미지만 업로드할 수 있습니다.";
+      case "UPLOAD_FAILED":
+        return "이미지 업로드에 실패했습니다.";
+      default:
+        return data?.message ?? "요청 처리 중 오류가 발생했습니다.";
+    }
   }
   if (err instanceof Error) return err.message;
   return "알 수 없는 오류가 발생했습니다.";

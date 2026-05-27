@@ -61,7 +61,7 @@ const QualityHomePage = () => {
 
   const handleResume = () => {
     if (!latestDraft) return;
-    navigate(`/cross-check/${latestDraft.crossCheckId}/measure`);
+    navigate(`/inspection/${latestDraft.inspectionId}/measure`);
   };
 
   const handleRequestDelegation = () => {
