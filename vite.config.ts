@@ -27,6 +27,18 @@ export default defineConfig({
           });
         },
       },
+      // 정적 파일 서버 (스케치 등) — port 80.
+      '/static': {
+        target: 'http://112.146.55.78',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/static/, ''),
+        bypass: (req) => {
+          if (req.method === 'GET' && req.headers.accept?.includes('text/html')) {
+            return req.url;
+          }
+          return null;
+        },
+      },
     },
   },
 })
