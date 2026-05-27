@@ -44,6 +44,7 @@ const STATUS_META: Record<
   { label: string; dot: string }
 > = {
   DRAFT: { label: "측정중", dot: "#3B82F6" },
+  PENDING_APPROVAL: { label: "결재 대기", dot: "#F59E0B" },
   APPROVED: { label: "승인됨", dot: "#22C55E" },
   REJECTED: { label: "반려됨", dot: "#EF4444" },
 };
