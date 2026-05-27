@@ -51,8 +51,8 @@ export default function CrossCheckResultPage() {
     return detail.results
       .map<StepResult>((r) => {
         const measured = r.measuredValue ?? undefined;
-        const imageUrl = r.imageUrl ?? undefined;
-        const done = measured != null && !!imageUrl;
+        // 순회검사는 사진 촬영 안 함 — measuredValue 만으로 완료 판정.
+        const done = measured != null;
         return {
           dimNo: r.dimNo,
           dimName: r.dimName,
@@ -61,7 +61,6 @@ export default function CrossCheckResultPage() {
           toleranceMinus: r.toleranceMinus,
           status: done ? "completed" : "skipped",
           measuredValue: measured,
-          imageUrl,
         };
       })
       .sort((a, b) => a.dimNo - b.dimNo);
