@@ -72,3 +72,9 @@ export async function decideCrossCheck(
     body,
   );
 }
+
+export async function completeCrossCheck(crossCheckId: number): Promise<void> {
+  await http.post<ApiResponse<Record<string, never>>>(
+    `/cross-check/${crossCheckId}/complete`,
+  );
+}

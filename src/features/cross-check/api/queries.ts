@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  completeCrossCheck,
   createCrossCheck,
   decideCrossCheck,
   getAssignedCrossChecks,
@@ -90,6 +91,16 @@ export function useDecideCrossCheck(crossCheckId: number) {
   return useMutation({
     mutationFn: (body: DecideCrossCheckRequest) =>
       decideCrossCheck(crossCheckId, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: crossCheckKeys.all });
+    },
+  });
+}
+
+export function useCompleteCrossCheck(crossCheckId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => completeCrossCheck(crossCheckId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: crossCheckKeys.all });
     },

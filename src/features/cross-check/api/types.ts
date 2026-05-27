@@ -10,7 +10,11 @@ export type CrossCheckType =
   | "NIGHT_4"
   | "NIGHT_5";
 
-export type CrossCheckStatus = "DRAFT" | "APPROVED" | "REJECTED";
+export type CrossCheckStatus =
+  | "DRAFT"
+  | "PENDING_APPROVAL"
+  | "APPROVED"
+  | "REJECTED";
 
 export type ProcessType =
   | "EXTRUSION"
@@ -82,6 +86,7 @@ export interface DelegationInfo {
 
 // 순회검사 측정 결과 한 항목. PATCH /cross-check/{id}/results 응답·요청과
 // GET /cross-check/{id} 응답에서 사용한다. measuredValue/imageUrl 는 아직 안 찍었으면 null.
+// productionValue/productionImageUrl 은 자주검사 단계에서 작업자가 입력한 측정값/사진 (순회검사 측정 시 참고용).
 export interface CrossCheckResultInfo {
   resultId: number;
   dimId: number;
@@ -90,6 +95,8 @@ export interface CrossCheckResultInfo {
   standardValue: number;
   tolerancePlus: number;
   toleranceMinus: number;
+  productionValue: number | null;
+  productionImageUrl: string | null;
   measuredValue: number | null;
   imageUrl: string | null;
 }

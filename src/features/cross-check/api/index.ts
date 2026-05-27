@@ -6,6 +6,7 @@ export {
   getCrossCheckDetail,
   saveCrossCheckResults,
   decideCrossCheck,
+  completeCrossCheck,
 } from "./crossCheckApi";
 export {
   useMyCrossChecks,
@@ -15,6 +16,7 @@ export {
   useCreateCrossCheck,
   useSaveCrossCheckResults,
   useDecideCrossCheck,
+  useCompleteCrossCheck,
   crossCheckKeys,
 } from "./queries";
 export type {

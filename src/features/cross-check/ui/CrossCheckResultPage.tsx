@@ -12,7 +12,11 @@ import {
   formatStandardWithTolerance,
 } from "../../inspection/lib/format";
 import Toast from "../../inspection/ui/Toast";
-import { useCrossCheckDetail, useSaveCrossCheckResults } from "../api";
+import {
+  useCompleteCrossCheck,
+  useCrossCheckDetail,
+  useSaveCrossCheckResults,
+} from "../api";
 import type { AppearanceResult } from "../api";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 
@@ -71,6 +75,7 @@ export default function CrossCheckResultPage() {
   const requiresHardness = process === "EXTRUSION";
 
   const saveMut = useSaveCrossCheckResults(crossCheckId);
+  const completeMut = useCompleteCrossCheck(crossCheckId);
 
   const [appearance, setAppearance] = useState<AppearanceResult | null>(null);
   const [hardness, setHardness] = useState<string>("");
@@ -139,7 +144,9 @@ export default function CrossCheckResultPage() {
         ...(requiresHardness ? { hardnessResult: hardness.trim() } : {}),
         ...(note.trim() ? { note: note.trim() } : {}),
       });
-      setToast("순회검사 측정값이 저장되었습니다");
+      // 저장 직후 QUALITY_ADMIN 결재 대기로 전환 (DRAFT → PENDING_APPROVAL).
+      await completeMut.mutateAsync();
+      setToast("결재 요청이 전송되었습니다");
       setTimeout(() => navigate("/cross-checks", { replace: true }), 1200);
     } catch (err) {
       setToast(toErrorMessage(err));
@@ -252,10 +259,12 @@ export default function CrossCheckResultPage() {
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={!canSubmit || saveMut.isPending}
+          disabled={!canSubmit || saveMut.isPending || completeMut.isPending}
           className="h-12 w-full rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
         >
-          {saveMut.isPending ? "처리 중..." : "순회검사 제출"}
+          {saveMut.isPending || completeMut.isPending
+            ? "처리 중..."
+            : "결재 요청"}
         </button>
       </div>
 
