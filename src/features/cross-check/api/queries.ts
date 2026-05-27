@@ -80,7 +80,10 @@ export function useSaveCrossCheckResults(crossCheckId: number) {
     mutationFn: (body: SaveCrossCheckResultRequest) =>
       saveCrossCheckResults(crossCheckId, body),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: crossCheckKeys.detail(crossCheckId) });
+      // detail 쿼리는 일부러 invalidate 하지 않는다 — 측정 흐름 중 백그라운드 refetch
+      // 가 발생하면 로컬 sessionResults 와 refetch 된 startIdx 가 동시에 진행도를
+      // 카운트해 stepIndex 가 두 칸 점프하는 버그가 발생한다. detail 은 staleTime:0
+      // 이라 다음 마운트(새로고침/재진입) 때 자연스럽게 갱신됨.
       qc.invalidateQueries({ queryKey: crossCheckKeys.my() });
     },
   });
