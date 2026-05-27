@@ -157,7 +157,7 @@ export default function InspectionDetailPage() {
         )}
       </section>
 
-      <div className="fixed inset-x-0 bottom-0 border-t border-gray-200 bg-white p-4">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white p-4">
         <button
           type="button"
           onClick={handleStart}
