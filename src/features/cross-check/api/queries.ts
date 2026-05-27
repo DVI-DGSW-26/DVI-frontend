@@ -7,6 +7,7 @@ import {
   getCrossCheckDetail,
   getMyCrossChecks,
   getMyDelegation,
+  getPendingCrossChecks,
   saveCrossCheckResults,
 } from "./crossCheckApi";
 import type {
@@ -20,6 +21,7 @@ export const crossCheckKeys = {
   my: (includeFinished = false) =>
     [...crossCheckKeys.all, "my", { includeFinished }] as const,
   assigned: () => [...crossCheckKeys.all, "assigned"] as const,
+  pending: () => [...crossCheckKeys.all, "pending"] as const,
   detail: (crossCheckId: number) =>
     [...crossCheckKeys.all, "detail", crossCheckId] as const,
   delegationMe: () => ["delegation", "me"] as const,
@@ -38,6 +40,15 @@ export function useAssignedCrossChecks() {
   return useQuery({
     queryKey: crossCheckKeys.assigned(),
     queryFn: getAssignedCrossChecks,
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
+}
+
+export function usePendingCrossChecks() {
+  return useQuery({
+    queryKey: crossCheckKeys.pending(),
+    queryFn: getPendingCrossChecks,
     staleTime: 0,
     refetchOnMount: "always",
   });

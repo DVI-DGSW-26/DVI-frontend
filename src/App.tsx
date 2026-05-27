@@ -30,6 +30,8 @@ import CrossCheckPendingPage from "./features/cross-check/ui/CrossCheckPendingPa
 import CrossCheckMeasurePage from "./features/cross-check/ui/CrossCheckMeasurePage";
 import CrossCheckResultPage from "./features/cross-check/ui/CrossCheckResultPage";
 import QualityHomePage from "./features/cross-check/ui/QualityHomePage";
+import CrossCheckApprovalPage from "./features/cross-check/ui/CrossCheckApprovalPage";
+import CrossCheckApprovalDetailPage from "./features/cross-check/ui/CrossCheckApprovalDetailPage";
 
 import { useAuth } from "./features/auth/AuthContext";
 
@@ -84,6 +86,15 @@ function App() {
               <Route path="/products" element={<ProductsPage />} />
               <Route path="/equipment" element={<EquipmentPage />} />
               <Route path="/customers" element={<CustomersPage />} />
+
+              <Route
+                path="/cross-check-approval"
+                element={<CrossCheckApprovalPage />}
+              />
+              <Route
+                path="/cross-check-approval/:crossCheckId"
+                element={<CrossCheckApprovalDetailPage />}
+              />
             </Route>
 
             <Route element={<RouteGuard roles={["QUALITY"]} />}>
