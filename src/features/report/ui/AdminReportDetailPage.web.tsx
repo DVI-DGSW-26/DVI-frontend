@@ -153,9 +153,6 @@ const MeasureCard = ({
             <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
               DIM {item.dimNo}
             </span>
-            <span className="truncate text-sm font-medium text-[#212121]">
-              {item.dimName}
-            </span>
           </div>
           <JudgeBadge value={item.result} />
         </div>

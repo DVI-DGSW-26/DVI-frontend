@@ -20,7 +20,6 @@ function buildHtml(detail: ReportDetail): string {
       (r) => `
         <tr>
           <td>${r.dimNo}</td>
-          <td>${escapeHtml(r.dimName)}</td>
           <td>${r.standardValue}</td>
           <td>${fmtTolerance(r.tolerancePlus, r.toleranceMinus)}</td>
           <td>${r.productionValue}</td>
@@ -69,14 +68,13 @@ function buildHtml(detail: ReportDetail): string {
     <thead>
       <tr>
         <th>번호</th>
-        <th>치수명</th>
         <th>기준</th>
         <th>공차</th>
         <th>자주검사</th>
         <th>순회검사</th>
       </tr>
     </thead>
-    <tbody>${rows || `<tr><td colspan="6" style="text-align:center;color:#A8A8A8">측정 데이터 없음</td></tr>`}</tbody>
+    <tbody>${rows || `<tr><td colspan="5" style="text-align:center;color:#A8A8A8">측정 데이터 없음</td></tr>`}</tbody>
   </table>
 
   <div class="footer">브라우저 인쇄 대화상자에서 "PDF로 저장"을 선택하세요.</div>
