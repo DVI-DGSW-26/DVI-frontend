@@ -362,7 +362,7 @@ export default function CrossCheckMeasurePage() {
             type="button"
             onClick={handleSubmit}
             disabled={!inputValid || isSaving}
-            className="h-12 flex-[2] rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+            className="h-12 flex-2 rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
           >
             {isSaving ? "저장 중..." : isLastDim ? "마지막 항목 제출" : "다음"}
           </button>

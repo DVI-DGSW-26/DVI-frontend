@@ -19,7 +19,7 @@ function SketchImageInner({ src, alt }: Props) {
 
   return (
     <div className="relative w-full overflow-hidden rounded-xl border border-gray-200 bg-[#F9FAFB]">
-      <div className="aspect-[4/3] w-full">
+      <div className="aspect-4/3 w-full">
         {status !== "error" && src && (
           <img
             src={src}
