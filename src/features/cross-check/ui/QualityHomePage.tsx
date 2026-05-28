@@ -35,6 +35,11 @@ const QualityHomePage = () => {
 
   const handleNotificationClick = (n: NotificationResponse) => {
     if (!n.isRead) markAsRead.mutate(n.id);
+    if (n.linkUrl) {
+      navigate(n.linkUrl);
+      return;
+    }
+    // 백엔드 linkUrl 미제공 시 키워드 fallback
     if (/순회검사|확인/.test(n.title)) {
       navigate("/cross-checks");
     } else {

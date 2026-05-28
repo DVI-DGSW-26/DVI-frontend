@@ -1,4 +1,5 @@
 import { Icon } from "@iconify/react";
+import { useNavigate } from "react-router-dom";
 import {
   useMarkAllAsRead,
   useMarkAsRead,
@@ -69,13 +70,16 @@ function groupByDay(items: NotificationResponse[]) {
 }
 
 const NotificationPage = () => {
+  const navigate = useNavigate();
   const { data: items = [], isLoading, isError } = useNotifications();
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
 
   const handleItemClick = (item: NotificationResponse) => {
-    if (item.isRead) return;
-    markAsRead.mutate(item.id);
+    if (!item.isRead) markAsRead.mutate(item.id);
+    if (item.linkUrl) {
+      navigate(item.linkUrl);
+    }
   };
 
   const groups = groupByDay(items);
@@ -112,6 +116,7 @@ const NotificationPage = () => {
             <ul className="flex flex-col overflow-hidden rounded-xl bg-white">
               {group.items.map((item, idx) => {
                 const meta = ICON_BY_TYPE[inferType(item.title)];
+                const hasMeta = !!(item.productName || item.equipmentName);
                 return (
                   <li
                     key={item.id}
@@ -132,7 +137,7 @@ const NotificationPage = () => {
                       </div>
                     </div>
 
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm font-semibold text-[#212121]">{item.title}</p>
                         <span className="shrink-0 text-xs text-[#A8A8A8]">
@@ -140,6 +145,20 @@ const NotificationPage = () => {
                         </span>
                       </div>
                       <p className="mt-1 text-sm text-[#A8A8A8]">{item.content}</p>
+                      {hasMeta && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {item.productName && (
+                            <span className="rounded-md bg-[#F3E8FF] px-2 py-0.5 text-[11px] font-medium text-[#931B82]">
+                              제품 · {item.productName}
+                            </span>
+                          )}
+                          {item.equipmentName && (
+                            <span className="rounded-md bg-[#F3F4F6] px-2 py-0.5 text-[11px] font-medium text-[#6B7280]">
+                              설비 · {item.equipmentName}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </li>
                 );
