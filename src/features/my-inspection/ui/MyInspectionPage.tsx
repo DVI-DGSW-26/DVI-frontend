@@ -12,7 +12,12 @@ import { getNextSlot } from "../../inspection/lib/slotSequence";
 import type { StartNextInspectionErrorData } from "../../inspection/type/types";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import type { MyInspection } from "../type/types";
-import type { Tab } from "../lib/inspectionStatus";
+import {
+  DATE_FILTERS,
+  isWithinDateFilter,
+  type DateFilter,
+  type Tab,
+} from "../lib/inspectionStatus";
 import TabBar from "./TabBar";
 import PullToRefreshIndicator from "./PullToRefreshIndicator";
 import EmptyState from "./EmptyState";
@@ -42,6 +47,7 @@ export default function MyInspectionPage() {
   const [tab, setTab] = useState<Tab>("ALL");
   const [deleteTarget, setDeleteTarget] = useState<MyInspection | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [dateFilter, setDateFilter] = useState<DateFilter>("TODAY");
 
   const inspectionsQuery = useMyInspectionList({ includeFinished: true });
   const deleteMutation = useDeleteInspection();
@@ -55,21 +61,27 @@ export default function MyInspectionPage() {
     [inspectionsQuery.data],
   );
 
+  // 날짜 필터를 먼저 적용 — 모든 탭의 카운트도 필터 후 기준.
+  const dateFiltered = useMemo(
+    () => myInspections.filter((i) => isWithinDateFilter(i, dateFilter)),
+    [myInspections, dateFilter],
+  );
+
   const counts = useMemo<Record<Tab, number>>(
     () => ({
-      ALL: myInspections.length,
-      IN_PROGRESS: myInspections.filter((i) => i.status === "DRAFT").length,
-      COMPLETED: myInspections.filter((i) => i.status === "COMPLETED").length,
-      INCOMPLETE: myInspections.filter(
+      ALL: dateFiltered.length,
+      IN_PROGRESS: dateFiltered.filter((i) => i.status === "DRAFT").length,
+      COMPLETED: dateFiltered.filter((i) => i.status === "COMPLETED").length,
+      INCOMPLETE: dateFiltered.filter(
         (i) => i.status === "INCOMPLETE" || i.status === "INCOMPLETE_APPROVED",
       ).length,
     }),
-    [myInspections],
+    [dateFiltered],
   );
 
   const entries = useMemo(
-    () => filterByTab(myInspections, tab),
-    [myInspections, tab],
+    () => filterByTab(dateFiltered, tab),
+    [dateFiltered, tab],
   );
 
   const { scrollRef, pullY, refreshing, triggerReady, bind } = usePullToRefresh(
@@ -163,7 +175,33 @@ export default function MyInspectionPage() {
       {...bind}
       className="relative flex min-h-screen flex-col bg-[#F5F5F5] pb-24"
     >
-      <TabBar tab={tab} counts={counts} onChange={setTab} />
+      <div className="sticky top-0 z-10 bg-white">
+        <div className="flex items-center gap-1 px-3 pb-1 pt-2">
+          {DATE_FILTERS.map((f) => {
+            const active = dateFilter === f.key;
+            return (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setDateFilter(f.key)}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  active
+                    ? "bg-[#931B82] text-white"
+                    : "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"
+                }`}
+              >
+                {f.label}
+              </button>
+            );
+          })}
+          {dateFilter !== "ALL" && (
+            <span className="ml-1 text-[10px] text-[#9CA3AF]">
+              미완료는 항상 표시
+            </span>
+          )}
+        </div>
+        <TabBar tab={tab} counts={counts} onChange={setTab} />
+      </div>
       <PullToRefreshIndicator
         pullY={pullY}
         refreshing={refreshing}

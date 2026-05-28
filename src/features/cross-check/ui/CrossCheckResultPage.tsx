@@ -89,7 +89,7 @@ export default function CrossCheckResultPage() {
   const productName = state.productName ?? detail?.product.name ?? "-";
   const inspectorName = state.inspectorName ?? user?.name ?? "-";
   const productionInspectorName =
-    state.productionInspectorName ?? detail?.productionInspectorName ?? "-";
+    state.productionInspectorName ?? detail?.production.name ?? "-";
   const process = state.process ?? detail?.product.process ?? "";
   const requiresHardness = process === "EXTRUSION";
 

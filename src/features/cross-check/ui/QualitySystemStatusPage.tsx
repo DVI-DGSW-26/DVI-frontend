@@ -1,34 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Icon } from "@iconify/react";
 import { useNavigate } from "react-router-dom";
 import { useAssignedCrossChecks, useMyCrossChecks } from "../api";
 import type { CrossCheckStatus } from "../api";
-
-type Period = "TODAY" | "WEEK";
-
-function startOfDay(d: Date) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
-
-function startOfWeek(d: Date) {
-  const x = startOfDay(d);
-  const day = x.getDay();
-  const diff = day === 0 ? 6 : day - 1; // 월요일 시작
-  x.setDate(x.getDate() - diff);
-  return x;
-}
-
-function isInPeriod(iso: string | undefined, period: Period): boolean {
-  if (!iso) return false;
-  const t = new Date(iso).getTime();
-  if (Number.isNaN(t)) return false;
-  const now = new Date();
-  const from =
-    period === "TODAY" ? startOfDay(now).getTime() : startOfWeek(now).getTime();
-  return t >= from;
-}
 
 function formatTime(iso: string) {
   const d = new Date(iso);
@@ -54,22 +28,17 @@ const QualitySystemStatusPage = () => {
   const { data: crossChecks = [], isLoading, isError } = useMyCrossChecks(true);
   const { data: assigned = [] } = useAssignedCrossChecks();
 
-  const [period, setPeriod] = useState<Period>("TODAY");
-
-  const filtered = useMemo(
-    () => crossChecks.filter((c) => isInPeriod(c.createdAt, period)),
-    [crossChecks, period],
-  );
-
+  // 완료/진행중은 누적 카운트 — 기간 필터 없음.
+  // 기간 토글이 제거된 뒤에도 의미를 유지하도록 전체 crossChecks 기준으로 집계.
   const counts = useMemo(() => {
     let approved = 0;
     let draft = 0;
-    for (const c of filtered) {
+    for (const c of crossChecks) {
       if (c.status === "APPROVED") approved++;
       else if (c.status === "DRAFT") draft++;
     }
     return { approved, draft, pending: assigned.length };
-  }, [filtered, assigned]);
+  }, [crossChecks, assigned]);
 
   const recentActivity = useMemo(
     () =>
@@ -85,24 +54,6 @@ const QualitySystemStatusPage = () => {
 
   return (
     <div className="flex min-h-full flex-col gap-5 bg-[#F5F5F5] px-4 pb-21 pt-4">
-      {/* 기간 토글 */}
-      <div className="flex gap-1.5 rounded-full bg-white p-1 shadow-sm">
-        {(["TODAY", "WEEK"] as const).map((p) => (
-          <button
-            key={p}
-            type="button"
-            onClick={() => setPeriod(p)}
-            className={`flex-1 rounded-full py-2 text-sm font-semibold transition-colors ${
-              period === p
-                ? "bg-[#931B82] text-white"
-                : "bg-transparent text-[#A8A8A8]"
-            }`}
-          >
-            {p === "TODAY" ? "오늘" : "이번주"}
-          </button>
-        ))}
-      </div>
-
       {/* Hero — 미처리 강조 */}
       <button
         type="button"
