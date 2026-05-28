@@ -1,5 +1,6 @@
 export { signup, login, reissue } from "./authApi";
-export { getMe } from "./userApi";
+export { getMe, changeMyPassword } from "./userApi";
+export type { ChangePasswordRequest } from "./userApi";
 export { tokenStorage } from "./tokenStorage";
 export { installAuthInterceptors } from "./interceptors";
 export { AuthError } from "../type/types";
