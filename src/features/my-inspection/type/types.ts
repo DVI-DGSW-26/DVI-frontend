@@ -50,6 +50,10 @@ export interface MyInspection {
   customer: MyInspectionCustomer;
   dims: MyInspectionDim[];
   status: MyInspectionStatus;
+  // 날짜 필터링용. 백엔드가 보내주면 사용, 없으면 필터 통과.
+  createdAt?: string;
+  updatedAt?: string;
+  completedAt?: string;
 }
 
 export type MyInspectionListResponse = ApiResponse<MyInspection[]>;
