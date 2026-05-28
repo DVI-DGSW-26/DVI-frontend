@@ -99,7 +99,7 @@ export default function StartInspectionPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-6">
+    <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-20 md:pb-6">
       {/* 페이지 제목과 뒤로 버튼은 레이아웃 헤더가 담당. 단계 표시만 카드로 강조. */}
       <div className="px-4 pt-4">
         <StepBar
