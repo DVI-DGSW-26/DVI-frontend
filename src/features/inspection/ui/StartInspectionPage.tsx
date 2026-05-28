@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useEquipmentList } from "../../equipment/api";
 import { useProductList } from "../../products/api";
@@ -37,13 +37,28 @@ interface SelectedEquipment {
 
 export default function StartInspectionPage() {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [step, setStep] = useState<Step>("product");
+  // 단계 전환을 브라우저 history 에 쌓기 위해 step 을 URL 쿼리(?step=) 로 관리.
+  // 설비 단계에서 뒤로가기를 누르면 자연스럽게 제품 단계로 복귀한다.
+  // 제품이 아직 선택되지 않았으면 강제로 제품 단계로 폴백 (직접 URL 접근/새로고침 대비).
+  const stepFromUrl = new URLSearchParams(location.search).get("step");
   const [product, setProduct] = useState<SelectedProduct | null>(null);
   const [equipment, setEquipment] = useState<SelectedEquipment | null>(null);
   const [productKeyword, setProductKeyword] = useState("");
   const [productProcess, setProductProcess] = useState<ProcessFilter>("ALL");
   const [equipmentKeyword, setEquipmentKeyword] = useState("");
+  const step: Step =
+    stepFromUrl === "equipment" && product ? "equipment" : "product";
+
+  // 제품 단계로 (뒤로) 돌아왔을 때 선택했던 설비/검색어를 비워서, 다시 선택하면
+  // 새 흐름처럼 보이도록 한다.
+  useEffect(() => {
+    if (step === "product") {
+      setEquipment(null);
+      setEquipmentKeyword("");
+    }
+  }, [step]);
 
   const productsQuery = useProductList();
   const equipmentQuery = useEquipmentList();
@@ -82,7 +97,8 @@ export default function StartInspectionPage() {
     setProduct(p);
     setEquipment(null);
     setEquipmentKeyword("");
-    setStep("equipment");
+    // URL 에 ?step=equipment 를 push — 브라우저 history 가 한 칸 늘어난다.
+    navigate("?step=equipment");
   };
 
   const handleSelectEquipment = (e: SelectedEquipment) => {
@@ -105,10 +121,8 @@ export default function StartInspectionPage() {
         <StepBar
           step={step}
           onJumpTo={(target) => {
-            if (target === "product") {
-              setStep("product");
-              setEquipment(null);
-            }
+            // history 일관성을 위해 직접 setState 가 아닌 뒤로가기로 처리한다.
+            if (target === "product") navigate(-1);
           }}
         />
         {step === "equipment" && product && (

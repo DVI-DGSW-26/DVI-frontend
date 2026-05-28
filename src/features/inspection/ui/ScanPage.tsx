@@ -114,8 +114,8 @@ export default function ScanPage() {
         type,
       });
       // POST 성공 — 상세 화면으로 보내서 측정 시작 전 미리보기 단계 거치게 한다.
+      // /scan 을 history 에 남겨, 검사 상세에서 뒤로가기 시 시점 선택으로 돌아갈 수 있도록 함.
       navigate(`/inspection/${inspection.inspectionId}`, {
-        replace: true,
         state: { inspection, qualityName },
       });
     } catch (err) {
