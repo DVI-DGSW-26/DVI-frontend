@@ -25,8 +25,14 @@ interface ResultLocationState {
   equipmentName?: string;
   productName?: string;
   inspectorName?: string;
+  productionInspectorName?: string;
   // EXTRUSION 일 때 경도 입력 노출 여부 판단.
   process?: string;
+}
+
+interface ResultMeta {
+  resultId: number;
+  imageUrl?: string;
 }
 
 export default function CrossCheckResultPage() {
@@ -39,20 +45,19 @@ export default function CrossCheckResultPage() {
   const state = (location.state ?? {}) as ResultLocationState;
   const stateResults = useMemo(() => state.results ?? [], [state.results]);
 
-  // 새로고침/뒤로가기 대응 — state 가 비면 detail 로 폴백.
-  const needsFallback = stateResults.length === 0;
-  const detailQuery = useCrossCheckDetail(
-    needsFallback ? crossCheckId : undefined,
-  );
+  // resultId 매핑 + 저장 시 imageUrl 보존을 위해 detail 은 항상 fetch.
+  const detailQuery = useCrossCheckDetail(crossCheckId);
   const detail = detailQuery.data;
+
+  const needsFallback = stateResults.length === 0;
 
   const fallbackResults = useMemo<StepResult[]>(() => {
     if (!needsFallback || !detail?.results?.length) return [];
     return detail.results
       .map<StepResult>((r) => {
         const measured = r.measuredValue ?? undefined;
-        // 순회검사는 사진 촬영 안 함 — measuredValue 만으로 완료 판정.
-        const done = measured != null;
+        const imageUrl = r.imageUrl ?? undefined;
+        const done = measured != null && !!imageUrl;
         return {
           dimNo: r.dimNo,
           dimName: r.dimName,
@@ -61,15 +66,30 @@ export default function CrossCheckResultPage() {
           toleranceMinus: r.toleranceMinus,
           status: done ? "completed" : "skipped",
           measuredValue: measured,
+          imageUrl,
         };
       })
       .sort((a, b) => a.dimNo - b.dimNo);
   }, [needsFallback, detail]);
 
-  const results = needsFallback ? fallbackResults : stateResults;
+  // dimNo → { resultId, imageUrl } 매핑 — 인라인 수정 저장 시 사용.
+  const metaByDimNo = useMemo<Map<number, ResultMeta>>(() => {
+    const m = new Map<number, ResultMeta>();
+    detail?.results?.forEach((r) => {
+      m.set(r.dimNo, {
+        resultId: r.resultId,
+        imageUrl: r.imageUrl ?? undefined,
+      });
+    });
+    return m;
+  }, [detail]);
+
+  const baseResults = needsFallback ? fallbackResults : stateResults;
   const equipmentName = state.equipmentName ?? detail?.equipment.name ?? "-";
   const productName = state.productName ?? detail?.product.name ?? "-";
   const inspectorName = state.inspectorName ?? user?.name ?? "-";
+  const productionInspectorName =
+    state.productionInspectorName ?? detail?.production.name ?? "-";
   const process = state.process ?? detail?.product.process ?? "";
   const requiresHardness = process === "EXTRUSION";
 
@@ -80,6 +100,8 @@ export default function CrossCheckResultPage() {
   const [hardness, setHardness] = useState<string>("");
   const [note, setNote] = useState<string>("");
   const [toast, setToast] = useState<string | null>(null);
+  // 카드별 인라인 수정값. dimNo → 새 측정값. 저장 성공 후에만 채워진다.
+  const [editedValues, setEditedValues] = useState<Record<number, number>>({});
 
   // detail 로 들어왔을 때 기존 값 prefill.
   useEffect(() => {
@@ -93,9 +115,16 @@ export default function CrossCheckResultPage() {
     if (!note && detail.note) {
       setNote(detail.note);
     }
-    // appearance/hardness/note 는 사용자 입력에 의해 변경되므로 deps 에 detail 만.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [detail]);
+
+  const results = useMemo<StepResult[]>(() => {
+    return baseResults.map((r) =>
+      editedValues[r.dimNo] != null
+        ? { ...r, measuredValue: editedValues[r.dimNo] }
+        : r,
+    );
+  }, [baseResults, editedValues]);
 
   const hasSkipped = useMemo(
     () => results.some((r) => r.status === "skipped"),
@@ -152,13 +181,38 @@ export default function CrossCheckResultPage() {
     }
   };
 
+  const handleEditMeasuredValue = async (dimNo: number, newValue: number) => {
+    const meta = metaByDimNo.get(dimNo);
+    if (!meta) {
+      setToast("저장할 수 없습니다. 새로고침 후 다시 시도해주세요.");
+      return;
+    }
+    try {
+      await saveMut.mutateAsync({
+        results: [
+          {
+            resultId: meta.resultId,
+            measuredValue: newValue,
+            ...(meta.imageUrl ? { imageUrl: meta.imageUrl } : {}),
+          },
+        ],
+      });
+      setEditedValues((prev) => ({ ...prev, [dimNo]: newValue }));
+      setToast("측정값이 수정되었습니다");
+    } catch (err) {
+      setToast(toErrorMessage(err));
+      throw err;
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-28">
       <section className="border-b border-gray-200 bg-white px-4 py-4">
         <InfoRow label="기계명" value={equipmentName} />
-        <div className="mt-2 grid grid-cols-2 gap-2">
+        <div className="mt-2 grid grid-cols-3 gap-2">
           <Stat label="제품명" value={productName} />
-          <Stat label="담당자" value={inspectorName} />
+          <Stat label="자주검사자" value={productionInspectorName} />
+          <Stat label="순회검사자" value={inspectorName} />
         </div>
       </section>
 
@@ -169,7 +223,12 @@ export default function CrossCheckResultPage() {
         <ul className="flex flex-col gap-3">
           {results.map((r, idx) => (
             <li key={`${r.dimNo}-${idx}`}>
-              <StepResultCard step={idx + 1} result={r} />
+              <StepResultCard
+                step={idx + 1}
+                result={r}
+                editable={metaByDimNo.has(r.dimNo)}
+                onEditSubmit={(v) => handleEditMeasuredValue(r.dimNo, v)}
+              />
             </li>
           ))}
         </ul>
@@ -275,15 +334,51 @@ export default function CrossCheckResultPage() {
 function StepResultCard({
   step,
   result,
+  editable,
+  onEditSubmit,
 }: {
   step: number;
   result: StepResult;
+  editable: boolean;
+  onEditSubmit: (value: number) => Promise<void>;
 }) {
   const dimText = formatStandardWithTolerance(
     result.standardValue,
     result.tolerancePlus,
     result.toleranceMinus,
   );
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState<string>("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const beginEdit = () => {
+    setDraft(result.measuredValue != null ? String(result.measuredValue) : "");
+    setIsEditing(true);
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setDraft("");
+  };
+
+  const trimmed = draft.trim();
+  const parsed = trimmed === "" ? NaN : Number(trimmed);
+  const isValid = Number.isFinite(parsed);
+
+  const saveEdit = async () => {
+    if (!isValid) return;
+    setIsSaving(true);
+    try {
+      await onEditSubmit(parsed);
+      setIsEditing(false);
+      setDraft("");
+    } catch {
+      // 토스트는 부모가 처리. 편집 모드 유지.
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-3">
@@ -308,12 +403,57 @@ function StepResultCard({
               />
             </div>
           )}
-          <div className="mt-3 flex items-baseline justify-between rounded-lg bg-[#F9FAFB] px-3 py-2">
-            <span className="text-xs text-[#6B7280]">측정값</span>
-            <span className="text-base font-semibold text-[#212121]">
-              {result.measuredValue ?? "-"}
-            </span>
-          </div>
+          {isEditing ? (
+            <div className="mt-3 rounded-lg bg-[#F9FAFB] p-3">
+              <label className="block text-xs text-[#6B7280]">측정값 수정</label>
+              <input
+                type="number"
+                inputMode="decimal"
+                step="any"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                disabled={isSaving}
+                autoFocus
+                className="mt-1 h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-base text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+              />
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  disabled={isSaving}
+                  className="h-9 flex-1 rounded-md border border-gray-300 bg-white text-xs font-semibold text-[#212121] disabled:opacity-60"
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  onClick={saveEdit}
+                  disabled={!isValid || isSaving}
+                  className="h-9 flex-1 rounded-md bg-[#931B82] text-xs font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+                >
+                  {isSaving ? "저장 중..." : "저장"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-3 flex items-center justify-between rounded-lg bg-[#F9FAFB] px-3 py-2">
+              <span className="text-xs text-[#6B7280]">측정값</span>
+              <div className="flex items-center gap-3">
+                <span className="text-base font-semibold text-[#212121]">
+                  {result.measuredValue ?? "-"}
+                </span>
+                {editable && (
+                  <button
+                    type="button"
+                    onClick={beginEdit}
+                    className="rounded-md border border-[#931B82] px-2 py-1 text-xs font-semibold text-[#931B82] hover:bg-[#F3E8FF]"
+                  >
+                    수정
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </>
       ) : (
         <div className="mt-3 flex aspect-square w-full flex-col items-center justify-center rounded-lg border border-dashed border-[#D1D5DB] bg-[#F3F4F6] text-[#6B7280]">
@@ -323,7 +463,7 @@ function StepResultCard({
             height={36}
             className="text-[#9CA3AF]"
           />
-          <span className="mt-2 text-sm font-medium">사진 촬영 불가</span>
+          <span className="mt-2 text-sm font-medium">건너뜀</span>
         </div>
       )}
     </div>

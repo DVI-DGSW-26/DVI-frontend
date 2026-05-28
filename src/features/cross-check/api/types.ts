@@ -113,6 +113,7 @@ export interface CrossCheckDetail {
   product: ProductInfo;
   equipment: EquipmentInfo;
   customer: CustomerInfo;
+  // production.name 이 자주검사자(작업자) 이름.
   production: ProductionInfo;
   results: CrossCheckResultInfo[];
   // 자주검사 단계에서 작업자가 기록한 외관 결과 (참고용).

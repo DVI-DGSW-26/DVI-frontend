@@ -9,11 +9,15 @@ import {
   formatStandardWithTolerance,
 } from "../../inspection/lib/format";
 import Toast from "../../inspection/ui/Toast";
+import CapturePhase from "../../inspection/ui/CapturePhase";
+import CropPhase from "../../inspection/ui/CropPhase";
+import { useUploadInspectionImage } from "../../inspection/api";
+import CrossCheckInputPhase from "./CrossCheckInputPhase";
 import { useCrossCheckDetail, useSaveCrossCheckResults } from "../api";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 
-// 순회검사 측정 항목. 품질 담당자는 작업자가 올린 측정값/사진을 참고만 하므로
-// 별도 촬영은 하지 않고 측정값만 입력한다.
+type Phase = "capture" | "crop" | "input";
+
 interface MeasureItem {
   resultId: number;
   dimId: number;
@@ -25,10 +29,11 @@ interface MeasureItem {
   productionValue?: number;
   productionImageUrl?: string;
   measuredValue?: number;
+  imageUrl?: string;
 }
 
 function isItemDone(item: MeasureItem): boolean {
-  return item.measuredValue != null;
+  return item.measuredValue != null && !!item.imageUrl;
 }
 
 function toCompletedStep(item: MeasureItem): StepResult {
@@ -40,6 +45,7 @@ function toCompletedStep(item: MeasureItem): StepResult {
     toleranceMinus: item.toleranceMinus,
     status: "completed",
     measuredValue: item.measuredValue,
+    imageUrl: item.imageUrl,
   };
 }
 
@@ -75,6 +81,7 @@ export default function CrossCheckMeasurePage() {
         productionValue: r.productionValue ?? undefined,
         productionImageUrl: r.productionImageUrl ?? undefined,
         measuredValue: r.measuredValue ?? undefined,
+        imageUrl: r.imageUrl ?? undefined,
       }))
       .sort((a, b) => a.dimNo - b.dimNo);
   }, [detail]);
@@ -88,9 +95,14 @@ export default function CrossCheckMeasurePage() {
   const startIdx = firstEmptyIdx === -1 ? items.length : firstEmptyIdx;
 
   const [sessionResults, setSessionResults] = useState<StepResult[]>([]);
-  const [inputValue, setInputValue] = useState("");
+  const [phase, setPhase] = useState<Phase>("capture");
+  const [capturedFile, setCapturedFile] = useState<File | null>(null);
+  const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+  const [isPreparing, setIsPreparing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
+  const uploadImage = useUploadInspectionImage();
   const saveResults = useSaveCrossCheckResults(crossCheckId);
 
   useEffect(() => {
@@ -102,6 +114,7 @@ export default function CrossCheckMeasurePage() {
         equipmentName: detail.equipment.name,
         productName: detail.product.name,
         inspectorName: user?.name ?? "-",
+        productionInspectorName: detail.production.name,
         process: detail.product.process,
       },
     });
@@ -152,6 +165,14 @@ export default function CrossCheckMeasurePage() {
 
   const isSaving = saveResults.isPending;
 
+  const resetForNextDim = () => {
+    setCapturedFile(null);
+    setCroppedBlob(null);
+    setUploadedImageUrl(null);
+    setIsPreparing(false);
+    setPhase("capture");
+  };
+
   const goToResult = (finalResults: StepResult[]) => {
     navigate(`/cross-check/${crossCheckId}/result`, {
       replace: true,
@@ -160,24 +181,39 @@ export default function CrossCheckMeasurePage() {
         equipmentName: detail.equipment.name,
         productName: detail.product.name,
         inspectorName: user?.name ?? "-",
+        productionInspectorName: detail.production.name,
         process: detail.product.process,
       },
     });
   };
 
-  const trimmed = inputValue.trim();
-  const parsedValue = trimmed === "" ? null : Number(trimmed);
-  const inputValid =
-    parsedValue !== null && Number.isFinite(parsedValue);
+  const handleCropConfirm = async (blob: Blob) => {
+    setCroppedBlob(blob);
+    setUploadedImageUrl(null);
+    setIsPreparing(true);
+    setPhase("input");
 
-  const handleSubmit = async () => {
-    if (!currentDim || !inputValid || parsedValue === null) return;
+    try {
+      const url = await uploadImage.mutateAsync(blob);
+      setUploadedImageUrl(url);
+    } catch (err) {
+      setToast(toErrorMessage(err));
+      setCroppedBlob(null);
+      setPhase("crop");
+    } finally {
+      setIsPreparing(false);
+    }
+  };
+
+  const handleSubmitMeasured = async (measuredValue: number) => {
+    if (!currentDim || !uploadedImageUrl) return;
     try {
       await saveResults.mutateAsync({
         results: [
           {
             resultId: currentDim.resultId,
-            measuredValue: parsedValue,
+            measuredValue,
+            imageUrl: uploadedImageUrl,
           },
         ],
       });
@@ -189,7 +225,8 @@ export default function CrossCheckMeasurePage() {
         tolerancePlus: currentDim.tolerancePlus,
         toleranceMinus: currentDim.toleranceMinus,
         status: "completed",
-        measuredValue: parsedValue,
+        measuredValue,
+        imageUrl: uploadedImageUrl,
       };
 
       if (isLastDim) {
@@ -198,7 +235,7 @@ export default function CrossCheckMeasurePage() {
       }
 
       setSessionResults((prev) => [...prev, next]);
-      setInputValue("");
+      resetForNextDim();
     } catch (err) {
       setToast(toErrorMessage(err));
     }
@@ -219,7 +256,7 @@ export default function CrossCheckMeasurePage() {
       return;
     }
     setSessionResults((prev) => [...prev, next]);
-    setInputValue("");
+    resetForNextDim();
   };
 
   if (totalSteps === 0) {
@@ -248,13 +285,16 @@ export default function CrossCheckMeasurePage() {
         ? "text-[#15803D]"
         : "text-[#B91C1C]";
 
+  const productionInspectorName = detail.production.name;
+
   return (
     <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-24">
       <section className="border-b border-gray-200 bg-white px-4 py-4">
         <InfoRow label="기계명" value={detail.equipment.name} />
-        <div className="mt-2 grid grid-cols-2 gap-2">
+        <div className="mt-2 grid grid-cols-3 gap-2">
           <Stat label="제품명" value={detail.product.name} />
-          <Stat label="담당자" value={user?.name ?? "-"} />
+          <Stat label="자주검사자" value={productionInspectorName} />
+          <Stat label="순회검사자" value={user?.name ?? "-"} />
         </div>
       </section>
 
@@ -291,7 +331,7 @@ export default function CrossCheckMeasurePage() {
         </div>
       </section>
 
-      <section className="flex-1 px-4 pt-4">
+      <section className="px-4 pt-4">
         <div className="rounded-xl border border-gray-200 bg-white p-4">
           <div className="text-xs font-medium text-[#6B7280]">
             자주검사 측정값 (참고)
@@ -326,48 +366,53 @@ export default function CrossCheckMeasurePage() {
             </span>
           </div>
         </div>
-
-        <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4">
-          <label
-            htmlFor="cross-check-measured-value"
-            className="block text-xs font-medium text-[#6B7280]"
-          >
-            순회검사 측정값 입력
-          </label>
-          <input
-            id="cross-check-measured-value"
-            type="number"
-            inputMode="decimal"
-            step="0.001"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="예: 30.123"
-            disabled={isSaving}
-            className="mt-2 h-12 w-full rounded-md border border-gray-300 bg-white px-3 text-base text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
-          />
-        </div>
       </section>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white p-4">
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={handleSkip}
-            disabled={isSaving}
-            className="h-12 flex-1 rounded-md border border-gray-300 text-sm font-medium text-[#212121] transition-colors hover:bg-gray-50 disabled:opacity-60"
-          >
-            건너뛰기
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!inputValid || isSaving}
-            className="h-12 flex-2 rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
-          >
-            {isSaving ? "저장 중..." : isLastDim ? "마지막 항목 제출" : "다음"}
-          </button>
-        </div>
-      </div>
+      <section className="flex-1 px-4 pt-4">
+        <h3 className="mb-2 text-xs font-medium text-[#6B7280]">
+          순회검사 측정
+        </h3>
+
+        {phase === "capture" && (
+          <CapturePhase
+            onCaptured={(file) => {
+              setCapturedFile(file);
+              setPhase("crop");
+            }}
+            onError={setToast}
+            onSkip={handleSkip}
+          />
+        )}
+
+        {phase === "crop" && capturedFile && (
+          <CropPhase
+            file={capturedFile}
+            onRetake={() => {
+              setCapturedFile(null);
+              setPhase("capture");
+            }}
+            onConfirm={handleCropConfirm}
+            onError={setToast}
+          />
+        )}
+
+        {phase === "input" && croppedBlob && (
+          <CrossCheckInputPhase
+            blob={croppedBlob}
+            isLastDim={isLastDim}
+            isSaving={isSaving}
+            isPreparing={isPreparing}
+            onRetake={() => {
+              setCroppedBlob(null);
+              setCapturedFile(null);
+              setUploadedImageUrl(null);
+              setIsPreparing(false);
+              setPhase("capture");
+            }}
+            onSubmit={handleSubmitMeasured}
+          />
+        )}
+      </section>
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
