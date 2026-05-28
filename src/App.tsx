@@ -86,7 +86,9 @@ function App() {
               <Route path="/products" element={<ProductsPage />} />
               <Route path="/equipment" element={<EquipmentPage />} />
               <Route path="/customers" element={<CustomersPage />} />
+            </Route>
 
+            <Route element={<RouteGuard roles={["QUALITY_ADMIN", "ADMIN"]} />}>
               <Route
                 path="/cross-check-approval"
                 element={<CrossCheckApprovalPage />}
@@ -97,7 +99,7 @@ function App() {
               />
             </Route>
 
-            <Route element={<RouteGuard roles={["QUALITY"]} />}>
+            <Route element={<RouteGuard roles={["QUALITY", "ADMIN"]} />}>
               <Route
                 path="/quality-status"
                 element={<QualitySystemStatusPage />}
