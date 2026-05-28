@@ -79,6 +79,29 @@ export type StartInspectionErrorCode =
   | "PRODUCT_NOT_FOUND"
   | "EQUIPMENT_NOT_FOUND";
 
+// POST /inspection/skip — 해당 시점을 건너뛰어 SKIPPED 상태 Inspection 생성.
+export interface SkipInspectionRequest {
+  productId: number;
+  equipmentId: number;
+  type: string;
+  reason?: string;
+}
+
+export type SkipInspectionResponse = MyInspection;
+export type SkipInspectionApiResponse = ApiResponse<SkipInspectionResponse>;
+
+export type SkipInspectionErrorCode =
+  | "INSPECTION_ALREADY_EXISTS"
+  | "NOT_ASSIGNED_PRODUCTION"
+  | "INVALID_INSPECTION_TYPE"
+  | "PRODUCT_NOT_FOUND"
+  | "EQUIPMENT_NOT_FOUND";
+
+export interface SkipInspectionErrorData {
+  code?: SkipInspectionErrorCode;
+  message?: string;
+}
+
 export interface StartInspectionErrorData {
   code?: StartInspectionErrorCode;
   message?: string;

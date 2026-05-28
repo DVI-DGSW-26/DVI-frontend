@@ -28,6 +28,11 @@ export const STATUS_BADGE: Record<string, StatusBadge> = {
     text: "text-[#6B7280]",
     dot: "bg-[#9CA3AF]",
   },
+  SKIPPED: {
+    label: "건너뜀",
+    text: "text-[#6B7280]",
+    dot: "bg-[#9CA3AF]",
+  },
 };
 
 export const FALLBACK_BADGE: StatusBadge = {
@@ -41,8 +46,10 @@ export function getStatusBadge(status: string): StatusBadge {
 }
 
 export function isDoneStep(inspection: MyInspection): boolean {
+  // 압출/프레스 묶음 보고서는 SKIPPED 도 "끝남"으로 인정.
   return (
     inspection.status === "COMPLETED" ||
-    inspection.status === "INCOMPLETE_APPROVED"
+    inspection.status === "INCOMPLETE_APPROVED" ||
+    inspection.status === "SKIPPED"
   );
 }

@@ -6,6 +6,7 @@ import {
   incompleteInspection,
   ocrInspectionImage,
   saveInspectionResults,
+  skipInspection,
   startInspection,
   uploadInspectionImage,
 } from "./inspectionApi";
@@ -51,6 +52,16 @@ export function useStartInspection() {
     mutationFn: startInspection,
     onSuccess: () => {
       // assigned/list 양쪽 다 무효화하기 위해 prefix 단위로.
+      qc.invalidateQueries({ queryKey: myInspectionKeys.all });
+    },
+  });
+}
+
+export function useSkipInspection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: skipInspection,
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: myInspectionKeys.all });
     },
   });

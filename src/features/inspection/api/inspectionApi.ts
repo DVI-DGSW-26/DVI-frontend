@@ -10,6 +10,9 @@ import type {
   InspectionSlotsResponse,
   OcrApiResponse,
   SaveResultsRequest,
+  SkipInspectionApiResponse,
+  SkipInspectionRequest,
+  SkipInspectionResponse,
   StartInspectionApiResponse,
   StartInspectionRequest,
   StartInspectionResponse,
@@ -65,6 +68,16 @@ export async function startInspection(
     }
     throw err;
   }
+}
+
+export async function skipInspection(
+  body: SkipInspectionRequest,
+): Promise<SkipInspectionResponse> {
+  const { data } = await http.post<SkipInspectionApiResponse>(
+    "/inspection/skip",
+    body,
+  );
+  return data.data;
 }
 
 export async function uploadInspectionImage(blob: Blob): Promise<string> {
