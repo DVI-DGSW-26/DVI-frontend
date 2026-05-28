@@ -1,18 +1,28 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
 import { useAuth } from "../../auth/AuthContext";
 import { useMyInspectionList } from "../api";
+import { useStartNextInspection } from "../../inspection/api";
+import type {
+  StartNextInspectionErrorData,
+} from "../../inspection/type/types";
 import type { MyInspection } from "../type/types";
 import { getStatusBadge } from "../lib/inspectionStatus";
+import { extractNextEligible } from "../lib/nextEligible";
 import { formatSlotTime } from "../../inspection/lib/format";
+import Toast from "../../inspection/ui/Toast";
 
-// 홈 화면은 종결된 검사 제외 (트래픽 절약). 탭/현황 페이지에서는 includeFinished=true.
+// "이어서 할 일" 후보를 즉시 계산하기 위해 includeFinished=true 로 받음.
 export default function ProductionHomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const inspectionsQuery = useMyInspectionList();
+  const inspectionsQuery = useMyInspectionList({ includeFinished: true });
+  const startNextMutation = useStartNextInspection();
+  const [toast, setToast] = useState<string | null>(null);
+  const [pendingPrevId, setPendingPrevId] = useState<number | null>(null);
 
   const inspections = useMemo(
     () => inspectionsQuery.data ?? [],
@@ -30,10 +40,46 @@ export default function ProductionHomePage() {
     [inspections],
   );
 
+  // "이어서 할 일" — 같은 제품/설비로 다음 시점 진입 가능한 후보.
+  const nextEligible = useMemo(
+    () => extractNextEligible(inspections),
+    [inspections],
+  );
+
   const handleResume = (inspection: MyInspection) => {
     navigate(`/inspection/${inspection.inspectionId}/measure`, {
       state: { inspection },
     });
+  };
+
+  const handleStartNext = async (previous: MyInspection) => {
+    setPendingPrevId(previous.inspectionId);
+    try {
+      const next = await startNextMutation.mutateAsync(previous.inspectionId);
+      navigate(`/inspection/${next.inspectionId}/measure`, {
+        state: { inspection: next },
+      });
+    } catch (err) {
+      if (err instanceof AxiosError) {
+        const data = err.response?.data as
+          | StartNextInspectionErrorData
+          | undefined;
+        const code = data?.code;
+        if (code === "NO_NEXT_SLOT") {
+          setToast("마지막 시점입니다.");
+        } else if (code === "PREVIOUS_INSPECTION_NOT_COMPLETED") {
+          setToast("이전 검사를 먼저 완료해주세요.");
+        } else if (code === "INSPECTION_ALREADY_EXISTS") {
+          setToast("이미 시작된 시점입니다.");
+        } else {
+          setToast(data?.message ?? "다음 시점을 시작하지 못했습니다.");
+        }
+      } else {
+        setToast("다음 시점을 시작하지 못했습니다.");
+      }
+    } finally {
+      setPendingPrevId(null);
+    }
   };
 
   return (
@@ -118,6 +164,76 @@ export default function ProductionHomePage() {
         )}
       </div>
 
+      {/* "이어서 할 일" — 같은 제품/설비로 다음 시점 검사를 한 번에 시작. 비어있으면 영역 숨김. */}
+      {nextEligible.length > 0 && (
+        <section className="px-4 pt-4">
+          <div className="mb-2 flex items-baseline justify-between">
+            <h2 className="text-sm font-semibold text-[#212121]">
+              이어서 할 일
+            </h2>
+            <span className="text-xs font-medium text-[#931B82]">
+              {nextEligible.length}건
+            </span>
+          </div>
+
+          <ul className="flex flex-col gap-2">
+            {nextEligible.map(({ previous, nextType }) => {
+              const isPending =
+                startNextMutation.isPending &&
+                pendingPrevId === previous.inspectionId;
+              const nextLabel =
+                resolveNextLabel(previous, nextType) ?? nextType;
+              return (
+                <li
+                  key={previous.inspectionId}
+                  className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold text-[#212121]">
+                        {previous.product.name}
+                      </div>
+                      <div className="mt-0.5 truncate text-xs text-[#6B7280]">
+                        {previous.equipment.name}
+                      </div>
+                    </div>
+                    <Icon
+                      icon="solar:arrow-right-linear"
+                      width={16}
+                      height={16}
+                      className="shrink-0 text-[#9CA3AF]"
+                    />
+                  </div>
+                  <div className="mt-2 flex items-center gap-1.5 text-xs text-[#6B7280]">
+                    <Icon
+                      icon="solar:check-circle-bold"
+                      width={14}
+                      height={14}
+                      className="text-[#22C55E]"
+                    />
+                    <span>
+                      {previous.typeLabel || previous.type} 완료
+                    </span>
+                    <span className="text-[#D1D5DB]">›</span>
+                    <span className="font-medium text-[#931B82]">
+                      {nextLabel} 시작
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleStartNext(previous)}
+                    disabled={startNextMutation.isPending}
+                    className="mt-3 h-10 w-full rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+                  >
+                    {isPending ? "시작 중..." : "다음 시점 시작"}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       {/* 미완료 검사가 있으면 후속 조치를 위해 홈에 미리 노출. 없으면 영역 자체를 숨김. */}
       {incompleteInspections.length > 0 && (
         <section className="px-4 pt-4">
@@ -170,6 +286,22 @@ export default function ProductionHomePage() {
           </ul>
         </section>
       )}
+
+      {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
   );
+}
+
+// "다음 시점" 라벨은 typeLabel 매핑이 응답에 따로 안 오므로,
+// 같은 (productId, equipmentId) 의 다른 검사 데이터를 활용해 type → label 매핑을
+// 시도하고, 못 찾으면 type 코드 그대로 보여준다.
+function resolveNextLabel(
+  previous: MyInspection,
+  nextType: string,
+): string | null {
+  // 같은 type 라벨이 일관되게 부여되어 있으므로, 같은 type 의 검사가 있다면 거기서 빌려옴.
+  // 여기서는 정보가 충분하지 않으므로 null 반환 — 호출부에서 type 코드 그대로 사용한다.
+  void previous;
+  void nextType;
+  return null;
 }

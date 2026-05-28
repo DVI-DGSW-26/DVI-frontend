@@ -4,7 +4,8 @@ export type MyInspectionStatus =
   | "DRAFT"
   | "COMPLETED"
   | "INCOMPLETE"
-  | "INCOMPLETE_APPROVED";
+  | "INCOMPLETE_APPROVED"
+  | "SKIPPED";
 
 export interface MyInspectionProduct {
   id: number;
