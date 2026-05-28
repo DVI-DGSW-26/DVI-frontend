@@ -19,7 +19,12 @@ export interface InspectionDetailResult {
   toleranceMinus: number;
   measuredValue: number | null;
   imageUrl: string | null;
+  // 가공(MACHINING) 공정 전용 — 작업자가 선택한 OK/NG 판정. 다른 공정은 null/undefined.
+  passFailResult?: PassFailResult | null;
 }
+
+// 가공 공정에서 각 측정 항목에 부여하는 OK/NG 판정. 외관 검사용 AppearanceResult 와는 의미가 다르지만 값 도메인은 동일.
+export type PassFailResult = "OK" | "NG";
 
 // GET /inspection/{id} 응답 본체. MyInspection 과는 별개 (dims 없음, results 와 부가 필드 있음).
 // orderId 는 신규 흐름(작업자 직접 시작) 응답에는 없을 수 있어 optional.
@@ -79,6 +84,21 @@ export type StartInspectionErrorCode =
   | "PRODUCT_NOT_FOUND"
   | "EQUIPMENT_NOT_FOUND";
 
+// POST /inspection/{previousId}/next — 직전 검사의 같은 제품/설비로 다음 시점 검사 생성.
+export type StartNextInspectionResponse = MyInspection;
+export type StartNextInspectionApiResponse =
+  ApiResponse<StartNextInspectionResponse>;
+
+export type StartNextInspectionErrorCode =
+  | "NO_NEXT_SLOT"
+  | "PREVIOUS_INSPECTION_NOT_COMPLETED"
+  | "INSPECTION_ALREADY_EXISTS";
+
+export interface StartNextInspectionErrorData {
+  code?: StartNextInspectionErrorCode;
+  message?: string;
+}
+
 // POST /inspection/skip — 해당 시점을 건너뛰어 SKIPPED 상태 Inspection 생성.
 export interface SkipInspectionRequest {
   productId: number;
@@ -129,12 +149,16 @@ export interface InspectionResultPayload {
   resultId: number;
   measuredValue: number;
   imageUrl: string;
+  // 가공(MACHINING) 공정에서만 함께 전송. 다른 공정은 미포함.
+  passFailResult?: PassFailResult;
 }
 
 export type AppearanceResult = "OK" | "NG";
 
 export interface SaveResultsRequest {
-  results: InspectionResultPayload[];
+  // 백엔드는 PATCH 시멘틱 — 보내지 않은 필드는 건드리지 않는다.
+  // 외관/비고만 부분 업데이트하는 경우엔 results 를 생략한다.
+  results?: InspectionResultPayload[];
   appearanceResult?: AppearanceResult;
   // 설비 이상/특이사항 자유 텍스트. 보고서 비고란에 표시됨. 선택.
   note?: string;
@@ -161,6 +185,8 @@ export interface StepResult {
   status: StepStatus;
   measuredValue?: number;
   imageUrl?: string;
+  // 가공 공정 한정 — 작업자가 선택한 OK/NG 판정.
+  passFailResult?: PassFailResult;
 }
 
 export interface IncompleteRequest {

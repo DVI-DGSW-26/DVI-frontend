@@ -115,9 +115,10 @@ export default function StartInspectionPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-6">
-      {/* 페이지 제목과 뒤로 버튼은 레이아웃 헤더가 담당. 단계 표시만 카드로 강조. */}
-      <div className="px-4 pt-4">
+    <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-24">
+      {/* StepBar + 선택된 제품 미리보기 + 검색/필터를 하나의 sticky 영역으로 묶음.
+          Layout 의 <main overflow-y-auto> 안에서 top:0 으로 고정되어, 리스트만 스크롤된다. */}
+      <div className="sticky top-0 z-10 bg-[#F5F5F5] px-4 pt-4 pb-3">
         <StepBar
           step={step}
           onJumpTo={(target) => {
@@ -137,20 +138,32 @@ export default function StartInspectionPage() {
             </div>
           </div>
         )}
+        <div className="mt-3">
+          {step === "product" ? (
+            <>
+              <SearchBox
+                value={productKeyword}
+                onChange={setProductKeyword}
+                placeholder="제품명 / 코드 / 고객사 검색"
+              />
+              <ProcessChipFilter
+                value={productProcess}
+                onChange={setProductProcess}
+              />
+            </>
+          ) : (
+            <SearchBox
+              value={equipmentKeyword}
+              onChange={setEquipmentKeyword}
+              placeholder="설비명 검색"
+            />
+          )}
+        </div>
       </div>
 
       <main className="flex-1 px-4 pt-4">
         {step === "product" ? (
           <>
-            <SearchBox
-              value={productKeyword}
-              onChange={setProductKeyword}
-              placeholder="제품명 / 코드 / 고객사 검색"
-            />
-            <ProcessChipFilter
-              value={productProcess}
-              onChange={setProductProcess}
-            />
             {productsQuery.isLoading ? (
               <EmptyMsg>제품을 불러오는 중...</EmptyMsg>
             ) : productsQuery.isError ? (
@@ -203,11 +216,6 @@ export default function StartInspectionPage() {
           </>
         ) : (
           <>
-            <SearchBox
-              value={equipmentKeyword}
-              onChange={setEquipmentKeyword}
-              placeholder="설비명 검색"
-            />
             {equipmentQuery.isLoading ? (
               <EmptyMsg>설비를 불러오는 중...</EmptyMsg>
             ) : equipmentQuery.isError ? (

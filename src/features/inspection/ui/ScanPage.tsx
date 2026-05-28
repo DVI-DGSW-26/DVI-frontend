@@ -264,7 +264,7 @@ export default function ScanPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-6">
+    <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-24">
       <div className="px-4 pt-4">
         <h2 className="text-base font-semibold text-[#212121]">
           검사 시점 선택

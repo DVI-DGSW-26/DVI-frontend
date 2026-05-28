@@ -16,6 +16,8 @@ import type {
   StartInspectionApiResponse,
   StartInspectionRequest,
   StartInspectionResponse,
+  StartNextInspectionApiResponse,
+  StartNextInspectionResponse,
   UploadImageApiResponse,
 } from "../type/types";
 
@@ -76,6 +78,15 @@ export async function skipInspection(
   const { data } = await http.post<SkipInspectionApiResponse>(
     "/inspection/skip",
     body,
+  );
+  return data.data;
+}
+
+export async function startNextInspection(
+  previousId: number,
+): Promise<StartNextInspectionResponse> {
+  const { data } = await http.post<StartNextInspectionApiResponse>(
+    `/inspection/${previousId}/next`,
   );
   return data.data;
 }

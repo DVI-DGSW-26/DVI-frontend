@@ -8,6 +8,7 @@ import {
   saveInspectionResults,
   skipInspection,
   startInspection,
+  startNextInspection,
   uploadInspectionImage,
 } from "./inspectionApi";
 import type {
@@ -15,7 +16,25 @@ import type {
   InspectionProcess,
   SaveResultsRequest,
 } from "../type/types";
+import type { MyInspection } from "../../my-inspection/type/types";
 import { myInspectionKeys } from "../../my-inspection/api";
+
+// 새 inspection 이 만들어진 직후 invalidate 만 호출하면 refetch 가 완료되기 전에 화면이
+// 잠깐 OLD 상태로 보일 수 있다 (사용자가 빠르게 navigate/back 한 경우 "이어 작업하기" 카드가
+// 사라진 것처럼 보이는 race). 캐시에 즉시 새 항목을 끼워넣고 invalidate 는 보조용으로 둔다.
+function pushInspectionToCache(
+  qc: ReturnType<typeof useQueryClient>,
+  fresh: MyInspection,
+) {
+  qc.setQueriesData<MyInspection[]>(
+    { queryKey: myInspectionKeys.all },
+    (prev) => {
+      if (!prev) return prev;
+      if (prev.some((i) => i.inspectionId === fresh.inspectionId)) return prev;
+      return [fresh, ...prev];
+    },
+  );
+}
 
 export const inspectionKeys = {
   all: ["inspection"] as const,
@@ -50,7 +69,8 @@ export function useStartInspection() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: startInspection,
-    onSuccess: () => {
+    onSuccess: (fresh) => {
+      pushInspectionToCache(qc, fresh);
       // assigned/list 양쪽 다 무효화하기 위해 prefix 단위로.
       qc.invalidateQueries({ queryKey: myInspectionKeys.all });
     },
@@ -61,7 +81,19 @@ export function useSkipInspection() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: skipInspection,
-    onSuccess: () => {
+    onSuccess: (fresh) => {
+      pushInspectionToCache(qc, fresh);
+      qc.invalidateQueries({ queryKey: myInspectionKeys.all });
+    },
+  });
+}
+
+export function useStartNextInspection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (previousId: number) => startNextInspection(previousId),
+    onSuccess: (fresh) => {
+      pushInspectionToCache(qc, fresh);
       qc.invalidateQueries({ queryKey: myInspectionKeys.all });
     },
   });
@@ -86,6 +118,9 @@ export function useSaveInspectionResults(inspectionId: number) {
       saveInspectionResults(inspectionId, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: myInspectionKeys.all });
+      // 외관/비고를 즉시 저장하는 흐름이 생긴 뒤로는, detail 도 무효화해서
+      // 새로고침/재진입 시 최신 값으로 다시 동기화되도록 한다.
+      qc.invalidateQueries({ queryKey: inspectionKeys.detail(inspectionId) });
     },
   });
 }

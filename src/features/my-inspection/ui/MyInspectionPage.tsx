@@ -1,7 +1,15 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
-import { useMyInspectionList } from "../api";
+import {
+  useDeleteInspection,
+  useMyInspectionList,
+  type DeleteInspectionErrorData,
+} from "../api";
+import { useStartNextInspection } from "../../inspection/api";
+import { getNextSlot } from "../../inspection/lib/slotSequence";
+import type { StartNextInspectionErrorData } from "../../inspection/type/types";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import type { MyInspection } from "../type/types";
 import type { Tab } from "../lib/inspectionStatus";
@@ -9,6 +17,8 @@ import TabBar from "./TabBar";
 import PullToRefreshIndicator from "./PullToRefreshIndicator";
 import EmptyState from "./EmptyState";
 import OrderCard from "./OrderCard";
+import DeleteInspectionModal from "./DeleteInspectionModal";
+import Toast from "../../inspection/ui/Toast";
 
 // /inspection/my?includeFinished=true 단일 호출. 탭 전환은 클라이언트 필터링.
 function filterByTab(inspections: MyInspection[], tab: Tab): MyInspection[] {
@@ -30,8 +40,15 @@ function filterByTab(inspections: MyInspection[], tab: Tab): MyInspection[] {
 export default function MyInspectionPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("ALL");
+  const [deleteTarget, setDeleteTarget] = useState<MyInspection | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   const inspectionsQuery = useMyInspectionList({ includeFinished: true });
+  const deleteMutation = useDeleteInspection();
+  const startNextMutation = useStartNextInspection();
+  const [pendingNextPrevId, setPendingNextPrevId] = useState<number | null>(
+    null,
+  );
 
   const myInspections = useMemo(
     () => inspectionsQuery.data ?? [],
@@ -58,6 +75,87 @@ export default function MyInspectionPage() {
   const { scrollRef, pullY, refreshing, triggerReady, bind } = usePullToRefresh(
     { onRefresh: () => inspectionsQuery.refetch() },
   );
+
+  // 같은 (productId, equipmentId, type) 조합이 이미 있는 경우(=다음 시점 이미 시작/SKIPPED) "다음 시점 시작" 노출 안 함.
+  const occupiedSlotKeys = useMemo(() => {
+    const set = new Set<string>();
+    for (const i of myInspections) {
+      set.add(`${i.product.id}-${i.equipment.id}-${i.type}`);
+    }
+    return set;
+  }, [myInspections]);
+
+  const getNextTypeFor = (i: MyInspection): string | null => {
+    if (i.status !== "COMPLETED") return null;
+    const next = getNextSlot(i.product.process, i.type);
+    if (!next) return null;
+    // 이미 다음 시점이 시작되어 있으면 노출하지 않음.
+    if (occupiedSlotKeys.has(`${i.product.id}-${i.equipment.id}-${next}`))
+      return null;
+    return next;
+  };
+
+  const handleStartNext = async (previous: MyInspection) => {
+    setPendingNextPrevId(previous.inspectionId);
+    try {
+      const next = await startNextMutation.mutateAsync(previous.inspectionId);
+      navigate(`/inspection/${next.inspectionId}/measure`, {
+        state: { inspection: next },
+      });
+    } catch (err) {
+      if (err instanceof AxiosError) {
+        const data = err.response?.data as
+          | StartNextInspectionErrorData
+          | undefined;
+        const code = data?.code;
+        if (code === "NO_NEXT_SLOT") {
+          setToast("마지막 시점입니다.");
+        } else if (code === "PREVIOUS_INSPECTION_NOT_COMPLETED") {
+          setToast("이전 검사를 먼저 완료해주세요.");
+        } else if (code === "INSPECTION_ALREADY_EXISTS") {
+          setToast("이미 시작된 시점입니다.");
+        } else {
+          setToast(data?.message ?? "다음 시점을 시작하지 못했습니다.");
+        }
+      } else {
+        setToast("다음 시점을 시작하지 못했습니다.");
+      }
+    } finally {
+      setPendingNextPrevId(null);
+    }
+  };
+
+  const handleRequestDelete = (inspection: MyInspection) => {
+    setDeleteTarget(inspection);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteMutation.mutateAsync(deleteTarget.inspectionId);
+      setDeleteTarget(null);
+      setToast("검사가 삭제되었습니다.");
+    } catch (err) {
+      if (err instanceof AxiosError) {
+        const data = err.response?.data as
+          | DeleteInspectionErrorData
+          | undefined;
+        const code = data?.code;
+        const status = err.response?.status;
+        setDeleteTarget(null);
+        if (code === "INSPECTION_NOT_DELETABLE" || status === 400) {
+          setToast("이미 처리된 검사는 삭제할 수 없습니다.");
+          return;
+        }
+        if (code === "NOT_OWNER" || status === 403) {
+          setToast("본인이 시작한 검사만 삭제할 수 있습니다.");
+          return;
+        }
+      }
+      setDeleteTarget(null);
+      setToast("검사를 삭제하지 못했습니다.");
+    }
+  };
 
   return (
     <div
@@ -88,7 +186,17 @@ export default function MyInspectionPage() {
         ) : (
           <div className="flex flex-col gap-2.5">
             {entries.map((inspection) => (
-              <OrderCard key={inspection.inspectionId} inspection={inspection} />
+              <OrderCard
+                key={inspection.inspectionId}
+                inspection={inspection}
+                onRequestDelete={handleRequestDelete}
+                nextType={getNextTypeFor(inspection)}
+                onStartNext={handleStartNext}
+                isStartingNext={
+                  startNextMutation.isPending &&
+                  pendingNextPrevId === inspection.inspectionId
+                }
+              />
             ))}
           </div>
         )}
@@ -104,6 +212,18 @@ export default function MyInspectionPage() {
         <Icon icon="solar:add-circle-bold" width={22} height={22} />
         <span className="text-sm font-semibold">검사 시작</span>
       </button>
+
+      <DeleteInspectionModal
+        open={!!deleteTarget}
+        isSubmitting={deleteMutation.isPending}
+        onCancel={() => {
+          if (deleteMutation.isPending) return;
+          setDeleteTarget(null);
+        }}
+        onConfirm={handleConfirmDelete}
+      />
+
+      {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
   );
 }
