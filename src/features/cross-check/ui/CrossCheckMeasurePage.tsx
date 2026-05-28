@@ -114,7 +114,7 @@ export default function CrossCheckMeasurePage() {
         equipmentName: detail.equipment.name,
         productName: detail.product.name,
         inspectorName: user?.name ?? "-",
-        productionInspectorName: detail.productionInspectorName ?? "-",
+        productionInspectorName: detail.production.name,
         process: detail.product.process,
       },
     });
@@ -181,7 +181,7 @@ export default function CrossCheckMeasurePage() {
         equipmentName: detail.equipment.name,
         productName: detail.product.name,
         inspectorName: user?.name ?? "-",
-        productionInspectorName: detail.productionInspectorName ?? "-",
+        productionInspectorName: detail.production.name,
         process: detail.product.process,
       },
     });
@@ -285,7 +285,7 @@ export default function CrossCheckMeasurePage() {
         ? "text-[#15803D]"
         : "text-[#B91C1C]";
 
-  const productionInspectorName = detail.productionInspectorName ?? "-";
+  const productionInspectorName = detail.production.name;
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-24">
