@@ -57,7 +57,11 @@ const QualitySystemStatusPage = () => {
   const [period, setPeriod] = useState<Period>("TODAY");
 
   const filtered = useMemo(
-    () => crossChecks.filter((c) => isInPeriod(c.createdAt, period)),
+    // 어제 시작해 오늘 승인된 건도 "오늘" 에 잡히도록 updatedAt 우선.
+    () =>
+      crossChecks.filter((c) =>
+        isInPeriod(c.updatedAt ?? c.createdAt, period),
+      ),
     [crossChecks, period],
   );
 
