@@ -1,15 +1,21 @@
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AxiosError } from "axios";
-import { useInspectionSlots, useStartInspection } from "../api";
+import {
+  useInspectionSlots,
+  useSkipInspection,
+  useStartInspection,
+} from "../api";
 import type {
   InspectionProcess,
+  SkipInspectionErrorData,
   StartInspectionErrorCode,
   StartInspectionErrorData,
 } from "../type/types";
 import type { MyInspection } from "../../my-inspection/type/types";
 import { useMyInspectionList } from "../../my-inspection/api";
 import SlotItem, { type SlotStatus } from "./SlotItem";
+import SkipModal from "./SkipModal";
 import Toast from "./Toast";
 
 interface ScanLocationState {
@@ -35,12 +41,14 @@ export default function ScanPage() {
 
   const [toast, setToast] = useState<ToastInfo | null>(null);
   const [pendingType, setPendingType] = useState<string | null>(null);
+  const [skipTargetType, setSkipTargetType] = useState<string | null>(null);
 
   const slotsQuery = useInspectionSlots(process);
   // 슬롯 상태(잠금/이어하기 등) 정확히 계산하려면 COMPLETED/INCOMPLETE_APPROVED 등
   // 종결된 검사 정보도 필요 — 홈에서 안 받는 케이스가 있어 ScanPage 가 자체 조회.
   const myInspectionsQuery = useMyInspectionList({ includeFinished: true });
   const startMutation = useStartInspection();
+  const skipMutation = useSkipInspection();
 
   const slots = useMemo(() => slotsQuery.data ?? [], [slotsQuery.data]);
 
@@ -73,12 +81,15 @@ export default function ScanPage() {
       else if (ins?.status === "INCOMPLETE") status = "INCOMPLETE";
       else if (ins?.status === "INCOMPLETE_APPROVED")
         status = "INCOMPLETE_APPROVED";
+      else if (ins?.status === "SKIPPED") status = "SKIPPED";
       else status = allPrevDone ? "NONE" : "LOCKED";
       map.set(s.type, status);
 
-      // 이전 시점이 "종결" 상태인지 — COMPLETED 와 INCOMPLETE_APPROVED 만 다음 진행 허용.
+      // 이전 시점이 "종결" 상태인지 — COMPLETED / INCOMPLETE_APPROVED / SKIPPED 가 다음 진행 허용.
       const terminal =
-        ins?.status === "COMPLETED" || ins?.status === "INCOMPLETE_APPROVED";
+        ins?.status === "COMPLETED" ||
+        ins?.status === "INCOMPLETE_APPROVED" ||
+        ins?.status === "SKIPPED";
       if (!terminal) allPrevDone = false;
     }
     return map;
@@ -103,8 +114,8 @@ export default function ScanPage() {
         type,
       });
       // POST 성공 — 상세 화면으로 보내서 측정 시작 전 미리보기 단계 거치게 한다.
+      // /scan 을 history 에 남겨, 검사 상세에서 뒤로가기 시 시점 선택으로 돌아갈 수 있도록 함.
       navigate(`/inspection/${inspection.inspectionId}`, {
-        replace: true,
         state: { inspection, qualityName },
       });
     } catch (err) {
@@ -173,6 +184,37 @@ export default function ScanPage() {
     setToast({ message: "검사를 시작하지 못했습니다." });
   };
 
+  const handleSkipRequest = (type: string) => {
+    setSkipTargetType(type);
+  };
+
+  const handleSkipConfirm = async (reason: string) => {
+    if (!productId || !equipmentId || !skipTargetType) return;
+    const type = skipTargetType;
+    try {
+      await skipMutation.mutateAsync({
+        productId,
+        equipmentId,
+        type,
+        ...(reason ? { reason } : {}),
+      });
+      setSkipTargetType(null);
+      const label = slots.find((s) => s.type === type)?.label ?? type;
+      setToast({ message: `${label} 시점을 건너뛰었습니다.` });
+    } catch (err) {
+      if (err instanceof AxiosError) {
+        const data = err.response?.data as SkipInspectionErrorData | undefined;
+        if (data?.code === "INSPECTION_ALREADY_EXISTS") {
+          setSkipTargetType(null);
+          setToast({ message: "이미 처리된 시점입니다." });
+          return;
+        }
+      }
+      setSkipTargetType(null);
+      setToast({ message: "건너뛰지 못했습니다." });
+    }
+  };
+
   const handleSlotTap = (type: string) => {
     if (!productId || !equipmentId) return;
     const status = getSlotStatus(type);
@@ -222,7 +264,7 @@ export default function ScanPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-6">
+    <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-24">
       <div className="px-4 pt-4">
         <h2 className="text-base font-semibold text-[#212121]">
           검사 시점 선택
@@ -254,6 +296,7 @@ export default function ScanPage() {
                   slot={slot}
                   status={getSlotStatus(slot.type)}
                   onTap={handleSlotTap}
+                  onSkip={handleSkipRequest}
                 />
               </li>
             ))}
@@ -266,6 +309,21 @@ export default function ScanPage() {
           </div>
         )}
       </div>
+
+      <SkipModal
+        open={!!skipTargetType}
+        slotLabel={
+          slots.find((s) => s.type === skipTargetType)?.label ??
+          skipTargetType ??
+          ""
+        }
+        isSubmitting={skipMutation.isPending}
+        onCancel={() => {
+          if (skipMutation.isPending) return;
+          setSkipTargetType(null);
+        }}
+        onConfirm={handleSkipConfirm}
+      />
 
       {toast && (
         <Toast message={toast.message} onDismiss={() => setToast(null)} />

@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useEquipmentList } from "../../equipment/api";
 import { useProductList } from "../../products/api";
@@ -37,13 +37,28 @@ interface SelectedEquipment {
 
 export default function StartInspectionPage() {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [step, setStep] = useState<Step>("product");
+  // 단계 전환을 브라우저 history 에 쌓기 위해 step 을 URL 쿼리(?step=) 로 관리.
+  // 설비 단계에서 뒤로가기를 누르면 자연스럽게 제품 단계로 복귀한다.
+  // 제품이 아직 선택되지 않았으면 강제로 제품 단계로 폴백 (직접 URL 접근/새로고침 대비).
+  const stepFromUrl = new URLSearchParams(location.search).get("step");
   const [product, setProduct] = useState<SelectedProduct | null>(null);
   const [equipment, setEquipment] = useState<SelectedEquipment | null>(null);
   const [productKeyword, setProductKeyword] = useState("");
   const [productProcess, setProductProcess] = useState<ProcessFilter>("ALL");
   const [equipmentKeyword, setEquipmentKeyword] = useState("");
+  const step: Step =
+    stepFromUrl === "equipment" && product ? "equipment" : "product";
+
+  // 제품 단계로 (뒤로) 돌아왔을 때 선택했던 설비/검색어를 비워서, 다시 선택하면
+  // 새 흐름처럼 보이도록 한다.
+  useEffect(() => {
+    if (step === "product") {
+      setEquipment(null);
+      setEquipmentKeyword("");
+    }
+  }, [step]);
 
   const productsQuery = useProductList();
   const equipmentQuery = useEquipmentList();
@@ -82,7 +97,8 @@ export default function StartInspectionPage() {
     setProduct(p);
     setEquipment(null);
     setEquipmentKeyword("");
-    setStep("equipment");
+    // URL 에 ?step=equipment 를 push — 브라우저 history 가 한 칸 늘어난다.
+    navigate("?step=equipment");
   };
 
   const handleSelectEquipment = (e: SelectedEquipment) => {
@@ -100,15 +116,15 @@ export default function StartInspectionPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-20 md:pb-6">
-      {/* 페이지 제목과 뒤로 버튼은 레이아웃 헤더가 담당. 단계 표시만 카드로 강조. */}
-      <div className="px-4 pt-4">
+      {/* StepBar + 선택된 제품 미리보기 + 검색/필터를 하나의 sticky 영역으로 묶음.
+          Layout 의 <main overflow-y-auto> 안에서 top:0 으로 고정되어, 리스트만 스크롤된다.
+          모바일(pb-20)에선 하단 TabBar(h-16)만큼, 데스크탑(md:pb-6)에선 TabBar 없으므로 작게. */}
+      <div className="sticky top-0 z-10 bg-[#F5F5F5] px-4 pt-4 pb-3">
         <StepBar
           step={step}
           onJumpTo={(target) => {
-            if (target === "product") {
-              setStep("product");
-              setEquipment(null);
-            }
+            // history 일관성을 위해 직접 setState 가 아닌 뒤로가기로 처리한다.
+            if (target === "product") navigate(-1);
           }}
         />
         {step === "equipment" && product && (
@@ -123,20 +139,32 @@ export default function StartInspectionPage() {
             </div>
           </div>
         )}
+        <div className="mt-3">
+          {step === "product" ? (
+            <>
+              <SearchBox
+                value={productKeyword}
+                onChange={setProductKeyword}
+                placeholder="제품명 / 코드 / 고객사 검색"
+              />
+              <ProcessChipFilter
+                value={productProcess}
+                onChange={setProductProcess}
+              />
+            </>
+          ) : (
+            <SearchBox
+              value={equipmentKeyword}
+              onChange={setEquipmentKeyword}
+              placeholder="설비명 검색"
+            />
+          )}
+        </div>
       </div>
 
       <main className="flex-1 px-4 pt-4">
         {step === "product" ? (
           <>
-            <SearchBox
-              value={productKeyword}
-              onChange={setProductKeyword}
-              placeholder="제품명 / 코드 / 고객사 검색"
-            />
-            <ProcessChipFilter
-              value={productProcess}
-              onChange={setProductProcess}
-            />
             {productsQuery.isLoading ? (
               <EmptyMsg>제품을 불러오는 중...</EmptyMsg>
             ) : productsQuery.isError ? (
@@ -189,11 +217,6 @@ export default function StartInspectionPage() {
           </>
         ) : (
           <>
-            <SearchBox
-              value={equipmentKeyword}
-              onChange={setEquipmentKeyword}
-              placeholder="설비명 검색"
-            />
             {equipmentQuery.isLoading ? (
               <EmptyMsg>설비를 불러오는 중...</EmptyMsg>
             ) : equipmentQuery.isError ? (

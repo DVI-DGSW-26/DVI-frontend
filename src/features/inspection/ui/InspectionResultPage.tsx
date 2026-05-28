@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
@@ -7,10 +7,19 @@ import {
   useIncompleteInspection,
   useInspectionDetail,
   useSaveInspectionResults,
+  useStartNextInspection,
 } from "../api";
 import { useAuth } from "../../auth/AuthContext";
-import type { AppearanceResult, ApiErrorData, StepResult } from "../type/types";
+import type {
+  AppearanceResult,
+  ApiErrorData,
+  StartNextInspectionErrorData,
+  StepResult,
+} from "../type/types";
 import { dimDisplayName, formatStandardWithTolerance } from "../lib/format";
+import { judgeMeasurement } from "../lib/judgment";
+import { getNextSlot } from "../lib/slotSequence";
+import JudgmentBadge from "./JudgmentBadge";
 import Toast from "./Toast";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 
@@ -44,9 +53,8 @@ export default function InspectionResultPage() {
 
   // location.state 가 비어 있어도 (새로고침/뒤로가기/race 등) 동작하도록 detail 폴백.
   const needsFallback = stateResults.length === 0;
-  const detailQuery = useInspectionDetail(
-    needsFallback ? inspectionId : undefined,
-  );
+  // 완료 후 "다음 시점 시작" 노출을 위해 process/type 이 필요 — 항상 detail 을 조회한다.
+  const detailQuery = useInspectionDetail(inspectionId);
   const detail = detailQuery.data;
 
   // detail.results 를 StepResult[] 형태로 재구성 (MeasurePage items 매핑과 동일 규약).
@@ -66,10 +74,14 @@ export default function InspectionResultPage() {
           status: done ? "completed" : "skipped",
           measuredValue: measured,
           imageUrl,
+          passFailResult: r.passFailResult ?? undefined,
         };
       })
       .sort((a, b) => a.dimNo - b.dimNo);
   }, [needsFallback, detail]);
+
+  // 가공 공정 여부 — StepResultCard 의 OK/NG 표시 분기에 사용.
+  const isMachining = detail?.product.process === "MACHINING";
 
   const results = needsFallback ? fallbackResults : stateResults;
   const equipmentName =
@@ -77,27 +89,47 @@ export default function InspectionResultPage() {
   const productName = state.productName ?? detail?.product.name ?? "-";
   const inspectorName = state.inspectorName ?? user?.name ?? "-";
 
-  useEffect(() => {
-    console.log("🟢 결과 페이지 location.state:", location.state);
-    console.log("🟢 URL params:", params);
-    console.log("🟢 inspectionId:", inspectionId);
-    console.log("🟢 needsFallback:", needsFallback);
-    console.log("🟢 detail 데이터:", detail);
-    console.log("🟢 detailQuery.error:", detailQuery.error);
-    console.log("🟢 최종 results:", results);
-    // 의도적으로 빈 deps: mount 시 한 번. 이후 변화는 위의 다른 console.log 로 추적.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const completeMut = useCompleteInspection(inspectionId);
   const incompleteMut = useIncompleteInspection(inspectionId);
   const saveMut = useSaveInspectionResults(inspectionId);
+  const startNextMut = useStartNextInspection();
+
+  // 검사 완료/미완료가 끝났는지 — 끝나면 "다음 시점 시작" 또는 "홈으로" 선택 UI 로 전환.
+  const [postSubmitMode, setPostSubmitMode] = useState<
+    "complete" | "incomplete" | null
+  >(null);
+
+  // 다음 시점이 존재하는지 (process + type 기반).
+  const nextType = useMemo(() => {
+    if (!detail) return null;
+    return getNextSlot(detail.product.process, detail.type);
+  }, [detail]);
 
   const [reasonKey, setReasonKey] = useState<string>("");
   const [customReason, setCustomReason] = useState("");
   const [appearance, setAppearance] = useState<AppearanceResult | null>(null);
   const [note, setNote] = useState<string>("");
   const [toast, setToast] = useState<string | null>(null);
+
+  // 검사 상세 응답이 도착하면 1회만 초기값으로 동기화 — 페이지 재진입/새로고침 시
+  // 사용자가 이전에 선택했던 외관 결과/비고/미완료 사유가 유지된다.
+  // 그 뒤 사용자가 변경한 값은 덮어쓰지 않는다.
+  const hydratedFromDetail = useRef(false);
+  useEffect(() => {
+    if (hydratedFromDetail.current || !detail) return;
+    if (detail.appearanceResult) setAppearance(detail.appearanceResult);
+    if (detail.note) setNote(detail.note);
+    if (detail.incompleteReason) {
+      // REASON_OPTIONS 에 매칭되면 그 키, 아니면 "기타" + customReason 로 표현.
+      if (REASON_OPTIONS.includes(detail.incompleteReason)) {
+        setReasonKey(detail.incompleteReason);
+      } else {
+        setReasonKey(OTHER_REASON);
+        setCustomReason(detail.incompleteReason);
+      }
+    }
+    hydratedFromDetail.current = true;
+  }, [detail]);
 
   const hasSkipped = useMemo(
     () => results.some((r) => r.status === "skipped"),
@@ -140,19 +172,39 @@ export default function InspectionResultPage() {
     );
   }
 
+  // 라디오 선택 즉시 PATCH 로 저장. 실패 시 이전 값으로 롤백.
+  // 중요: results 필드는 보내지 않는다 — 측정값을 의도치 않게 덮어쓰지 않기 위함.
+  // (백엔드 PATCH 시멘틱: 보내지 않은 필드는 변경되지 않음)
+  const handleAppearanceChange = (value: AppearanceResult) => {
+    if (isBusy || postSubmitMode !== null) return;
+    if (appearance === value) return;
+    const previous = appearance;
+    setAppearance(value);
+    saveMut.mutate(
+      { appearanceResult: value },
+      {
+        onError: (err) => {
+          setAppearance(previous);
+          setToast(toErrorMessage(err));
+        },
+      },
+    );
+  };
+
   const handleComplete = async () => {
     if (!appearance) return;
     const trimmedNote = note.trim();
     try {
+      // results 는 측정 페이지에서 항목별로 이미 저장됨 — 여기서는 외관/비고만 부분 업데이트.
       await saveMut.mutateAsync({
-        results: [],
         appearanceResult: appearance,
         // 빈 문자열은 보내지 않는다 — 백엔드가 optional 처리하므로.
         ...(trimmedNote ? { note: trimmedNote } : {}),
       });
       await completeMut.mutateAsync();
       setToast("검사가 완료되었습니다");
-      setTimeout(() => navigate("/", { replace: true }), 1200);
+      // 자동 홈 이동 대신 "다음 시점 시작" / "홈으로" 선택 UI 노출.
+      setPostSubmitMode("complete");
     } catch (err) {
       setToast(toErrorMessage(err));
     }
@@ -165,13 +217,41 @@ export default function InspectionResultPage() {
       {
         onSuccess: () => {
           setToast("QUALITY_ADMIN 검토 대기 중입니다");
-          setTimeout(() => navigate("/", { replace: true }), 1500);
+          setPostSubmitMode("incomplete");
         },
         onError: (err) => {
           setToast(toErrorMessage(err));
         },
       },
     );
+  };
+
+  const handleStartNext = async () => {
+    try {
+      const next = await startNextMut.mutateAsync(inspectionId);
+      navigate(`/inspection/${next.inspectionId}/measure`, {
+        replace: true,
+        state: { inspection: next },
+      });
+    } catch (err) {
+      if (err instanceof AxiosError) {
+        const data = err.response?.data as
+          | StartNextInspectionErrorData
+          | undefined;
+        const code = data?.code;
+        if (code === "NO_NEXT_SLOT") {
+          setToast("마지막 시점입니다.");
+        } else if (code === "PREVIOUS_INSPECTION_NOT_COMPLETED") {
+          setToast("이전 검사를 먼저 완료해주세요.");
+        } else if (code === "INSPECTION_ALREADY_EXISTS") {
+          setToast("이미 시작된 시점입니다.");
+        } else {
+          setToast(data?.message ?? "다음 시점을 시작하지 못했습니다.");
+        }
+      } else {
+        setToast("다음 시점을 시작하지 못했습니다.");
+      }
+    }
   };
 
   return (
@@ -191,7 +271,11 @@ export default function InspectionResultPage() {
         <ul className="flex flex-col gap-3">
           {results.map((r, idx) => (
             <li key={`${r.dimNo}-${idx}`}>
-              <StepResultCard step={idx + 1} result={r} />
+              <StepResultCard
+                step={idx + 1}
+                result={r}
+                isMachining={!!isMachining}
+              />
             </li>
           ))}
         </ul>
@@ -206,14 +290,16 @@ export default function InspectionResultPage() {
             {(["OK", "NG"] as const).map((opt) => {
               const selected = appearance === opt;
               const isOk = opt === "OK";
+              // 처리 중이거나 이미 제출이 끝난 뒤에는 외관 변경 불가.
+              const disabled = isBusy || postSubmitMode !== null;
               return (
                 <button
                   key={opt}
                   type="button"
                   role="radio"
                   aria-checked={selected}
-                  onClick={() => setAppearance(opt)}
-                  disabled={isBusy}
+                  onClick={() => handleAppearanceChange(opt)}
+                  disabled={disabled}
                   className={`h-11 rounded-md border text-sm font-semibold transition-colors disabled:opacity-60 ${
                     selected
                       ? isOk
@@ -292,7 +378,34 @@ export default function InspectionResultPage() {
       </section>
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white p-4">
-        {hasSkipped ? (
+        {postSubmitMode ? (
+          // 완료/미완료 처리 후 — 다음 시점이 있으면 그쪽 진입, 없으면 홈으로 이동.
+          <div className="flex flex-col gap-2">
+            {postSubmitMode === "complete" && nextType && (
+              <button
+                type="button"
+                onClick={handleStartNext}
+                disabled={startNextMut.isPending}
+                className="h-12 w-full rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+              >
+                {startNextMut.isPending
+                  ? "시작 중..."
+                  : `다음 시점 시작 (${nextType})`}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => navigate("/", { replace: true })}
+              className={`h-12 w-full rounded-md text-base font-semibold transition-colors ${
+                postSubmitMode === "complete" && nextType
+                  ? "border border-[#E5E7EB] bg-white text-[#6B7280] hover:bg-[#F9FAFB]"
+                  : "bg-[#931B82] text-white hover:bg-[#6A0F5D]"
+              }`}
+            >
+              홈으로
+            </button>
+          </div>
+        ) : hasSkipped ? (
           <button
             type="button"
             onClick={handleIncomplete}
@@ -320,22 +433,46 @@ export default function InspectionResultPage() {
   );
 }
 
-function StepResultCard({ step, result }: { step: number; result: StepResult }) {
+function StepResultCard({
+  step,
+  result,
+  isMachining,
+}: {
+  step: number;
+  result: StepResult;
+  isMachining: boolean;
+}) {
   const dimText = formatStandardWithTolerance(
     result.standardValue,
     result.tolerancePlus,
     result.toleranceMinus,
   );
+  // 가공 공정이면 저장된 작업자 판정값 우선, 다른 공정은 자동 계산값.
+  const judgment = isMachining
+    ? result.passFailResult === "OK"
+      ? "pass"
+      : result.passFailResult === "NG"
+        ? "fail"
+        : null
+    : judgeMeasurement(
+        result.measuredValue,
+        result.standardValue,
+        result.tolerancePlus,
+        result.toleranceMinus,
+      );
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-3">
-      <div className="flex items-center gap-2">
-        <span className="rounded-md bg-[#F3E8FF] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
-          Step {step}
-        </span>
-        <span className="text-sm font-medium text-[#212121]">
-          {dimDisplayName(result)}
-        </span>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="shrink-0 rounded-md bg-[#F3E8FF] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
+            Step {step}
+          </span>
+          <span className="truncate text-sm font-medium text-[#212121]">
+            {dimDisplayName(result)}
+          </span>
+        </div>
+        <JudgmentBadge judgment={judgment} compact />
       </div>
       <div className="mt-1 text-sm text-[#6B7280]">{dimText}</div>
 
@@ -356,6 +493,20 @@ function StepResultCard({ step, result }: { step: number; result: StepResult }) 
               {result.measuredValue ?? "-"}
             </span>
           </div>
+          {isMachining && result.passFailResult && (
+            <div className="mt-2 flex items-baseline justify-between rounded-lg bg-[#F9FAFB] px-3 py-2">
+              <span className="text-xs text-[#6B7280]">판정 (가공)</span>
+              <span
+                className={`text-base font-semibold ${
+                  result.passFailResult === "OK"
+                    ? "text-[#15803D]"
+                    : "text-[#B91C1C]"
+                }`}
+              >
+                {result.passFailResult}
+              </span>
+            </div>
+          )}
         </>
       ) : (
         <div className="mt-3 flex aspect-square w-full flex-col items-center justify-center rounded-lg border border-dashed border-[#D1D5DB] bg-[#F3F4F6] text-[#6B7280]">
