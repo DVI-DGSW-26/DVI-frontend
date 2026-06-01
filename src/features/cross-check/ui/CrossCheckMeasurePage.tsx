@@ -12,6 +12,7 @@ import Toast from "../../inspection/ui/Toast";
 import CapturePhase from "../../inspection/ui/CapturePhase";
 import CropPhase from "../../inspection/ui/CropPhase";
 import {
+  useInspectionDetail,
   useOcrInspectionImage,
   useUploadInspectionImage,
 } from "../../inspection/api";
@@ -70,24 +71,44 @@ export default function CrossCheckMeasurePage() {
   const detailQuery = useCrossCheckDetail(crossCheckId);
   const detail = detailQuery.data;
 
+  // 워크어라운드: 백엔드 CrossCheckDetailResponse.results 에 productionValue/
+  // productionImageUrl 필드가 없어서, 자주검사 detail 을 별도로 fetch 해서 같은
+  // dimId 의 measuredValue/imageUrl 을 자주검사 참고값으로 사용.
+  // 백엔드가 ResultInfo 에 production* 필드 추가하면 이 fetch + 매핑은 제거 가능.
+  const inspectionDetailQuery = useInspectionDetail(detail?.inspectionId);
+  const productionByDimId = useMemo(() => {
+    const map = new Map<number, { value: number | null; imageUrl: string | null }>();
+    const results = inspectionDetailQuery.data?.results;
+    if (!results) return map;
+    for (const r of results) {
+      map.set(r.dimId, { value: r.measuredValue, imageUrl: r.imageUrl });
+    }
+    return map;
+  }, [inspectionDetailQuery.data]);
+
   const items = useMemo<MeasureItem[]>(() => {
     if (!detail?.results?.length) return [];
     return detail.results
-      .map<MeasureItem>((r) => ({
-        resultId: r.resultId,
-        dimId: r.dimId,
-        dimNo: r.dimNo,
-        dimName: r.dimName,
-        standardValue: r.standardValue,
-        tolerancePlus: r.tolerancePlus,
-        toleranceMinus: r.toleranceMinus,
-        productionValue: r.productionValue ?? undefined,
-        productionImageUrl: r.productionImageUrl ?? undefined,
-        measuredValue: r.measuredValue ?? undefined,
-        imageUrl: r.imageUrl ?? undefined,
-      }))
+      .map<MeasureItem>((r) => {
+        const productionRef = productionByDimId.get(r.dimId);
+        return {
+          resultId: r.resultId,
+          dimId: r.dimId,
+          dimNo: r.dimNo,
+          dimName: r.dimName,
+          standardValue: r.standardValue,
+          tolerancePlus: r.tolerancePlus,
+          toleranceMinus: r.toleranceMinus,
+          productionValue:
+            productionRef?.value ?? r.productionValue ?? undefined,
+          productionImageUrl:
+            productionRef?.imageUrl ?? r.productionImageUrl ?? undefined,
+          measuredValue: r.measuredValue ?? undefined,
+          imageUrl: r.imageUrl ?? undefined,
+        };
+      })
       .sort((a, b) => a.dimNo - b.dimNo);
-  }, [detail]);
+  }, [detail, productionByDimId]);
 
   const firstEmptyIdx = useMemo(
     () => items.findIndex((it) => !isItemDone(it)),
