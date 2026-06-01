@@ -5,6 +5,7 @@ interface Props {
   isLastDim: boolean;
   isSaving: boolean;
   isPreparing: boolean;
+  suggestedValue: string | null;
   onRetake: () => void;
   onSubmit: (measuredValue: number) => void;
 }
@@ -14,6 +15,7 @@ export default function CrossCheckInputPhase({
   isLastDim,
   isSaving,
   isPreparing,
+  suggestedValue,
   onRetake,
   onSubmit,
 }: Props) {
@@ -26,6 +28,17 @@ export default function CrossCheckInputPhase({
   }, [blob]);
 
   const [value, setValue] = useState("");
+  const [autoFilled, setAutoFilled] = useState(false);
+
+  // 자주검사와 동일 — preparing 종료 시점에 OCR 결과를 1회만 인풋에 반영. 이후 사용자 수정 유지.
+  useEffect(() => {
+    if (isPreparing || autoFilled) return;
+    if (suggestedValue) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- async OCR suggestion 이 부모에서 비동기로 도착한 후 1회만 controlled input 을 시드한다 (cascading render 아님)
+      setValue(suggestedValue);
+    }
+    setAutoFilled(true);
+  }, [isPreparing, autoFilled, suggestedValue]);
 
   const numeric = Number(value);
   const isValid = value.trim() !== "" && Number.isFinite(numeric);
@@ -34,12 +47,33 @@ export default function CrossCheckInputPhase({
   const submitDisabled = !isValid || isSaving || isPreparing;
 
   const buttonLabel = isPreparing
-    ? "업로드 중..."
+    ? "OCR 인식 중..."
     : isSaving
       ? "저장 중..."
       : isLastDim
         ? "완료"
         : "저장 후 다음";
+
+  const hint = isPreparing
+    ? { text: "OCR로 측정값을 인식하는 중입니다…", tone: "info" as const }
+    : autoFilled && suggestedValue
+      ? {
+          text: "OCR로 자동 입력됨 — 필요하면 수정해주세요.",
+          tone: "ok" as const,
+        }
+      : autoFilled
+        ? {
+            text: "자동 인식 실패, 직접 입력해주세요.",
+            tone: "warn" as const,
+          }
+        : null;
+
+  const hintColor =
+    hint?.tone === "ok"
+      ? "text-[#931B82]"
+      : hint?.tone === "warn"
+        ? "text-[#B45309]"
+        : "text-[#6B7280]";
 
   return (
     <div className="flex flex-col gap-3">
@@ -63,10 +97,13 @@ export default function CrossCheckInputPhase({
           step="any"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder="예: 100.25"
+          placeholder={isPreparing ? "OCR 인식 중..." : "예: 100.25"}
           disabled={inputDisabled}
           className="mt-1 h-11 w-full rounded-md border border-gray-300 px-3 text-base text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
         />
+        {hint && (
+          <p className={`mt-2 text-xs ${hintColor}`}>{hint.text}</p>
+        )}
       </div>
 
       <div className="flex gap-2">
