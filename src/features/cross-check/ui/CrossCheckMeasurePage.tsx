@@ -61,6 +61,17 @@ function isWithinTolerance(
   return value >= standard - minus && value <= standard + plus;
 }
 
+// inspectionTime 은 백엔드 포맷이 일정치 않아 두 가지(hh:mm / ISO) 다 처리.
+function formatInspectionTime(time: string | undefined | null): string {
+  if (!time) return "-";
+  if (/^\d{1,2}:\d{2}$/.test(time)) return time;
+  const d = new Date(time);
+  if (Number.isNaN(d.getTime())) return time;
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
 export default function CrossCheckMeasurePage() {
   const navigate = useNavigate();
   const params = useParams<{ crossCheckId: string }>();
@@ -309,6 +320,10 @@ export default function CrossCheckMeasurePage() {
     <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-24">
       <section className="border-b border-gray-200 bg-white px-4 py-4">
         <InfoRow label="기계명" value={detail.equipment.name} />
+        <InfoRow
+          label="검사 시간"
+          value={formatInspectionTime(detail.inspectionTime)}
+        />
         <div className="mt-2 grid grid-cols-3 gap-2">
           <Stat label="제품명" value={detail.product.name} />
           <Stat label="자주검사자" value={productionInspectorName} />
