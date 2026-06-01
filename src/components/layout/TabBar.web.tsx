@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import Logo from "../../assets/Logo.svg";
 import { useAuth } from "../../features/auth/AuthContext";
@@ -37,7 +37,9 @@ const TabBarWeb = () => {
   return (
   <aside className="flex h-screen w-60 flex-col bg-white">
     <div className="flex items-center px-4 py-8 text-lg font-bold">
-      <img src={Logo} className="w-14 xl:w-37" />
+      <Link to="/" aria-label="홈으로 이동">
+        <img src={Logo} className="w-14 xl:w-37 cursor-pointer" />
+      </Link>
     </div>
 
     <nav className="flex flex-1 flex-col gap-1 w-full px-4">
