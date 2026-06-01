@@ -174,7 +174,7 @@ export default function CrossCheckApprovalDetailPage() {
           측정 결과 비교
         </h2>
         <div className="overflow-x-auto px-2 py-2 md:px-3">
-          <table className="w-full min-w-[640px] text-sm">
+          <table className="w-full min-w-160 text-sm">
             <thead className="bg-[#F9FAFB] text-xs text-[#6B7280]">
               <tr>
                 <th className="px-3 py-2 text-left font-medium">DIM</th>
@@ -272,7 +272,7 @@ export default function CrossCheckApprovalDetailPage() {
               type="button"
               onClick={handleApprove}
               disabled={isPending}
-              className="h-12 flex-[2] rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+              className="h-12 flex-2 rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
             >
               {isPending ? "처리 중..." : "승인 (보고서 발행)"}
             </button>
