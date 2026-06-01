@@ -11,7 +11,10 @@ import {
 import Toast from "../../inspection/ui/Toast";
 import CapturePhase from "../../inspection/ui/CapturePhase";
 import CropPhase from "../../inspection/ui/CropPhase";
-import { useUploadInspectionImage } from "../../inspection/api";
+import {
+  useOcrInspectionImage,
+  useUploadInspectionImage,
+} from "../../inspection/api";
 import CrossCheckInputPhase from "./CrossCheckInputPhase";
 import { useCrossCheckDetail, useSaveCrossCheckResults } from "../api";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
@@ -99,10 +102,14 @@ export default function CrossCheckMeasurePage() {
   const [capturedFile, setCapturedFile] = useState<File | null>(null);
   const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+  const [ocrSuggestedValue, setOcrSuggestedValue] = useState<string | null>(
+    null,
+  );
   const [isPreparing, setIsPreparing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const uploadImage = useUploadInspectionImage();
+  const ocrImage = useOcrInspectionImage();
   const saveResults = useSaveCrossCheckResults(crossCheckId);
 
   useEffect(() => {
@@ -169,6 +176,7 @@ export default function CrossCheckMeasurePage() {
     setCapturedFile(null);
     setCroppedBlob(null);
     setUploadedImageUrl(null);
+    setOcrSuggestedValue(null);
     setIsPreparing(false);
     setPhase("capture");
   };
@@ -190,19 +198,29 @@ export default function CrossCheckMeasurePage() {
   const handleCropConfirm = async (blob: Blob) => {
     setCroppedBlob(blob);
     setUploadedImageUrl(null);
+    setOcrSuggestedValue(null);
     setIsPreparing(true);
     setPhase("input");
 
-    try {
-      const url = await uploadImage.mutateAsync(blob);
-      setUploadedImageUrl(url);
-    } catch (err) {
-      setToast(toErrorMessage(err));
+    // 업로드와 OCR 을 병렬로. 자주검사 패턴 그대로 — OCR 실패해도 업로드만 성공하면 진행.
+    const [imageRes, ocrRes] = await Promise.allSettled([
+      uploadImage.mutateAsync(blob),
+      ocrImage.mutateAsync(blob),
+    ]);
+
+    if (imageRes.status === "rejected") {
+      setToast(toErrorMessage(imageRes.reason));
       setCroppedBlob(null);
       setPhase("crop");
-    } finally {
       setIsPreparing(false);
+      return;
     }
+
+    setUploadedImageUrl(imageRes.value);
+    setOcrSuggestedValue(
+      ocrRes.status === "fulfilled" ? ocrRes.value : null,
+    );
+    setIsPreparing(false);
   };
 
   const handleSubmitMeasured = async (measuredValue: number) => {
@@ -402,10 +420,12 @@ export default function CrossCheckMeasurePage() {
             isLastDim={isLastDim}
             isSaving={isSaving}
             isPreparing={isPreparing}
+            suggestedValue={ocrSuggestedValue}
             onRetake={() => {
               setCroppedBlob(null);
               setCapturedFile(null);
               setUploadedImageUrl(null);
+              setOcrSuggestedValue(null);
               setIsPreparing(false);
               setPhase("capture");
             }}
