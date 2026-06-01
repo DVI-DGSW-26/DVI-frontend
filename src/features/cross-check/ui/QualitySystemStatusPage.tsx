@@ -92,7 +92,7 @@ const QualitySystemStatusPage = () => {
         </div>
       </button>
 
-      {/* 완료/진행중 작은 통계 */}
+      {/* 완료/진행중 작은 통계 — 클릭 시 해당 탭으로 이동. */}
       <section className="grid grid-cols-2 gap-3">
         <SmallStat
           icon="solar:check-circle-bold"
@@ -100,6 +100,7 @@ const QualitySystemStatusPage = () => {
           iconColor="#22C55E"
           label="완료"
           value={counts.approved}
+          onClick={() => navigate("/cross-checks?tab=history")}
         />
         <SmallStat
           icon="solar:pen-bold"
@@ -107,6 +108,7 @@ const QualitySystemStatusPage = () => {
           iconColor="#3B82F6"
           label="진행중"
           value={counts.draft}
+          onClick={() => navigate("/cross-checks?tab=assigned")}
         />
       </section>
 
@@ -172,10 +174,23 @@ interface SmallStatProps {
   iconColor: string;
   label: string;
   value: number;
+  onClick?: () => void;
 }
 
-const SmallStat = ({ icon, iconBg, iconColor, label, value }: SmallStatProps) => (
-  <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-4 shadow-sm">
+const SmallStat = ({
+  icon,
+  iconBg,
+  iconColor,
+  label,
+  value,
+  onClick,
+}: SmallStatProps) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={!onClick}
+    className="flex items-center gap-3 rounded-2xl bg-white px-4 py-4 text-left shadow-sm transition-transform active:scale-[0.98] disabled:cursor-default disabled:active:scale-100"
+  >
     <span
       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
       style={{ backgroundColor: iconBg }}
@@ -186,7 +201,7 @@ const SmallStat = ({ icon, iconBg, iconColor, label, value }: SmallStatProps) =>
       <span className="text-xs text-[#A8A8A8]">{label}</span>
       <span className="text-xl font-bold text-[#212121]">{value}</span>
     </div>
-  </div>
+  </button>
 );
 
 export default QualitySystemStatusPage;

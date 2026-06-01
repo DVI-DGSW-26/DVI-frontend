@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { AxiosError } from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import {
   useAssignedCrossChecks,
@@ -46,7 +46,10 @@ function formatDate(iso?: string): string {
 
 const CrossCheckPendingPage = () => {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>("assigned");
+  const [searchParams] = useSearchParams();
+  // 품질시스템현황에서 카운트 카드 클릭 시 ?tab=history|assigned 로 진입.
+  const initialTab: Tab = searchParams.get("tab") === "history" ? "history" : "assigned";
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [toast, setToast] = useState<string | null>(null);
   const [startingId, setStartingId] = useState<number | null>(null);
 
