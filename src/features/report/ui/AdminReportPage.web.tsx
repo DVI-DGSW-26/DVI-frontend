@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useReportList } from "../api";
 import AdminReportCard from "./AdminReportCard";
@@ -21,7 +22,7 @@ const RESULT_OPTIONS: MultiOption[] = [
 ];
 
 const AdminReportPageWeb = () => {
-
+  const navigate = useNavigate();
   const { data: reports = [], isLoading, isError } = useReportList();
   const { data: products = [] } = useProductList();
 
@@ -247,7 +248,11 @@ const AdminReportPageWeb = () => {
       {!isLoading && !isError && filtered.length > 0 && (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((r) => (
-            <AdminReportCard key={r.id} report={r} />
+            <AdminReportCard
+              key={r.id}
+              report={r}
+              onClick={(report) => navigate(`/reports/${report.id}`)}
+            />
           ))}
         </div>
       )}

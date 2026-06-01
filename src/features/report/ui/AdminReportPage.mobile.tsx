@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useReportList } from "../api";
 import AdminReportCard from "./AdminReportCard";
@@ -14,6 +15,7 @@ const PROCESS_OPTIONS: MultiOption[] = [
 ];
 
 const AdminReportPageMobile = () => {
+  const navigate = useNavigate();
   const { data: reports = [], isLoading, isError } = useReportList();
   const { data: products = [] } = useProductList();
 
@@ -211,7 +213,10 @@ const AdminReportPageMobile = () => {
         <ul className="flex flex-col gap-3">
           {filtered.map((r) => (
             <li key={r.id}>
-              <AdminReportCard report={r} />
+              <AdminReportCard
+                report={r}
+                onClick={(report) => navigate(`/reports/${report.id}`)}
+              />
             </li>
           ))}
         </ul>

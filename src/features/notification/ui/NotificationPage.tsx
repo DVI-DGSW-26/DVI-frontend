@@ -6,6 +6,7 @@ import {
   useNotifications,
   type NotificationResponse,
 } from "../api";
+import { resolveNotificationLink } from "../lib/resolveNotificationLink";
 
 type NotificationType = "warning" | "success" | "info";
 
@@ -77,9 +78,7 @@ const NotificationPage = () => {
 
   const handleItemClick = (item: NotificationResponse) => {
     if (!item.isRead) markAsRead.mutate(item.id);
-    if (item.linkUrl) {
-      navigate(item.linkUrl);
-    }
+    navigate(resolveNotificationLink(item));
   };
 
   const groups = groupByDay(items);
