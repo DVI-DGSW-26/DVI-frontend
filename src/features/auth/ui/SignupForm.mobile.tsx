@@ -48,6 +48,12 @@ export default function SignupFormMobile({
     else setStep((step - 1) as 1 | 2);
   };
 
+  const step1Valid =
+    username.trim() !== "" &&
+    password.trim() !== "" &&
+    confirmPassword.trim() !== "";
+  const step2Valid = name.trim() !== "" && department !== "";
+
   const inputBaseStyle = {
     position: "absolute" as const,
     left: "24px",
@@ -135,7 +141,9 @@ export default function SignupFormMobile({
               width: "calc(100% - 48px)",
             }}
           >
-            <Button onClick={() => setStep(2)}>다음</Button>
+            <Button onClick={() => setStep(2)} disabled={!step1Valid}>
+              다음
+            </Button>
           </div>
         </>
       )}
@@ -183,7 +191,9 @@ export default function SignupFormMobile({
               width: "calc(100% - 48px)",
             }}
           >
-            <Button onClick={() => setStep(3)}>다음</Button>
+            <Button onClick={() => setStep(3)} disabled={!step2Valid}>
+              다음
+            </Button>
           </div>
         </>
       )}

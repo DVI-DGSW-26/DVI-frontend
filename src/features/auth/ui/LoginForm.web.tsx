@@ -44,7 +44,13 @@ export default function LoginFormWeb({
           >
             <img src={Logo} className="w-60 xl:w-90" />
           </div>
-          <div className="flex flex-col gap-3">
+          <form
+            className="flex flex-col gap-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              onSubmit();
+            }}
+          >
             <input
               placeholder="아이디를 입력하세요."
               value={username}
@@ -82,13 +88,13 @@ export default function LoginFormWeb({
               <span className="text-sm text-[#A8A8A8]">로그인 유지</span>
             </label>
             <div style={{ marginTop: "35px" }}>
-              <Button onClick={onSubmit}>로그인</Button>
+              <Button type="submit">로그인</Button>
             </div>
             <div className="flex flex-row justify-center gap-1 mt-5 text-sm">
               <span className="text-[#A8A8A8]">계정이 없으신가요?</span>
               <span className="text-[#931B82] cursor-pointer" onClick={() => navigate("/signup")}>회원가입 하기</span>
             </div>
-          </div>
+          </form>
         </div>
       </div>
     </div>

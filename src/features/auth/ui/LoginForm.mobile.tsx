@@ -17,7 +17,13 @@ export default function LoginFormMobile({
   const navigate = useNavigate();
 
   return (
-    <div className="relative min-h-screen w-full bg-white">
+    <form
+      className="relative min-h-screen w-full bg-white"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit();
+      }}
+    >
       <div
         className="absolute flex flex-col items-center left-1/2 -translate-x-1/2"
         style={{ top: "176px" }}
@@ -88,7 +94,7 @@ export default function LoginFormMobile({
           width: "calc(100% - 60px)",
         }}
       >
-        <Button onClick={onSubmit}>로그인</Button>
+        <Button type="submit">로그인</Button>
       </div>
 
       <div
@@ -103,6 +109,6 @@ export default function LoginFormMobile({
           신규 회원 가입
         </span>
       </div>
-    </div>
+    </form>
   );
 }
