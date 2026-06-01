@@ -75,7 +75,7 @@ export default function CropPhase({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex max-h-[70vh] w-full items-center justify-center overflow-hidden rounded-xl bg-black">
+      <div className="flex max-h-[55vh] w-full items-center justify-center overflow-hidden rounded-xl bg-black">
         {imageSrc && (
           <ReactCrop
             crop={crop}
@@ -90,7 +90,7 @@ export default function CropPhase({
               src={imageSrc}
               alt="크롭 대상"
               onLoad={handleImageLoad}
-              className="block max-h-[70vh] w-auto select-none"
+              className="block max-h-[55vh] w-auto select-none"
               draggable={false}
             />
           </ReactCrop>

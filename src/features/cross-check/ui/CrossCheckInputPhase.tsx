@@ -77,12 +77,12 @@ export default function CrossCheckInputPhase({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-[#F9FAFB]">
+      <div className="flex items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-[#F9FAFB]">
         {imageSrc && (
           <img
             src={imageSrc}
             alt="크롭된 측정 부위"
-            className="block aspect-square w-full object-contain"
+            className="block max-h-[35vh] w-auto object-contain"
           />
         )}
       </div>
