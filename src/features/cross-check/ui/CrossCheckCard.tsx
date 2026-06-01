@@ -9,21 +9,9 @@ interface Props {
   isStarting?: boolean;
 }
 
-// "9시간 전" 대신 자주검사 완료 시각(예: 17:30)을 보여준다.
-// 색상은 elapsed 의 tone (urgency) 을 그대로 사용해 대기시간 위급도를 유지.
-function formatCompletedTime(iso: string | undefined): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  return `${hh}:${mm}`;
-}
-
 const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
   const elapsed = elapsedFrom(item.completedAt);
   const color = TONE_COLOR[elapsed.tone];
-  const completedTime = formatCompletedTime(item.completedAt);
 
   return (
     <button
@@ -63,9 +51,8 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
           <span
             className="text-sm font-bold"
             style={{ color }}
-            title={elapsed.label}
           >
-            {completedTime}
+            {elapsed.label}
           </span>
           <Icon
             icon="solar:alt-arrow-right-linear"
