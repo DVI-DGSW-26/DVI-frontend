@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { ReportSummary } from "../api/types";
 import { downloadReportPdf } from "../lib/downloadReportPdf";
 
@@ -17,9 +18,12 @@ function formatDateTime(iso: string) {
 }
 
 export default function ReportCard({ report }: ReportCardProps) {
+  const navigate = useNavigate();
   const [downloading, setDownloading] = useState(false);
 
-  const handleDownload = async () => {
+  const handleDownload = async (e: React.MouseEvent) => {
+    // 부모 카드의 onClick (상세 이동) 막기
+    e.stopPropagation();
     if (downloading) return;
     setDownloading(true);
     try {
@@ -30,7 +34,10 @@ export default function ReportCard({ report }: ReportCardProps) {
   };
 
   return (
-    <div className="flex items-start justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:p-5">
+    <div
+      onClick={() => navigate(`/reports/${report.id}`)}
+      className="flex cursor-pointer items-start justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:bg-[#F9FAFB] md:p-5"
+    >
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="truncate text-lg font-bold text-[#212121] md:text-xl">
           {report.reportNumber}

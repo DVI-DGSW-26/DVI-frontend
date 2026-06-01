@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LoginForm from "./features/auth/ui/LoginForm";
 import MyPage from "./features/auth/ui/MyPage";
 import Layout from "./components/layout/Layout";
+import NotFoundPage from "./components/layout/NotFoundPage";
 import RouteGuard from "./features/auth/RouteGuard";
 import NotificationPage from "./features/notification/ui/NotificationPage";
 import ApprovalManagementPage from "./features/incomplete/ui/ApprovalManagementPage";
@@ -57,6 +58,12 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/notifications" element={<NotificationPage />} />
             <Route path="/my-page" element={<MyPage />} />
+            {/* 보고서 상세는 인증된 모든 사용자에게 공개 — 알림 클릭으로 본인 검사의
+                보고서를 보러 들어올 수 있어야 함. 백엔드 /report/{id} 에서 권한 체크. */}
+            <Route
+              path="/reports/:reportId"
+              element={<AdminReportDetailPage />}
+            />
 
             <Route element={<RouteGuard roles={["ADMIN"]} />}>
               <Route path="/dashboard" element={<DashboardPage />} />
@@ -65,10 +72,6 @@ function App() {
               <Route path="/approval" element={<AccountApprovalPage />} />
 
               <Route path="/reports" element={<AdminReportPage />} />
-              <Route
-                path="/reports/:reportId"
-                element={<AdminReportDetailPage />}
-              />
             </Route>
 
             <Route element={<RouteGuard roles={["QUALITY_ADMIN"]} />}>
@@ -148,6 +151,9 @@ function App() {
                 element={<InspectionResultPage />}
               />
             </Route>
+
+            {/* 매칭 안 된 모든 경로 — 잘못된 알림 linkUrl 등으로 흰 화면이 뜨지 않도록. */}
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Route>
       </Routes>
