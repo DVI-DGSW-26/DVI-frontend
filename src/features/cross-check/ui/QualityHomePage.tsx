@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { useMarkAsRead, useNotifications } from "../../notification/api";
 import type { NotificationResponse } from "../../notification/api";
+import { resolveNotificationLink } from "../../notification/lib/resolveNotificationLink";
 import {
   useAssignedCrossChecks,
   useMyCrossChecks,
@@ -35,16 +36,7 @@ const QualityHomePage = () => {
 
   const handleNotificationClick = (n: NotificationResponse) => {
     if (!n.isRead) markAsRead.mutate(n.id);
-    if (n.linkUrl) {
-      navigate(n.linkUrl);
-      return;
-    }
-    // 백엔드 linkUrl 미제공 시 키워드 fallback
-    if (/순회검사|확인/.test(n.title)) {
-      navigate("/cross-checks");
-    } else {
-      navigate("/notifications");
-    }
+    navigate(resolveNotificationLink(n));
   };
 
   const latestDraft = useMemo(
