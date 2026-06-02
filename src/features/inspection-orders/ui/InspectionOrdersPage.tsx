@@ -107,7 +107,8 @@ export default function InspectionOrdersPage() {
 
   const handleDelete = (order: InspectionOrder) => {
     if (isDeleting) return;
-    if (!window.confirm(`'${order.product.name}' 검사지시를 삭제할까요?`)) return;
+    const label = order.product?.name ?? "이 검사지시";
+    if (!window.confirm(`'${label}' 검사지시를 삭제할까요?`)) return;
     remove(order.id, {
       onError: () => {
         alert("삭제 중 오류가 발생했습니다.");
@@ -253,11 +254,11 @@ function DesktopTable({ orders, isLoading, isError, isDeleting, onEdit, onDelete
           {orders.map((order) => (
             <tr key={order.id} className="hover:bg-gray-50">
               <td className="px-4 py-3 whitespace-nowrap">{order.targetDate}</td>
-              <td className="px-4 py-3">{order.product.name}</td>
-              <td className="px-4 py-3">{order.equipment.name}</td>
-              <td className="px-4 py-3">{order.customer.name}</td>
-              <td className="px-4 py-3">{order.production.name}</td>
-              <td className="px-4 py-3">{order.quality.name}</td>
+              <td className="px-4 py-3">{order.product?.name ?? "-"}</td>
+              <td className="px-4 py-3">{order.equipment?.name ?? "-"}</td>
+              <td className="px-4 py-3">{order.customer?.name ?? "-"}</td>
+              <td className="px-4 py-3">{order.production?.name ?? "-"}</td>
+              <td className="px-4 py-3">{order.quality?.name ?? "-"}</td>
               <td className="px-4 py-3">{statusBadge(order.status)}</td>
               <td className="px-4 py-3">
                 <div className="flex items-center justify-end gap-1">
@@ -321,10 +322,10 @@ function MobileList({ orders, isLoading, isError, isDeleting, onEdit, onDelete }
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <div className="truncate text-base font-semibold text-[#212121]">
-                {order.product.name}
+                {order.product?.name ?? "-"}
               </div>
               <div className="mt-0.5 truncate text-xs text-[#6B7280]">
-                {order.customer.name} · {order.equipment.name}
+                {order.customer?.name ?? "-"} · {order.equipment?.name ?? "-"}
               </div>
             </div>
             {statusBadge(order.status)}
@@ -332,8 +333,8 @@ function MobileList({ orders, isLoading, isError, isDeleting, onEdit, onDelete }
 
           <div className="mt-3 grid grid-cols-1 gap-y-1.5 text-xs">
             <InfoRow icon="mdi:calendar-outline" label="지시일" value={order.targetDate} />
-            <InfoRow icon="mdi:account-hard-hat" label="자주검사" value={order.production.name} />
-            <InfoRow icon="mdi:shield-check-outline" label="순회검사" value={order.quality.name} />
+            <InfoRow icon="mdi:account-hard-hat" label="자주검사" value={order.production?.name ?? "-"} />
+            <InfoRow icon="mdi:shield-check-outline" label="순회검사" value={order.quality?.name ?? "-"} />
           </div>
 
           <div className="mt-3 flex items-center justify-end gap-1 border-t border-gray-100 pt-2">
