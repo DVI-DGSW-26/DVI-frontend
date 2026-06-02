@@ -442,6 +442,9 @@ export default function CrossCheckMeasurePage() {
             isSaving={isSaving}
             isPreparing={isPreparing}
             suggestedValue={ocrSuggestedValue}
+            standardValue={currentDim.standardValue}
+            tolerancePlus={currentDim.tolerancePlus}
+            toleranceMinus={currentDim.toleranceMinus}
             onRetake={() => {
               setCroppedBlob(null);
               setCapturedFile(null);
