@@ -15,6 +15,7 @@ import type {
   DecideCrossCheckRequest,
   SaveCrossCheckResultRequest,
 } from "./types";
+import { reportKeys } from "../../report/api";
 
 export const crossCheckKeys = {
   all: ["cross-check"] as const,
@@ -107,6 +108,9 @@ export function useDecideCrossCheck(crossCheckId: number) {
       decideCrossCheck(crossCheckId, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: crossCheckKeys.all });
+      // 승인 시 보고서가 자동 발행되므로 양쪽 보고서 페이지(ADMIN/QUALITY_ADMIN)
+      // 캐시도 같이 비워서 다음 진입 때 새 목록이 보이게 한다.
+      qc.invalidateQueries({ queryKey: reportKeys.all });
     },
   });
 }
@@ -117,6 +121,7 @@ export function useCompleteCrossCheck(crossCheckId: number) {
     mutationFn: () => completeCrossCheck(crossCheckId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: crossCheckKeys.all });
+      qc.invalidateQueries({ queryKey: reportKeys.all });
     },
   });
 }
