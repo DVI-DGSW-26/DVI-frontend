@@ -6,9 +6,16 @@ interface Props {
   onCaptured: (file: File) => void;
   onError: (message: string) => void;
   onSkip: () => void;
+  /** 첫 dim 이 아니면 직전 dim 으로 돌아가 재촬영. 부모가 stepIndex > 0 일 때만 전달. */
+  onGoBack?: () => void;
 }
 
-export default function CapturePhase({ onCaptured, onError, onSkip }: Props) {
+export default function CapturePhase({
+  onCaptured,
+  onError,
+  onSkip,
+  onGoBack,
+}: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -189,13 +196,24 @@ export default function CapturePhase({ onCaptured, onError, onSkip }: Props) {
           className="hidden"
         />
       </div>
-      <button
-        type="button"
-        onClick={onSkip}
-        className="h-11 rounded-md border border-[#E5E7EB] bg-[#F9FAFB] text-sm font-medium text-[#6B7280] hover:bg-[#F3F4F6]"
-      >
-        사진 촬영 불가
-      </button>
+      <div className="flex gap-2">
+        {onGoBack && (
+          <button
+            type="button"
+            onClick={onGoBack}
+            className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F3F4F6]"
+          >
+            이전 단계
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onSkip}
+          className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-[#F9FAFB] text-sm font-medium text-[#6B7280] hover:bg-[#F3F4F6]"
+        >
+          사진 촬영 불가
+        </button>
+      </div>
 
       {isCameraOpen && (
         <div className="fixed inset-0 z-50 flex flex-col bg-black">

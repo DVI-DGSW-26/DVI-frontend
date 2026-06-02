@@ -119,6 +119,9 @@ export default function CrossCheckMeasurePage() {
   const startIdx = firstEmptyIdx === -1 ? items.length : firstEmptyIdx;
 
   const [sessionResults, setSessionResults] = useState<StepResult[]>([]);
+  // 사용자가 "이전 단계" 로 돌아갈 수 있도록 stepIndex 를 명시 state 로 관리.
+  // null 이면 기본 진행 (startIdx + sessionResults 기준).
+  const [manualStepIdx, setManualStepIdx] = useState<number | null>(null);
   const [phase, setPhase] = useState<Phase>("capture");
   const [capturedFile, setCapturedFile] = useState<File | null>(null);
   const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
@@ -182,13 +185,19 @@ export default function CrossCheckMeasurePage() {
   }
 
   const totalSteps = items.length;
-  const stepIndex = startIdx + sessionResults.length;
+  const stepIndex = manualStepIdx ?? startIdx + sessionResults.length;
   const currentDim = items[stepIndex];
   const isLastDim = stepIndex === totalSteps - 1;
+  const canGoBack = stepIndex > 0;
   const progressPercent =
     totalSteps === 0 ? 0 : Math.round((stepIndex / totalSteps) * 100);
 
-  const persistedDoneSteps = items.slice(0, startIdx).map(toCompletedStep);
+  // 이전 단계로 돌아가 재저장하면 sessionResults 에 해당 dim 의 새 값이 들어가므로
+  // persistedDoneSteps 에서는 같은 dimNo 를 제외해 결과 페이지로 중복 전달되지 않게 한다.
+  const persistedDoneSteps = items
+    .slice(0, startIdx)
+    .filter((it) => !sessionResults.some((s) => s.dimNo === it.dimNo))
+    .map(toCompletedStep);
   const allStepResults = [...persistedDoneSteps, ...sessionResults];
 
   const isSaving = saveResults.isPending;
@@ -200,6 +209,32 @@ export default function CrossCheckMeasurePage() {
     setOcrSuggestedValue(null);
     setIsPreparing(false);
     setPhase("capture");
+  };
+
+  const upsertSessionResult = (next: StepResult) => {
+    setSessionResults((prev) => {
+      const idx = prev.findIndex((s) => s.dimNo === next.dimNo);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = next;
+        return copy;
+      }
+      return [...prev, next];
+    });
+  };
+
+  const advanceToNextStep = () => {
+    // manualStepIdx 가 잡혀 있으면 +1 로 직접 이동, 없으면 sessionResults 증가로 자동 이동.
+    if (manualStepIdx !== null) {
+      setManualStepIdx(manualStepIdx + 1);
+    }
+    resetForNextDim();
+  };
+
+  const goToPreviousStep = () => {
+    if (stepIndex <= 0) return;
+    setManualStepIdx(stepIndex - 1);
+    resetForNextDim();
   };
 
   const goToResult = (finalResults: StepResult[]) => {
@@ -268,13 +303,25 @@ export default function CrossCheckMeasurePage() {
         imageUrl: uploadedImageUrl,
       };
 
+      upsertSessionResult(next);
+
       if (isLastDim) {
-        goToResult([...allStepResults, next]);
+        // allStepResults 는 이전 sessionResults 기준 — next 가 같은 dim 의 갱신본일
+        // 수도 있어 동일하게 upsert 한 결과로 갈음.
+        const finalResults = (() => {
+          const idx = allStepResults.findIndex((s) => s.dimNo === next.dimNo);
+          if (idx >= 0) {
+            const copy = [...allStepResults];
+            copy[idx] = next;
+            return copy;
+          }
+          return [...allStepResults, next];
+        })();
+        goToResult(finalResults);
         return;
       }
 
-      setSessionResults((prev) => [...prev, next]);
-      resetForNextDim();
+      advanceToNextStep();
     } catch (err) {
       setToast(toErrorMessage(err));
     }
@@ -290,12 +337,21 @@ export default function CrossCheckMeasurePage() {
       toleranceMinus: currentDim.toleranceMinus,
       status: "skipped",
     };
+    upsertSessionResult(next);
     if (isLastDim) {
-      goToResult([...allStepResults, next]);
+      const finalResults = (() => {
+        const idx = allStepResults.findIndex((s) => s.dimNo === next.dimNo);
+        if (idx >= 0) {
+          const copy = [...allStepResults];
+          copy[idx] = next;
+          return copy;
+        }
+        return [...allStepResults, next];
+      })();
+      goToResult(finalResults);
       return;
     }
-    setSessionResults((prev) => [...prev, next]);
-    resetForNextDim();
+    advanceToNextStep();
   };
 
   if (totalSteps === 0) {
@@ -420,6 +476,7 @@ export default function CrossCheckMeasurePage() {
             }}
             onError={setToast}
             onSkip={handleSkip}
+            onGoBack={canGoBack ? goToPreviousStep : undefined}
           />
         )}
 
