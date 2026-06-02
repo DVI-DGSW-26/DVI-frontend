@@ -10,6 +10,7 @@ import type {
 } from "../api/types";
 import { downloadReportPdf } from "../lib/downloadReportPdf";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
+import PhotoCompareModal from "../../../components/shared/PhotoCompareModal";
 
 const PROCESS_LABEL: Record<ReportProcess, string> = {
   EXTRUSION: "압출",
@@ -119,10 +120,12 @@ const MeasureCard = ({
   item,
   measuredValue,
   imageUrl,
+  onOpenPhotos,
 }: {
   item: ReportResultItem;
   measuredValue: number | null | undefined;
   imageUrl: string | null | undefined;
+  onOpenPhotos: () => void;
 }) => {
   const within = isWithinTolerance(item, measuredValue);
   const valueColor =
@@ -134,7 +137,11 @@ const MeasureCard = ({
 
   return (
     <li className="flex gap-3 rounded-xl border border-[#E5E7EB] p-3">
-      <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#F5F5F5]">
+      <button
+        type="button"
+        onClick={onOpenPhotos}
+        className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#F5F5F5]"
+      >
         {imageUrl ? (
           <img
             src={toBackendImageUrl(imageUrl)}
@@ -144,7 +151,7 @@ const MeasureCard = ({
         ) : (
           <Icon icon="mdi:image-off-outline" width={22} height={22} className="text-[#A8A8A8]" />
         )}
-      </div>
+      </button>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
@@ -173,6 +180,7 @@ const AdminReportDetailPageMobile = () => {
   const { data, isLoading, isError } = useReportDetail(id, validId);
 
   const [downloading, setDownloading] = useState(false);
+  const [photoItem, setPhotoItem] = useState<ReportResultItem | null>(null);
 
   const handleDownload = async () => {
     if (!validId || downloading) return;
@@ -305,6 +313,7 @@ const AdminReportDetailPageMobile = () => {
                 item={r}
                 measuredValue={r.productionValue}
                 imageUrl={r.productionImageUrl}
+                onOpenPhotos={() => setPhotoItem(r)}
               />
             ))}
           </ul>
@@ -331,6 +340,7 @@ const AdminReportDetailPageMobile = () => {
                 item={r}
                 measuredValue={r.qualityValue}
                 imageUrl={r.qualityImageUrl}
+                onOpenPhotos={() => setPhotoItem(r)}
               />
             ))}
           </ul>
@@ -345,6 +355,14 @@ const AdminReportDetailPageMobile = () => {
       >
         {downloading ? "준비 중..." : "PDF"}
       </button>
+
+      <PhotoCompareModal
+        open={photoItem !== null}
+        dimNo={photoItem?.dimNo ?? null}
+        productionImageUrl={photoItem?.productionImageUrl}
+        qualityImageUrl={photoItem?.qualityImageUrl}
+        onClose={() => setPhotoItem(null)}
+      />
     </div>
   );
 };
