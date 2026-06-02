@@ -170,6 +170,23 @@ export default function CrossCheckApprovalDetailPage() {
         </dl>
       </section>
 
+      {detail.status === "REJECTED" && detail.rejectReason && (
+        <section className="rounded-2xl border border-[#FECACA] bg-[#FEF2F2] p-5">
+          <div className="flex items-center gap-2">
+            <Icon
+              icon="solar:close-circle-bold"
+              width={18}
+              height={18}
+              className="text-[#B91C1C]"
+            />
+            <h2 className="text-sm font-semibold text-[#B91C1C]">반려 사유</h2>
+          </div>
+          <p className="mt-2 whitespace-pre-wrap text-sm text-[#7F1D1D]">
+            {detail.rejectReason}
+          </p>
+        </section>
+      )}
+
       <section className="rounded-2xl border border-gray-200 bg-white">
         <h2 className="border-b border-gray-100 px-5 py-3 text-sm font-semibold text-[#212121]">
           측정 결과 비교
