@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import Logo from "../../assets/Logo.svg";
 import { useAuth } from "../../features/auth/AuthContext";
@@ -28,16 +28,26 @@ const TABS: TabItem[] = [
   { label: "마이페이지", to: "/my-page", icon: "mdi:account-circle", roles: ["ADMIN", "QUALITY_ADMIN", "PRODUCTION", "QUALITY"] },
 ];
 
+const ROLE_HOME: Record<Role, string> = {
+  ADMIN: "/dashboard",
+  QUALITY_ADMIN: "/cross-check-approval",
+  PRODUCTION: "/",
+  QUALITY: "/",
+};
+
 const TabBarWeb = () => {
   const { user } = useAuth();
   const visibleTabs = user
     ? TABS.filter((tab) => tab.roles.includes(user.role))
     : [];
+  const homePath = user ? ROLE_HOME[user.role] : "/";
 
   return (
   <aside className="flex h-screen w-60 flex-col bg-white">
     <div className="flex items-center px-4 py-8 text-lg font-bold">
-      <img src={Logo} className="w-14 xl:w-37" />
+      <Link to={homePath} aria-label="홈으로 이동">
+        <img src={Logo} className="w-14 xl:w-37 cursor-pointer" />
+      </Link>
     </div>
 
     <nav className="flex flex-1 flex-col gap-1 w-full px-4">
