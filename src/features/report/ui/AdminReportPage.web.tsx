@@ -169,7 +169,12 @@ const AdminReportPageWeb = () => {
               type="date"
               value={draftDate}
               onChange={(e) => setDraftDate(e.target.value)}
-              className="h-9 w-36 rounded-full border border-[#931B82] bg-white pl-9 pr-3 text-xs text-[#931B82] focus:outline-none [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:m-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+              aria-label="날짜 선택"
+              className={`h-9 w-36 rounded-full border border-[#931B82] bg-white pl-9 pr-3 text-xs focus:outline-none [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:m-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-datetime-edit]:opacity-0 ${
+                draftDate
+                  ? "text-[#931B82] [&::-webkit-datetime-edit]:opacity-100"
+                  : "text-transparent"
+              }`}
             />
             <Icon
               icon="solar:calendar-linear"
