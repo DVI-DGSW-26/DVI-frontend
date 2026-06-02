@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useAuth } from "../../auth/AuthContext";
@@ -16,6 +16,11 @@ import type {
 } from "../type/types";
 import type { MyInspection } from "../../my-inspection/type/types";
 import { dimDisplayName, formatStandardWithTolerance } from "../lib/format";
+import {
+  clearProgress,
+  readProgress,
+  writeProgress,
+} from "../lib/measurementProgress";
 import CapturePhase from "./CapturePhase";
 import CropPhase from "./CropPhase";
 import InputPhase from "./InputPhase";
@@ -139,20 +144,25 @@ export default function InspectionMeasurePage() {
 
   const allDone = items.length > 0 && firstEmptyIdx === -1;
 
-  // startIdx 는 mount 시점의 "이미 done 인 dim 수" 로 한 번만 고정.
+  // items 가 처음 채워지는 렌더 시점에 동기적으로 잠근다.
   // detail 이 refetch 돼서 방금 저장한 dim 이 done 으로 반영돼도 startIdx 는 안 움직이고,
   // 새로 추가된 sessionResults 가 그 진행 차이를 흡수한다.
-  // 잠그지 않으면 detail refetch + sessionResults 가 이중으로 진행을 더해서 stepIndex 가
-  // items 범위를 넘어가는 race 가 발생한다.
-  const [lockedStartIdx, setLockedStartIdx] = useState<number | null>(null);
-  useEffect(() => {
-    if (lockedStartIdx !== null) return;
-    if (items.length === 0) return;
-    setLockedStartIdx(firstEmptyIdx === -1 ? items.length : firstEmptyIdx);
-  }, [lockedStartIdx, items.length, firstEmptyIdx]);
-  const startIdx = lockedStartIdx ?? 0;
+  // useState + useEffect 로 잠그면 첫 프레임에 lockedStartIdx=null → startIdx=0 으로
+  // dim 1 이 잠깐 보였다가 정정되는 깜빡임이 발생 — "이어하기" 가 리셋된 것처럼 보임.
+  const lockedStartIdxRef = useRef<number | null>(null);
+  if (lockedStartIdxRef.current === null && items.length > 0) {
+    lockedStartIdxRef.current =
+      firstEmptyIdx === -1 ? items.length : firstEmptyIdx;
+  }
+  const startIdx = lockedStartIdxRef.current ?? 0;
 
-  const [sessionResults, setSessionResults] = useState<StepResult[]>([]);
+  // 이어하기 진입 시점에는 detail.results 가 (백엔드 응답에 따라) 비어 보일 수 있어 firstEmptyIdx
+  // 가 0 으로 잡혀 처음부터 다시 시작되는 문제가 발생한다. 로컬 캐시에 진행 상태를 별도로
+  // 보관해 두고, sessionResults 초기값으로 주입하면 detail 이 비어 있어도 stepIndex 는
+  // sessionResults.length 만큼 전진해 다음 미완료 dim 으로 곧장 이어진다.
+  const [sessionResults, setSessionResults] = useState<StepResult[]>(() =>
+    readProgress(inspectionId),
+  );
   // 사용자가 "이전 단계" 로 돌아갈 수 있도록 stepIndex 를 명시 state 로 관리.
   // null 이면 기본 진행 (startIdx + sessionResults 기준).
   const [manualStepIdx, setManualStepIdx] = useState<number | null>(null);
@@ -175,6 +185,7 @@ export default function InspectionMeasurePage() {
 
   useEffect(() => {
     if (!info || !allDone) return;
+    clearProgress(inspectionId);
     navigate(`/inspection/${inspectionId}/result`, {
       replace: true,
       state: {
@@ -272,12 +283,13 @@ export default function InspectionMeasurePage() {
   const upsertSessionResult = (next: StepResult) => {
     setSessionResults((prev) => {
       const idx = prev.findIndex((s) => s.dimNo === next.dimNo);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = next;
-        return copy;
-      }
-      return [...prev, next];
+      const updated =
+        idx >= 0
+          ? prev.map((s, i) => (i === idx ? next : s))
+          : [...prev, next];
+      // 다음 진입(이어하기) 때 detail 응답이 비어도 복원할 수 있도록 매 저장마다 로컬 캐시 동기화.
+      writeProgress(inspectionId, updated);
+      return updated;
     });
   };
 
@@ -295,6 +307,7 @@ export default function InspectionMeasurePage() {
   };
 
   const goToResult = (finalResults: StepResult[]) => {
+    clearProgress(inspectionId);
     navigate(`/inspection/${inspectionId}/result`, {
       replace: true,
       state: {
