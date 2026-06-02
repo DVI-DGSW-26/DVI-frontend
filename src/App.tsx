@@ -97,6 +97,15 @@ function App() {
                 path="/cross-check-approval"
                 element={<CrossCheckApprovalPage />}
               />
+            </Route>
+
+            {/* 결재 상세는 순회검사자(QUALITY)도 읽기 전용으로 진입 가능 — 반려된
+                본인 검사의 사유 확인용. 승인/반려 액션은 페이지 내에서 결재자에게만 노출. */}
+            <Route
+              element={
+                <RouteGuard roles={["QUALITY_ADMIN", "ADMIN", "QUALITY"]} />
+              }
+            >
               <Route
                 path="/cross-check-approval/:crossCheckId"
                 element={<CrossCheckApprovalDetailPage />}
@@ -109,10 +118,7 @@ function App() {
                 element={<QualitySystemStatusPage />}
               />
 
-              <Route
-                path="/cross-checks"
-                element={<CrossCheckPendingPage />}
-              />
+              <Route path="/cross-checks" element={<CrossCheckPendingPage />} />
 
               <Route
                 path="/cross-check/:crossCheckId/measure"
