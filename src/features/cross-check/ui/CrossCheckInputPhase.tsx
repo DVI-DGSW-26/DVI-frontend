@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { judgeMeasurement } from "../../inspection/lib/judgment";
+import JudgmentBadge from "../../inspection/ui/JudgmentBadge";
 
 interface Props {
   blob: Blob;
@@ -6,6 +8,10 @@ interface Props {
   isSaving: boolean;
   isPreparing: boolean;
   suggestedValue: string | null;
+  /** 기준값/공차 — 자주검사처럼 입력 값이 합격 범위 안인지 실시간 판정 표시 용도. */
+  standardValue: number;
+  tolerancePlus: number;
+  toleranceMinus: number;
   onRetake: () => void;
   onSubmit: (measuredValue: number) => void;
 }
@@ -16,6 +22,9 @@ export default function CrossCheckInputPhase({
   isSaving,
   isPreparing,
   suggestedValue,
+  standardValue,
+  tolerancePlus,
+  toleranceMinus,
   onRetake,
   onSubmit,
 }: Props) {
@@ -42,6 +51,11 @@ export default function CrossCheckInputPhase({
 
   const numeric = Number(value);
   const isValid = value.trim() !== "" && Number.isFinite(numeric);
+
+  // 실시간 합격/불합격 — 입력 값이 비어있거나 유효하지 않으면 null (뱃지 숨김).
+  const judgment = isValid
+    ? judgeMeasurement(numeric, standardValue, tolerancePlus, toleranceMinus)
+    : null;
 
   const inputDisabled = isSaving || isPreparing;
   const submitDisabled = !isValid || isSaving || isPreparing;
@@ -88,9 +102,12 @@ export default function CrossCheckInputPhase({
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-4">
-        <label className="block text-xs font-medium text-[#6B7280]">
-          측정값
-        </label>
+        <div className="flex items-center justify-between gap-2">
+          <label className="block text-xs font-medium text-[#6B7280]">
+            측정값
+          </label>
+          <JudgmentBadge judgment={judgment} compact />
+        </div>
         <input
           type="number"
           inputMode="decimal"
