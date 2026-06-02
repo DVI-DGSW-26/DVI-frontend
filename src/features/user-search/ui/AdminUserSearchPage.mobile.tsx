@@ -6,6 +6,7 @@ import {
   ROLE_LABEL,
   STATUS_BADGE,
 } from "../lib/userLabels";
+import CreateUserModal from "./CreateUserModal";
 
 type FilterKey = "ALL" | "PRODUCTION" | "QUALITY" | "ACTIVE" | "INACTIVE";
 
@@ -22,6 +23,7 @@ const AdminUserSearchPageMobile = () => {
 
   const [keyword, setKeyword] = useState("");
   const [filter, setFilter] = useState<FilterKey>("ALL");
+  const [createOpen, setCreateOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
@@ -47,20 +49,30 @@ const AdminUserSearchPageMobile = () => {
 
   return (
     <div className="flex min-h-full flex-col gap-5 bg-[#F5F5F5] px-4 pb-21 pt-5">
-      <div className="relative">
-        <Icon
-          icon="solar:magnifer-linear"
-          width={18}
-          height={18}
-          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A8A8A8]"
-        />
-        <input
-          type="text"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          placeholder="이름, 아이디, 부서로 검색"
-          className="h-12 w-full rounded-2xl border border-[#931B82] bg-white pl-11 pr-4 text-sm text-[#212121] placeholder:text-[#A8A8A8] focus:outline-none"
-        />
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Icon
+            icon="solar:magnifer-linear"
+            width={18}
+            height={18}
+            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A8A8A8]"
+          />
+          <input
+            type="text"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="이름, 아이디, 부서로 검색"
+            className="h-12 w-full rounded-2xl border border-[#931B82] bg-white pl-11 pr-4 text-sm text-[#212121] placeholder:text-[#A8A8A8] focus:outline-none"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => setCreateOpen(true)}
+          aria-label="사용자 추가"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#931B82] text-white transition-colors hover:bg-[#6A0F5D]"
+        >
+          <Icon icon="mdi:plus" width={22} height={22} />
+        </button>
       </div>
 
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4">
@@ -100,6 +112,8 @@ const AdminUserSearchPageMobile = () => {
           조건에 맞는 사용자가 없습니다.
         </p>
       )}
+
+      <CreateUserModal open={createOpen} onClose={() => setCreateOpen(false)} />
 
       {!isLoading && !isError && filtered.length > 0 && (
         <ul className="flex flex-col gap-3">
