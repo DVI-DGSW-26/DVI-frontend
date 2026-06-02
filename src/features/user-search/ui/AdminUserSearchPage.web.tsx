@@ -3,6 +3,7 @@ import { Icon } from "@iconify/react";
 import { useUserList } from "../api";
 import { useReportList } from "../../report/api";
 import { DEPARTMENT_LABEL } from "../lib/userLabels";
+import CreateUserModal from "./CreateUserModal";
 import UserCard from "./UserCard";
 
 function todayISO() {
@@ -30,6 +31,7 @@ const AdminUserSearchPageWeb = () => {
   const [keyword, setKeyword] = useState("");
   const [appliedKeyword, setAppliedKeyword] = useState("");
   const [filter, setFilter] = useState<FilterKey>("ALL");
+  const [createOpen, setCreateOpen] = useState(false);
 
   const completedSlotsByName = useMemo(() => {
     const today = todayISO();
@@ -114,6 +116,14 @@ const AdminUserSearchPageWeb = () => {
           >
             검색
           </button>
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="flex h-10 items-center gap-1 rounded-full border border-[#931B82] bg-white px-4 text-sm font-medium text-[#931B82] transition-colors hover:bg-[#F3E8F7]"
+          >
+            <Icon icon="mdi:plus" width={16} height={16} />
+            사용자 추가
+          </button>
         </div>
 
         <div className="mt-3 flex flex-wrap gap-2">
@@ -166,6 +176,8 @@ const AdminUserSearchPageWeb = () => {
           ))}
         </div>
       )}
+
+      <CreateUserModal open={createOpen} onClose={() => setCreateOpen(false)} />
     </div>
   );
 };
