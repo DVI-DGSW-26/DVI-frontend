@@ -72,6 +72,10 @@ function App() {
               <Route path="/approval" element={<AccountApprovalPage />} />
 
               <Route path="/reports" element={<AdminReportPage />} />
+
+              <Route path="/products" element={<ProductsPage />} />
+              <Route path="/equipment" element={<EquipmentPage />} />
+              <Route path="/customers" element={<CustomersPage />} />
             </Route>
 
             <Route element={<RouteGuard roles={["QUALITY_ADMIN"]} />}>
@@ -86,9 +90,6 @@ function App() {
               />
 
               <Route path="/qm-reports" element={<ReportPage />} />
-              <Route path="/products" element={<ProductsPage />} />
-              <Route path="/equipment" element={<EquipmentPage />} />
-              <Route path="/customers" element={<CustomersPage />} />
             </Route>
 
             <Route element={<RouteGuard roles={["QUALITY_ADMIN", "ADMIN"]} />}>
