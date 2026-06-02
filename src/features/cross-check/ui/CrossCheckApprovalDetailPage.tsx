@@ -4,6 +4,7 @@ import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
 import { useCrossCheckDetail, useDecideCrossCheck } from "../api";
 import type { CrossCheckResultInfo, ProcessType } from "../api";
+import { useAuth } from "../../auth/AuthContext";
 import PhotoCompareModal from "../../../components/shared/PhotoCompareModal";
 
 const PROCESS_LABEL: Record<ProcessType, string> = {
@@ -64,6 +65,7 @@ export default function CrossCheckApprovalDetailPage() {
   const params = useParams<{ crossCheckId: string }>();
   const crossCheckId = Number(params.crossCheckId);
 
+  const { user } = useAuth();
   const detailQuery = useCrossCheckDetail(crossCheckId);
   const detail = detailQuery.data;
   const decideMut = useDecideCrossCheck(crossCheckId);
@@ -76,7 +78,11 @@ export default function CrossCheckApprovalDetailPage() {
   const goBack = () => navigate("/cross-check-approval", { replace: true });
 
   const handleApprove = async () => {
-    if (!window.confirm("이 순회검사를 승인하시겠습니까?\n보고서가 자동 발행됩니다.")) {
+    if (
+      !window.confirm(
+        "이 순회검사를 승인하시겠습니까?\n보고서가 자동 발행됩니다.",
+      )
+    ) {
       return;
     }
     setError(null);
@@ -130,6 +136,11 @@ export default function CrossCheckApprovalDetailPage() {
 
   const requiresHardness = detail.product.process === "EXTRUSION";
   const isPending = decideMut.isPending;
+  // 승인/반려 액션은 결재자(QUALITY_ADMIN/ADMIN)가 결재 대기 건을 볼 때만.
+  // 순회검사자(QUALITY)나 이미 처리된 건은 읽기 전용 — 반려 사유만 확인.
+  const canDecide =
+    (user?.role === "QUALITY_ADMIN" || user?.role === "ADMIN") &&
+    detail.status === "PENDING_APPROVAL";
 
   return (
     <div className="flex flex-col gap-4 p-4 pb-32 md:p-6 md:pb-32">
@@ -157,7 +168,9 @@ export default function CrossCheckApprovalDetailPage() {
         <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-xs md:grid-cols-3">
           <InfoLine
             label="공정"
-            value={PROCESS_LABEL[detail.product.process] ?? detail.product.process}
+            value={
+              PROCESS_LABEL[detail.product.process] ?? detail.product.process
+            }
           />
           <InfoLine label="설비" value={detail.equipment.name} />
           <InfoLine label="고객사" value={detail.customer.name} />
@@ -196,7 +209,9 @@ export default function CrossCheckApprovalDetailPage() {
             <thead className="bg-[#F9FAFB] text-xs text-[#6B7280]">
               <tr>
                 <th className="px-3 py-2 text-left font-medium">DIM</th>
-                <th className="px-3 py-2 text-left font-medium">기준 (±공차)</th>
+                <th className="px-3 py-2 text-left font-medium">
+                  기준 (±공차)
+                </th>
                 <th className="px-3 py-2 text-right font-medium">자주검사</th>
                 <th className="px-3 py-2 text-right font-medium">순회검사</th>
                 <th className="px-3 py-2 text-center font-medium">사진</th>
@@ -215,15 +230,23 @@ export default function CrossCheckApprovalDetailPage() {
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5">
-        <h2 className="text-sm font-semibold text-[#212121]">외관 / 경도 / 비고</h2>
+        <h2 className="text-sm font-semibold text-[#212121]">
+          외관 / 경도 / 비고
+        </h2>
         <dl className="mt-3 grid grid-cols-1 gap-y-2 text-xs md:grid-cols-2 md:gap-x-6">
           <InfoLine
             label="자주검사 외관"
             value={detail.productionAppearanceResult ?? "-"}
           />
-          <InfoLine label="순회검사 외관" value={detail.appearanceResult ?? "-"} />
+          <InfoLine
+            label="순회검사 외관"
+            value={detail.appearanceResult ?? "-"}
+          />
           {requiresHardness && (
-            <InfoLine label="경도 (EXTRUSION)" value={detail.hardnessResult ?? "-"} />
+            <InfoLine
+              label="경도 (EXTRUSION)"
+              value={detail.hardnessResult ?? "-"}
+            />
           )}
           <InfoLine label="비고" value={detail.note ?? "-"} />
         </dl>
@@ -235,68 +258,70 @@ export default function CrossCheckApprovalDetailPage() {
         </div>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white p-4">
-        {showRejectForm ? (
-          <div className="mx-auto flex max-w-3xl flex-col gap-3">
-            <label
-              htmlFor="reject-reason"
-              className="text-xs font-medium text-[#6B7280]"
-            >
-              반려 사유 (필수)
-            </label>
-            <textarea
-              id="reject-reason"
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="예: DIM 3 측정값이 자주검사와 차이가 큼. 재측정 요청"
-              rows={3}
-              disabled={isPending}
-              className="resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
-            />
-            <div className="flex gap-2">
+      {canDecide && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white p-4">
+          {showRejectForm ? (
+            <div className="mx-auto flex max-w-3xl flex-col gap-3">
+              <label
+                htmlFor="reject-reason"
+                className="text-xs font-medium text-[#6B7280]"
+              >
+                반려 사유 (필수)
+              </label>
+              <textarea
+                id="reject-reason"
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="예: DIM 3 측정값이 자주검사와 차이가 큼. 재측정 요청"
+                rows={3}
+                disabled={isPending}
+                className="resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRejectForm(false);
+                    setRejectReason("");
+                    setError(null);
+                  }}
+                  disabled={isPending}
+                  className="h-11 flex-1 rounded-md border border-gray-300 text-sm font-medium text-[#212121] transition-colors hover:bg-gray-50 disabled:opacity-60"
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRejectConfirm}
+                  disabled={isPending || rejectReason.trim() === ""}
+                  className="h-11 flex-1 rounded-md bg-[#EF4444] text-sm font-semibold text-white transition-colors hover:bg-[#DC2626] disabled:bg-[#D1D5DB]"
+                >
+                  {isPending ? "처리 중..." : "반려 확정"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mx-auto flex max-w-3xl gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  setShowRejectForm(false);
-                  setRejectReason("");
-                  setError(null);
-                }}
+                onClick={() => setShowRejectForm(true)}
                 disabled={isPending}
-                className="h-11 flex-1 rounded-md border border-gray-300 text-sm font-medium text-[#212121] transition-colors hover:bg-gray-50 disabled:opacity-60"
+                className="h-12 flex-1 rounded-md border border-[#EF4444] text-base font-semibold text-[#EF4444] transition-colors hover:bg-[#FEF2F2] disabled:opacity-60"
               >
-                취소
+                반려
               </button>
               <button
                 type="button"
-                onClick={handleRejectConfirm}
-                disabled={isPending || rejectReason.trim() === ""}
-                className="h-11 flex-1 rounded-md bg-[#EF4444] text-sm font-semibold text-white transition-colors hover:bg-[#DC2626] disabled:bg-[#D1D5DB]"
+                onClick={handleApprove}
+                disabled={isPending}
+                className="h-12 flex-2 rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
               >
-                {isPending ? "처리 중..." : "반려 확정"}
+                {isPending ? "처리 중..." : "승인 (보고서 발행)"}
               </button>
             </div>
-          </div>
-        ) : (
-          <div className="mx-auto flex max-w-3xl gap-2">
-            <button
-              type="button"
-              onClick={() => setShowRejectForm(true)}
-              disabled={isPending}
-              className="h-12 flex-1 rounded-md border border-[#EF4444] text-base font-semibold text-[#EF4444] transition-colors hover:bg-[#FEF2F2] disabled:opacity-60"
-            >
-              반려
-            </button>
-            <button
-              type="button"
-              onClick={handleApprove}
-              disabled={isPending}
-              className="h-12 flex-2 rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
-            >
-              {isPending ? "처리 중..." : "승인 (보고서 발행)"}
-            </button>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       <PhotoCompareModal
         open={photoRow !== null}
@@ -339,7 +364,9 @@ function DimRow({
     <tr>
       <td className="px-3 py-2 text-xs font-semibold text-[#931B82]">
         DIM {row.dimNo}
-        {row.dimName ? <span className="ml-1 text-[#6B7280]">({row.dimName})</span> : null}
+        {row.dimName ? (
+          <span className="ml-1 text-[#6B7280]">({row.dimName})</span>
+        ) : null}
       </td>
       <td className="px-3 py-2 text-xs text-[#6B7280]">
         {formatStandardWithTolerance(
@@ -348,10 +375,14 @@ function DimRow({
           row.toleranceMinus,
         )}
       </td>
-      <td className={`px-3 py-2 text-right text-sm font-semibold ${colorOf(productionWithin)}`}>
+      <td
+        className={`px-3 py-2 text-right text-sm font-semibold ${colorOf(productionWithin)}`}
+      >
         {row.productionValue ?? "-"}
       </td>
-      <td className={`px-3 py-2 text-right text-sm font-semibold ${colorOf(crossWithin)}`}>
+      <td
+        className={`px-3 py-2 text-right text-sm font-semibold ${colorOf(crossWithin)}`}
+      >
         {row.measuredValue ?? "-"}
       </td>
       <td className="px-3 py-2 text-center">
