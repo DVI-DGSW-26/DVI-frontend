@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
 import Select, { type StylesConfig } from "react-select";
-import ReportCard from "./ReportCard";
+import AdminReportCard from "./AdminReportCard";
 import { useReportList } from "../api";
 import {
   useEquipmentList,
@@ -259,7 +259,7 @@ export default function ReportPage() {
       {!isLoading && !isError && filtered.length > 0 && (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {filtered.map((r) => (
-            <ReportCard key={r.id} report={r} />
+            <AdminReportCard key={r.id} report={r} />
           ))}
         </div>
       )}
