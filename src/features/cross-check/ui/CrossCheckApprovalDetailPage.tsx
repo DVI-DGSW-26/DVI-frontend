@@ -4,7 +4,7 @@ import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
 import { useCrossCheckDetail, useDecideCrossCheck } from "../api";
 import type { CrossCheckResultInfo, ProcessType } from "../api";
-import { toBackendImageUrl } from "../../../lib/imageUrl";
+import PhotoCompareModal from "../../../components/shared/PhotoCompareModal";
 
 const PROCESS_LABEL: Record<ProcessType, string> = {
   EXTRUSION: "압출",
@@ -71,6 +71,7 @@ export default function CrossCheckApprovalDetailPage() {
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [photoRow, setPhotoRow] = useState<CrossCheckResultInfo | null>(null);
 
   const goBack = () => navigate("/cross-check-approval", { replace: true });
 
@@ -169,6 +170,23 @@ export default function CrossCheckApprovalDetailPage() {
         </dl>
       </section>
 
+      {detail.status === "REJECTED" && detail.rejectReason && (
+        <section className="rounded-2xl border border-[#FECACA] bg-[#FEF2F2] p-5">
+          <div className="flex items-center gap-2">
+            <Icon
+              icon="solar:close-circle-bold"
+              width={18}
+              height={18}
+              className="text-[#B91C1C]"
+            />
+            <h2 className="text-sm font-semibold text-[#B91C1C]">반려 사유</h2>
+          </div>
+          <p className="mt-2 whitespace-pre-wrap text-sm text-[#7F1D1D]">
+            {detail.rejectReason}
+          </p>
+        </section>
+      )}
+
       <section className="rounded-2xl border border-gray-200 bg-white">
         <h2 className="border-b border-gray-100 px-5 py-3 text-sm font-semibold text-[#212121]">
           측정 결과 비교
@@ -189,7 +207,7 @@ export default function CrossCheckApprovalDetailPage() {
                 .slice()
                 .sort((a, b) => a.dimNo - b.dimNo)
                 .map((r) => (
-                  <DimRow key={r.resultId} row={r} />
+                  <DimRow key={r.resultId} row={r} onOpenPhotos={setPhotoRow} />
                 ))}
             </tbody>
           </table>
@@ -279,11 +297,25 @@ export default function CrossCheckApprovalDetailPage() {
           </div>
         )}
       </div>
+
+      <PhotoCompareModal
+        open={photoRow !== null}
+        dimNo={photoRow?.dimNo ?? null}
+        productionImageUrl={photoRow?.productionImageUrl}
+        qualityImageUrl={photoRow?.imageUrl}
+        onClose={() => setPhotoRow(null)}
+      />
     </div>
   );
 }
 
-function DimRow({ row }: { row: CrossCheckResultInfo }) {
+function DimRow({
+  row,
+  onOpenPhotos,
+}: {
+  row: CrossCheckResultInfo;
+  onOpenPhotos: (row: CrossCheckResultInfo) => void;
+}) {
   const productionWithin =
     row.productionValue != null
       ? isWithinTolerance(
@@ -323,16 +355,15 @@ function DimRow({ row }: { row: CrossCheckResultInfo }) {
         {row.measuredValue ?? "-"}
       </td>
       <td className="px-3 py-2 text-center">
-        {row.productionImageUrl ? (
-          <a
-            href={toBackendImageUrl(row.productionImageUrl)}
-            target="_blank"
-            rel="noopener noreferrer"
+        {row.productionImageUrl || row.imageUrl ? (
+          <button
+            type="button"
+            onClick={() => onOpenPhotos(row)}
             className="inline-flex items-center gap-1 text-xs font-medium text-[#931B82] hover:underline"
           >
             <Icon icon="solar:gallery-linear" width={14} height={14} />
-            보기
-          </a>
+            사진
+          </button>
         ) : (
           <span className="text-xs text-[#9CA3AF]">-</span>
         )}
