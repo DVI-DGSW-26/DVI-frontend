@@ -386,6 +386,7 @@ export default function CrossCheckMeasurePage() {
     <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-24">
       <section className="border-b border-gray-200 bg-white px-4 py-4">
         <InfoRow label="기계명" value={detail.equipment.name} />
+        <InfoRow label="검사 시간" value={detail.inspectionTime} />
         <div className="mt-2 grid grid-cols-3 gap-2">
           <Stat label="제품명" value={detail.product.name} />
           <Stat label="자주검사자" value={productionInspectorName} />
