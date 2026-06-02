@@ -153,6 +153,9 @@ export default function InspectionMeasurePage() {
   const startIdx = lockedStartIdx ?? 0;
 
   const [sessionResults, setSessionResults] = useState<StepResult[]>([]);
+  // 사용자가 "이전 단계" 로 돌아갈 수 있도록 stepIndex 를 명시 state 로 관리.
+  // null 이면 기본 진행 (startIdx + sessionResults 기준).
+  const [manualStepIdx, setManualStepIdx] = useState<number | null>(null);
   const [phase, setPhase] = useState<Phase>("capture");
   const [capturedFile, setCapturedFile] = useState<File | null>(null);
   const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
@@ -218,9 +221,10 @@ export default function InspectionMeasurePage() {
   }
 
   const totalSteps = items.length;
-  const stepIndex = startIdx + sessionResults.length;
+  const stepIndex = manualStepIdx ?? startIdx + sessionResults.length;
   const currentDim = items[stepIndex];
   const isLastDim = stepIndex === totalSteps - 1;
+  const canGoBack = stepIndex > 0;
 
   // items 가 비어있거나 (백엔드가 results 를 아직 안 채웠거나, 일시적 race)
   // stepIndex 가 범위를 벗어난 경우 — 안전한 로딩 화면으로 폴백.
@@ -246,7 +250,12 @@ export default function InspectionMeasurePage() {
     ? 0
     : Math.round((stepIndex / totalSteps) * 100);
 
-  const persistedDoneSteps = items.slice(0, startIdx).map(toCompletedStep);
+  // 이전 단계로 돌아가 재저장하면 sessionResults 에 해당 dim 의 새 값이 들어가므로
+  // persistedDoneSteps 에서는 같은 dimNo 를 제외해 결과 페이지로 중복 전달되지 않게 한다.
+  const persistedDoneSteps = items
+    .slice(0, startIdx)
+    .filter((it) => !sessionResults.some((s) => s.dimNo === it.dimNo))
+    .map(toCompletedStep);
   const allStepResults = [...persistedDoneSteps, ...sessionResults];
 
   const isSaving = saveResults.isPending;
@@ -258,6 +267,31 @@ export default function InspectionMeasurePage() {
     setOcrSuggestedValue(null);
     setIsPreparing(false);
     setPhase("capture");
+  };
+
+  const upsertSessionResult = (next: StepResult) => {
+    setSessionResults((prev) => {
+      const idx = prev.findIndex((s) => s.dimNo === next.dimNo);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = next;
+        return copy;
+      }
+      return [...prev, next];
+    });
+  };
+
+  const advanceToNextStep = () => {
+    if (manualStepIdx !== null) {
+      setManualStepIdx(manualStepIdx + 1);
+    }
+    resetForNextDim();
+  };
+
+  const goToPreviousStep = () => {
+    if (stepIndex <= 0) return;
+    setManualStepIdx(stepIndex - 1);
+    resetForNextDim();
   };
 
   const goToResult = (finalResults: StepResult[]) => {
@@ -343,13 +377,23 @@ export default function InspectionMeasurePage() {
         ...(passFailResult ? { passFailResult } : {}),
       };
 
+      upsertSessionResult(next);
+
       if (isLastDim) {
-        goToResult([...allStepResults, next]);
+        const finalResults = (() => {
+          const idx = allStepResults.findIndex((s) => s.dimNo === next.dimNo);
+          if (idx >= 0) {
+            const copy = [...allStepResults];
+            copy[idx] = next;
+            return copy;
+          }
+          return [...allStepResults, next];
+        })();
+        goToResult(finalResults);
         return;
       }
 
-      setSessionResults((prev) => [...prev, next]);
-      resetForNextDim();
+      advanceToNextStep();
     } catch (err) {
       setToast(toErrorMessage(err));
     }
@@ -367,13 +411,23 @@ export default function InspectionMeasurePage() {
       status: "skipped",
     };
 
+    upsertSessionResult(next);
+
     if (isLastDim) {
-      goToResult([...allStepResults, next]);
+      const finalResults = (() => {
+        const idx = allStepResults.findIndex((s) => s.dimNo === next.dimNo);
+        if (idx >= 0) {
+          const copy = [...allStepResults];
+          copy[idx] = next;
+          return copy;
+        }
+        return [...allStepResults, next];
+      })();
+      goToResult(finalResults);
       return;
     }
 
-    setSessionResults((prev) => [...prev, next]);
-    resetForNextDim();
+    advanceToNextStep();
   };
 
   if (totalSteps === 0) {
@@ -440,6 +494,7 @@ export default function InspectionMeasurePage() {
             }}
             onError={setToast}
             onSkip={handleSkip}
+            onGoBack={canGoBack ? goToPreviousStep : undefined}
           />
         )}
 
