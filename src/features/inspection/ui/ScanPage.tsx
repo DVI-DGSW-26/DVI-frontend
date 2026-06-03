@@ -13,7 +13,10 @@ import type {
   StartInspectionErrorData,
 } from "../type/types";
 import type { MyInspection } from "../../my-inspection/type/types";
-import { useMyInspectionList } from "../../my-inspection/api";
+import {
+  useDeleteInspection,
+  useMyInspectionList,
+} from "../../my-inspection/api";
 import SlotItem, { type SlotStatus } from "./SlotItem";
 import SkipModal from "./SkipModal";
 import Toast from "./Toast";
@@ -49,6 +52,7 @@ export default function ScanPage() {
   const myInspectionsQuery = useMyInspectionList({ includeFinished: true });
   const startMutation = useStartInspection();
   const skipMutation = useSkipInspection();
+  const deleteMutation = useDeleteInspection();
 
   const slots = useMemo(() => slotsQuery.data ?? [], [slotsQuery.data]);
 
@@ -192,6 +196,12 @@ export default function ScanPage() {
     if (!productId || !equipmentId || !skipTargetType) return;
     const type = skipTargetType;
     try {
+      // 작성 중(DRAFT) 인 검사가 이미 존재하면 백엔드가 INSPECTION_ALREADY_EXISTS 를
+      // 던지므로, skip 호출 전 해당 DRAFT 를 먼저 삭제해서 NONE 상태로 되돌린다.
+      const existing = inspectionByType.get(type);
+      if (existing && existing.status === "DRAFT") {
+        await deleteMutation.mutateAsync(existing.inspectionId);
+      }
       await skipMutation.mutateAsync({
         productId,
         equipmentId,
