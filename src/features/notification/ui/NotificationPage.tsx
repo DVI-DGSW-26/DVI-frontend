@@ -7,6 +7,7 @@ import {
   type NotificationResponse,
 } from "../api";
 import { resolveNotificationLink } from "../lib/resolveNotificationLink";
+import { parseServerDate } from "../../../lib/datetime";
 
 type NotificationType = "warning" | "success" | "info";
 
@@ -27,7 +28,7 @@ function startOfDay(d: Date) {
 }
 
 function getGroupLabel(createdAt: string): string {
-  const created = new Date(createdAt);
+  const created = parseServerDate(createdAt);
   const now = new Date();
   const diffDays = Math.floor((startOfDay(now) - startOfDay(created)) / 86_400_000);
   if (diffDays <= 0) return "오늘";
@@ -36,7 +37,7 @@ function getGroupLabel(createdAt: string): string {
 }
 
 function formatTime(createdAt: string): string {
-  const created = new Date(createdAt);
+  const created = parseServerDate(createdAt);
   const now = new Date();
   const diffMs = now.getTime() - created.getTime();
   const diffMin = Math.floor(diffMs / 60_000);

@@ -1,3 +1,5 @@
+import { parseServerDate } from "../../../lib/datetime";
+
 export type ElapsedTone = "gray" | "orange" | "red";
 
 export interface ElapsedInfo {
@@ -8,7 +10,7 @@ export interface ElapsedInfo {
 
 export function elapsedFrom(iso: string | undefined): ElapsedInfo {
   if (!iso) return { label: "—", tone: "gray", minutes: 0 };
-  const then = new Date(iso).getTime();
+  const then = parseServerDate(iso).getTime();
   if (Number.isNaN(then)) return { label: "—", tone: "gray", minutes: 0 };
 
   const now = Date.now();
