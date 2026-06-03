@@ -96,8 +96,9 @@ const STATUS_META: Record<
   },
 };
 
-// 건너뛰기 가능한 상태 — 아직 시작/완료/건너뛴 적이 없을 때만.
-const CAN_SKIP: SlotStatus[] = ["NONE"];
+// 건너뛰기 가능한 상태 — 시작 전(NONE) 또는 작성 중(DRAFT) 일 때.
+// DRAFT 인 경우 ScanPage 가 기존 DRAFT 를 먼저 삭제하고 skip 호출.
+const CAN_SKIP: SlotStatus[] = ["NONE", "DRAFT"];
 
 export default function SlotItem({ slot, status, onTap, onSkip }: Props) {
   const meta = STATUS_META[status];
