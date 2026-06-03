@@ -131,10 +131,9 @@ export default function CrossCheckResultPage() {
     [results],
   );
 
-  const canSubmit =
-    appearance !== null &&
-    (!requiresHardness || hardness.trim().length > 0) &&
-    !hasSkipped;
+  // 경도값은 압출 공정이라도 결재요청 시점엔 선택. 초품검사 등 경도를 아직 측정
+  // 못 한 경우에도 결재요청이 가능해야 함 (경도는 압출 최종 후 입력).
+  const canSubmit = appearance !== null && !hasSkipped;
 
   if (needsFallback && detailQuery.isLoading) {
     return (
@@ -163,13 +162,15 @@ export default function CrossCheckResultPage() {
 
   const handleSubmit = async () => {
     if (!appearance) return;
-    if (requiresHardness && !hardness.trim()) return;
 
     try {
       await saveMut.mutateAsync({
         results: [],
         appearanceResult: appearance,
-        ...(requiresHardness ? { hardnessResult: hardness.trim() } : {}),
+        // 경도는 입력했을 때만 전송 (압출이라도 선택).
+        ...(requiresHardness && hardness.trim()
+          ? { hardnessResult: hardness.trim() }
+          : {}),
         ...(note.trim() ? { note: note.trim() } : {}),
       });
       // 저장 직후 QUALITY_ADMIN 결재 대기로 전환 (DRAFT → PENDING_APPROVAL).
@@ -272,7 +273,7 @@ export default function CrossCheckResultPage() {
               htmlFor="hardness-result"
               className="block text-xs font-medium text-[#6B7280]"
             >
-              경도 측정값 (압출 공정 필수)
+              경도 측정값 (압출 공정, 선택 · 최종 후 입력)
             </label>
             <input
               id="hardness-result"
