@@ -62,14 +62,28 @@ const CrossCheckPendingPage = () => {
 
   const createMut = useCreateCrossCheck();
 
+  // 이미 순회검사를 시작한(DRAFT 생성됨) 자주검사는 "진행 중(이어하기)"에 뜨므로
+  // "새 배정"에서는 제외해 같은 건이 두 섹션에 중복 노출되지 않게 한다.
+  const inProgressInspectionIds = useMemo(
+    () =>
+      new Set(
+        myCrossChecks
+          .filter((c) => c.status === "DRAFT")
+          .map((c) => c.inspectionId),
+      ),
+    [myCrossChecks],
+  );
+
   const sortedAssigned = useMemo(
     () =>
-      [...assigned].sort(
-        (a, b) =>
-          elapsedFrom(b.completedAt).minutes -
-          elapsedFrom(a.completedAt).minutes,
-      ),
-    [assigned],
+      [...assigned]
+        .filter((a) => !inProgressInspectionIds.has(a.inspectionId))
+        .sort(
+          (a, b) =>
+            elapsedFrom(b.completedAt).minutes -
+            elapsedFrom(a.completedAt).minutes,
+        ),
+    [assigned, inProgressInspectionIds],
   );
 
   // 결재 요청 이력: DRAFT 제외 (DRAFT 는 측정 중 — 할당 대기 탭에서 이어하기로 노출)
