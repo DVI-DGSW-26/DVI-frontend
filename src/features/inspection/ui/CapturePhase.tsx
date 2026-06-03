@@ -8,6 +8,8 @@ interface Props {
   onSkip: () => void;
   /** 첫 dim 이 아니면 직전 dim 으로 돌아가 재촬영. 부모가 stepIndex > 0 일 때만 전달. */
   onGoBack?: () => void;
+  /** 사진 없이 측정값만 입력. 전달된 경우에만 버튼 노출 (순회검사 한정). */
+  onMeasureWithoutPhoto?: () => void;
 }
 
 export default function CapturePhase({
@@ -15,6 +17,7 @@ export default function CapturePhase({
   onError,
   onSkip,
   onGoBack,
+  onMeasureWithoutPhoto,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -214,6 +217,16 @@ export default function CapturePhase({
           사진 촬영 불가
         </button>
       </div>
+
+      {onMeasureWithoutPhoto && (
+        <button
+          type="button"
+          onClick={onMeasureWithoutPhoto}
+          className="h-11 w-full rounded-md border border-[#931B82] bg-white text-sm font-medium text-[#931B82] hover:bg-[#F3E8FF]"
+        >
+          사진 없이 측정값 입력
+        </button>
+      )}
 
       {isCameraOpen && (
         <div className="fixed inset-0 z-50 flex flex-col bg-black">
