@@ -37,7 +37,8 @@ interface MeasureItem {
 }
 
 function isItemDone(item: MeasureItem): boolean {
-  return item.measuredValue != null && !!item.imageUrl;
+  // 사진 없이 측정값만 입력하는 케이스도 허용 — 측정값이 있으면 완료로 본다.
+  return item.measuredValue != null;
 }
 
 function toCompletedStep(item: MeasureItem): StepResult {
@@ -211,6 +212,16 @@ export default function CrossCheckMeasurePage() {
     setPhase("capture");
   };
 
+  // 사진 없이 측정값만 입력 — 촬영/크롭/업로드 없이 바로 입력 단계로.
+  const startMeasureWithoutPhoto = () => {
+    setCapturedFile(null);
+    setCroppedBlob(null);
+    setUploadedImageUrl(null);
+    setOcrSuggestedValue(null);
+    setIsPreparing(false);
+    setPhase("input");
+  };
+
   const upsertSessionResult = (next: StepResult) => {
     setSessionResults((prev) => {
       const idx = prev.findIndex((s) => s.dimNo === next.dimNo);
@@ -280,14 +291,15 @@ export default function CrossCheckMeasurePage() {
   };
 
   const handleSubmitMeasured = async (measuredValue: number) => {
-    if (!currentDim || !uploadedImageUrl) return;
+    if (!currentDim) return;
     try {
       await saveResults.mutateAsync({
         results: [
           {
             resultId: currentDim.resultId,
             measuredValue,
-            imageUrl: uploadedImageUrl,
+            // 사진 없이 입력한 경우 imageUrl 은 생략 (백엔드에서 선택).
+            ...(uploadedImageUrl ? { imageUrl: uploadedImageUrl } : {}),
           },
         ],
       });
@@ -300,7 +312,7 @@ export default function CrossCheckMeasurePage() {
         toleranceMinus: currentDim.toleranceMinus,
         status: "completed",
         measuredValue,
-        imageUrl: uploadedImageUrl,
+        imageUrl: uploadedImageUrl ?? undefined,
       };
 
       upsertSessionResult(next);
@@ -478,6 +490,7 @@ export default function CrossCheckMeasurePage() {
             onError={setToast}
             onSkip={handleSkip}
             onGoBack={canGoBack ? goToPreviousStep : undefined}
+            onMeasureWithoutPhoto={startMeasureWithoutPhoto}
           />
         )}
 
@@ -493,7 +506,7 @@ export default function CrossCheckMeasurePage() {
           />
         )}
 
-        {phase === "input" && croppedBlob && (
+        {phase === "input" && (
           <CrossCheckInputPhase
             blob={croppedBlob}
             isLastDim={isLastDim}
