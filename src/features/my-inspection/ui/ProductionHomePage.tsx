@@ -3,16 +3,32 @@ import { useNavigate } from "react-router-dom";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
 import { useAuth } from "../../auth/AuthContext";
-import { useMyInspectionList } from "../api";
-import { useStartNextInspection } from "../../inspection/api";
+import { useDeleteInspection, useMyInspectionList } from "../api";
+import {
+  useSkipInspection,
+  useStartNextInspection,
+} from "../../inspection/api";
 import type {
+  SkipInspectionErrorData,
   StartNextInspectionErrorData,
 } from "../../inspection/type/types";
 import type { MyInspection } from "../type/types";
 import { getStatusBadge } from "../lib/inspectionStatus";
 import { extractNextEligible } from "../lib/nextEligible";
 import { formatSlotTime } from "../../inspection/lib/format";
+import SkipModal from "../../inspection/ui/SkipModal";
 import Toast from "../../inspection/ui/Toast";
+
+// 건너뛰기 모달 대상 — latestDraft(DRAFT 인 검사 자체 건너뛰기) 와
+// nextEligible(다음 시점을 건너뛰기) 둘 다 같은 모양으로 처리.
+interface SkipTarget {
+  label: string;
+  productId: number;
+  equipmentId: number;
+  type: string;
+  // DRAFT 검사를 먼저 삭제해야 하는 경우 inspectionId 동봉.
+  draftInspectionIdToDelete?: number;
+}
 
 // "이어서 할 일" 후보를 즉시 계산하기 위해 includeFinished=true 로 받음.
 export default function ProductionHomePage() {
@@ -21,8 +37,11 @@ export default function ProductionHomePage() {
 
   const inspectionsQuery = useMyInspectionList({ includeFinished: true });
   const startNextMutation = useStartNextInspection();
+  const skipMutation = useSkipInspection();
+  const deleteMutation = useDeleteInspection();
   const [toast, setToast] = useState<string | null>(null);
   const [pendingPrevId, setPendingPrevId] = useState<number | null>(null);
+  const [skipTarget, setSkipTarget] = useState<SkipTarget | null>(null);
 
   const inspections = useMemo(
     () => inspectionsQuery.data ?? [],
@@ -50,6 +69,56 @@ export default function ProductionHomePage() {
     navigate(`/inspection/${inspection.inspectionId}/measure`, {
       state: { inspection },
     });
+  };
+
+  const handleAskSkipDraft = (inspection: MyInspection) => {
+    setSkipTarget({
+      label: `${inspection.product.name} (${inspection.typeLabel})`,
+      productId: inspection.product.id,
+      equipmentId: inspection.equipment.id,
+      type: inspection.type,
+      draftInspectionIdToDelete: inspection.inspectionId,
+    });
+  };
+
+  const handleAskSkipNext = (previous: MyInspection, nextType: string) => {
+    setSkipTarget({
+      label: `${previous.product.name} (${nextType})`,
+      productId: previous.product.id,
+      equipmentId: previous.equipment.id,
+      type: nextType,
+    });
+  };
+
+  const handleSkipConfirm = async (reason: string) => {
+    if (!skipTarget) return;
+    const target = skipTarget;
+    try {
+      // DRAFT 가 이미 있으면 백엔드가 INSPECTION_ALREADY_EXISTS 를 던지므로,
+      // skip 호출 전 DRAFT 를 먼저 삭제해 NONE 상태로 되돌린다.
+      if (target.draftInspectionIdToDelete != null) {
+        await deleteMutation.mutateAsync(target.draftInspectionIdToDelete);
+      }
+      await skipMutation.mutateAsync({
+        productId: target.productId,
+        equipmentId: target.equipmentId,
+        type: target.type,
+        ...(reason ? { reason } : {}),
+      });
+      setSkipTarget(null);
+      setToast(`${target.label} 시점을 건너뛰었습니다.`);
+    } catch (err) {
+      if (err instanceof AxiosError) {
+        const data = err.response?.data as SkipInspectionErrorData | undefined;
+        if (data?.code === "INSPECTION_ALREADY_EXISTS") {
+          setSkipTarget(null);
+          setToast("이미 처리된 시점입니다.");
+          return;
+        }
+      }
+      setSkipTarget(null);
+      setToast("건너뛰지 못했습니다.");
+    }
   };
 
   const handleStartNext = async (previous: MyInspection) => {
@@ -91,29 +160,39 @@ export default function ProductionHomePage() {
 
         {latestDraft ? (
           <>
-            <button
-              type="button"
-              onClick={() => handleResume(latestDraft)}
-              className="mt-3 flex w-full items-center justify-between gap-3 rounded-xl bg-[#931B82] p-4 text-left text-white shadow-md ring-1 ring-[#6A0F5D]/30 transition-colors hover:bg-[#6A0F5D]"
-            >
-              <div className="min-w-0">
-                <div className="text-xs font-medium uppercase tracking-wide text-[#F3E8FF]">
-                  이어 작업하기
+            <div className="relative mt-3">
+              <button
+                type="button"
+                onClick={() => handleResume(latestDraft)}
+                className="flex w-full items-center justify-between gap-3 rounded-xl bg-[#931B82] p-4 text-left text-white shadow-md ring-1 ring-[#6A0F5D]/30 transition-colors hover:bg-[#6A0F5D]"
+              >
+                <div className="min-w-0">
+                  <div className="text-xs font-medium uppercase tracking-wide text-[#F3E8FF]">
+                    이어 작업하기
+                  </div>
+                  <div className="mt-1 truncate text-base font-semibold text-white">
+                    {latestDraft.product.name}
+                  </div>
+                  <div className="mt-0.5 truncate text-xs text-[#F3E8FF]/90">
+                    {latestDraft.type} / {latestDraft.typeLabel}
+                  </div>
                 </div>
-                <div className="mt-1 truncate text-base font-semibold text-white">
-                  {latestDraft.product.name}
-                </div>
-                <div className="mt-0.5 truncate text-xs text-[#F3E8FF]/90">
-                  {latestDraft.type} / {latestDraft.typeLabel}
-                </div>
-              </div>
-              <Icon
-                icon="solar:arrow-right-linear"
-                width={22}
-                height={22}
-                className="shrink-0 text-white"
-              />
-            </button>
+                <Icon
+                  icon="solar:arrow-right-linear"
+                  width={22}
+                  height={22}
+                  className="shrink-0 text-white"
+                />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAskSkipDraft(latestDraft)}
+                className="absolute right-2 top-2 rounded-md bg-white/15 px-2 py-1 text-[11px] font-medium text-white transition-colors hover:bg-white/25"
+              >
+                건너뛰기
+              </button>
+            </div>
 
             <button
               type="button"
@@ -219,14 +298,24 @@ export default function ProductionHomePage() {
                       {nextLabel} 시작
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleStartNext(previous)}
-                    disabled={startNextMutation.isPending}
-                    className="mt-3 h-10 w-full rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
-                  >
-                    {isPending ? "시작 중..." : "다음 시점 시작"}
-                  </button>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleStartNext(previous)}
+                      disabled={startNextMutation.isPending}
+                      className="h-10 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+                    >
+                      {isPending ? "시작 중..." : "다음 시점 시작"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAskSkipNext(previous, nextType)}
+                      disabled={startNextMutation.isPending}
+                      className="h-10 shrink-0 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-[#6B7280] transition-colors hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      건너뛰기
+                    </button>
+                  </div>
                 </li>
               );
             })}
@@ -286,6 +375,17 @@ export default function ProductionHomePage() {
           </ul>
         </section>
       )}
+
+      <SkipModal
+        open={!!skipTarget}
+        slotLabel={skipTarget?.label ?? ""}
+        isSubmitting={skipMutation.isPending || deleteMutation.isPending}
+        onCancel={() => {
+          if (skipMutation.isPending || deleteMutation.isPending) return;
+          setSkipTarget(null);
+        }}
+        onConfirm={handleSkipConfirm}
+      />
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
