@@ -100,10 +100,10 @@ export default function ProductFormDrawer({
               .slice()
               .sort((a, b) => a.dimNo - b.dimNo)
               .map((d) => ({
-                dimName: d.dimName,
-                standardValue: String(d.standardValue),
-                tolerancePlus: String(d.tolerancePlus),
-                toleranceMinus: String(d.toleranceMinus),
+                dimName: d.dimName ?? "",
+                standardValue: String(d.standardValue ?? ""),
+                tolerancePlus: String(d.tolerancePlus ?? ""),
+                toleranceMinus: String(d.toleranceMinus ?? ""),
               }))
           : [emptyDim()],
       );
