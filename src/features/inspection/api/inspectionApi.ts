@@ -154,3 +154,11 @@ export async function incompleteInspection(
     body,
   );
 }
+
+// COMPLETED / INCOMPLETE_APPROVED 자주검사를 DRAFT 로 복귀시켜 재측정 가능하게.
+// 측정값/사진/외관/노트 보존. 순회검사가 시작된 건은 409 INSPECTION_HAS_CROSS_CHECK.
+export async function reopenInspection(inspectionId: number): Promise<void> {
+  await http.post<ApiResponse<Record<string, never>>>(
+    `/inspection/${inspectionId}/reopen`,
+  );
+}

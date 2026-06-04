@@ -5,6 +5,7 @@ import {
   getInspectionSlots,
   incompleteInspection,
   ocrInspectionImage,
+  reopenInspection,
   saveInspectionResults,
   skipInspection,
   startInspection,
@@ -142,6 +143,19 @@ export function useIncompleteInspection(inspectionId: number) {
       incompleteInspection(inspectionId, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: myInspectionKeys.all });
+    },
+  });
+}
+
+// 종결된 자주검사를 DRAFT 로 복귀. 측정값/사진은 보존, status 만 변경.
+// 호출 후 detail/list 모두 invalidate — 홈/리스트에서 status 표시 즉시 갱신.
+export function useReopenInspection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (inspectionId: number) => reopenInspection(inspectionId),
+    onSuccess: (_v, inspectionId) => {
+      qc.invalidateQueries({ queryKey: myInspectionKeys.all });
+      qc.invalidateQueries({ queryKey: inspectionKeys.detail(inspectionId) });
     },
   });
 }

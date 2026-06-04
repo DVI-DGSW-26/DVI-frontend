@@ -8,6 +8,8 @@ interface Props {
   onSkip: () => void;
   /** 첫 dim 이 아니면 직전 dim 으로 돌아가 재촬영. 부모가 stepIndex > 0 일 때만 전달. */
   onGoBack?: () => void;
+  /** 마지막 dim 이 아니면 다음 dim 으로 자유 이동. 부모가 stepIndex < last 일 때만 전달. */
+  onGoNext?: () => void;
   /** 사진 없이 측정값만 입력. 전달된 경우에만 버튼 노출 (순회검사 한정). */
   onMeasureWithoutPhoto?: () => void;
 }
@@ -17,6 +19,7 @@ export default function CapturePhase({
   onError,
   onSkip,
   onGoBack,
+  onGoNext,
   onMeasureWithoutPhoto,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -216,6 +219,15 @@ export default function CapturePhase({
         >
           이 항목 건너뛰기
         </button>
+        {onGoNext && (
+          <button
+            type="button"
+            onClick={onGoNext}
+            className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F3F4F6]"
+          >
+            다음 단계
+          </button>
+        )}
       </div>
 
       {onMeasureWithoutPhoto && (
