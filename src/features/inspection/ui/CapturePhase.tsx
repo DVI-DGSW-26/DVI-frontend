@@ -214,7 +214,7 @@ export default function CapturePhase({
           onClick={onSkip}
           className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-[#F9FAFB] text-sm font-medium text-[#6B7280] hover:bg-[#F3F4F6]"
         >
-          사진 촬영 불가
+          이 항목 건너뛰기
         </button>
       </div>
 
