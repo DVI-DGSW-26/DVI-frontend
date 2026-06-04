@@ -48,7 +48,10 @@ interface MeasureLocationState {
 }
 
 function isItemDone(item: MeasureItem): boolean {
-  return item.measuredValue != null && !!item.imageUrl;
+  // 사진 없이 측정값만 입력하는 흐름이 생겨서 imageUrl 부재는 "끝남" 으로 본다.
+  // (이전엔 imageUrl 도 필수로 봤더니 "사진 없이 입력" 저장 후 measuredValue 만 있는 상태가
+  //  영원히 미완료로 잡혀 stepIndex 가 items 범위를 벗어나는 race 가 발생했음.)
+  return item.measuredValue != null;
 }
 
 function toCompletedStep(item: MeasureItem): StepResult {
@@ -197,6 +200,24 @@ export default function InspectionMeasurePage() {
     });
   }, [info, allDone, items, inspectionId, navigate, user]);
 
+  // 검사가 이미 종결된 상태(INCOMPLETE / INCOMPLETE_APPROVED / COMPLETED / SKIPPED) 면
+  // 측정 페이지에 머물 이유 없음 → 결과 페이지로 보내고 stale 한 로컬 진행 캐시도 정리.
+  // (예전 race 로 LS 에 남아 stepIndex 가 items 범위를 벗어나는 케이스도 같이 해결.)
+  useEffect(() => {
+    if (!detail) return;
+    if (detail.status === "DRAFT") return;
+    clearProgress(inspectionId);
+    navigate(`/inspection/${inspectionId}/result`, {
+      replace: true,
+      state: {
+        results: items.length > 0 ? items.map(toCompletedStep) : undefined,
+        equipmentName: detail.equipment.name,
+        productName: detail.product.name,
+        inspectorName: user?.name ?? "-",
+      },
+    });
+  }, [detail, items, inspectionId, navigate, user]);
+
   // detail 이 아직 도착하지 않았으면 어떤 케이스든 로딩 UI. (stateInspection 만으로 항목 렌더하면 빈 화면 깜빡)
   if (detailQuery.isLoading || (!detail && !detailQuery.isError)) {
     return (
@@ -280,17 +301,28 @@ export default function InspectionMeasurePage() {
     setPhase("capture");
   };
 
+  // 사진 없이 측정값만 입력 — 촬영/크롭/업로드 없이 바로 입력 단계로.
+  const startMeasureWithoutPhoto = () => {
+    setCapturedFile(null);
+    setCroppedBlob(null);
+    setUploadedImageUrl(null);
+    setOcrSuggestedValue(null);
+    setIsPreparing(false);
+    setPhase("input");
+  };
+
   const upsertSessionResult = (next: StepResult) => {
-    setSessionResults((prev) => {
-      const idx = prev.findIndex((s) => s.dimNo === next.dimNo);
-      const updated =
-        idx >= 0
-          ? prev.map((s, i) => (i === idx ? next : s))
-          : [...prev, next];
-      // 다음 진입(이어하기) 때 detail 응답이 비어도 복원할 수 있도록 매 저장마다 로컬 캐시 동기화.
-      writeProgress(inspectionId, updated);
-      return updated;
-    });
+    // updater 안에서 writeProgress 를 호출하면 React 가 state 업데이트를 미루는 동안
+    // goToResult 의 clearProgress 가 먼저 실행되고 나중에 writeProgress 가 다시 LS 를
+    // 덮어쓰는 race 가 발생 → 미완료 처리 후에도 LS 에 sessionResults 가 남음.
+    // 외부에서 새 배열을 직접 계산해 setSessionResults + writeProgress 같은 동기 흐름에서 호출.
+    const idx = sessionResults.findIndex((s) => s.dimNo === next.dimNo);
+    const updated =
+      idx >= 0
+        ? sessionResults.map((s, i) => (i === idx ? next : s))
+        : [...sessionResults, next];
+    setSessionResults(updated);
+    writeProgress(inspectionId, updated);
   };
 
   const advanceToNextStep = () => {
@@ -363,7 +395,7 @@ export default function InspectionMeasurePage() {
     measuredValue: number,
     passFailResult?: PassFailResult,
   ) => {
-    if (!currentDim || !uploadedImageUrl) return;
+    if (!currentDim) return;
 
     try {
       await saveResults.mutateAsync({
@@ -371,7 +403,8 @@ export default function InspectionMeasurePage() {
           {
             resultId: currentDim.resultId,
             measuredValue,
-            imageUrl: uploadedImageUrl,
+            // 사진 없이 입력한 경우 imageUrl 생략 (백엔드에서 미수신 시 기존 값 유지).
+            ...(uploadedImageUrl ? { imageUrl: uploadedImageUrl } : {}),
             // 가공 공정에서만 포함됨 (InputPhase 가 가공일 때만 두 번째 인자 전달).
             ...(passFailResult ? { passFailResult } : {}),
           },
@@ -386,7 +419,7 @@ export default function InspectionMeasurePage() {
         toleranceMinus: currentDim.toleranceMinus,
         status: "completed",
         measuredValue,
-        imageUrl: uploadedImageUrl,
+        imageUrl: uploadedImageUrl ?? undefined,
         ...(passFailResult ? { passFailResult } : {}),
       };
 
@@ -508,6 +541,7 @@ export default function InspectionMeasurePage() {
             onError={setToast}
             onSkip={handleSkip}
             onGoBack={canGoBack ? goToPreviousStep : undefined}
+            onMeasureWithoutPhoto={startMeasureWithoutPhoto}
           />
         )}
 
@@ -523,7 +557,7 @@ export default function InspectionMeasurePage() {
           />
         )}
 
-        {phase === "input" && croppedBlob && currentDim && (
+        {phase === "input" && currentDim && (
           <InputPhase
             blob={croppedBlob}
             isLastDim={isLastDim}
