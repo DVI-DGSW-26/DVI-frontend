@@ -26,7 +26,8 @@ export interface ProductListItem {
 export interface ProductDim {
   id: number;
   dimNo: number;
-  dimName: string;
+  // 백엔드 응답에 누락될 수 있어 optional. 폼 복원 시 빈 문자열로 fallback.
+  dimName?: string;
   standardValue: number;
   tolerancePlus: number;
   toleranceMinus: number;
