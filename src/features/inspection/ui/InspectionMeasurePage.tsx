@@ -45,6 +45,8 @@ interface MeasureItem {
 interface MeasureLocationState {
   inspection?: MyInspection;
   qualityName?: string;
+  // result 페이지에서 "측정으로 돌아가기" 로 진입했을 때 allDone 자동 redirect 를 막기 위한 플래그.
+  editMode?: boolean;
 }
 
 function isItemDone(item: MeasureItem): boolean {
@@ -166,6 +168,22 @@ export default function InspectionMeasurePage() {
   const [sessionResults, setSessionResults] = useState<StepResult[]>(() =>
     readProgress(inspectionId),
   );
+
+  // items 가 backend 에서 measuredValue 를 반영하면 그 dim 은 startIdx 에 이미 카운트되므로
+  // sessionResults 에서 제거해야 한다. 안 그러면 새로고침 후 둘 다 카운트되어 stepIndex 가
+  // items 범위를 넘어가는 race 발생.
+  useEffect(() => {
+    if (items.length === 0) return;
+    const backendDone = new Set(
+      items.filter((it) => it.measuredValue != null).map((it) => it.dimNo),
+    );
+    setSessionResults((prev) => {
+      const filtered = prev.filter((s) => !backendDone.has(s.dimNo));
+      if (filtered.length === prev.length) return prev;
+      writeProgress(inspectionId, filtered);
+      return filtered;
+    });
+  }, [items, inspectionId]);
   // 사용자가 "이전 단계" 로 돌아갈 수 있도록 stepIndex 를 명시 state 로 관리.
   // null 이면 기본 진행 (startIdx + sessionResults 기준).
   const [manualStepIdx, setManualStepIdx] = useState<number | null>(null);
@@ -186,8 +204,15 @@ export default function InspectionMeasurePage() {
   // 메타 정보(설비명/제품명) 는 detail 우선, 없으면 location.state.inspection 에서.
   const info = detail ?? stateInspection;
 
+  // result 페이지에서 "측정으로 돌아가기" 로 진입한 경우 — allDone 자동 redirect 를 막기 위한 플래그.
+  const editMode = useMemo<boolean>(() => {
+    const s = (location.state ?? {}) as MeasureLocationState;
+    return s.editMode === true;
+  }, [location.state]);
+
   useEffect(() => {
     if (!info || !allDone) return;
+    if (editMode) return; // 사용자가 명시적으로 돌아온 경우 redirect 안 함
     clearProgress(inspectionId);
     navigate(`/inspection/${inspectionId}/result`, {
       replace: true,
@@ -198,7 +223,7 @@ export default function InspectionMeasurePage() {
         inspectorName: user?.name ?? "-",
       },
     });
-  }, [info, allDone, items, inspectionId, navigate, user]);
+  }, [info, allDone, items, inspectionId, navigate, user, editMode]);
 
   // 검사가 이미 종결된 상태(INCOMPLETE / INCOMPLETE_APPROVED / COMPLETED / SKIPPED) 면
   // 측정 페이지에 머물 이유 없음 → 결과 페이지로 보내고 stale 한 로컬 진행 캐시도 정리.
@@ -244,7 +269,8 @@ export default function InspectionMeasurePage() {
     );
   }
 
-  if (allDone) {
+  // editMode 일 땐 allDone 이어도 화면을 그대로 렌더 — 사용자가 dim 을 골라 수정 가능.
+  if (allDone && !editMode) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
         결과 화면으로 이동 중...
@@ -253,10 +279,13 @@ export default function InspectionMeasurePage() {
   }
 
   const totalSteps = items.length;
-  const stepIndex = manualStepIdx ?? startIdx + sessionResults.length;
+  // allDone 케이스에서 startIdx + sessionResults.length 가 items 범위 초과할 수 있어 clamp.
+  const rawStepIndex = manualStepIdx ?? startIdx + sessionResults.length;
+  const stepIndex = Math.min(rawStepIndex, Math.max(0, items.length - 1));
   const currentDim = items[stepIndex];
   const isLastDim = stepIndex === totalSteps - 1;
   const canGoBack = stepIndex > 0;
+  const canGoForward = stepIndex < items.length - 1;
 
   // items 가 비어있거나 (백엔드가 results 를 아직 안 채웠거나, 일시적 race)
   // stepIndex 가 범위를 벗어난 경우 — 안전한 로딩 화면으로 폴백.
@@ -326,16 +355,45 @@ export default function InspectionMeasurePage() {
   };
 
   const advanceToNextStep = () => {
-    if (manualStepIdx !== null) {
-      setManualStepIdx(manualStepIdx + 1);
-    }
+    // sessionResults 가 backend 반영 직후 필터 useEffect 로 비워지면서 stepIndex 가 뒤로
+    // 돌아가는 race 가 있어, manualStepIdx 를 명시적으로 다음 인덱스로 세팅한다.
+    setManualStepIdx(stepIndex + 1);
     resetForNextDim();
+  };
+
+  // 이전/다음 네비게이션 공통 — 대상 dim 에 기존 측정값이 있으면 input phase 로 복원,
+  // 없으면 capture phase 로 새로 시작.
+  const moveToStep = (targetIdx: number) => {
+    setManualStepIdx(targetIdx);
+    const targetDim = items[targetIdx];
+    const fromSession = targetDim
+      ? sessionResults.find((s) => s.dimNo === targetDim.dimNo)
+      : undefined;
+    const restoredValue =
+      fromSession?.measuredValue ?? targetDim?.measuredValue ?? null;
+    const restoredImageUrl =
+      fromSession?.imageUrl ?? targetDim?.imageUrl ?? null;
+
+    if (restoredValue != null) {
+      setCapturedFile(null);
+      setCroppedBlob(null);
+      setUploadedImageUrl(restoredImageUrl);
+      setOcrSuggestedValue(null);
+      setIsPreparing(false);
+      setPhase("input");
+    } else {
+      resetForNextDim();
+    }
   };
 
   const goToPreviousStep = () => {
     if (stepIndex <= 0) return;
-    setManualStepIdx(stepIndex - 1);
-    resetForNextDim();
+    moveToStep(stepIndex - 1);
+  };
+
+  const goToNextStep = () => {
+    if (stepIndex >= items.length - 1) return;
+    moveToStep(stepIndex + 1);
   };
 
   const goToResult = (finalResults: StepResult[]) => {
@@ -557,28 +615,54 @@ export default function InspectionMeasurePage() {
           />
         )}
 
-        {phase === "input" && currentDim && (
-          <InputPhase
-            blob={croppedBlob}
-            isLastDim={isLastDim}
-            isSaving={isSaving}
-            isPreparing={isPreparing}
-            suggestedValue={ocrSuggestedValue}
-            standardValue={currentDim.standardValue}
-            tolerancePlus={currentDim.tolerancePlus}
-            toleranceMinus={currentDim.toleranceMinus}
-            process={(info?.product.process ?? "EXTRUSION") as InspectionProcess}
-            onRetake={() => {
-              setCroppedBlob(null);
-              setCapturedFile(null);
-              setUploadedImageUrl(null);
-              setOcrSuggestedValue(null);
-              setIsPreparing(false);
-              setPhase("capture");
-            }}
-            onSubmit={handleSubmitMeasured}
-          />
-        )}
+        {phase === "input" && currentDim && (() => {
+          // 이전 단계로 돌아왔을 때 복원할 값들 — sessionResults 우선, 없으면 백엔드 items.
+          const fromSession = sessionResults.find(
+            (s) => s.dimNo === currentDim.dimNo,
+          );
+          const initialValue =
+            fromSession?.measuredValue ?? currentDim.measuredValue;
+          const initialImageUrl =
+            (croppedBlob ? null : uploadedImageUrl) ??
+            fromSession?.imageUrl ??
+            currentDim.imageUrl ??
+            undefined;
+          const initialPassFail =
+            fromSession?.passFailResult ?? currentDim.passFailResult;
+          return (
+            <InputPhase
+              // key 로 dim 마다 인스턴스 재마운트 — 내부 autoFilled / passFailTouched 초기화.
+              key={currentDim.dimNo}
+              blob={croppedBlob}
+              existingImageUrl={initialImageUrl ?? undefined}
+              initialValue={
+                initialValue != null ? String(initialValue) : undefined
+              }
+              initialPassFailValue={initialPassFail ?? undefined}
+              isLastDim={isLastDim}
+              isSaving={isSaving}
+              isPreparing={isPreparing}
+              suggestedValue={ocrSuggestedValue}
+              standardValue={currentDim.standardValue}
+              tolerancePlus={currentDim.tolerancePlus}
+              toleranceMinus={currentDim.toleranceMinus}
+              process={
+                (info?.product.process ?? "EXTRUSION") as InspectionProcess
+              }
+              onRetake={() => {
+                setCroppedBlob(null);
+                setCapturedFile(null);
+                setUploadedImageUrl(null);
+                setOcrSuggestedValue(null);
+                setIsPreparing(false);
+                setPhase("capture");
+              }}
+              onGoBack={canGoBack ? goToPreviousStep : undefined}
+              onGoNext={canGoForward ? goToNextStep : undefined}
+              onSubmit={handleSubmitMeasured}
+            />
+          );
+        })()}
       </section>
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}

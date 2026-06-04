@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
 import { useAuth } from "../../auth/AuthContext";
@@ -65,9 +65,16 @@ function isWithinTolerance(
 
 export default function CrossCheckMeasurePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const params = useParams<{ crossCheckId: string }>();
   const crossCheckId = Number(params.crossCheckId);
   const { user } = useAuth();
+
+  // result 페이지에서 "측정으로 돌아가기" 로 진입한 경우 — allDone 자동 redirect 차단용.
+  const editMode = useMemo<boolean>(() => {
+    const s = (location.state ?? {}) as { editMode?: boolean } | null;
+    return s?.editMode === true;
+  }, [location.state]);
 
   const detailQuery = useCrossCheckDetail(crossCheckId);
   const detail = detailQuery.data;
@@ -139,6 +146,7 @@ export default function CrossCheckMeasurePage() {
 
   useEffect(() => {
     if (!detail || !allDone) return;
+    if (editMode) return; // 사용자가 result 에서 명시적으로 돌아온 경우 redirect 안 함
     navigate(`/cross-check/${crossCheckId}/result`, {
       replace: true,
       state: {
@@ -150,7 +158,7 @@ export default function CrossCheckMeasurePage() {
         process: detail.product.process,
       },
     });
-  }, [detail, allDone, items, crossCheckId, navigate, user]);
+  }, [detail, allDone, items, crossCheckId, navigate, user, editMode]);
 
   if (detailQuery.isLoading || (!detail && !detailQuery.isError)) {
     return (
@@ -177,7 +185,8 @@ export default function CrossCheckMeasurePage() {
     );
   }
 
-  if (allDone) {
+  // editMode 면 allDone 이어도 화면 유지 — dim 별 수정 가능.
+  if (allDone && !editMode) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
         결과 화면으로 이동 중...
@@ -186,10 +195,12 @@ export default function CrossCheckMeasurePage() {
   }
 
   const totalSteps = items.length;
-  const stepIndex = manualStepIdx ?? startIdx + sessionResults.length;
+  const rawStepIndex = manualStepIdx ?? startIdx + sessionResults.length;
+  const stepIndex = Math.min(rawStepIndex, Math.max(0, items.length - 1));
   const currentDim = items[stepIndex];
   const isLastDim = stepIndex === totalSteps - 1;
   const canGoBack = stepIndex > 0;
+  const canGoForward = stepIndex < items.length - 1;
   const progressPercent =
     totalSteps === 0 ? 0 : Math.round((stepIndex / totalSteps) * 100);
 
@@ -235,17 +246,43 @@ export default function CrossCheckMeasurePage() {
   };
 
   const advanceToNextStep = () => {
-    // manualStepIdx 가 잡혀 있으면 +1 로 직접 이동, 없으면 sessionResults 증가로 자동 이동.
-    if (manualStepIdx !== null) {
-      setManualStepIdx(manualStepIdx + 1);
-    }
+    // sessionResults 가 backend 반영 직후 비워질 수 있으므로 stepIndex+1 로 명시 이동.
+    setManualStepIdx(stepIndex + 1);
     resetForNextDim();
+  };
+
+  // 이전/다음 네비게이션 공통 로직.
+  const moveToStep = (targetIdx: number) => {
+    setManualStepIdx(targetIdx);
+    const targetDim = items[targetIdx];
+    const fromSession = targetDim
+      ? sessionResults.find((s) => s.dimNo === targetDim.dimNo)
+      : undefined;
+    const restoredValue =
+      fromSession?.measuredValue ?? targetDim?.measuredValue ?? null;
+    const restoredImageUrl =
+      fromSession?.imageUrl ?? targetDim?.imageUrl ?? null;
+
+    if (restoredValue != null) {
+      setCapturedFile(null);
+      setCroppedBlob(null);
+      setUploadedImageUrl(restoredImageUrl);
+      setOcrSuggestedValue(null);
+      setIsPreparing(false);
+      setPhase("input");
+    } else {
+      resetForNextDim();
+    }
   };
 
   const goToPreviousStep = () => {
     if (stepIndex <= 0) return;
-    setManualStepIdx(stepIndex - 1);
-    resetForNextDim();
+    moveToStep(stepIndex - 1);
+  };
+
+  const goToNextStep = () => {
+    if (stepIndex >= items.length - 1) return;
+    moveToStep(stepIndex + 1);
   };
 
   const goToResult = (finalResults: StepResult[]) => {
@@ -530,27 +567,47 @@ export default function CrossCheckMeasurePage() {
           />
         )}
 
-        {phase === "input" && (
-          <CrossCheckInputPhase
-            blob={croppedBlob}
-            isLastDim={isLastDim}
-            isSaving={isSaving}
-            isPreparing={isPreparing}
-            suggestedValue={ocrSuggestedValue}
-            standardValue={currentDim.standardValue}
-            tolerancePlus={currentDim.tolerancePlus}
-            toleranceMinus={currentDim.toleranceMinus}
-            onRetake={() => {
-              setCroppedBlob(null);
-              setCapturedFile(null);
-              setUploadedImageUrl(null);
-              setOcrSuggestedValue(null);
-              setIsPreparing(false);
-              setPhase("capture");
-            }}
-            onSubmit={handleSubmitMeasured}
-          />
-        )}
+        {phase === "input" && (() => {
+          // 이전 단계 복원용 — sessionResults 우선, 없으면 items 의 백엔드 값.
+          const fromSession = sessionResults.find(
+            (s) => s.dimNo === currentDim.dimNo,
+          );
+          const initialValue =
+            fromSession?.measuredValue ?? currentDim.measuredValue;
+          const initialImageUrl =
+            (croppedBlob ? null : uploadedImageUrl) ??
+            fromSession?.imageUrl ??
+            currentDim.imageUrl ??
+            undefined;
+          return (
+            <CrossCheckInputPhase
+              key={currentDim.dimNo}
+              blob={croppedBlob}
+              existingImageUrl={initialImageUrl ?? undefined}
+              initialValue={
+                initialValue != null ? String(initialValue) : undefined
+              }
+              isLastDim={isLastDim}
+              isSaving={isSaving}
+              isPreparing={isPreparing}
+              suggestedValue={ocrSuggestedValue}
+              standardValue={currentDim.standardValue}
+              tolerancePlus={currentDim.tolerancePlus}
+              toleranceMinus={currentDim.toleranceMinus}
+              onRetake={() => {
+                setCroppedBlob(null);
+                setCapturedFile(null);
+                setUploadedImageUrl(null);
+                setOcrSuggestedValue(null);
+                setIsPreparing(false);
+                setPhase("capture");
+              }}
+              onGoBack={canGoBack ? goToPreviousStep : undefined}
+              onGoNext={canGoForward ? goToNextStep : undefined}
+              onSubmit={handleSubmitMeasured}
+            />
+          );
+        })()}
       </section>
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}

@@ -5,6 +5,7 @@ import { Icon } from "@iconify/react";
 import { useAuth } from "../../auth/AuthContext";
 import { useDeleteInspection, useMyInspectionList } from "../api";
 import {
+  useReopenInspection,
   useSkipInspection,
   useStartNextInspection,
 } from "../../inspection/api";
@@ -39,8 +40,10 @@ export default function ProductionHomePage() {
   const startNextMutation = useStartNextInspection();
   const skipMutation = useSkipInspection();
   const deleteMutation = useDeleteInspection();
+  const reopenMutation = useReopenInspection();
   const [toast, setToast] = useState<string | null>(null);
   const [pendingPrevId, setPendingPrevId] = useState<number | null>(null);
+  const [pendingReopenId, setPendingReopenId] = useState<number | null>(null);
   const [skipTarget, setSkipTarget] = useState<SkipTarget | null>(null);
 
   const inspections = useMemo(
@@ -59,6 +62,17 @@ export default function ProductionHomePage() {
     [inspections],
   );
 
+  // 재오픈 가능한 검사 — 완료/미완료 승인됨 (순회검사 시작 전인 건만 backend 가 허용).
+  // 프론트에선 status 만 보고 노출, 실제 허용 여부는 backend 응답으로 판단.
+  const reopenableInspections = useMemo(
+    () =>
+      inspections.filter(
+        (i) =>
+          i.status === "COMPLETED" || i.status === "INCOMPLETE_APPROVED",
+      ),
+    [inspections],
+  );
+
   // "이어서 할 일" — 같은 제품/설비로 다음 시점 진입 가능한 후보.
   const nextEligible = useMemo(
     () => extractNextEligible(inspections),
@@ -69,6 +83,35 @@ export default function ProductionHomePage() {
     navigate(`/inspection/${inspection.inspectionId}/measure`, {
       state: { inspection },
     });
+  };
+
+  const handleReopen = async (inspection: MyInspection) => {
+    if (pendingReopenId !== null) return;
+    setPendingReopenId(inspection.inspectionId);
+    try {
+      await reopenMutation.mutateAsync(inspection.inspectionId);
+      // DRAFT 로 복귀했으니 바로 측정 페이지로.
+      navigate(`/inspection/${inspection.inspectionId}/measure`, {
+        state: { inspection: { ...inspection, status: "DRAFT" } },
+      });
+    } catch (err) {
+      if (err instanceof AxiosError) {
+        const code = (err.response?.data as { code?: string } | undefined)?.code;
+        if (code === "INSPECTION_NOT_REOPENABLE") {
+          setToast("재오픈할 수 없는 상태입니다.");
+        } else if (code === "INSPECTION_HAS_CROSS_CHECK") {
+          setToast("순회검사가 시작되어 더 이상 수정할 수 없습니다.");
+        } else if (code === "NOT_OWNER") {
+          setToast("본인이 한 검사만 재오픈할 수 있습니다.");
+        } else {
+          setToast("재오픈에 실패했습니다.");
+        }
+      } else {
+        setToast("재오픈에 실패했습니다.");
+      }
+    } finally {
+      setPendingReopenId(null);
+    }
   };
 
   const handleAskSkipDraft = (inspection: MyInspection) => {
@@ -368,6 +411,54 @@ export default function ProductionHomePage() {
                       />
                       {badge.label}
                     </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      {/* 완료/사유인정 상태에서 다시 수정 가능한 검사들. 순회검사 시작된 건은 backend 가 거부. */}
+      {reopenableInspections.length > 0 && (
+        <section className="px-4 pt-4">
+          <div className="mb-2 flex items-baseline justify-between">
+            <h2 className="text-sm font-semibold text-[#212121]">
+              수정 가능한 검사
+            </h2>
+            <span className="text-xs font-medium text-[#6B7280]">
+              {reopenableInspections.length}건
+            </span>
+          </div>
+
+          <ul className="flex flex-col gap-2">
+            {reopenableInspections.map((i) => {
+              const isReopening = pendingReopenId === i.inspectionId;
+              return (
+                <li
+                  key={i.inspectionId}
+                  className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold text-[#212121]">
+                        {i.product.name}
+                      </div>
+                      <div className="mt-0.5 truncate text-xs text-[#6B7280]">
+                        {i.equipment.name} · {i.typeLabel}
+                      </div>
+                      <div className="mt-0.5 text-xs text-[#6B7280]">
+                        {i.status === "COMPLETED" ? "완료" : "미완료 승인됨"}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleReopen(i)}
+                    disabled={pendingReopenId !== null}
+                    className="mt-3 h-10 w-full rounded-md border border-[#931B82] bg-white text-sm font-semibold text-[#931B82] transition-colors hover:bg-[#F3E8F7] disabled:opacity-50"
+                  >
+                    {isReopening ? "준비 중..." : "수정하기"}
                   </button>
                 </li>
               );
