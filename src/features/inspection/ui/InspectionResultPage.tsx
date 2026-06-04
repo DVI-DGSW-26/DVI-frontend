@@ -128,6 +128,17 @@ export default function InspectionResultPage() {
         setCustomReason(detail.incompleteReason);
       }
     }
+    // 검사가 이미 종결된 상태로 들어왔으면 "처리 후" 화면으로 — 검사 완료/미완료 처리 버튼 대신
+    // 다음 시점 시작/홈으로 만 노출. (백엔드는 이미 완료된 검사를 다시 complete 시킬 수 없어 400 반환.)
+    if (detail.status === "COMPLETED") {
+      setPostSubmitMode("complete");
+    } else if (
+      detail.status === "INCOMPLETE" ||
+      detail.status === "INCOMPLETE_APPROVED" ||
+      detail.status === "SKIPPED"
+    ) {
+      setPostSubmitMode("incomplete");
+    }
     hydratedFromDetail.current = true;
   }, [detail]);
 
