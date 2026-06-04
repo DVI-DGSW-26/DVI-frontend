@@ -8,6 +8,7 @@ import {
   getMyCrossChecks,
   getMyDelegation,
   getPendingCrossChecks,
+  reopenCrossCheck,
   saveCrossCheckResults,
 } from "./crossCheckApi";
 import type {
@@ -122,6 +123,20 @@ export function useCompleteCrossCheck(crossCheckId: number) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: crossCheckKeys.all });
       qc.invalidateQueries({ queryKey: reportKeys.all });
+    },
+  });
+}
+
+// 반려된 cross-check 를 DRAFT 로 복귀시키는 mutation.
+// 목록에서 여러 항목을 다룰 수 있도록 id 를 mutate 시점에 받는다.
+// 호출 후 detail/list 모두 invalidate — status 가 REJECTED → DRAFT 로 바뀌므로
+// 홈/결재 페이지 양쪽 표시 변경 필요.
+export function useReopenCrossCheck() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (crossCheckId: number) => reopenCrossCheck(crossCheckId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: crossCheckKeys.all });
     },
   });
 }
