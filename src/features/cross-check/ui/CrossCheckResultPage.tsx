@@ -133,7 +133,10 @@ export default function CrossCheckResultPage() {
 
   // 경도값은 압출 공정이라도 결재요청 시점엔 선택. 초품검사 등 경도를 아직 측정
   // 못 한 경우에도 결재요청이 가능해야 함 (경도는 압출 최종 후 입력).
-  const canSubmit = appearance !== null && !hasSkipped;
+  // 건너뜀(skipped) 항목이 있어도 결재 요청 자체는 허용 — 결재자가 판단해 반려하면
+  // reopen 으로 돌아와 다시 측정할 수 있는 흐름이 마련돼 있음. 본인이 빠른 길로
+  // 즉시 수정하려면 카드의 "다시 측정" 버튼을 쓰면 됨.
+  const canSubmit = appearance !== null;
 
   if (needsFallback && detailQuery.isLoading) {
     return (
@@ -229,6 +232,11 @@ export default function CrossCheckResultPage() {
                 result={r}
                 editable={metaByDimNo.has(r.dimNo)}
                 onEditSubmit={(v) => handleEditMeasuredValue(r.dimNo, v)}
+                onRetake={
+                  r.status === "skipped"
+                    ? () => navigate(`/cross-check/${crossCheckId}/measure`)
+                    : undefined
+                }
               />
             </li>
           ))}
@@ -307,10 +315,14 @@ export default function CrossCheckResultPage() {
         </div>
 
         {hasSkipped && (
-          <p className="mt-3 rounded-md bg-[#FEF3C7] px-3 py-2 text-xs text-[#92400E]">
-            건너뛴 항목이 있어 제출할 수 없습니다. 측정 화면에서 다시
-            측정해주세요.
-          </p>
+          <div className="mt-3 rounded-md bg-[#FEF3C7] px-3 py-2 text-xs text-[#92400E]">
+            <div className="font-semibold">건너뛴 항목이 있어요</div>
+            <div className="mt-0.5 leading-relaxed">
+              본인이 직접 다시 측정하려면 위 카드의 <b>"다시 측정"</b> 버튼을,
+              결재자 판단에 맡기려면 그대로 <b>결재 요청</b> 하세요.
+              반려되면 알림 → 홈에서 다시 수정 가능합니다.
+            </div>
+          </div>
         )}
       </section>
 
@@ -337,11 +349,14 @@ function StepResultCard({
   result,
   editable,
   onEditSubmit,
+  onRetake,
 }: {
   step: number;
   result: StepResult;
   editable: boolean;
   onEditSubmit: (value: number) => Promise<void>;
+  // 건너뜀 항목에 한해 "다시 측정" 버튼을 노출하기 위한 핸들러.
+  onRetake?: () => void;
 }) {
   const dimText = formatStandardWithTolerance(
     result.standardValue,
@@ -457,15 +472,27 @@ function StepResultCard({
           )}
         </>
       ) : (
-        <div className="mt-3 flex aspect-square w-full flex-col items-center justify-center rounded-lg border border-dashed border-[#D1D5DB] bg-[#F3F4F6] text-[#6B7280]">
-          <Icon
-            icon="solar:camera-cross-bold"
-            width={36}
-            height={36}
-            className="text-[#9CA3AF]"
-          />
-          <span className="mt-2 text-sm font-medium">건너뜀</span>
-        </div>
+        <>
+          <div className="mt-3 flex aspect-square w-full flex-col items-center justify-center rounded-lg border border-dashed border-[#D1D5DB] bg-[#F3F4F6] text-[#6B7280]">
+            <Icon
+              icon="solar:camera-cross-bold"
+              width={36}
+              height={36}
+              className="text-[#9CA3AF]"
+            />
+            <span className="mt-2 text-sm font-medium">건너뜀</span>
+          </div>
+          {onRetake && (
+            <button
+              type="button"
+              onClick={onRetake}
+              className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-[#931B82] bg-white text-sm font-semibold text-[#931B82] transition-colors hover:bg-[#F3E8FF]"
+            >
+              <Icon icon="solar:refresh-linear" width={16} height={16} />
+              다시 측정
+            </button>
+          )}
+        </>
       )}
     </div>
   );
@@ -496,6 +523,10 @@ function Stat({ label, value }: { label: string; value: string }) {
 function toErrorMessage(err: unknown): string {
   if (err instanceof AxiosError) {
     const data = err.response?.data as ApiErrorData | undefined;
+    // 백엔드가 건너뜀 상태를 거부하는 경우 — 사용자가 직접 다시 측정 하도록 안내.
+    if (data?.code === "RESULTS_NOT_COMPLETE") {
+      return "건너뛴 항목이 있어 결재 요청이 불가합니다. 카드의 '다시 측정' 버튼으로 채워주세요.";
+    }
     return data?.message ?? "요청 처리 중 오류가 발생했습니다.";
   }
   if (err instanceof Error) return err.message;

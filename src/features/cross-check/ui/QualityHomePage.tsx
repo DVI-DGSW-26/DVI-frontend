@@ -1,6 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
 import { useNavigate } from "react-router-dom";
+import { AxiosError } from "axios";
 import { useAuth } from "../../auth/AuthContext";
 import { useMarkAsRead, useNotifications } from "../../notification/api";
 import type { NotificationResponse } from "../../notification/api";
@@ -9,7 +10,9 @@ import {
   useAssignedCrossChecks,
   useMyCrossChecks,
   useMyDelegation,
+  useReopenCrossCheck,
 } from "../api";
+import type { CrossCheckSummary } from "../api";
 import { elapsedFrom } from "../lib/elapsed";
 
 function formatTime(iso: string) {
@@ -26,11 +29,15 @@ function formatTime(iso: string) {
 const QualityHomePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  // 반려 카드는 종결된 cross-check(REJECTED) 도 포함되어야 노출되므로 includeFinished=true.
   const { data: assigned = [] } = useAssignedCrossChecks();
-  const { data: myCrossChecks = [] } = useMyCrossChecks();
+  const { data: myCrossChecks = [] } = useMyCrossChecks(true);
   const { data: delegation } = useMyDelegation();
   const { data: notifications = [] } = useNotifications();
   const markAsRead = useMarkAsRead();
+  const reopenMut = useReopenCrossCheck();
+  const [reopeningId, setReopeningId] = useState<number | null>(null);
+  const [reopenError, setReopenError] = useState<string | null>(null);
 
   const pendingCount = assigned.length;
 
@@ -50,6 +57,45 @@ const QualityHomePage = () => {
         )[0],
     [myCrossChecks],
   );
+
+  // 결재에서 반려된 본인 cross-check 목록 — reopen 후 수정 가능.
+  const rejectedCrossChecks = useMemo<CrossCheckSummary[]>(
+    () =>
+      [...myCrossChecks]
+        .filter((c) => c.status === "REJECTED")
+        .sort(
+          (a, b) =>
+            elapsedFrom(b.updatedAt).minutes -
+            elapsedFrom(a.updatedAt).minutes,
+        ),
+    [myCrossChecks],
+  );
+
+  const handleReopen = async (cc: CrossCheckSummary) => {
+    if (reopeningId !== null) return;
+    setReopeningId(cc.crossCheckId);
+    setReopenError(null);
+    try {
+      await reopenMut.mutateAsync(cc.crossCheckId);
+      // 성공 시 DRAFT 로 바뀌어 측정 페이지로 보냄.
+      navigate(`/cross-check/${cc.crossCheckId}/measure`);
+    } catch (err) {
+      if (err instanceof AxiosError) {
+        const code = (err.response?.data as { code?: string } | undefined)?.code;
+        if (code === "CROSS_CHECK_NOT_REJECTED") {
+          setReopenError("이미 재오픈된 검사입니다. 새로고침 후 다시 시도해주세요.");
+        } else if (code === "NOT_CHECKER") {
+          setReopenError("본인이 진행한 순회검사만 재오픈할 수 있습니다.");
+        } else {
+          setReopenError("재오픈에 실패했습니다. 잠시 후 다시 시도해주세요.");
+        }
+      } else {
+        setReopenError("재오픈에 실패했습니다.");
+      }
+    } finally {
+      setReopeningId(null);
+    }
+  };
 
   const recentNotifications = useMemo(
     () => notifications.slice(0, 3),
@@ -140,6 +186,61 @@ const QualityHomePage = () => {
       >
         직전 작업 이어하기
       </button>
+
+      {rejectedCrossChecks.length > 0 && (
+        <section>
+          <div className="mb-2 flex items-baseline justify-between">
+            <h2 className="text-sm font-semibold text-[#212121]">반려된 검사</h2>
+            <span className="text-xs font-medium text-[#B91C1C]">
+              {rejectedCrossChecks.length}건 수정 필요
+            </span>
+          </div>
+          <ul className="flex flex-col gap-2">
+            {rejectedCrossChecks.map((cc) => {
+              const isReopening = reopeningId === cc.crossCheckId;
+              return (
+                <li
+                  key={cc.crossCheckId}
+                  className="rounded-2xl border border-[#FECACA] bg-[#FEF2F2] p-4 shadow-sm"
+                >
+                  <div className="flex items-start gap-2">
+                    <Icon
+                      icon="solar:close-circle-bold"
+                      width={20}
+                      height={20}
+                      className="mt-0.5 shrink-0 text-[#B91C1C]"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold text-[#212121]">
+                        {cc.product.name}
+                      </div>
+                      <div className="mt-0.5 truncate text-xs text-[#6B7280]">
+                        {cc.equipment.name} · {cc.typeLabel}
+                      </div>
+                      <div className="mt-0.5 text-xs text-[#B91C1C]">
+                        결재 반려됨 — 수정 후 재제출 필요
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleReopen(cc)}
+                    disabled={reopeningId !== null}
+                    className="mt-3 h-10 w-full rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+                  >
+                    {isReopening ? "준비 중..." : "수정하기"}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          {reopenError && (
+            <p className="mt-2 rounded-md bg-[#FEF2F2] px-3 py-2 text-xs text-[#B91C1C]">
+              {reopenError}
+            </p>
+          )}
+        </section>
+      )}
 
       <section>
         <h2 className="mb-2 text-sm font-semibold text-[#212121]">최근 알림</h2>
