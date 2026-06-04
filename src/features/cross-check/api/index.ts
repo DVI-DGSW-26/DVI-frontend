@@ -8,6 +8,7 @@ export {
   saveCrossCheckResults,
   decideCrossCheck,
   completeCrossCheck,
+  reopenCrossCheck,
 } from "./crossCheckApi";
 export {
   useMyCrossChecks,
@@ -19,6 +20,7 @@ export {
   useSaveCrossCheckResults,
   useDecideCrossCheck,
   useCompleteCrossCheck,
+  useReopenCrossCheck,
   crossCheckKeys,
 } from "./queries";
 export type {

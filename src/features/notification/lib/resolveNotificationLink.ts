@@ -18,9 +18,13 @@ export function resolveNotificationLink(n: NotificationResponse): string {
       return "/cross-check-approval";
 
     case "CROSS_CHECK_APPROVED":
-    case "CROSS_CHECK_REJECTED":
       // 본인 순회검사 결과. linkUrl 이 /reports/{id} 면 그 보고서로, 아니면 결재 이력 탭.
       return n.linkUrl ?? "/cross-checks?tab=history";
+
+    case "CROSS_CHECK_REJECTED":
+      // 반려 알림 — 홈에 "반려된 검사" 카드가 노출되므로 그쪽으로 보내서
+      // "수정하기" 버튼으로 reopen → 측정 흐름을 사용자가 명시적으로 시작하게 한다.
+      return "/";
 
     case "INSPECTION_REMINDER":
       // 생산자에게 검사 시작 시점 알림.

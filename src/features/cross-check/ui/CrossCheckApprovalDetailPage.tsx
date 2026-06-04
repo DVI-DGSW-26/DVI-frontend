@@ -15,6 +15,32 @@ const PROCESS_LABEL: Record<ProcessType, string> = {
   PRESS: "프레스",
 };
 
+// 검사 차수(type)를 초/중/종 단계로 매핑.
+// _1 차수 → 초, _5 차수 → 종, 나머지(_2~_4) → 중.
+type Stage = "INITIAL" | "MIDDLE" | "FINAL";
+
+function getStage(type: string): Stage | null {
+  const m = type.match(/_(\d+)$/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  if (n === 1) return "INITIAL";
+  if (n === 5) return "FINAL";
+  if (n >= 2 && n <= 4) return "MIDDLE";
+  return null;
+}
+
+const STAGE_LABEL: Record<Stage, string> = {
+  INITIAL: "초",
+  MIDDLE: "중",
+  FINAL: "종",
+};
+
+const STAGE_BADGE: Record<Stage, string> = {
+  INITIAL: "border-[#DBEAFE] bg-[#EFF6FF] text-[#1D4ED8]",
+  MIDDLE: "border-[#FEF3C7] bg-[#FFFBEB] text-[#B45309]",
+  FINAL: "border-[#FBCFE8] bg-[#FDF2F8] text-[#9D174D]",
+};
+
 function isWithinTolerance(
   value: number,
   standard: number,
@@ -157,13 +183,24 @@ export default function CrossCheckApprovalDetailPage() {
       </div>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-lg font-semibold text-[#212121]">
             {detail.product.name}
           </span>
           <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-medium text-[#931B82]">
             {detail.product.code}
           </span>
+          {(() => {
+            const stage = getStage(detail.type);
+            if (!stage) return null;
+            return (
+              <span
+                className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${STAGE_BADGE[stage]}`}
+              >
+                {STAGE_LABEL[stage]}
+              </span>
+            );
+          })()}
         </div>
         <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-xs md:grid-cols-3">
           <InfoLine
@@ -177,7 +214,11 @@ export default function CrossCheckApprovalDetailPage() {
           <InfoLine label="작업자" value={detail.production.name} />
           <InfoLine
             label="검사 차수"
-            value={`${detail.typeLabel} (${detail.type})`}
+            value={(() => {
+              const stage = getStage(detail.type);
+              const stageText = stage ? ` · ${STAGE_LABEL[stage]}` : "";
+              return `${detail.typeLabel} (${detail.type})${stageText}`;
+            })()}
           />
           <InfoLine label="검사 시간" value={detail.inspectionTime} />
         </dl>
@@ -375,15 +416,21 @@ function DimRow({
           row.toleranceMinus,
         )}
       </td>
-      <td
-        className={`px-3 py-2 text-right text-sm font-semibold ${colorOf(productionWithin)}`}
-      >
-        {row.productionValue ?? "-"}
+      <td className="px-3 py-2 text-right">
+        <div className="flex items-center justify-end gap-2">
+          <JudgmentChip within={productionWithin} />
+          <span className={`text-sm font-semibold ${colorOf(productionWithin)}`}>
+            {row.productionValue ?? "-"}
+          </span>
+        </div>
       </td>
-      <td
-        className={`px-3 py-2 text-right text-sm font-semibold ${colorOf(crossWithin)}`}
-      >
-        {row.measuredValue ?? "-"}
+      <td className="px-3 py-2 text-right">
+        <div className="flex items-center justify-end gap-2">
+          <JudgmentChip within={crossWithin} />
+          <span className={`text-sm font-semibold ${colorOf(crossWithin)}`}>
+            {row.measuredValue ?? "-"}
+          </span>
+        </div>
       </td>
       <td className="px-3 py-2 text-center">
         {row.productionImageUrl || row.imageUrl ? (
@@ -406,6 +453,25 @@ function DimRow({
 function colorOf(within: boolean | null): string {
   if (within === null) return "text-[#A8A8A8]";
   return within ? "text-[#15803D]" : "text-[#B91C1C]";
+}
+
+function JudgmentChip({ within }: { within: boolean | null }) {
+  if (within === null) {
+    return (
+      <span className="inline-flex shrink-0 items-center rounded-full border border-gray-200 bg-[#F3F4F6] px-1.5 py-0.5 text-[10px] font-semibold text-[#9CA3AF]">
+        -
+      </span>
+    );
+  }
+  return within ? (
+    <span className="inline-flex shrink-0 items-center rounded-full border border-[#BBF7D0] bg-[#DCFCE7] px-1.5 py-0.5 text-[10px] font-semibold text-[#15803D]">
+      합격
+    </span>
+  ) : (
+    <span className="inline-flex shrink-0 items-center rounded-full border border-[#FECACA] bg-[#FEE2E2] px-1.5 py-0.5 text-[10px] font-semibold text-[#B91C1C]">
+      불합격
+    </span>
+  );
 }
 
 function InfoLine({ label, value }: { label: string; value: string }) {

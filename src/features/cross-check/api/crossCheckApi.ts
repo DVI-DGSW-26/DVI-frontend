@@ -87,3 +87,11 @@ export async function completeCrossCheck(crossCheckId: number): Promise<void> {
     `/cross-check/${crossCheckId}/complete`,
   );
 }
+
+// 반려(REJECTED) 된 순회검사를 다시 편집 가능한 상태(DRAFT) 로 복귀.
+// 측정값/사진/외관/경도 및 rejectReason 은 그대로 보존되어 사용자가 어디가 문제였는지 확인 가능.
+export async function reopenCrossCheck(crossCheckId: number): Promise<void> {
+  await http.post<ApiResponse<Record<string, never>>>(
+    `/cross-check/${crossCheckId}/reopen`,
+  );
+}

@@ -396,6 +396,30 @@ export default function CrossCheckMeasurePage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-24">
+      {detail.rejectReason && (
+        <section className="border-b border-[#FECACA] bg-[#FEF2F2] px-4 py-3">
+          <div className="flex items-start gap-2">
+            <Icon
+              icon="solar:danger-triangle-bold"
+              width={18}
+              height={18}
+              className="mt-0.5 shrink-0 text-[#B91C1C]"
+            />
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-[#B91C1C]">
+                이전 결재 반려 사유
+              </div>
+              <div className="mt-0.5 whitespace-pre-wrap text-sm text-[#212121]">
+                {detail.rejectReason}
+              </div>
+              <div className="mt-1 text-[11px] text-[#6B7280]">
+                해당 항목을 수정한 뒤 다시 결재 요청해주세요.
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="border-b border-gray-200 bg-white px-4 py-4">
         <InfoRow label="기계명" value={detail.equipment.name} />
         <InfoRow label="검사 시간" value={detail.inspectionTime} />
