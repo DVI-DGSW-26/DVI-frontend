@@ -4,7 +4,8 @@ import JudgmentBadge from "./JudgmentBadge";
 import type { InspectionProcess, PassFailResult } from "../type/types";
 
 interface Props {
-  blob: Blob;
+  /** 사진 없이 측정값만 입력하는 경우 null — 그땐 미리보기/다시 촬영 동작이 달라짐. */
+  blob: Blob | null;
   isLastDim: boolean;
   isSaving: boolean;
   isPreparing: boolean;
@@ -35,6 +36,8 @@ export default function InputPhase({
 }: Props) {
   const [imageSrc, setImageSrc] = useState<string>("");
   useEffect(() => {
+    // 사진 없이 입력하는 경우 blob 이 없어 미리보기 URL 생성 안 함.
+    if (!blob) return;
     const url = URL.createObjectURL(blob);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- createObjectURL/revokeObjectURL pair must be lifecycle-bound
     setImageSrc(url);
@@ -131,15 +134,19 @@ export default function InputPhase({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-[#F9FAFB]">
-        {imageSrc && (
+      {imageSrc ? (
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-[#F9FAFB]">
           <img
             src={imageSrc}
             alt="크롭된 측정 부위"
             className="block aspect-square w-full object-contain"
           />
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-dashed border-gray-300 bg-[#F9FAFB] px-4 py-6 text-center text-xs text-[#6B7280]">
+          사진 없이 측정값만 입력합니다.
+        </div>
+      )}
 
       <div className="rounded-xl border border-gray-200 bg-white p-4">
         <div className="flex items-center justify-between gap-2">
@@ -197,7 +204,7 @@ export default function InputPhase({
           disabled={isSaving || isPreparing}
           className="h-11 flex-1 rounded-md border border-gray-300 bg-white text-sm font-semibold text-[#212121] disabled:opacity-60"
         >
-          다시 촬영
+          {blob ? "다시 촬영" : "사진 촬영하기"}
         </button>
         <button
           type="button"

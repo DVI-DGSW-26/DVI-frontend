@@ -280,6 +280,16 @@ export default function InspectionMeasurePage() {
     setPhase("capture");
   };
 
+  // 사진 없이 측정값만 입력 — 촬영/크롭/업로드 없이 바로 입력 단계로.
+  const startMeasureWithoutPhoto = () => {
+    setCapturedFile(null);
+    setCroppedBlob(null);
+    setUploadedImageUrl(null);
+    setOcrSuggestedValue(null);
+    setIsPreparing(false);
+    setPhase("input");
+  };
+
   const upsertSessionResult = (next: StepResult) => {
     setSessionResults((prev) => {
       const idx = prev.findIndex((s) => s.dimNo === next.dimNo);
@@ -363,7 +373,7 @@ export default function InspectionMeasurePage() {
     measuredValue: number,
     passFailResult?: PassFailResult,
   ) => {
-    if (!currentDim || !uploadedImageUrl) return;
+    if (!currentDim) return;
 
     try {
       await saveResults.mutateAsync({
@@ -371,7 +381,8 @@ export default function InspectionMeasurePage() {
           {
             resultId: currentDim.resultId,
             measuredValue,
-            imageUrl: uploadedImageUrl,
+            // 사진 없이 입력한 경우 imageUrl 생략 (백엔드에서 미수신 시 기존 값 유지).
+            ...(uploadedImageUrl ? { imageUrl: uploadedImageUrl } : {}),
             // 가공 공정에서만 포함됨 (InputPhase 가 가공일 때만 두 번째 인자 전달).
             ...(passFailResult ? { passFailResult } : {}),
           },
@@ -386,7 +397,7 @@ export default function InspectionMeasurePage() {
         toleranceMinus: currentDim.toleranceMinus,
         status: "completed",
         measuredValue,
-        imageUrl: uploadedImageUrl,
+        imageUrl: uploadedImageUrl ?? undefined,
         ...(passFailResult ? { passFailResult } : {}),
       };
 
@@ -508,6 +519,7 @@ export default function InspectionMeasurePage() {
             onError={setToast}
             onSkip={handleSkip}
             onGoBack={canGoBack ? goToPreviousStep : undefined}
+            onMeasureWithoutPhoto={startMeasureWithoutPhoto}
           />
         )}
 
@@ -523,7 +535,7 @@ export default function InspectionMeasurePage() {
           />
         )}
 
-        {phase === "input" && croppedBlob && currentDim && (
+        {phase === "input" && currentDim && (
           <InputPhase
             blob={croppedBlob}
             isLastDim={isLastDim}

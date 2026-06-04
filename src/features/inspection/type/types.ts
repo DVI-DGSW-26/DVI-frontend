@@ -148,7 +148,8 @@ export type OcrApiResponse = ApiResponse<OcrResponseData>;
 export interface InspectionResultPayload {
   resultId: number;
   measuredValue: number;
-  imageUrl: string;
+  // 사진 없이 측정값만 입력하는 경우 생략 (백엔드에서 미수신 시 기존 imageUrl 유지).
+  imageUrl?: string;
   // 가공(MACHINING) 공정에서만 함께 전송. 다른 공정은 미포함.
   passFailResult?: PassFailResult;
 }
