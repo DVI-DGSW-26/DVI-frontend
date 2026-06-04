@@ -2,10 +2,15 @@ import { useEffect, useState } from "react";
 import { judgeMeasurement } from "../lib/judgment";
 import JudgmentBadge from "./JudgmentBadge";
 import type { InspectionProcess, PassFailResult } from "../type/types";
+import { toBackendImageUrl } from "../../../lib/imageUrl";
 
 interface Props {
   /** 사진 없이 측정값만 입력하는 경우 null — 그땐 미리보기/다시 촬영 동작이 달라짐. */
   blob: Blob | null;
+  /** "이전 단계" 로 돌아왔을 때 기존 사진을 보여주기 위한 백엔드 URL. blob 없을 때만 사용. */
+  existingImageUrl?: string;
+  /** "이전 단계" 로 돌아왔을 때 기존 측정값. 입력 초기값으로 채움. */
+  initialValue?: string;
   isLastDim: boolean;
   isSaving: boolean;
   isPreparing: boolean;
@@ -16,13 +21,21 @@ interface Props {
   toleranceMinus: number;
   /** 공정 — MACHINING 일 때 OK/NG 드롭다운 노출. */
   process: InspectionProcess;
+  /** 가공 공정에서 기존 판정값 복원용. 사용자가 수정 안 하면 그대로 제출. */
+  initialPassFailValue?: PassFailResult;
   onRetake: () => void;
+  /** 입력 단계에서도 이전 dim 으로 돌아갈 수 있게. 부모가 stepIndex > 0 일 때만 전달. */
+  onGoBack?: () => void;
+  /** 입력 단계에서 저장 없이 다음 dim 으로 이동. 부모가 stepIndex < last 일 때만 전달. */
+  onGoNext?: () => void;
   /** 가공 공정이면 두 번째 인자에 OK/NG 도 전달. 다른 공정은 undefined. */
   onSubmit: (measuredValue: number, passFailResult?: PassFailResult) => void;
 }
 
 export default function InputPhase({
   blob,
+  existingImageUrl,
+  initialValue,
   isLastDim,
   isSaving,
   isPreparing,
@@ -31,25 +44,40 @@ export default function InputPhase({
   tolerancePlus,
   toleranceMinus,
   process,
+  initialPassFailValue,
   onRetake,
+  onGoBack,
+  onGoNext,
   onSubmit,
 }: Props) {
   const [imageSrc, setImageSrc] = useState<string>("");
   useEffect(() => {
-    // 사진 없이 입력하는 경우 blob 이 없어 미리보기 URL 생성 안 함.
-    if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- createObjectURL/revokeObjectURL pair must be lifecycle-bound
-    setImageSrc(url);
-    return () => URL.revokeObjectURL(url);
-  }, [blob]);
+    // 1) 새로 크롭한 blob 이 있으면 그걸 미리보기.
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- createObjectURL/revokeObjectURL pair must be lifecycle-bound
+      setImageSrc(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    // 2) blob 없고 기존 사진 URL 이 있으면 그걸로 미리보기 (이전 단계 복원).
+    if (existingImageUrl) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 외부 URL 은 정리할 자원 없어 단순 set
+      setImageSrc(toBackendImageUrl(existingImageUrl) ?? "");
+      return;
+    }
+    // 3) 둘 다 없으면 "사진 없이 측정값만" 안내.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 위 케이스 모두 미해당 시 미리보기 비움
+    setImageSrc("");
+  }, [blob, existingImageUrl]);
 
-  const [value, setValue] = useState("");
-  const [autoFilled, setAutoFilled] = useState(false);
+  const [value, setValue] = useState(() => initialValue ?? "");
+  const [autoFilled, setAutoFilled] = useState(() => !!initialValue);
   // 가공 공정에서 작업자가 직접 OK/NG 를 선택했는지. true 가 된 뒤로는 자동 판정으로 덮어쓰지 않는다.
-  const [passFailTouched, setPassFailTouched] = useState(false);
+  const [passFailTouched, setPassFailTouched] = useState(
+    () => !!initialPassFailValue,
+  );
   const [passFailValue, setPassFailValue] = useState<PassFailResult | null>(
-    null,
+    () => initialPassFailValue ?? null,
   );
 
   const isMachining = process === "MACHINING";
@@ -198,6 +226,16 @@ export default function InputPhase({
       </div>
 
       <div className="flex gap-2">
+        {onGoBack && (
+          <button
+            type="button"
+            onClick={onGoBack}
+            disabled={isSaving || isPreparing}
+            className="h-11 rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold text-[#6B7280] disabled:opacity-60"
+          >
+            이전
+          </button>
+        )}
         <button
           type="button"
           onClick={onRetake}
@@ -206,6 +244,16 @@ export default function InputPhase({
         >
           {blob ? "다시 촬영" : "사진 촬영하기"}
         </button>
+        {onGoNext && (
+          <button
+            type="button"
+            onClick={onGoNext}
+            disabled={isSaving || isPreparing}
+            className="h-11 rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold text-[#6B7280] disabled:opacity-60"
+          >
+            다음
+          </button>
+        )}
         <button
           type="button"
           onClick={handleSubmit}
