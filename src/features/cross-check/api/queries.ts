@@ -8,6 +8,7 @@ import {
   getMyCrossChecks,
   getMyDelegation,
   getPendingCrossChecks,
+  rejectCrossCheck,
   reopenCrossCheck,
   saveCrossCheckResults,
 } from "./crossCheckApi";
@@ -135,6 +136,19 @@ export function useReopenCrossCheck() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (crossCheckId: number) => reopenCrossCheck(crossCheckId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: crossCheckKeys.all });
+    },
+  });
+}
+
+// 순회검사자 즉시 반려. rejectReason 을 mutate 시점에 받는다.
+// 순회검사·자주검사 상태가 함께 바뀌므로 cross-check 전체 캐시 invalidate.
+export function useRejectCrossCheck(crossCheckId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (rejectReason: string) =>
+      rejectCrossCheck(crossCheckId, rejectReason),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: crossCheckKeys.all });
     },

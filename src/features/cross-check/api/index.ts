@@ -9,6 +9,7 @@ export {
   decideCrossCheck,
   completeCrossCheck,
   reopenCrossCheck,
+  rejectCrossCheck,
 } from "./crossCheckApi";
 export {
   useMyCrossChecks,
@@ -21,6 +22,7 @@ export {
   useDecideCrossCheck,
   useCompleteCrossCheck,
   useReopenCrossCheck,
+  useRejectCrossCheck,
   crossCheckKeys,
 } from "./queries";
 export type {
