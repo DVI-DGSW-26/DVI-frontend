@@ -1,8 +1,9 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { useMyInspectionList } from "../../my-inspection/api";
 import type { MyInspection } from "../../my-inspection/type/types";
+import { setRecentInspectionId } from "../lib/recentInspection";
 import {
   dimDisplayName,
   formatInspectionTime,
@@ -23,6 +24,11 @@ export default function InspectionDetailPage() {
   const inspectionId = Number(params.inspectionId);
   const state = (location.state ?? {}) as DetailLocationState;
   const { user } = useAuth();
+
+  // 마지막 진입한 자주검사 id 추적 — 탭바 스캔 누르면 이 검사로 복귀.
+  useEffect(() => {
+    setRecentInspectionId(inspectionId);
+  }, [inspectionId]);
 
   const myInspectionsQuery = useMyInspectionList();
   const inspection = useMemo<MyInspection | undefined>(() => {

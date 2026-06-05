@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AxiosError } from "axios";
 import {
@@ -17,6 +17,7 @@ import {
   useDeleteInspection,
   useMyInspectionList,
 } from "../../my-inspection/api";
+import { getRecentInspectionId } from "../lib/recentInspection";
 import SlotItem, { type SlotStatus } from "./SlotItem";
 import SkipModal from "./SkipModal";
 import Toast from "./Toast";
@@ -55,6 +56,49 @@ export default function ScanPage() {
   const deleteMutation = useDeleteInspection();
 
   const slots = useMemo(() => slotsQuery.data ?? [], [slotsQuery.data]);
+
+  // 탭바의 "품질검사시스템" 으로 들어왔을 때(location.state 비어있음) 마지막 작업으로 복귀.
+  // 우선순위:
+  //   1) 직전에 진입했던 자주검사 (status 무관) — DRAFT 면 measure, 아니면 detail
+  //   2) 그 외엔 가장 최근에 업데이트된 DRAFT 가 있으면 그 measure
+  const inspectionsList = useMemo(
+    () => myInspectionsQuery.data ?? [],
+    [myInspectionsQuery.data],
+  );
+  const recentInspection = useMemo(() => {
+    const recentId = getRecentInspectionId();
+    if (!recentId) return undefined;
+    return inspectionsList.find((i) => i.inspectionId === recentId);
+  }, [inspectionsList]);
+  const latestDraft = useMemo(() => {
+    const drafts = inspectionsList.filter((i) => i.status === "DRAFT");
+    if (drafts.length === 0) return undefined;
+    return [...drafts].sort((a, b) => {
+      const ta = new Date(a.updatedAt ?? a.createdAt ?? 0).getTime();
+      const tb = new Date(b.updatedAt ?? b.createdAt ?? 0).getTime();
+      return tb - ta;
+    })[0];
+  }, [inspectionsList]);
+  useEffect(() => {
+    if (hasContext) return;
+    if (recentInspection) {
+      const target =
+        recentInspection.status === "DRAFT"
+          ? `/inspection/${recentInspection.inspectionId}/measure`
+          : `/inspection/${recentInspection.inspectionId}`;
+      navigate(target, {
+        replace: true,
+        state: { inspection: recentInspection },
+      });
+      return;
+    }
+    if (latestDraft) {
+      navigate(`/inspection/${latestDraft.inspectionId}/measure`, {
+        replace: true,
+        state: { inspection: latestDraft },
+      });
+    }
+  }, [hasContext, recentInspection, latestDraft, navigate]);
 
   // 같은 제품/설비 콘텍스트의 기존 검사를 시점별로 매핑.
   const inspectionByType = useMemo(() => {
