@@ -84,12 +84,15 @@ function App() {
                 element={<InspectionOrdersPage />}
               />
 
+              <Route path="/qm-reports" element={<ReportPage />} />
+            </Route>
+
+            {/* 승인관리 — 자주검사 미완료(INCOMPLETE) 결재. 품질관리자 + 통합관리자 둘 다 접근. */}
+            <Route element={<RouteGuard roles={["QUALITY_ADMIN", "ADMIN"]} />}>
               <Route
                 path="/approval-management"
                 element={<ApprovalManagementPage />}
               />
-
-              <Route path="/qm-reports" element={<ReportPage />} />
             </Route>
 
             <Route element={<RouteGuard roles={["QUALITY_ADMIN", "ADMIN"]} />}>
