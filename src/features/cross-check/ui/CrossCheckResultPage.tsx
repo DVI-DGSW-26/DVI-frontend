@@ -57,14 +57,19 @@ export default function CrossCheckResultPage() {
       .map<StepResult>((r) => {
         const measured = r.measuredValue ?? undefined;
         const imageUrl = r.imageUrl ?? undefined;
-        const done = measured != null && !!imageUrl;
+        // skipped 항목은 건너뜀. 그 외엔 측정값이 있으면 완료(사진은 선택).
+        const status: StepResult["status"] = r.skipped
+          ? "skipped"
+          : measured != null
+            ? "completed"
+            : "skipped";
         return {
           dimNo: r.dimNo,
           dimName: r.dimName,
           standardValue: r.standardValue,
           tolerancePlus: r.tolerancePlus,
           toleranceMinus: r.toleranceMinus,
-          status: done ? "completed" : "skipped",
+          status,
           measuredValue: measured,
           imageUrl,
         };

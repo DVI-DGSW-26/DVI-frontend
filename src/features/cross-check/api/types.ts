@@ -99,6 +99,8 @@ export interface CrossCheckResultInfo {
   productionImageUrl: string | null;
   measuredValue: number | null;
   imageUrl: string | null;
+  // 항목(dim) 단위 건너뜀 여부. skipped 인 항목은 complete 시 measuredValue 검증 면제.
+  skipped?: boolean;
 }
 
 export type AppearanceResult = "OK" | "NG";
@@ -136,8 +138,11 @@ export interface CreateCrossCheckRequest {
 
 export interface CrossCheckResultItemPayload {
   resultId: number;
-  measuredValue: number;
+  // 건너뜀(skipped=true) 항목은 measuredValue 없이 저장 가능.
+  measuredValue?: number;
   imageUrl?: string;
+  // 항목 단위 건너뜀. true 면 complete 검증에서 이 항목 measuredValue 검사 면제.
+  skipped?: boolean;
 }
 
 export interface SaveCrossCheckResultRequest {

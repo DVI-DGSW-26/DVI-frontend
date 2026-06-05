@@ -17,7 +17,11 @@ import {
   useUploadInspectionImage,
 } from "../../inspection/api";
 import CrossCheckInputPhase from "./CrossCheckInputPhase";
-import { useCrossCheckDetail, useSaveCrossCheckResults } from "../api";
+import {
+  useCrossCheckDetail,
+  useRejectCrossCheck,
+  useSaveCrossCheckResults,
+} from "../api";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 
 type Phase = "capture" | "crop" | "input";
@@ -34,11 +38,13 @@ interface MeasureItem {
   productionImageUrl?: string;
   measuredValue?: number;
   imageUrl?: string;
+  skipped?: boolean;
 }
 
 function isItemDone(item: MeasureItem): boolean {
-  // 사진 없이 측정값만 입력하는 케이스도 허용 — 측정값이 있으면 완료로 본다.
-  return item.measuredValue != null;
+  // 사진 없이 측정값만 입력 / 항목 건너뜀(skipped) 모두 "처리됨"으로 봐서
+  // 이어하기 시 다시 묻지 않는다.
+  return item.measuredValue != null || !!item.skipped;
 }
 
 function toCompletedStep(item: MeasureItem): StepResult {
@@ -48,7 +54,7 @@ function toCompletedStep(item: MeasureItem): StepResult {
     standardValue: item.standardValue,
     tolerancePlus: item.tolerancePlus,
     toleranceMinus: item.toleranceMinus,
-    status: "completed",
+    status: item.skipped ? "skipped" : "completed",
     measuredValue: item.measuredValue,
     imageUrl: item.imageUrl,
   };
@@ -85,7 +91,10 @@ export default function CrossCheckMeasurePage() {
   // 백엔드가 ResultInfo 에 production* 필드 추가하면 이 fetch + 매핑은 제거 가능.
   const inspectionDetailQuery = useInspectionDetail(detail?.inspectionId);
   const productionByDimId = useMemo(() => {
-    const map = new Map<number, { value: number | null; imageUrl: string | null }>();
+    const map = new Map<
+      number,
+      { value: number | null; imageUrl: string | null }
+    >();
     const results = inspectionDetailQuery.data?.results;
     if (!results) return map;
     for (const r of results) {
@@ -113,6 +122,7 @@ export default function CrossCheckMeasurePage() {
             productionRef?.imageUrl ?? r.productionImageUrl ?? undefined,
           measuredValue: r.measuredValue ?? undefined,
           imageUrl: r.imageUrl ?? undefined,
+          skipped: r.skipped ?? undefined,
         };
       })
       .sort((a, b) => a.dimNo - b.dimNo);
@@ -139,10 +149,13 @@ export default function CrossCheckMeasurePage() {
   );
   const [isPreparing, setIsPreparing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
 
   const uploadImage = useUploadInspectionImage();
   const ocrImage = useOcrInspectionImage();
   const saveResults = useSaveCrossCheckResults(crossCheckId);
+  const rejectMut = useRejectCrossCheck(crossCheckId);
 
   useEffect(() => {
     if (!detail || !allDone) return;
@@ -321,9 +334,7 @@ export default function CrossCheckMeasurePage() {
     }
 
     setUploadedImageUrl(imageRes.value);
-    setOcrSuggestedValue(
-      ocrRes.status === "fulfilled" ? ocrRes.value : null,
-    );
+    setOcrSuggestedValue(ocrRes.status === "fulfilled" ? ocrRes.value : null);
     setIsPreparing(false);
   };
 
@@ -376,8 +387,18 @@ export default function CrossCheckMeasurePage() {
     }
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
     if (!currentDim) return;
+    // 항목 단위 SKIP 을 백엔드에 영속화 — complete 검증에서 이 항목 measuredValue
+    // 검사가 면제되어, 건너뛴 채로도 결재요청이 가능해진다.
+    try {
+      await saveResults.mutateAsync({
+        results: [{ resultId: currentDim.resultId, skipped: true }],
+      });
+    } catch (err) {
+      setToast(toErrorMessage(err));
+      return;
+    }
     const next: StepResult = {
       dimNo: currentDim.dimNo,
       dimName: currentDim.dimName,
@@ -402,6 +423,20 @@ export default function CrossCheckMeasurePage() {
     }
     advanceToNextStep();
   };
+
+  const confirmReject = async () => {
+    const reason = rejectReason.trim();
+    if (!reason) return;
+    try {
+      await rejectMut.mutateAsync(reason);
+      // 반려 시 자주검사가 작업자에게 되돌아가고 이 순회검사는 종료됨 → 목록으로.
+      navigate("/cross-checks", { replace: true });
+    } catch (err) {
+      setToast(toErrorMessage(err));
+    }
+  };
+
+  const productionNg = detail.productionAppearanceResult === "NG";
 
   if (totalSteps === 0) {
     return (
@@ -457,7 +492,48 @@ export default function CrossCheckMeasurePage() {
         </section>
       )}
 
+      {productionNg && (
+        <section className="border-b border-[#FECACA] bg-[#FEF2F2] px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Icon
+              icon="solar:danger-triangle-bold"
+              width={18}
+              height={18}
+              className="shrink-0 text-[#B91C1C]"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-semibold text-[#B91C1C]">
+                자주검사 외관 NG
+              </div>
+              <div className="mt-0.5 text-[11px] text-[#6B7280]">
+                측정 없이 바로 반려할 수 있어요. 반려 시 작업자에게 재측정
+                요청이 전달됩니다.
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowRejectModal(true)}
+              className="h-9 shrink-0 rounded-md bg-[#EF4444] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#DC2626]"
+            >
+              바로 반려
+            </button>
+          </div>
+        </section>
+      )}
+
       <section className="border-b border-gray-200 bg-white px-4 py-4">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-sm font-semibold text-[#212121]">
+            순회검사 측정
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowRejectModal(true)}
+            className="h-8 rounded-md border border-[#EF4444] px-3 text-xs font-semibold text-[#EF4444] transition-colors hover:bg-[#FEF2F2]"
+          >
+            반려
+          </button>
+        </div>
         <InfoRow label="기계명" value={detail.equipment.name} />
         <InfoRow label="검사 시간" value={detail.inspectionTime} />
         <div className="mt-2 grid grid-cols-3 gap-2">
@@ -567,50 +643,101 @@ export default function CrossCheckMeasurePage() {
           />
         )}
 
-        {phase === "input" && (() => {
-          // 이전 단계 복원용 — sessionResults 우선, 없으면 items 의 백엔드 값.
-          // 새 사진을 찍은 경우(croppedBlob 존재) 엔 OCR 결과로 채워야 하므로 복원값 사용 안 함.
-          const fromSession = sessionResults.find(
-            (s) => s.dimNo === currentDim.dimNo,
-          );
-          const initialValue = croppedBlob
-            ? undefined
-            : (fromSession?.measuredValue ?? currentDim.measuredValue);
-          const initialImageUrl =
-            (croppedBlob ? null : uploadedImageUrl) ??
-            fromSession?.imageUrl ??
-            currentDim.imageUrl ??
-            undefined;
-          return (
-            <CrossCheckInputPhase
-              key={currentDim.dimNo}
-              blob={croppedBlob}
-              existingImageUrl={initialImageUrl ?? undefined}
-              initialValue={
-                initialValue != null ? String(initialValue) : undefined
-              }
-              isLastDim={isLastDim}
-              isSaving={isSaving}
-              isPreparing={isPreparing}
-              suggestedValue={ocrSuggestedValue}
-              standardValue={currentDim.standardValue}
-              tolerancePlus={currentDim.tolerancePlus}
-              toleranceMinus={currentDim.toleranceMinus}
-              onRetake={() => {
-                setCroppedBlob(null);
-                setCapturedFile(null);
-                setUploadedImageUrl(null);
-                setOcrSuggestedValue(null);
-                setIsPreparing(false);
-                setPhase("capture");
-              }}
-              onGoBack={canGoBack ? goToPreviousStep : undefined}
-              onGoNext={canGoForward ? goToNextStep : undefined}
-              onSubmit={handleSubmitMeasured}
-            />
-          );
-        })()}
+        {phase === "input" &&
+          (() => {
+            // 이전 단계 복원용 — sessionResults 우선, 없으면 items 의 백엔드 값.
+            // 새 사진을 찍은 경우(croppedBlob 존재) 엔 OCR 결과로 채워야 하므로 복원값 사용 안 함.
+            const fromSession = sessionResults.find(
+              (s) => s.dimNo === currentDim.dimNo,
+            );
+            const initialValue = croppedBlob
+              ? undefined
+              : (fromSession?.measuredValue ?? currentDim.measuredValue);
+            const initialImageUrl =
+              (croppedBlob ? null : uploadedImageUrl) ??
+              fromSession?.imageUrl ??
+              currentDim.imageUrl ??
+              undefined;
+            return (
+              <CrossCheckInputPhase
+                key={currentDim.dimNo}
+                blob={croppedBlob}
+                existingImageUrl={initialImageUrl ?? undefined}
+                initialValue={
+                  initialValue != null ? String(initialValue) : undefined
+                }
+                isLastDim={isLastDim}
+                isSaving={isSaving}
+                isPreparing={isPreparing}
+                suggestedValue={ocrSuggestedValue}
+                standardValue={currentDim.standardValue}
+                tolerancePlus={currentDim.tolerancePlus}
+                toleranceMinus={currentDim.toleranceMinus}
+                onRetake={() => {
+                  setCroppedBlob(null);
+                  setCapturedFile(null);
+                  setUploadedImageUrl(null);
+                  setOcrSuggestedValue(null);
+                  setIsPreparing(false);
+                  setPhase("capture");
+                }}
+                onGoBack={canGoBack ? goToPreviousStep : undefined}
+                onGoNext={canGoForward ? goToNextStep : undefined}
+                onSubmit={handleSubmitMeasured}
+              />
+            );
+          })()}
       </section>
+
+      {showRejectModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center"
+          onClick={() => {
+            if (!rejectMut.isPending) setShowRejectModal(false);
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-t-2xl bg-white p-5 sm:rounded-2xl"
+          >
+            <h3 className="text-base font-semibold text-[#212121]">
+              순회검사 반려
+            </h3>
+            <p className="mt-1 text-xs text-[#6B7280]">
+              측정 없이 바로 반려합니다. 자주검사가 작업자에게 되돌아가 재측정을
+              요청합니다.
+            </p>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="반려 사유 (예: DIM1 외관 NG 확인됨)"
+              rows={3}
+              disabled={rejectMut.isPending}
+              className="mt-3 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+            />
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowRejectModal(false)}
+                disabled={rejectMut.isPending}
+                className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-60"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={confirmReject}
+                disabled={rejectMut.isPending || rejectReason.trim() === ""}
+                className="h-11 flex-1 rounded-md bg-[#EF4444] text-sm font-semibold text-white transition-colors hover:bg-[#DC2626] disabled:bg-[#D1D5DB]"
+              >
+                {rejectMut.isPending ? "처리 중..." : "반려 확정"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>

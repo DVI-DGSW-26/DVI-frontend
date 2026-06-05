@@ -95,3 +95,16 @@ export async function reopenCrossCheck(crossCheckId: number): Promise<void> {
     `/cross-check/${crossCheckId}/reopen`,
   );
 }
+
+// 순회검사자(QUALITY)가 측정 없이 바로 반려. 자주검사 NG 등 명확할 때 사용.
+// 순회검사 DRAFT→REJECTED, 자주검사 COMPLETED→DRAFT 로 복귀(작업자 재측정), production 알림.
+// 바디는 decision/decision 무시 + rejectReason 만 사용하므로 decision 은 형식상 채워 보낸다.
+export async function rejectCrossCheck(
+  crossCheckId: number,
+  rejectReason: string,
+): Promise<void> {
+  await http.post<ApiResponse<Record<string, never>>>(
+    `/cross-check/${crossCheckId}/reject`,
+    { decision: "REJECT", rejectReason },
+  );
+}
