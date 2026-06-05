@@ -1,7 +1,13 @@
 <!doctype html>
-<html lang="en">
+<!--
+  translate="no" + notranslate 메타 — 브라우저 자동 번역 (Edge/Chrome 한국어 번역 등) 이
+  React 가 추적하는 DOM 텍스트 노드를 wrap/replace 하면서 NotFoundError(insertBefore)
+  를 일으키는 문제 방지. UI 가 이미 한국어라 번역 자체도 불필요.
+-->
+<html lang="ko" translate="no">
   <head>
     <meta charset="UTF-8" />
+    <meta name="google" content="notranslate" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link
@@ -12,7 +18,7 @@
     />
     <title>dvi-frontend</title>
   </head>
-  <body>
+  <body class="notranslate">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
