@@ -569,11 +569,13 @@ export default function CrossCheckMeasurePage() {
 
         {phase === "input" && (() => {
           // 이전 단계 복원용 — sessionResults 우선, 없으면 items 의 백엔드 값.
+          // 새 사진을 찍은 경우(croppedBlob 존재) 엔 OCR 결과로 채워야 하므로 복원값 사용 안 함.
           const fromSession = sessionResults.find(
             (s) => s.dimNo === currentDim.dimNo,
           );
-          const initialValue =
-            fromSession?.measuredValue ?? currentDim.measuredValue;
+          const initialValue = croppedBlob
+            ? undefined
+            : (fromSession?.measuredValue ?? currentDim.measuredValue);
           const initialImageUrl =
             (croppedBlob ? null : uploadedImageUrl) ??
             fromSession?.imageUrl ??

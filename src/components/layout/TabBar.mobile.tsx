@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useAuth } from "../../features/auth/AuthContext";
 import type { Role } from "../../features/auth/api";
@@ -9,6 +9,8 @@ type TabItem = {
   icon: string;
   roles: Role[];
   iconSize?: number;
+  // 현재 pathname 으로 활성화 여부를 커스텀 판정. 미지정 시 NavLink end-match.
+  activeMatch?: (pathname: string) => boolean;
 };
 
 const TABS: TabItem[] = [
@@ -23,7 +25,17 @@ const TABS: TabItem[] = [
 
   { label: "홈", to: "/", icon: "flowbite:home-solid", roles: ["PRODUCTION"], iconSize: 34 },
   { label: "검사이력", to: "/inspections", icon: "icon-park-outline:big-clock", roles: ["PRODUCTION"] },
-  { label: "스캔", to: "/scan", icon: "carbon:scan-alt", roles: ["PRODUCTION"] },
+  {
+    label: "스캔",
+    to: "/scan",
+    icon: "carbon:scan-alt",
+    roles: ["PRODUCTION"],
+    // 작업 중인 측정/결과 페이지에서도 이 탭이 활성화 보이도록.
+    activeMatch: (p) =>
+      p === "/scan" ||
+      p === "/start-inspection" ||
+      p.startsWith("/inspection/"),
+  },
 
   { label: "홈", to: "/", icon: "flowbite:home-solid", roles: ["QUALITY"], iconSize: 34 },
   { label: "품질 시스템 현황", to: "/quality-status", icon: "mdi:chart-line", roles: ["QUALITY", "ADMIN"] },
@@ -39,6 +51,7 @@ const TABS: TabItem[] = [
 
 const TabBarMobile = () => {
   const { user } = useAuth();
+  const location = useLocation();
 
   const visibleTabs = user
     ? TABS.filter((tab) => tab.roles.includes(user.role))
@@ -46,25 +59,29 @@ const TabBarMobile = () => {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-30 flex h-16 items-center justify-around border-t border-[#E5E7EB] bg-white">
-      {visibleTabs.map((tab) => (
-        <NavLink
-          key={`${tab.label}-${tab.to}`}
-          to={tab.to}
-          end
-          aria-label={tab.label}
-          className={({ isActive }) =>
-            `flex flex-1 items-center justify-center transition-colors ${
-              isActive ? "text-[#931B82]" : "text-[#A8A8A8]"
-            }`
-          }
-        >
-          <Icon
-            icon={tab.icon}
-            width={tab.iconSize ?? 28}
-            height={tab.iconSize ?? 28}
-          />
-        </NavLink>
-      ))}
+      {visibleTabs.map((tab) => {
+        const customActive = tab.activeMatch?.(location.pathname);
+        return (
+          <NavLink
+            key={`${tab.label}-${tab.to}`}
+            to={tab.to}
+            end
+            aria-label={tab.label}
+            className={({ isActive: navActive }) => {
+              const isActive = customActive ?? navActive;
+              return `flex flex-1 items-center justify-center transition-colors ${
+                isActive ? "text-[#931B82]" : "text-[#A8A8A8]"
+              }`;
+            }}
+          >
+            <Icon
+              icon={tab.icon}
+              width={tab.iconSize ?? 28}
+              height={tab.iconSize ?? 28}
+            />
+          </NavLink>
+        );
+      })}
     </nav>
   );
 };
