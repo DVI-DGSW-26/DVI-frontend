@@ -21,6 +21,7 @@ import {
   readProgress,
   writeProgress,
 } from "../lib/measurementProgress";
+import { setRecentInspectionId } from "../lib/recentInspection";
 import CapturePhase from "./CapturePhase";
 import CropPhase from "./CropPhase";
 import InputPhase from "./InputPhase";
@@ -76,6 +77,11 @@ export default function InspectionMeasurePage() {
   const params = useParams<{ inspectionId: string }>();
   const inspectionId = Number(params.inspectionId);
   const { user } = useAuth();
+
+  // 마지막 진입한 자주검사 id 추적 — 탭바 스캔 누르면 이 검사로 복귀.
+  useEffect(() => {
+    setRecentInspectionId(inspectionId);
+  }, [inspectionId]);
 
   // 측정 페이지 진입 직후 detail 도착 전까지 빈 화면 방지를 위한 임시 메타 정보 소스.
   // 실제 측정 항목은 detail.results 로만 산출한다.
@@ -155,7 +161,14 @@ export default function InspectionMeasurePage() {
   // useState + useEffect 로 잠그면 첫 프레임에 lockedStartIdx=null → startIdx=0 으로
   // dim 1 이 잠깐 보였다가 정정되는 깜빡임이 발생 — "이어하기" 가 리셋된 것처럼 보임.
   const lockedStartIdxRef = useRef<number | null>(null);
-  if (lockedStartIdxRef.current === null && items.length > 0) {
+  // detail 이 아직 안 왔을 땐 items 가 stateInspection.dims 폴백(measuredValue 없음)일 수
+  // 있어 firstEmptyIdx 가 항상 0 으로 잡힌다. 그 시점에 lock 되면 다음 마운트마다 dim 1
+  // 부터 시작하는 버그가 생기므로 detail 도착 후에만 잠근다.
+  if (
+    lockedStartIdxRef.current === null &&
+    detail &&
+    items.length > 0
+  ) {
     lockedStartIdxRef.current =
       firstEmptyIdx === -1 ? items.length : firstEmptyIdx;
   }
@@ -617,18 +630,21 @@ export default function InspectionMeasurePage() {
 
         {phase === "input" && currentDim && (() => {
           // 이전 단계로 돌아왔을 때 복원할 값들 — sessionResults 우선, 없으면 백엔드 items.
+          // 새로 사진을 찍은 경우(croppedBlob 존재) 엔 OCR 결과로 채워야 하므로 복원값 사용 안 함.
           const fromSession = sessionResults.find(
             (s) => s.dimNo === currentDim.dimNo,
           );
-          const initialValue =
-            fromSession?.measuredValue ?? currentDim.measuredValue;
+          const initialValue = croppedBlob
+            ? undefined
+            : (fromSession?.measuredValue ?? currentDim.measuredValue);
           const initialImageUrl =
             (croppedBlob ? null : uploadedImageUrl) ??
             fromSession?.imageUrl ??
             currentDim.imageUrl ??
             undefined;
-          const initialPassFail =
-            fromSession?.passFailResult ?? currentDim.passFailResult;
+          const initialPassFail = croppedBlob
+            ? undefined
+            : (fromSession?.passFailResult ?? currentDim.passFailResult);
           return (
             <InputPhase
               // key 로 dim 마다 인스턴스 재마운트 — 내부 autoFilled / passFailTouched 초기화.
