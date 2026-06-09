@@ -19,7 +19,9 @@ export interface LoginFormProps {
   setUsername: (value: string) => void;
   password: string;
   setPassword: (value: string) => void;
-  onSubmit: () => void;
+  // keepLoggedIn=true → localStorage (브라우저 종료 후에도 자동 로그인 유지)
+  // keepLoggedIn=false → sessionStorage (탭 닫으면 로그아웃)
+  onSubmit: (keepLoggedIn: boolean) => void;
 }
 
 export default function Login() {
@@ -30,12 +32,15 @@ export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (keepLoggedIn: boolean) => {
     try {
-      const me = await login({
-        loginId: username.trim(),
-        password: password.trim(),
-      });
+      const me = await login(
+        {
+          loginId: username.trim(),
+          password: password.trim(),
+        },
+        keepLoggedIn,
+      );
       navigate(ROLE_HOME[me.role] ?? "/");
     } catch (err) {
       if (err instanceof AuthError) {
