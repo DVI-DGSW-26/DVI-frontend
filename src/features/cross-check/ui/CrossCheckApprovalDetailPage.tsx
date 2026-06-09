@@ -16,13 +16,20 @@ const PROCESS_LABEL: Record<ProcessType, string> = {
 };
 
 // 검사 차수(type)를 초/중/종 단계로 매핑.
-// _1 차수 → 초, _5 차수 → 종, 나머지(_2~_4) → 중.
+// - 압출: 초중종 3차수 → _1=초, _2=중, _3=종
+// - 그 외(절단/가공, 시간슬롯): _1=초, _5=종, _2~_4=중
 type Stage = "INITIAL" | "MIDDLE" | "FINAL";
 
-function getStage(type: string): Stage | null {
+function getStage(type: string, process: ProcessType): Stage | null {
   const m = type.match(/_(\d+)$/);
   if (!m) return null;
   const n = Number(m[1]);
+  if (process === "EXTRUSION") {
+    if (n === 1) return "INITIAL";
+    if (n === 2) return "MIDDLE";
+    if (n === 3) return "FINAL";
+    return null;
+  }
   if (n === 1) return "INITIAL";
   if (n === 5) return "FINAL";
   if (n >= 2 && n <= 4) return "MIDDLE";
@@ -208,7 +215,7 @@ export default function CrossCheckApprovalDetailPage() {
             {detail.product.code}
           </span>
           {(() => {
-            const stage = getStage(detail.type);
+            const stage = getStage(detail.type, detail.product.process);
             if (!stage) return null;
             return (
               <span
@@ -232,7 +239,7 @@ export default function CrossCheckApprovalDetailPage() {
           <InfoLine
             label="검사 차수"
             value={(() => {
-              const stage = getStage(detail.type);
+              const stage = getStage(detail.type, detail.product.process);
               const stageText = stage ? ` · ${STAGE_LABEL[stage]}` : "";
               return `${detail.typeLabel} (${detail.type})${stageText}`;
             })()}
