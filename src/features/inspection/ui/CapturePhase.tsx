@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import { isAllowedImageFile, MAX_UPLOAD_BYTES } from "../lib/cropImage";
+import CaptureGuideModal from "./CaptureGuideModal";
+
+// 촬영 가이드 예시 화면을 세션당 1회만 자동 노출하기 위한 키.
+const GUIDE_SEEN_KEY = "ocr-capture-guide-seen";
 
 interface Props {
   onCaptured: (file: File) => void;
@@ -27,6 +31,7 @@ export default function CapturePhase({
   const streamRef = useRef<MediaStream | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
     if (!isCameraOpen) return;
@@ -117,6 +122,31 @@ export default function CapturePhase({
     setIsCameraOpen(true);
   };
 
+  // 사진 촬영 버튼 — 세션 첫 촬영이면 가이드 예시를 먼저 보여주고, 이후엔 바로 카메라.
+  const handleCaptureClick = () => {
+    let seen = false;
+    try {
+      seen = sessionStorage.getItem(GUIDE_SEEN_KEY) === "1";
+    } catch {
+      seen = false;
+    }
+    if (!seen) {
+      setShowGuide(true);
+      return;
+    }
+    handleOpenCamera();
+  };
+
+  const handleGuideStart = () => {
+    try {
+      sessionStorage.setItem(GUIDE_SEEN_KEY, "1");
+    } catch {
+      // sessionStorage 사용 불가 환경 — 무시하고 진행.
+    }
+    setShowGuide(false);
+    handleOpenCamera();
+  };
+
   const handleCloseCamera = () => {
     setIsCameraOpen(false);
   };
@@ -188,10 +218,18 @@ export default function CapturePhase({
         </div>
         <button
           type="button"
-          onClick={handleOpenCamera}
+          onClick={handleCaptureClick}
           className="h-11 rounded-md bg-[#931B82] px-6 text-sm font-semibold text-white hover:bg-[#6A0F5D]"
         >
           사진 촬영
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowGuide(true)}
+          className="inline-flex items-center gap-1 text-xs font-medium text-[#931B82] hover:underline"
+        >
+          <Icon icon="solar:question-circle-linear" width={14} height={14} />
+          촬영 예시 보기
         </button>
         <input
           ref={fileInputRef}
@@ -297,6 +335,12 @@ export default function CapturePhase({
           </div>
         </div>
       )}
+
+      <CaptureGuideModal
+        open={showGuide}
+        onClose={() => setShowGuide(false)}
+        onStart={handleGuideStart}
+      />
     </div>
   );
 }
