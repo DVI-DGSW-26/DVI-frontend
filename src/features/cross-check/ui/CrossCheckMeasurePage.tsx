@@ -82,6 +82,13 @@ export default function CrossCheckMeasurePage() {
     return s?.editMode === true;
   }, [location.state]);
 
+  // result 페이지에서 특정 항목 "다시 측정" 으로 진입한 경우 — 해당 dim 으로 바로 이동하고
+  // 한 항목 재측정(사진 포함) 후 다시 결과 화면으로 복귀시킨다.
+  const targetDimNo = useMemo<number | null>(() => {
+    const s = (location.state ?? {}) as { targetDimNo?: number } | null;
+    return typeof s?.targetDimNo === "number" ? s.targetDimNo : null;
+  }, [location.state]);
+
   const detailQuery = useCrossCheckDetail(crossCheckId);
   const detail = detailQuery.data;
 
@@ -173,6 +180,13 @@ export default function CrossCheckMeasurePage() {
     });
   }, [detail, allDone, items, crossCheckId, navigate, user, editMode]);
 
+  // targetDimNo 로 진입한 경우 해당 dim 의 인덱스. 수동 네비게이션(manualStepIdx) 전까지
+  // 이 인덱스를 기본 위치로 사용해, 이미 측정된 항목도 바로 재촬영할 수 있게 한다.
+  const targetIdx = useMemo(() => {
+    if (targetDimNo == null) return -1;
+    return items.findIndex((it) => it.dimNo === targetDimNo);
+  }, [targetDimNo, items]);
+
   if (detailQuery.isLoading || (!detail && !detailQuery.isError)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
@@ -208,7 +222,9 @@ export default function CrossCheckMeasurePage() {
   }
 
   const totalSteps = items.length;
-  const rawStepIndex = manualStepIdx ?? startIdx + sessionResults.length;
+  const rawStepIndex =
+    manualStepIdx ??
+    (targetIdx >= 0 ? targetIdx : startIdx + sessionResults.length);
   const stepIndex = Math.min(rawStepIndex, Math.max(0, items.length - 1));
   const currentDim = items[stepIndex];
   const isLastDim = stepIndex === totalSteps - 1;
@@ -365,6 +381,12 @@ export default function CrossCheckMeasurePage() {
 
       upsertSessionResult(next);
 
+      // 특정 항목 "다시 측정" 으로 진입한 경우 — 한 항목만 고치고 결과로 복귀.
+      if (targetDimNo != null) {
+        navigate(`/cross-check/${crossCheckId}/result`, { replace: true });
+        return;
+      }
+
       if (isLastDim) {
         // allStepResults 는 이전 sessionResults 기준 — next 가 같은 dim 의 갱신본일
         // 수도 있어 동일하게 upsert 한 결과로 갈음.
@@ -408,6 +430,11 @@ export default function CrossCheckMeasurePage() {
       status: "skipped",
     };
     upsertSessionResult(next);
+    // 특정 항목 "다시 측정" 진입이면 한 항목만 처리하고 결과로 복귀.
+    if (targetDimNo != null) {
+      navigate(`/cross-check/${crossCheckId}/result`, { replace: true });
+      return;
+    }
     if (isLastDim) {
       const finalResults = (() => {
         const idx = allStepResults.findIndex((s) => s.dimNo === next.dimNo);
