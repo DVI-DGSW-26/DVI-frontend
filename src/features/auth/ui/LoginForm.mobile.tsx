@@ -13,7 +13,8 @@ export default function LoginFormMobile({
   onSubmit,
 }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
-  const [keepLoggedIn, setKeepLoggedIn] = useState(false);
+  // 기본값 true — 체크 해제 시에만 sessionStorage 로 저장 (브라우저 종료 시 로그아웃).
+  const [keepLoggedIn, setKeepLoggedIn] = useState(true);
   const navigate = useNavigate();
 
   return (
@@ -21,7 +22,7 @@ export default function LoginFormMobile({
       className="relative min-h-screen w-full bg-white"
       onSubmit={(e) => {
         e.preventDefault();
-        onSubmit();
+        onSubmit(keepLoggedIn);
       }}
     >
       <div

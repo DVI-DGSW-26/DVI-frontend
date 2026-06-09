@@ -12,7 +12,9 @@ import type { LoginRequest, User } from "./api";
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
-  login: (body: LoginRequest) => Promise<User>;
+  // persist=true (기본): localStorage 에 token 저장 (브라우저 종료 후에도 유지)
+  // persist=false: sessionStorage 에 저장 (브라우저 종료 시 자동 로그아웃)
+  login: (body: LoginRequest, persist?: boolean) => Promise<User>;
   logout: () => void;
   refresh: () => Promise<void>;
 }
@@ -42,18 +44,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refresh().finally(() => setLoading(false));
   }, [refresh]);
 
-  const login = useCallback(async (body: LoginRequest) => {
-    const tokens = await loginApi(body);
-    if (!tokens?.accessToken) {
-      throw new Error(
-        "로그인 응답에 accessToken 이 없습니다. 백엔드 응답 형태를 확인해주세요.",
-      );
-    }
-    tokenStorage.save(tokens);
-    const me = await getMe();
-    setUser(me);
-    return me;
-  }, []);
+  const login = useCallback(
+    async (body: LoginRequest, persist: boolean = true) => {
+      const tokens = await loginApi(body);
+      if (!tokens?.accessToken) {
+        throw new Error(
+          "로그인 응답에 accessToken 이 없습니다. 백엔드 응답 형태를 확인해주세요.",
+        );
+      }
+      tokenStorage.save(tokens, persist);
+      const me = await getMe();
+      setUser(me);
+      return me;
+    },
+    [],
+  );
 
   const logout = useCallback(() => {
     tokenStorage.clear();
