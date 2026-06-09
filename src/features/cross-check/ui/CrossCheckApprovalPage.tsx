@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { usePendingCrossChecks } from "../api";
 import type { CrossCheckSummary } from "../api";
+import { getStage, STAGE_LABEL, STAGE_BADGE } from "../lib/stage";
 
 const PROCESS_LABEL: Record<string, string> = {
   EXTRUSION: "압출",
@@ -102,6 +103,17 @@ export default function CrossCheckApprovalPage() {
                     <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-medium text-[#931B82]">
                       {cc.product.code}
                     </span>
+                    {(() => {
+                      const stage = getStage(cc.type, cc.product.process);
+                      if (!stage) return null;
+                      return (
+                        <span
+                          className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${STAGE_BADGE[stage]}`}
+                        >
+                          {STAGE_LABEL[stage]}
+                        </span>
+                      );
+                    })()}
                     {cc.hardnessPending && (
                       <span className="rounded-md bg-[#FEF3C7] px-2 py-0.5 text-xs font-semibold text-[#B45309]">
                         경도 대기
