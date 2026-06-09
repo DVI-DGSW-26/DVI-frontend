@@ -7,7 +7,6 @@ import NotFoundPage from "./components/layout/NotFoundPage";
 import RouteGuard from "./features/auth/RouteGuard";
 import NotificationPage from "./features/notification/ui/NotificationPage";
 import ApprovalManagementPage from "./features/incomplete/ui/ApprovalManagementPage";
-import AccountApprovalPage from "./features/account-approval/ui/AccountApprovalPage";
 import ReportPage from "./features/report/ui/ReportPage";
 import MyInspectionPage from "./features/my-inspection/ui/MyInspectionPage";
 import ProductionHomePage from "./features/my-inspection/ui/ProductionHomePage";
@@ -20,7 +19,6 @@ import ProductsPage from "./features/products/ui/ProductsPage";
 import EquipmentPage from "./features/equipment/ui/EquipmentPage";
 import CustomersPage from "./features/customers/ui/CustomersPage";
 
-import AdminUserSearchPage from "./features/user-search/ui/AdminUserSearchPage";
 import AdminReportPage from "./features/report/ui/AdminReportPage";
 import AdminReportDetailPage from "./features/report/ui/AdminReportDetailPage";
 import DashboardPage from "./features/dashboard/ui/DashboardPage";
@@ -66,9 +64,6 @@ function App() {
 
             <Route element={<RouteGuard roles={["ADMIN"]} />}>
               <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/userSearch" element={<AdminUserSearchPage />} />
-
-              <Route path="/approval" element={<AccountApprovalPage />} />
 
               <Route path="/reports" element={<AdminReportPage />} />
 

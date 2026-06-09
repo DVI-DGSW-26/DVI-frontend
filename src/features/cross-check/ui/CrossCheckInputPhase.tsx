@@ -100,7 +100,7 @@ export default function CrossCheckInputPhase({
         }
       : autoFilled
         ? {
-            text: "자동 인식 실패, 직접 입력해주세요.",
+            text: "측정값을 인식하지 못했어요. LCD가 또렷이 보이게 다시 찍거나 직접 입력해주세요.",
             tone: "warn" as const,
           }
         : null;
@@ -141,9 +141,7 @@ export default function CrossCheckInputPhase({
           disabled={inputDisabled}
           className="mt-1 h-11 w-full rounded-md border border-gray-300 px-3 text-base text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
         />
-        {hint && (
-          <p className={`mt-2 text-xs ${hintColor}`}>{hint.text}</p>
-        )}
+        {hint && <p className={`mt-2 text-xs ${hintColor}`}>{hint.text}</p>}
       </div>
 
       <div className="flex gap-2">
