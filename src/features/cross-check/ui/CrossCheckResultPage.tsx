@@ -92,14 +92,12 @@ export default function CrossCheckResultPage() {
   const inspectorName = state.inspectorName ?? user?.name ?? "-";
   const productionInspectorName =
     state.productionInspectorName ?? detail?.production.name ?? "-";
-  const process = state.process ?? detail?.product.process ?? "";
-  const requiresHardness = process === "EXTRUSION";
-
+  // 경도는 압출 종품 승인 시 품질관리자가 승인 화면에서 입력한다.
+  // 순회검사자 결재요청 화면에선 경도를 받지 않는다 (8~12시간 뒤에야 값이 나옴).
   const saveMut = useSaveCrossCheckResults(crossCheckId);
   const completeMut = useCompleteCrossCheck(crossCheckId);
 
   const [appearance, setAppearance] = useState<AppearanceResult | null>(null);
-  const [hardness, setHardness] = useState<string>("");
   const [note, setNote] = useState<string>("");
   const [toast, setToast] = useState<string | null>(null);
   // 카드별 인라인 수정값. dimNo → 새 측정값. 저장 성공 후에만 채워진다.
@@ -110,9 +108,6 @@ export default function CrossCheckResultPage() {
     if (!detail) return;
     if (appearance === null && detail.appearanceResult) {
       setAppearance(detail.appearanceResult);
-    }
-    if (!hardness && detail.hardnessResult) {
-      setHardness(detail.hardnessResult);
     }
     if (!note && detail.note) {
       setNote(detail.note);
@@ -172,10 +167,6 @@ export default function CrossCheckResultPage() {
       await saveMut.mutateAsync({
         results: [],
         appearanceResult: appearance,
-        // 경도는 입력했을 때만 전송 (압출이라도 선택).
-        ...(requiresHardness && hardness.trim()
-          ? { hardnessResult: hardness.trim() }
-          : {}),
         ...(note.trim() ? { note: note.trim() } : {}),
       });
       // 저장 직후 QUALITY_ADMIN 결재 대기로 전환 (DRAFT → PENDING_APPROVAL).
@@ -276,26 +267,6 @@ export default function CrossCheckResultPage() {
             })}
           </div>
         </div>
-
-        {requiresHardness && (
-          <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4">
-            <label
-              htmlFor="hardness-result"
-              className="block text-xs font-medium text-[#6B7280]"
-            >
-              경도 측정값 (압출 공정, 선택 · 최종 후 입력)
-            </label>
-            <input
-              id="hardness-result"
-              type="text"
-              value={hardness}
-              onChange={(e) => setHardness(e.target.value)}
-              placeholder="예: HV 120"
-              disabled={saveMut.isPending}
-              className="mt-2 h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
-            />
-          </div>
-        )}
 
         <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4">
           <label

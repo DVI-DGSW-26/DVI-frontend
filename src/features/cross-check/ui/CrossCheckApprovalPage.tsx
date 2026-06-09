@@ -26,7 +26,11 @@ function formatDate(iso?: string): string {
 
 export default function CrossCheckApprovalPage() {
   const navigate = useNavigate();
-  const { data: crossChecks = [], isLoading, isError } = usePendingCrossChecks();
+  const {
+    data: crossChecks = [],
+    isLoading,
+    isError,
+  } = usePendingCrossChecks();
 
   // 최근 결재 요청부터 위로 (updatedAt 우선, 없으면 createdAt)
   const sorted = useMemo(
@@ -98,11 +102,18 @@ export default function CrossCheckApprovalPage() {
                     <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-medium text-[#931B82]">
                       {cc.product.code}
                     </span>
+                    {cc.hardnessPending && (
+                      <span className="rounded-md bg-[#FEF3C7] px-2 py-0.5 text-xs font-semibold text-[#B45309]">
+                        경도 대기
+                      </span>
+                    )}
                   </div>
                   <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                     <InfoLine
                       label="공정"
-                      value={PROCESS_LABEL[cc.product.process] ?? cc.product.process}
+                      value={
+                        PROCESS_LABEL[cc.product.process] ?? cc.product.process
+                      }
                     />
                     <InfoLine label="설비" value={cc.equipment.name} />
                     <InfoLine label="고객사" value={cc.customer.name} />
@@ -119,7 +130,11 @@ export default function CrossCheckApprovalPage() {
                 </div>
 
                 <div className="flex shrink-0 items-center text-[#931B82]">
-                  <Icon icon="solar:alt-arrow-right-linear" width={20} height={20} />
+                  <Icon
+                    icon="solar:alt-arrow-right-linear"
+                    width={20}
+                    height={20}
+                  />
                 </div>
               </button>
             </li>

@@ -58,6 +58,10 @@ export interface CrossCheckSummary {
   customer: CustomerInfo;
   production: ProductionInfo;
   status: CrossCheckStatus;
+  // 압출 종품 경도값 (없으면 null). 결재 대기 목록의 "경도 대기" 표시용.
+  hardnessResult?: string | null;
+  // 압출 종품인데 경도 미입력 → true. 승인 시 경도 입력 필수.
+  hardnessPending?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -159,4 +163,6 @@ export interface DecideCrossCheckRequest {
   decision: CrossCheckDecision;
   // REJECT 일 때만 필수.
   rejectReason?: string;
+  // 압출 종품 APPROVE 시 필수. 입력 시 저장 후 발행. (그 외 공정/차수는 무시)
+  hardnessResult?: string;
 }
