@@ -1,6 +1,29 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import { isAllowedImageFile, MAX_UPLOAD_BYTES } from "../lib/cropImage";
+import CaptureGuideModal from "./CaptureGuideModal";
+
+// 촬영 가이드 예시 화면을 세션당 1회만 자동 노출하기 위한 키.
+const GUIDE_SEEN_KEY = "ocr-capture-guide-seen";
+
+// OCR 인식이 가능한 최소 해상도(가로/세로). 이보다 작으면 재촬영 안내.
+const MIN_OCR_DIMENSION = 600;
+
+function readImageSize(file: Blob): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("이미지를 읽을 수 없습니다."));
+    };
+    img.src = url;
+  });
+}
 
 interface Props {
   onCaptured: (file: File) => void;
@@ -27,6 +50,7 @@ export default function CapturePhase({
   const streamRef = useRef<MediaStream | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
     if (!isCameraOpen) return;
@@ -117,6 +141,31 @@ export default function CapturePhase({
     setIsCameraOpen(true);
   };
 
+  // 사진 촬영 버튼 — 세션 첫 촬영이면 가이드 예시를 먼저 보여주고, 이후엔 바로 카메라.
+  const handleCaptureClick = () => {
+    let seen = false;
+    try {
+      seen = sessionStorage.getItem(GUIDE_SEEN_KEY) === "1";
+    } catch {
+      seen = false;
+    }
+    if (!seen) {
+      setShowGuide(true);
+      return;
+    }
+    handleOpenCamera();
+  };
+
+  const handleGuideStart = () => {
+    try {
+      sessionStorage.setItem(GUIDE_SEEN_KEY, "1");
+    } catch {
+      // sessionStorage 사용 불가 환경 — 무시하고 진행.
+    }
+    setShowGuide(false);
+    handleOpenCamera();
+  };
+
   const handleCloseCamera = () => {
     setIsCameraOpen(false);
   };
@@ -154,17 +203,31 @@ export default function CapturePhase({
     onCaptured(file);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
     if (!isAllowedImageFile(file)) {
-      onError(`PNG/JPG 이미지만 업로드할 수 있습니다. (현재: ${file.type || "unknown"})`);
+      onError(
+        `PNG/JPG 이미지만 업로드할 수 있습니다. (현재: ${file.type || "unknown"})`,
+      );
       return;
     }
     if (file.size > MAX_UPLOAD_BYTES) {
       onError("최대 10MB 이하의 이미지만 업로드할 수 있습니다.");
       return;
+    }
+    // 저해상도 사진은 OCR 인식이 어려워 미리 거른다. (크기 확인 실패 시엔 통과)
+    try {
+      const { width, height } = await readImageSize(file);
+      if (width < MIN_OCR_DIMENSION || height < MIN_OCR_DIMENSION) {
+        onError(
+          "사진 해상도가 낮아 측정값 인식이 어려워요. 측정값이 또렷이 보이게 더 가까이서 다시 찍어주세요.",
+        );
+        return;
+      }
+    } catch {
+      // 무시하고 진행
     }
     onCaptured(file);
   };
@@ -182,16 +245,22 @@ export default function CapturePhase({
           <div className="text-sm font-medium text-[#212121]">
             측정 부위를 촬영해주세요
           </div>
-          <p className="mt-1 text-xs text-[#6B7280]">
-            PNG/JPG · 최대 10MB
-          </p>
+          <p className="mt-1 text-xs text-[#6B7280]">PNG/JPG · 최대 10MB</p>
         </div>
         <button
           type="button"
-          onClick={handleOpenCamera}
+          onClick={handleCaptureClick}
           className="h-11 rounded-md bg-[#931B82] px-6 text-sm font-semibold text-white hover:bg-[#6A0F5D]"
         >
           사진 촬영
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowGuide(true)}
+          className="inline-flex items-center gap-1 text-xs font-medium text-[#931B82] hover:underline"
+        >
+          <Icon icon="solar:question-circle-linear" width={14} height={14} />
+          촬영 예시 보기
         </button>
         <input
           ref={fileInputRef}
@@ -255,6 +324,28 @@ export default function CapturePhase({
                 카메라 여는 중...
               </div>
             )}
+            {/* OCR 정확도 가이드 — 바깥을 어둡게 깔고 가운데 박스만 또렷하게.
+                LCD 가 사진의 30~50% 를 차지하는 적정 거리를 유도한다. */}
+            {!isStarting && (
+              <div className="pointer-events-none absolute inset-0">
+                <div
+                  className="absolute rounded-xl border-2 border-white/90"
+                  style={{
+                    left: "12%",
+                    top: "26%",
+                    width: "76%",
+                    height: "40%",
+                    boxShadow: "0 0 0 9999px rgba(0,0,0,0.5)",
+                  }}
+                />
+                <p
+                  className="absolute w-full px-6 text-center text-sm font-medium text-white"
+                  style={{ top: "70%" }}
+                >
+                  LCD(측정값)를 박스 안에 가득 차게 맞춰주세요
+                </p>
+              </div>
+            )}
           </div>
           <div className="flex items-center justify-between gap-4 bg-black/90 px-6 py-5">
             <button
@@ -275,6 +366,12 @@ export default function CapturePhase({
           </div>
         </div>
       )}
+
+      <CaptureGuideModal
+        open={showGuide}
+        onClose={() => setShowGuide(false)}
+        onStart={handleGuideStart}
+      />
     </div>
   );
 }
