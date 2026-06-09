@@ -3,10 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
 import { useAuth } from "../../auth/AuthContext";
-import type {
-  ApiErrorData,
-  StepResult,
-} from "../../inspection/type/types";
+import type { ApiErrorData, StepResult } from "../../inspection/type/types";
 import {
   dimDisplayName,
   formatStandardWithTolerance,
@@ -237,10 +234,10 @@ export default function CrossCheckResultPage() {
                 result={r}
                 editable={metaByDimNo.has(r.dimNo)}
                 onEditSubmit={(v) => handleEditMeasuredValue(r.dimNo, v)}
-                onRetake={
-                  r.status === "skipped"
-                    ? () => navigate(`/cross-check/${crossCheckId}/measure`)
-                    : undefined
+                onRetake={() =>
+                  navigate(`/cross-check/${crossCheckId}/measure`, {
+                    state: { editMode: true, targetDimNo: r.dimNo },
+                  })
                 }
               />
             </li>
@@ -324,8 +321,8 @@ export default function CrossCheckResultPage() {
             <div className="font-semibold">건너뛴 항목이 있어요</div>
             <div className="mt-0.5 leading-relaxed">
               본인이 직접 다시 측정하려면 위 카드의 <b>"다시 측정"</b> 버튼을,
-              결재자 판단에 맡기려면 그대로 <b>결재 요청</b> 하세요.
-              반려되면 알림 → 홈에서 다시 수정 가능합니다.
+              결재자 판단에 맡기려면 그대로 <b>결재 요청</b> 하세요. 반려되면
+              알림 → 홈에서 다시 수정 가능합니다.
             </div>
           </div>
         )}
@@ -426,7 +423,9 @@ function StepResultCard({
           )}
           {isEditing ? (
             <div className="mt-3 rounded-lg bg-[#F9FAFB] p-3">
-              <label className="block text-xs text-[#6B7280]">측정값 수정</label>
+              <label className="block text-xs text-[#6B7280]">
+                측정값 수정
+              </label>
               <input
                 type="number"
                 inputMode="decimal"
@@ -470,6 +469,16 @@ function StepResultCard({
                     className="rounded-md border border-[#931B82] px-2 py-1 text-xs font-semibold text-[#931B82] hover:bg-[#F3E8FF]"
                   >
                     수정
+                  </button>
+                )}
+                {onRetake && (
+                  <button
+                    type="button"
+                    onClick={onRetake}
+                    className="inline-flex items-center gap-1 rounded-md border border-[#931B82] px-2 py-1 text-xs font-semibold text-[#931B82] hover:bg-[#F3E8FF]"
+                  >
+                    <Icon icon="solar:camera-linear" width={13} height={13} />
+                    다시 측정
                   </button>
                 )}
               </div>
