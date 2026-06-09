@@ -6,6 +6,25 @@ import CaptureGuideModal from "./CaptureGuideModal";
 // 촬영 가이드 예시 화면을 세션당 1회만 자동 노출하기 위한 키.
 const GUIDE_SEEN_KEY = "ocr-capture-guide-seen";
 
+// OCR 인식이 가능한 최소 해상도(가로/세로). 이보다 작으면 재촬영 안내.
+const MIN_OCR_DIMENSION = 600;
+
+function readImageSize(file: Blob): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("이미지를 읽을 수 없습니다."));
+    };
+    img.src = url;
+  });
+}
+
 interface Props {
   onCaptured: (file: File) => void;
   onError: (message: string) => void;
@@ -184,7 +203,7 @@ export default function CapturePhase({
     onCaptured(file);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
@@ -197,6 +216,18 @@ export default function CapturePhase({
     if (file.size > MAX_UPLOAD_BYTES) {
       onError("최대 10MB 이하의 이미지만 업로드할 수 있습니다.");
       return;
+    }
+    // 저해상도 사진은 OCR 인식이 어려워 미리 거른다. (크기 확인 실패 시엔 통과)
+    try {
+      const { width, height } = await readImageSize(file);
+      if (width < MIN_OCR_DIMENSION || height < MIN_OCR_DIMENSION) {
+        onError(
+          "사진 해상도가 낮아 측정값 인식이 어려워요. 측정값이 또렷이 보이게 더 가까이서 다시 찍어주세요.",
+        );
+        return;
+      }
+    } catch {
+      // 무시하고 진행
     }
     onCaptured(file);
   };
