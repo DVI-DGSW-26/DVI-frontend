@@ -8,7 +8,6 @@ import RouteGuard from "./features/auth/RouteGuard";
 import NotificationPage from "./features/notification/ui/NotificationPage";
 import ApprovalManagementPage from "./features/incomplete/ui/ApprovalManagementPage";
 import AccountApprovalPage from "./features/account-approval/ui/AccountApprovalPage";
-import InspectionOrdersPage from "./features/inspection-orders/ui/InspectionOrdersPage";
 import ReportPage from "./features/report/ui/ReportPage";
 import MyInspectionPage from "./features/my-inspection/ui/MyInspectionPage";
 import ProductionHomePage from "./features/my-inspection/ui/ProductionHomePage";
@@ -79,11 +78,6 @@ function App() {
             </Route>
 
             <Route element={<RouteGuard roles={["QUALITY_ADMIN"]} />}>
-              <Route
-                path="/inspection-orders"
-                element={<InspectionOrdersPage />}
-              />
-
               <Route path="/qm-reports" element={<ReportPage />} />
             </Route>
 
