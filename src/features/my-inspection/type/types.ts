@@ -51,6 +51,9 @@ export interface MyInspection {
   customer: MyInspectionCustomer;
   dims: MyInspectionDim[];
   status: MyInspectionStatus;
+  // 연결된 순회검사가 시작/존재하면 true. true 면 자주 reopen 불가 (백엔드가 거부).
+  // 자주검사자 홈의 "수정 가능한 검사" 섹션에서 거르기 위함.
+  hasCrossCheck?: boolean;
   // 날짜 필터링용. 백엔드가 보내주면 사용, 없으면 필터 통과.
   createdAt?: string;
   updatedAt?: string;

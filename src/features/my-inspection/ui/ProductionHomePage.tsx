@@ -62,13 +62,15 @@ export default function ProductionHomePage() {
     [inspections],
   );
 
-  // 재오픈 가능한 검사 — 완료/미완료 승인됨 (순회검사 시작 전인 건만 backend 가 허용).
-  // 프론트에선 status 만 보고 노출, 실제 허용 여부는 backend 응답으로 판단.
+  // 재오픈 가능한 검사 — 완료/미완료 승인됨 이면서 순회검사가 아직 시작 안 된 건만.
+  // hasCrossCheck=true 면 backend 가 reopen 거부 (409) → 사전에 필터링해서 카드 노출 안 함.
   const reopenableInspections = useMemo(
     () =>
       inspections.filter(
         (i) =>
-          i.status === "COMPLETED" || i.status === "INCOMPLETE_APPROVED",
+          (i.status === "COMPLETED" ||
+            i.status === "INCOMPLETE_APPROVED") &&
+          !i.hasCrossCheck,
       ),
     [inspections],
   );
