@@ -159,7 +159,9 @@ export default function CapturePhase({
     e.target.value = "";
     if (!file) return;
     if (!isAllowedImageFile(file)) {
-      onError(`PNG/JPG 이미지만 업로드할 수 있습니다. (현재: ${file.type || "unknown"})`);
+      onError(
+        `PNG/JPG 이미지만 업로드할 수 있습니다. (현재: ${file.type || "unknown"})`,
+      );
       return;
     }
     if (file.size > MAX_UPLOAD_BYTES) {
@@ -182,9 +184,7 @@ export default function CapturePhase({
           <div className="text-sm font-medium text-[#212121]">
             측정 부위를 촬영해주세요
           </div>
-          <p className="mt-1 text-xs text-[#6B7280]">
-            PNG/JPG · 최대 10MB
-          </p>
+          <p className="mt-1 text-xs text-[#6B7280]">PNG/JPG · 최대 10MB</p>
         </div>
         <button
           type="button"
@@ -253,6 +253,28 @@ export default function CapturePhase({
             {isStarting && (
               <div className="absolute inset-0 flex items-center justify-center text-sm text-white">
                 카메라 여는 중...
+              </div>
+            )}
+            {/* OCR 정확도 가이드 — 바깥을 어둡게 깔고 가운데 박스만 또렷하게.
+                LCD 가 사진의 30~50% 를 차지하는 적정 거리를 유도한다. */}
+            {!isStarting && (
+              <div className="pointer-events-none absolute inset-0">
+                <div
+                  className="absolute rounded-xl border-2 border-white/90"
+                  style={{
+                    left: "12%",
+                    top: "26%",
+                    width: "76%",
+                    height: "40%",
+                    boxShadow: "0 0 0 9999px rgba(0,0,0,0.5)",
+                  }}
+                />
+                <p
+                  className="absolute w-full px-6 text-center text-sm font-medium text-white"
+                  style={{ top: "70%" }}
+                >
+                  LCD(측정값)를 박스 안에 가득 차게 맞춰주세요
+                </p>
               </div>
             )}
           </div>
