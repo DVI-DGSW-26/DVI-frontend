@@ -15,6 +15,7 @@ import {
   useSaveCrossCheckResults,
 } from "../api";
 import type { AppearanceResult } from "../api";
+import { getStage, STAGE_LABEL, STAGE_BADGE } from "../lib/stage";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 
 interface ResultLocationState {
@@ -205,6 +206,21 @@ export default function CrossCheckResultPage() {
   return (
     <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-28">
       <section className="border-b border-gray-200 bg-white px-4 py-4">
+        {detail &&
+          (() => {
+            const stage = getStage(detail.type, detail.product.process);
+            if (!stage) return null;
+            return (
+              <div className="mb-2 flex items-center gap-2">
+                <span className="text-xs text-[#6B7280]">검사 차수</span>
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${STAGE_BADGE[stage]}`}
+                >
+                  {STAGE_LABEL[stage]}
+                </span>
+              </div>
+            );
+          })()}
         <InfoRow label="기계명" value={equipmentName} />
         <div className="mt-2 grid grid-cols-3 gap-2">
           <Stat label="제품명" value={productName} />
