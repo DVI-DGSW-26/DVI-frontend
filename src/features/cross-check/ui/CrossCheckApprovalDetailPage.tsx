@@ -100,10 +100,21 @@ export default function CrossCheckApprovalDetailPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [photoRow, setPhotoRow] = useState<CrossCheckResultInfo | null>(null);
+  // 승인 시 입력하는 경도값. null 이면 기존 detail.hardnessResult 를 표시값으로 사용.
+  const [hardnessInput, setHardnessInput] = useState<string | null>(null);
 
   const goBack = () => navigate("/cross-check-approval", { replace: true });
 
   const handleApprove = async () => {
+    if (!detail) return;
+    // 압출 종품(_3차수)은 경도값이 있어야 승인·발행 가능.
+    const needsHardness =
+      detail.product.process === "EXTRUSION" && /_3$/.test(detail.type);
+    const h = (hardnessInput ?? detail.hardnessResult ?? "").trim();
+    if (needsHardness && !h) {
+      setError("압출 종품은 경도값을 입력해야 승인할 수 있습니다.");
+      return;
+    }
     if (
       !window.confirm(
         "이 순회검사를 승인하시겠습니까?\n보고서가 자동 발행됩니다.",
@@ -113,7 +124,10 @@ export default function CrossCheckApprovalDetailPage() {
     }
     setError(null);
     try {
-      await decideMut.mutateAsync({ decision: "APPROVE" });
+      await decideMut.mutateAsync({
+        decision: "APPROVE",
+        ...(h ? { hardnessResult: h } : {}),
+      });
       goBack();
     } catch (err) {
       setError(toErrorMessage(err));
@@ -167,6 +181,9 @@ export default function CrossCheckApprovalDetailPage() {
   const canDecide =
     (user?.role === "QUALITY_ADMIN" || user?.role === "ADMIN") &&
     detail.status === "PENDING_APPROVAL";
+  // 압출 종품(_3차수)은 승인 시 경도 입력 필수 (경도는 종품 측정 8~12시간 뒤에 나옴).
+  const needsHardnessApproval = requiresHardness && /_3$/.test(detail.type);
+  const hardnessValue = hardnessInput ?? detail.hardnessResult ?? "";
 
   return (
     <div className="flex flex-col gap-4 p-4 pb-32 md:p-6 md:pb-32">
@@ -283,7 +300,7 @@ export default function CrossCheckApprovalDetailPage() {
             label="순회검사 외관"
             value={detail.appearanceResult ?? "-"}
           />
-          {requiresHardness && (
+          {requiresHardness && !(canDecide && needsHardnessApproval) && (
             <InfoLine
               label="경도 (EXTRUSION)"
               value={detail.hardnessResult ?? "-"}
@@ -342,23 +359,47 @@ export default function CrossCheckApprovalDetailPage() {
               </div>
             </div>
           ) : (
-            <div className="mx-auto flex max-w-3xl gap-2">
-              <button
-                type="button"
-                onClick={() => setShowRejectForm(true)}
-                disabled={isPending}
-                className="h-12 flex-1 rounded-md border border-[#EF4444] text-base font-semibold text-[#EF4444] transition-colors hover:bg-[#FEF2F2] disabled:opacity-60"
-              >
-                반려
-              </button>
-              <button
-                type="button"
-                onClick={handleApprove}
-                disabled={isPending}
-                className="h-12 flex-2 rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
-              >
-                {isPending ? "처리 중..." : "승인 (보고서 발행)"}
-              </button>
+            <div className="mx-auto flex max-w-3xl flex-col gap-3">
+              {needsHardnessApproval && (
+                <div>
+                  <label
+                    htmlFor="approval-hardness"
+                    className="text-xs font-medium text-[#6B7280]"
+                  >
+                    경도 측정값 (압출 종품 · 필수)
+                  </label>
+                  <input
+                    id="approval-hardness"
+                    type="text"
+                    value={hardnessValue}
+                    onChange={(e) => setHardnessInput(e.target.value)}
+                    placeholder="예: HV 47.5"
+                    disabled={isPending}
+                    className="mt-1 h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+                  />
+                </div>
+              )}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowRejectForm(true)}
+                  disabled={isPending}
+                  className="h-12 flex-1 rounded-md border border-[#EF4444] text-base font-semibold text-[#EF4444] transition-colors hover:bg-[#FEF2F2] disabled:opacity-60"
+                >
+                  반려
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApprove}
+                  disabled={
+                    isPending ||
+                    (needsHardnessApproval && hardnessValue.trim() === "")
+                  }
+                  className="h-12 flex-2 rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+                >
+                  {isPending ? "처리 중..." : "승인 (보고서 발행)"}
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -419,7 +460,9 @@ function DimRow({
       <td className="px-3 py-2 text-right">
         <div className="flex items-center justify-end gap-2">
           <JudgmentChip within={productionWithin} />
-          <span className={`text-sm font-semibold ${colorOf(productionWithin)}`}>
+          <span
+            className={`text-sm font-semibold ${colorOf(productionWithin)}`}
+          >
             {row.productionValue ?? "-"}
           </span>
         </div>
