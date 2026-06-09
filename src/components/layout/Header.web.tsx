@@ -5,7 +5,6 @@ const ROUTE_TITLES: Record<string, string> = {
   "/userSearch": "사용자 관리",
   "/approval": "가입승인",
   "/reports": "검사보고서",
-  "/inspection-orders": "검사지시관리",
   "/approval-management": "승인관리",
   "/qm-reports": "보고서",
   "/products": "제품관리",

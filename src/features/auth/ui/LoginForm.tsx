@@ -9,7 +9,7 @@ import LoginFormMobile from "./LoginForm.mobile";
 
 const ROLE_HOME: Record<Role, string> = {
   ADMIN: "/dashboard",
-  QUALITY_ADMIN: "/inspection-orders",
+  QUALITY_ADMIN: "/approval-management",
   PRODUCTION: "/",
   QUALITY: "/",
 };
