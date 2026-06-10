@@ -74,13 +74,10 @@ export default function CropPhase({
     !!completedCrop && completedCrop.width > 0 && completedCrop.height > 0;
 
   return (
-    <div className="flex flex-col gap-3">
-      <div
-        className="flex w-full justify-center overflow-hidden rounded-xl"
-        // 두 손가락 스크롤 / 좁은 가장자리 스와이프 시 페이지 세로 스크롤 허용.
-        // ReactCrop 의 크롭 핸들 드래그는 그대로 동작.
-        style={{ touchAction: "pan-y" }}
-      >
+    // 모바일에서 ReactCrop 이 이미지 위 터치를 다 캡쳐해 페이지 스크롤이 막힌다.
+    // 안내문 + 액션 버튼을 화면 하단에 sticky 로 고정해 스크롤 없이도 접근 가능.
+    <div className="flex flex-col gap-3 pb-2">
+      <div className="flex w-full justify-center overflow-hidden rounded-xl">
         {imageSrc && (
           <ReactCrop
             crop={crop}
@@ -95,34 +92,35 @@ export default function CropPhase({
               src={imageSrc}
               alt="크롭 대상"
               onLoad={handleImageLoad}
-              className="block max-h-[55vh] w-auto select-none"
+              className="block max-h-[70vh] w-auto select-none"
               draggable={false}
             />
           </ReactCrop>
         )}
       </div>
 
-      <p className="px-1 text-xs text-[#6B7280]">
-        모서리·변 핸들을 드래그해서 측정 부위만 선택해주세요.
-      </p>
-
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={onRetake}
-          disabled={confirming}
-          className="h-11 flex-1 rounded-md border border-gray-300 bg-white text-sm font-semibold text-[#212121] disabled:opacity-60"
-        >
-          다시 촬영
-        </button>
-        <button
-          type="button"
-          onClick={handleConfirm}
-          disabled={confirming || !canConfirm}
-          className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
-        >
-          {confirming ? "처리 중..." : "확인"}
-        </button>
+      <div className="sticky bottom-0 -mx-4 flex flex-col gap-2 border-t border-gray-200 bg-[#F5F5F5] px-4 pb-3 pt-2">
+        <p className="text-xs text-[#6B7280]">
+          모서리·변 핸들을 드래그해서 측정 부위만 선택해주세요.
+        </p>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onRetake}
+            disabled={confirming}
+            className="h-11 flex-1 rounded-md border border-gray-300 bg-white text-sm font-semibold text-[#212121] disabled:opacity-60"
+          >
+            다시 촬영
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={confirming || !canConfirm}
+            className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+          >
+            {confirming ? "처리 중..." : "확인"}
+          </button>
+        </div>
       </div>
     </div>
   );
