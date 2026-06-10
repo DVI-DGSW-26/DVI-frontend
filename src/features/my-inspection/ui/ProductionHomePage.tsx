@@ -62,15 +62,14 @@ export default function ProductionHomePage() {
     [inspections],
   );
 
-  // 재오픈 가능한 검사 — 완료/미완료 승인됨 이면서 순회검사가 아직 시작 안 된 건만.
-  // hasCrossCheck=true 면 backend 가 reopen 거부 (409) → 사전에 필터링해서 카드 노출 안 함.
+  // 재오픈 가능한 검사 — 완료(COMPLETED) 는 종결로 보고 더 이상 손대지 않는다.
+  // 미완료 승인됨(INCOMPLETE_APPROVED) 만 노출 — 건너뛴 dim 이 있던 검사를 결재자가
+  // 승인해준 케이스라 채워넣기 용도로 reopen 의미가 있음.
+  // hasCrossCheck=true 면 backend 가 reopen 거부(409) → 사전에 필터링.
   const reopenableInspections = useMemo(
     () =>
       inspections.filter(
-        (i) =>
-          (i.status === "COMPLETED" ||
-            i.status === "INCOMPLETE_APPROVED") &&
-          !i.hasCrossCheck,
+        (i) => i.status === "INCOMPLETE_APPROVED" && !i.hasCrossCheck,
       ),
     [inspections],
   );
@@ -456,7 +455,7 @@ export default function ProductionHomePage() {
                         {i.equipment.name} · {i.typeLabel}
                       </div>
                       <div className="mt-0.5 text-xs text-[#6B7280]">
-                        {i.status === "COMPLETED" ? "완료" : "미완료 승인됨"}
+                        미완료 승인됨
                       </div>
                     </div>
                   </div>
