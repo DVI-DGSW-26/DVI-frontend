@@ -15,7 +15,11 @@ import type {
   StepResult,
 } from "../type/types";
 import type { MyInspection } from "../../my-inspection/type/types";
-import { dimDisplayName, formatStandardWithTolerance } from "../lib/format";
+import {
+  dimDisplayName,
+  formatSlotTime,
+  formatStandardWithTolerance,
+} from "../lib/format";
 import {
   clearProgress,
   readProgress,
@@ -561,6 +565,16 @@ export default function InspectionMeasurePage() {
     <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-24">
       <section className="border-b border-gray-200 bg-white px-4 py-4">
         <InfoRow label="기계명" value={info.equipment.name} />
+        <InfoRow
+          label="검사 시간"
+          value={(() => {
+            // detail.inspectionTime 이 null 인 케이스 (예: 직접 시작한 자주검사)
+            // 가 있어 stateInspection 의 값으로 폴백.
+            const t =
+              detail?.inspectionTime ?? stateInspection?.inspectionTime ?? "";
+            return t ? formatSlotTime(t) : "-";
+          })()}
+        />
         <div className="mt-2 grid grid-cols-2 gap-2">
           <Stat label="제품명" value={info.product.name} />
           <Stat label="담당자" value={user?.name ?? "-"} />
