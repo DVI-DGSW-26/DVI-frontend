@@ -92,9 +92,15 @@ export default function ProductionHomePage() {
     setPendingReopenId(inspection.inspectionId);
     try {
       await reopenMutation.mutateAsync(inspection.inspectionId);
-      // DRAFT 로 복귀했으니 바로 측정 페이지로.
+      // reopen 은 status 만 DRAFT 로 복귀시키고 측정값/사진은 보존하므로
+      // 모든 dim 이 done 인 상태 그대로 → MeasurePage 가 allDone=true 로 result 페이지에
+      // 자동 redirect 함. editMode 플래그를 넘겨 이 redirect 를 차단, 사용자가 직접
+      // 이전/다음 으로 원하는 dim 으로 이동해 수정할 수 있게 한다.
       navigate(`/inspection/${inspection.inspectionId}/measure`, {
-        state: { inspection: { ...inspection, status: "DRAFT" } },
+        state: {
+          inspection: { ...inspection, status: "DRAFT" },
+          editMode: true,
+        },
       });
     } catch (err) {
       if (err instanceof AxiosError) {
