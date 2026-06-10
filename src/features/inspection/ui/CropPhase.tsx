@@ -75,7 +75,7 @@ export default function CropPhase({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex max-h-[70vh] w-full items-center justify-center overflow-hidden rounded-xl bg-black">
+      <div className="flex w-full justify-center overflow-hidden rounded-xl">
         {imageSrc && (
           <ReactCrop
             crop={crop}
