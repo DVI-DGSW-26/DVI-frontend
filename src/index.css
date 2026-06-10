@@ -11,9 +11,14 @@ html, body, #root {
   width: 100%;
 }
 
-/* react-image-crop 기본 .ReactCrop 에 touch-action: none 이 박혀있어 모바일에서
-   이미지 위 어느 곳을 만져도 페이지 스크롤이 막힘. 수직 스크롤만 살려둠.
-   크롭 핸들 드래그(작은 박스/모서리) 는 onPointerDown 으로 동작해 영향 없음. */
-.ReactCrop {
+/* react-image-crop 가 .ReactCrop, .ReactCrop__child-wrapper, 내부 img 모두에
+   touch-action: none 을 강제해서 모바일 페이지 스크롤이 막힘.
+   루트 + 자식 + 이미지까지 pan-y 로 override 해서 수직 스크롤만 허용.
+   크롭 핸들 드래그는 pointer 이벤트로 처리돼 영향 없음. */
+.ReactCrop,
+.ReactCrop *,
+.ReactCrop__child-wrapper,
+.ReactCrop__child-wrapper img,
+.ReactCrop img {
   touch-action: pan-y !important;
 }
