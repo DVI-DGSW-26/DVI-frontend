@@ -426,12 +426,12 @@ export default function ProductionHomePage() {
         </section>
       )}
 
-      {/* 완료/사유인정 상태에서 다시 수정 가능한 검사들. 순회검사 시작된 건은 backend 가 거부. */}
+      {/* 미완료 승인된 검사들 — 건너뛴 dim 을 채우기 위한 재측정 흐름. */}
       {reopenableInspections.length > 0 && (
         <section className="px-4 pt-4">
           <div className="mb-2 flex items-baseline justify-between">
             <h2 className="text-sm font-semibold text-[#212121]">
-              수정 가능한 검사
+              재측정 해야하는 검사
             </h2>
             <span className="text-xs font-medium text-[#6B7280]">
               {reopenableInspections.length}건
@@ -465,7 +465,7 @@ export default function ProductionHomePage() {
                     disabled={pendingReopenId !== null}
                     className="mt-3 h-10 w-full rounded-md border border-[#931B82] bg-white text-sm font-semibold text-[#931B82] transition-colors hover:bg-[#F3E8F7] disabled:opacity-50"
                   >
-                    {isReopening ? "준비 중..." : "수정하기"}
+                    {isReopening ? "준비 중..." : "재측정하기"}
                   </button>
                 </li>
               );
