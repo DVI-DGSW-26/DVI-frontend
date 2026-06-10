@@ -75,7 +75,12 @@ export default function CropPhase({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex w-full justify-center overflow-hidden rounded-xl">
+      <div
+        className="flex w-full justify-center overflow-hidden rounded-xl"
+        // 두 손가락 스크롤 / 좁은 가장자리 스와이프 시 페이지 세로 스크롤 허용.
+        // ReactCrop 의 크롭 핸들 드래그는 그대로 동작.
+        style={{ touchAction: "pan-y" }}
+      >
         {imageSrc && (
           <ReactCrop
             crop={crop}
@@ -90,7 +95,7 @@ export default function CropPhase({
               src={imageSrc}
               alt="크롭 대상"
               onLoad={handleImageLoad}
-              className="block max-h-[70vh] w-auto select-none"
+              className="block max-h-[55vh] w-auto select-none"
               draggable={false}
             />
           </ReactCrop>
