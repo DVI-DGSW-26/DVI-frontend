@@ -99,7 +99,7 @@ export default function CropPhase({
         )}
       </div>
 
-      <div className="sticky bottom-0 -mx-4 flex flex-col gap-2 border-t border-gray-200 bg-[#F5F5F5] px-4 pb-3 pt-2">
+      <div className="sticky bottom-16 z-20 -mx-4 flex flex-col gap-2 border-t border-gray-200 bg-[#F5F5F5] px-4 pb-3 pt-2 shadow-[0_-2px_8px_rgba(0,0,0,0.04)]">
         <p className="text-xs text-[#6B7280]">
           모서리·변 핸들을 드래그해서 측정 부위만 선택해주세요.
         </p>
