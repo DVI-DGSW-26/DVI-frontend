@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Icon } from "@iconify/react";
+import { AxiosError } from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-import { useReportDetail } from "../api";
+import { useDeleteReport, useReportDetail } from "../api";
+import type { DeleteReportErrorData } from "../api";
 import type {
   AppearanceResult,
   JudgeResult,
@@ -11,6 +13,9 @@ import type {
 import { downloadReportPdf } from "../lib/downloadReportPdf";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import PhotoCompareModal from "../../../components/shared/PhotoCompareModal";
+import DeleteReportModal from "./DeleteReportModal";
+import Toast from "../../inspection/ui/Toast";
+import { useAuth } from "../../auth/AuthContext";
 
 const PROCESS_LABEL: Record<ReportProcess, string> = {
   EXTRUSION: "압출",
@@ -181,7 +186,12 @@ const AdminReportDetailPageWeb = () => {
   const validId = Number.isFinite(id) && id > 0;
 
   const { data, isLoading, isError } = useReportDetail(id, validId);
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
 
+  const deleteReport = useDeleteReport();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [photoItem, setPhotoItem] = useState<ReportResultItem | null>(null);
 
@@ -192,6 +202,31 @@ const AdminReportDetailPageWeb = () => {
       await downloadReportPdf(id);
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!validId) return;
+    try {
+      await deleteReport.mutateAsync(id);
+      // 삭제된 보고서 상세에 머무를 수 없으므로 목록으로 복귀.
+      navigate("/reports", { replace: true });
+    } catch (err) {
+      setConfirmDelete(false);
+      if (err instanceof AxiosError) {
+        const status = err.response?.status;
+        const code = (err.response?.data as DeleteReportErrorData | undefined)
+          ?.code;
+        if (code === "ACCESS_DENIED" || status === 403) {
+          setToast("삭제 권한이 없습니다.");
+          return;
+        }
+        if (code === "REPORT_NOT_FOUND" || status === 404) {
+          setToast("이미 삭제된 보고서입니다.");
+          return;
+        }
+      }
+      setToast("보고서를 삭제하지 못했습니다.");
     }
   };
 
@@ -356,7 +391,18 @@ const AdminReportDetailPageWeb = () => {
         </Section>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            disabled={deleteReport.isPending}
+            className="flex items-center gap-2 rounded-full border border-[#FCA5A5] bg-white px-5 py-2.5 text-sm font-medium text-[#DC2626] transition-colors hover:bg-[#FEF2F2] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Icon icon="solar:trash-bin-trash-bold" width={18} height={18} />
+            검사 삭제
+          </button>
+        )}
         <button
           type="button"
           onClick={handleDownload}
@@ -375,6 +421,15 @@ const AdminReportDetailPageWeb = () => {
         qualityImageUrl={photoItem?.qualityImageUrl}
         onClose={() => setPhotoItem(null)}
       />
+
+      <DeleteReportModal
+        open={confirmDelete}
+        isSubmitting={deleteReport.isPending}
+        onCancel={() => setConfirmDelete(false)}
+        onConfirm={handleConfirmDelete}
+      />
+
+      {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
   );
 };
