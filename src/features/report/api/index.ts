@@ -1,5 +1,11 @@
-export { getReports, getReportDetail } from "./reportApi";
-export { useReportList, useReportDetail, reportKeys } from "./queries";
+export { getReports, getReportDetail, deleteReport } from "./reportApi";
+export type { DeleteReportErrorCode, DeleteReportErrorData } from "./reportApi";
+export {
+  useReportList,
+  useReportDetail,
+  useDeleteReport,
+  reportKeys,
+} from "./queries";
 export type {
   ReportSummary,
   ReportDetail,
