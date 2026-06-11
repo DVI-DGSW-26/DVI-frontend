@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { getReportDetail, getReports } from "./reportApi";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { deleteReport, getReportDetail, getReports } from "./reportApi";
+import type { ReportSummary } from "./types";
 
 export const reportKeys = {
   all: ["reports"] as const,
@@ -23,5 +24,20 @@ export function useReportDetail(reportId: number, enabled = true) {
     queryKey: reportKeys.detail(reportId),
     queryFn: () => getReportDetail(reportId),
     enabled,
+  });
+}
+
+export function useDeleteReport() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (reportId: number) => deleteReport(reportId),
+    onSuccess: (_void, deletedId) => {
+      // navigate 직후에도 목록에서 즉시 사라지도록 캐시에서 먼저 제거.
+      qc.setQueryData<ReportSummary[]>(reportKeys.list(), (prev) =>
+        prev ? prev.filter((r) => r.id !== deletedId) : prev,
+      );
+      qc.removeQueries({ queryKey: reportKeys.detail(deletedId) });
+      qc.invalidateQueries({ queryKey: reportKeys.all });
+    },
   });
 }
