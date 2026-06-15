@@ -9,18 +9,26 @@ import {
 import { resolveNotificationLink } from "../lib/resolveNotificationLink";
 import { parseServerDate } from "../../../lib/datetime";
 
-type NotificationType = "warning" | "success" | "info";
+type NotificationType = "error" | "warning" | "success" | "info";
 
 const ICON_BY_TYPE: Record<NotificationType, { icon: string; color: string; bg: string }> = {
+  error: { icon: "mdi:alert-circle", color: "#B91C1C", bg: "#FEE2E2" },
   warning: { icon: "mdi:alert", color: "#F59E0B", bg: "#FEF3C7" },
   success: { icon: "mdi:check-circle", color: "#22C55E", bg: "#DCFCE7" },
   info: { icon: "mdi:information", color: "#3B82F6", bg: "#DBEAFE" },
 };
 
 function inferType(title: string): NotificationType {
+  if (/NG|불합격/.test(title)) return "error";
   if (/요청|반려|미완료|지연/.test(title)) return "warning";
   if (/완료|승인/.test(title)) return "success";
   return "info";
+}
+
+// 자주검사 NG 알림은 제목 문구와 무관하게 빨강(error)으로 강조한다.
+function resolveVisualType(item: NotificationResponse): NotificationType {
+  if (item.type === "INSPECTION_NG") return "error";
+  return inferType(item.title);
 }
 
 function startOfDay(d: Date) {
@@ -115,7 +123,7 @@ const NotificationPage = () => {
             <h2 className="text-sm text-[#A8A8A8]">{group.label}</h2>
             <ul className="flex flex-col overflow-hidden rounded-xl bg-white">
               {group.items.map((item, idx) => {
-                const meta = ICON_BY_TYPE[inferType(item.title)];
+                const meta = ICON_BY_TYPE[resolveVisualType(item)];
                 const hasMeta = !!(item.productName || item.equipmentName);
                 return (
                   <li
