@@ -32,3 +32,19 @@ export const STAGE_BADGE: Record<Stage, string> = {
   MIDDLE: "border-[#FEF3C7] bg-[#FFFBEB] text-[#B45309]",
   FINAL: "border-[#FBCFE8] bg-[#FDF2F8] text-[#9D174D]",
 };
+
+// 압출 종품(FINAL)인데 경도값이 아직 없는 DRAFT — 순회검사자가 열처리 후 경도를
+// 입력해야 결재요청 가능. 목록 카드에서 "경도 입력 필요" 배지 노출용.
+export function needsHardnessInput(cc: {
+  status: string;
+  type: string;
+  product: { process: ProcessType };
+  hardnessResult?: string | null;
+}): boolean {
+  return (
+    cc.status === "DRAFT" &&
+    cc.product.process === "EXTRUSION" &&
+    getStage(cc.type, cc.product.process) === "FINAL" &&
+    !cc.hardnessResult?.trim()
+  );
+}

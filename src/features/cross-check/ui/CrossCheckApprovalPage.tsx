@@ -114,11 +114,6 @@ export default function CrossCheckApprovalPage() {
                         </span>
                       );
                     })()}
-                    {cc.hardnessPending && (
-                      <span className="rounded-md bg-[#FEF3C7] px-2 py-0.5 text-xs font-semibold text-[#B45309]">
-                        경도 대기
-                      </span>
-                    )}
                   </div>
                   <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                     <InfoLine

@@ -9,6 +9,7 @@ import {
 } from "../api";
 import type { AssignedInspection, CrossCheckSummary } from "../api";
 import { elapsedFrom } from "../lib/elapsed";
+import { needsHardnessInput } from "../lib/stage";
 import CrossCheckCard from "./CrossCheckCard";
 import Toast from "../../inspection/ui/Toast";
 
@@ -311,6 +312,11 @@ function DraftResumeCard({
           <span className="rounded-md bg-[#931B82] px-2 py-0.5 text-[10px] font-semibold text-white">
             이어하기
           </span>
+          {needsHardnessInput(cc) && (
+            <span className="rounded-md bg-[#FEF3C7] px-2 py-0.5 text-[10px] font-semibold text-[#B45309]">
+              경도 입력 필요
+            </span>
+          )}
         </div>
         <div className="mt-1 flex items-center gap-1.5">
           <Icon

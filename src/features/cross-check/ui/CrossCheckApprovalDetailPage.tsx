@@ -75,21 +75,11 @@ export default function CrossCheckApprovalDetailPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [photoRow, setPhotoRow] = useState<CrossCheckResultInfo | null>(null);
-  // 승인 시 입력하는 경도값. null 이면 기존 detail.hardnessResult 를 표시값으로 사용.
-  const [hardnessInput, setHardnessInput] = useState<string | null>(null);
 
   const goBack = () => navigate("/cross-check-approval", { replace: true });
 
   const handleApprove = async () => {
     if (!detail) return;
-    // 압출 종품(_3차수)은 경도값이 있어야 승인·발행 가능.
-    const needsHardness =
-      detail.product.process === "EXTRUSION" && /_3$/.test(detail.type);
-    const h = (hardnessInput ?? detail.hardnessResult ?? "").trim();
-    if (needsHardness && !h) {
-      setError("압출 종품은 경도값을 입력해야 승인할 수 있습니다.");
-      return;
-    }
     if (
       !window.confirm(
         "이 순회검사를 승인하시겠습니까?\n보고서가 자동 발행됩니다.",
@@ -99,6 +89,9 @@ export default function CrossCheckApprovalDetailPage() {
     }
     setError(null);
     try {
+      // 경도값은 순회검사자가 종품 측정 단계에서 이미 입력·저장함.
+      // 결재자는 입력하지 않고, 저장된 값을 그대로 함께 보내 발행한다.
+      const h = (detail.hardnessResult ?? "").trim();
       await decideMut.mutateAsync({
         decision: "APPROVE",
         ...(h ? { hardnessResult: h } : {}),
@@ -149,16 +142,15 @@ export default function CrossCheckApprovalDetailPage() {
     );
   }
 
-  const requiresHardness = detail.product.process === "EXTRUSION";
   const isPending = decideMut.isPending;
   // 승인/반려 액션은 결재자(QUALITY_ADMIN/ADMIN)가 결재 대기 건을 볼 때만.
   // 순회검사자(QUALITY)나 이미 처리된 건은 읽기 전용 — 반려 사유만 확인.
   const canDecide =
     (user?.role === "QUALITY_ADMIN" || user?.role === "ADMIN") &&
     detail.status === "PENDING_APPROVAL";
-  // 압출 종품(_3차수)은 승인 시 경도 입력 필수 (경도는 종품 측정 8~12시간 뒤에 나옴).
-  const needsHardnessApproval = requiresHardness && /_3$/.test(detail.type);
-  const hardnessValue = hardnessInput ?? detail.hardnessResult ?? "";
+  // 경도값은 순회검사자가 종품 측정 단계에서 입력한다. 결재자는 읽기 전용으로 확인만.
+  const isExtrusionFinal =
+    detail.product.process === "EXTRUSION" && /_3$/.test(detail.type);
 
   return (
     <div className="flex flex-col gap-4 p-4 pb-32 md:p-6 md:pb-32">
@@ -237,7 +229,8 @@ export default function CrossCheckApprovalDetailPage() {
         <h2 className="border-b border-gray-100 px-5 py-3 text-sm font-semibold text-[#212121]">
           측정 결과 비교
         </h2>
-        <div className="overflow-x-auto px-2 py-2 md:px-3">
+        {/* 데스크톱: 가로 표 */}
+        <div className="hidden overflow-x-auto px-2 py-2 md:block md:px-3">
           <table className="w-full min-w-160 text-sm">
             <thead className="bg-[#F9FAFB] text-xs text-[#6B7280]">
               <tr>
@@ -260,6 +253,15 @@ export default function CrossCheckApprovalDetailPage() {
             </tbody>
           </table>
         </div>
+        {/* 모바일: 세로 카드 (표가 화면 밖으로 잘리지 않도록) */}
+        <ul className="flex flex-col gap-2 p-3 md:hidden">
+          {detail.results
+            .slice()
+            .sort((a, b) => a.dimNo - b.dimNo)
+            .map((r) => (
+              <DimCard key={r.resultId} row={r} onOpenPhotos={setPhotoRow} />
+            ))}
+        </ul>
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5">
@@ -275,10 +277,10 @@ export default function CrossCheckApprovalDetailPage() {
             label="순회검사 외관"
             value={detail.appearanceResult ?? "-"}
           />
-          {requiresHardness && !(canDecide && needsHardnessApproval) && (
+          {isExtrusionFinal && (
             <InfoLine
-              label="경도 (EXTRUSION)"
-              value={detail.hardnessResult ?? "-"}
+              label="경도 (압출 종품)"
+              value={detail.hardnessResult?.trim() ? detail.hardnessResult : "미입력"}
             />
           )}
           <InfoLine label="비고" value={detail.note ?? "-"} />
@@ -335,25 +337,6 @@ export default function CrossCheckApprovalDetailPage() {
             </div>
           ) : (
             <div className="mx-auto flex max-w-3xl flex-col gap-3">
-              {needsHardnessApproval && (
-                <div>
-                  <label
-                    htmlFor="approval-hardness"
-                    className="text-xs font-medium text-[#6B7280]"
-                  >
-                    경도 측정값 (압출 종품 · 필수)
-                  </label>
-                  <input
-                    id="approval-hardness"
-                    type="text"
-                    value={hardnessValue}
-                    onChange={(e) => setHardnessInput(e.target.value)}
-                    placeholder="예: HV 47.5"
-                    disabled={isPending}
-                    className="mt-1 h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
-                  />
-                </div>
-              )}
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -366,10 +349,7 @@ export default function CrossCheckApprovalDetailPage() {
                 <button
                   type="button"
                   onClick={handleApprove}
-                  disabled={
-                    isPending ||
-                    (needsHardnessApproval && hardnessValue.trim() === "")
-                  }
+                  disabled={isPending}
                   className="h-12 flex-2 rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
                 >
                   {isPending ? "처리 중..." : "승인 (보고서 발행)"}
@@ -465,6 +445,88 @@ function DimRow({
         )}
       </td>
     </tr>
+  );
+}
+
+// 모바일용 — DimRow 와 동일 정보를 세로 카드로. 가로 표가 좁은 화면에서 잘리는 문제 대응.
+function DimCard({
+  row,
+  onOpenPhotos,
+}: {
+  row: CrossCheckResultInfo;
+  onOpenPhotos: (row: CrossCheckResultInfo) => void;
+}) {
+  const productionWithin =
+    row.productionValue != null
+      ? isWithinTolerance(
+          row.productionValue,
+          row.standardValue,
+          row.tolerancePlus,
+          row.toleranceMinus,
+        )
+      : null;
+  const crossWithin =
+    row.measuredValue != null
+      ? isWithinTolerance(
+          row.measuredValue,
+          row.standardValue,
+          row.tolerancePlus,
+          row.toleranceMinus,
+        )
+      : null;
+  const hasPhoto = !!(row.productionImageUrl || row.imageUrl);
+
+  return (
+    <li className="rounded-xl border border-gray-200 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-semibold text-[#931B82]">
+          DIM {row.dimNo}
+          {row.dimName ? (
+            <span className="ml-1 text-[#6B7280]">({row.dimName})</span>
+          ) : null}
+        </span>
+        {hasPhoto ? (
+          <button
+            type="button"
+            onClick={() => onOpenPhotos(row)}
+            className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-[#931B82] hover:underline"
+          >
+            <Icon icon="solar:gallery-linear" width={14} height={14} />
+            사진
+          </button>
+        ) : null}
+      </div>
+      <div className="mt-1 text-xs text-[#6B7280]">
+        기준{" "}
+        {formatStandardWithTolerance(
+          row.standardValue,
+          row.tolerancePlus,
+          row.toleranceMinus,
+        )}
+      </div>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <div className="rounded-lg bg-[#F9FAFB] px-3 py-2">
+          <div className="text-[11px] text-[#6B7280]">자주검사</div>
+          <div className="mt-0.5 flex items-center gap-1.5">
+            <JudgmentChip within={productionWithin} />
+            <span
+              className={`text-sm font-semibold ${colorOf(productionWithin)}`}
+            >
+              {row.productionValue ?? "-"}
+            </span>
+          </div>
+        </div>
+        <div className="rounded-lg bg-[#F9FAFB] px-3 py-2">
+          <div className="text-[11px] text-[#6B7280]">순회검사</div>
+          <div className="mt-0.5 flex items-center gap-1.5">
+            <JudgmentChip within={crossWithin} />
+            <span className={`text-sm font-semibold ${colorOf(crossWithin)}`}>
+              {row.measuredValue ?? "-"}
+            </span>
+          </div>
+        </div>
+      </div>
+    </li>
   );
 }
 
