@@ -220,7 +220,7 @@ export default function ProductionHomePage() {
                   <div className="text-xs font-medium uppercase tracking-wide text-[#F3E8FF]">
                     이어 작업하기
                   </div>
-                  <div className="mt-1 truncate text-base font-semibold text-white">
+                  <div className="mt-1 wrap-break-word text-base font-semibold text-white">
                     {latestDraft.product.name}
                   </div>
                   <div className="mt-0.5 truncate text-xs text-[#F3E8FF]/90">
@@ -319,7 +319,7 @@ export default function ProductionHomePage() {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold text-[#212121]">
+                      <div className="wrap-break-word text-sm font-semibold text-[#212121]">
                         {previous.product.name}
                       </div>
                       <div className="mt-0.5 truncate text-xs text-[#6B7280]">
@@ -400,7 +400,7 @@ export default function ProductionHomePage() {
                     className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-gray-50"
                   >
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-medium text-[#212121]">
+                      <div className="wrap-break-word text-sm font-medium text-[#212121]">
                         {i.product.name}
                       </div>
                       <div className="truncate text-xs text-[#6B7280]">
@@ -448,7 +448,7 @@ export default function ProductionHomePage() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold text-[#212121]">
+                      <div className="wrap-break-word text-sm font-semibold text-[#212121]">
                         {i.product.name}
                       </div>
                       <div className="mt-0.5 truncate text-xs text-[#6B7280]">

@@ -97,7 +97,7 @@ export default function CrossCheckApprovalPage() {
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="truncate text-base font-semibold text-[#212121]">
+                    <span className="wrap-break-word text-base font-semibold text-[#212121]">
                       {cc.product.name}
                     </span>
                     <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-medium text-[#931B82]">

@@ -211,7 +211,7 @@ const QualityHomePage = () => {
                       className="mt-0.5 shrink-0 text-[#B91C1C]"
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-semibold text-[#212121]">
+                      <div className="wrap-break-word text-sm font-semibold text-[#212121]">
                         {cc.product.name}
                       </div>
                       <div className="mt-0.5 truncate text-xs text-[#6B7280]">

@@ -21,7 +21,7 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
       className="flex w-full items-center gap-3 rounded-2xl bg-white px-5 py-4 text-left shadow-sm disabled:opacity-60"
     >
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-base font-bold text-[#212121]">
+        <span className="wrap-break-word text-base font-bold text-[#212121]">
           {item.productName}
         </span>
         <div className="mt-1 flex items-center gap-1.5">
