@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import type { MyInspection } from "../type/types";
 import { getStatusBadge } from "../lib/inspectionStatus";
-import { formatSlotTime } from "../../inspection/lib/format";
 
 // 한 카드는 한 검사를 표현. /inspection/assigned 제거 후로는 my inspection 한 종류만 표시.
 
@@ -82,14 +81,14 @@ export default function OrderCard({
           className="flex flex-1 items-center justify-between gap-3 text-left"
         >
           <div className="min-w-0">
-            <div className="truncate text-base font-semibold text-[#212121]">
+            <div className="wrap-break-word text-base font-semibold text-[#212121]">
               {inspection.product.name}
             </div>
             <div className="mt-0.5 truncate text-xs text-[#6B7280]">
               {inspection.customer.name} · {inspection.equipment.name}
             </div>
             <div className="mt-0.5 truncate text-xs text-[#6B7280]">
-              {inspection.typeLabel} · {formatSlotTime(inspection.inspectionTime)}
+              {inspection.typeLabel}
             </div>
           </div>
           <span

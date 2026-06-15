@@ -31,9 +31,11 @@ const HeaderMobile = () => {
       ? "대시보드"
       : /^\/inspection\/\d+\/measure$/.test(pathname)
         ? "품질 검사 시스템"
-        : pathname.startsWith("/inspection/")
-          ? "측정 항목 확인"
-          : (ROUTE_TITLES[pathname] ?? "");
+        : /^\/cross-check\/\d+\/measure$/.test(pathname)
+          ? "순회 검사 시스템"
+          : pathname.startsWith("/inspection/")
+            ? "측정 항목 확인"
+            : (ROUTE_TITLES[pathname] ?? "");
 
   const hasUnread = unreadCount > 0;
   const isNotificationsPage = pathname === "/notifications";

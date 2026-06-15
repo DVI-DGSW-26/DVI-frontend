@@ -130,7 +130,7 @@ export default function StartInspectionPage() {
         {step === "equipment" && product && (
           <div className="mt-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs shadow-sm">
             <div className="text-[#6B7280]">선택한 제품</div>
-            <div className="mt-0.5 truncate text-sm font-medium text-[#212121]">
+            <div className="mt-0.5 wrap-break-word text-sm font-medium text-[#212121]">
               {product.name}{" "}
               <span className="text-[#6B7280]">({product.code})</span>
             </div>
@@ -193,7 +193,7 @@ export default function StartInspectionPage() {
                       className="flex w-full items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-3 text-left shadow-sm transition-colors hover:bg-gray-50"
                     >
                       <div className="min-w-0">
-                        <div className="truncate text-sm font-semibold text-[#212121]">
+                        <div className="wrap-break-word text-sm font-semibold text-[#212121]">
                           {p.name}
                         </div>
                         <div className="mt-0.5 truncate text-xs text-[#6B7280]">
@@ -239,7 +239,7 @@ export default function StartInspectionPage() {
                       aria-pressed={equipment?.id === e.id}
                     >
                       <div className="min-w-0">
-                        <div className="truncate text-sm font-semibold text-[#212121]">
+                        <div className="wrap-break-word text-sm font-semibold text-[#212121]">
                           {e.name}
                         </div>
                         <div className="mt-0.5 text-[11px] text-[#931B82]">

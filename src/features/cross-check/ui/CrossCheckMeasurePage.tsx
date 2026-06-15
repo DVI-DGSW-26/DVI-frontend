@@ -562,11 +562,13 @@ export default function CrossCheckMeasurePage() {
           </button>
         </div>
         <InfoRow label="기계명" value={detail.equipment.name} />
-        <InfoRow label="검사 시간" value={detail.inspectionTime} />
-        <div className="mt-2 grid grid-cols-3 gap-2">
+        <InfoRow label="검사 차수" value={detail.typeLabel} />
+        <div className="mt-2 flex flex-col gap-2">
           <Stat label="제품명" value={detail.product.name} />
-          <Stat label="자주검사자" value={productionInspectorName} />
-          <Stat label="순회검사자" value={user?.name ?? "-"} />
+          <div className="grid grid-cols-2 gap-2">
+            <Stat label="자주검사자" value={productionInspectorName} />
+            <Stat label="순회검사자" value={user?.name ?? "-"} />
+          </div>
         </div>
       </section>
 
@@ -786,7 +788,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg bg-[#F9FAFB] px-3 py-2">
       <div className="text-xs text-[#6B7280]">{label}</div>
-      <div className="mt-0.5 truncate text-sm font-semibold text-[#212121]">
+      <div className="mt-0.5 wrap-break-word text-sm font-semibold text-[#212121]">
         {value}
       </div>
     </div>
