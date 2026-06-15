@@ -37,7 +37,7 @@ const TABS: TabItem[] = [
   { label: "홈", to: "/", icon: "flowbite:home-solid", roles: ["QUALITY"], iconSize: 34 },
   { label: "품질 시스템 현황", to: "/quality-status", icon: "mdi:chart-line", roles: ["QUALITY", "ADMIN"] },
   { label: "순회검사 대기", to: "/cross-checks", icon: "icon-park-outline:big-clock", roles: ["QUALITY", "ADMIN"] },
-  { label: "순회검사 결재", to: "/cross-check-approval", icon: "mdi:shield-check-outline", roles: ["ADMIN"] },
+  { label: "순회검사 결재", to: "/cross-check-approval", icon: "mdi:shield-check-outline", roles: ["QUALITY_ADMIN", "ADMIN"] },
 
   { label: "제품관리", to: "/products", icon: "mdi:cube", roles: ["ADMIN"] },
   { label: "설비관리", to: "/equipment", icon: "mdi:factory", roles: ["ADMIN"] },
