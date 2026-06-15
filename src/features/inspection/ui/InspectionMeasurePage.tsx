@@ -17,7 +17,6 @@ import type {
 import type { MyInspection } from "../../my-inspection/type/types";
 import {
   dimDisplayName,
-  formatSlotTime,
   formatStandardWithTolerance,
 } from "../lib/format";
 import {
@@ -565,16 +564,7 @@ export default function InspectionMeasurePage() {
     <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-24">
       <section className="border-b border-gray-200 bg-white px-4 py-4">
         <InfoRow label="기계명" value={info.equipment.name} />
-        <InfoRow
-          label="검사 시간"
-          value={(() => {
-            // detail.inspectionTime 이 null 인 케이스 (예: 직접 시작한 자주검사)
-            // 가 있어 stateInspection 의 값으로 폴백.
-            const t =
-              detail?.inspectionTime ?? stateInspection?.inspectionTime ?? "";
-            return t ? formatSlotTime(t) : "-";
-          })()}
-        />
+        <InfoRow label="검사 차수" value={info.typeLabel || "-"} />
         <div className="mt-2 grid grid-cols-2 gap-2">
           <Stat label="제품명" value={info.product.name} />
           <Stat label="담당자" value={user?.name ?? "-"} />
@@ -715,7 +705,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg bg-[#F9FAFB] px-3 py-2">
       <div className="text-xs text-[#6B7280]">{label}</div>
-      <div className="mt-0.5 truncate text-sm font-semibold text-[#212121]">
+      <div className="mt-0.5 wrap-break-word text-sm font-semibold text-[#212121]">
         {value}
       </div>
     </div>

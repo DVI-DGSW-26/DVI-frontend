@@ -6,7 +6,6 @@ import type { MyInspection } from "../../my-inspection/type/types";
 import { setRecentInspectionId } from "../lib/recentInspection";
 import {
   dimDisplayName,
-  formatInspectionTime,
   formatTolerance,
 } from "../lib/format";
 import { getProcessLabel } from "../lib/process";
@@ -97,10 +96,6 @@ export default function InspectionDetailPage() {
           <InfoRow
             label="검사 차수"
             value={`${inspection.typeLabel} (${inspection.type})`}
-          />
-          <InfoRow
-            label="검사 시간"
-            value={formatInspectionTime(inspection.inspectionTime)}
           />
           <InfoRow label="작업자" value={user?.name ?? "-"} />
           {state.qualityName && (
