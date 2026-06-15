@@ -13,6 +13,13 @@ export function resolveNotificationLink(n: NotificationResponse): string {
       // 거기서 카드 클릭하면 POST /cross-check 가 일어나도록 한다.
       return "/cross-checks";
 
+    case "INSPECTION_NG":
+      // 자주검사 NG 발생 → 순회검사자(QUALITY)·관리자(ADMIN) 알림. 교차 역할로
+      // 볼 수 있는 검사 상세는 보고서 상세(/reports/{id})뿐 — 전원 공개에 백엔드
+      // 권한 체크. /inspection/{id} 는 생산자/품질만 접근 가능하고 본인 검사
+      // 목록에서만 조회돼 타인 NG 조회용으로 못 쓴다. linkUrl 을 따른다.
+      return n.linkUrl ?? "/notifications";
+
     case "CROSS_CHECK_PENDING_APPROVAL":
       // 품질관리자에게 결재 요청 알림. 결재 대기 목록으로.
       return "/cross-check-approval";
