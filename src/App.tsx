@@ -15,6 +15,7 @@ import StartInspectionPage from "./features/inspection/ui/StartInspectionPage";
 import InspectionDetailPage from "./features/inspection/ui/InspectionDetailPage";
 import InspectionMeasurePage from "./features/inspection/ui/InspectionMeasurePage";
 import InspectionResultPage from "./features/inspection/ui/InspectionResultPage";
+import InspectionNgViewPage from "./features/inspection/ui/InspectionNgViewPage";
 import ProductsPage from "./features/products/ui/ProductsPage";
 import EquipmentPage from "./features/equipment/ui/EquipmentPage";
 import CustomersPage from "./features/customers/ui/CustomersPage";
@@ -60,6 +61,13 @@ function App() {
             <Route
               path="/reports/:reportId"
               element={<AdminReportDetailPage />}
+            />
+            {/* 자주검사 NG 알림 진입용 읽기전용 상세 — 순회검사자/관리자 포함 전 역할
+                공개. NG 시점엔 보고서가 아직 없어 GET /inspection/{id}(권한:전체)로
+                조회한다. /inspection/{id} 측정 흐름(생산자/품질 전용)과는 별도 경로. */}
+            <Route
+              path="/inspection/:inspectionId/view"
+              element={<InspectionNgViewPage />}
             />
 
             <Route element={<RouteGuard roles={["ADMIN"]} />}>
