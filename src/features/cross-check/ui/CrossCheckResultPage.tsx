@@ -93,13 +93,20 @@ export default function CrossCheckResultPage() {
   const inspectorName = state.inspectorName ?? user?.name ?? "-";
   const productionInspectorName =
     state.productionInspectorName ?? detail?.production.name ?? "-";
-  // 경도는 압출 종품 승인 시 품질관리자가 승인 화면에서 입력한다.
-  // 순회검사자 결재요청 화면에선 경도를 받지 않는다 (8~12시간 뒤에야 값이 나옴).
+  // 압출 종품(EXTRUSION FINAL)은 순회검사자가 이 화면에서 경도값을 입력한다.
+  // 경도는 열처리 완료(8~12시간) 후에야 나오므로, 측정값만 저장한 채 DRAFT 로 두고
+  // 다음날 '작업 이어하기' 로 다시 들어와 경도 입력 후 결재 요청하는 흐름.
+  const isExtrusionFinal =
+    !!detail &&
+    detail.product.process === "EXTRUSION" &&
+    getStage(detail.type, detail.product.process) === "FINAL";
+
   const saveMut = useSaveCrossCheckResults(crossCheckId);
   const completeMut = useCompleteCrossCheck(crossCheckId);
 
   const [appearance, setAppearance] = useState<AppearanceResult | null>(null);
   const [note, setNote] = useState<string>("");
+  const [hardness, setHardness] = useState<string>("");
   const [toast, setToast] = useState<string | null>(null);
   // 카드별 인라인 수정값. dimNo → 새 측정값. 저장 성공 후에만 채워진다.
   const [editedValues, setEditedValues] = useState<Record<number, number>>({});
@@ -112,6 +119,9 @@ export default function CrossCheckResultPage() {
     }
     if (!note && detail.note) {
       setNote(detail.note);
+    }
+    if (!hardness && detail.hardnessResult) {
+      setHardness(detail.hardnessResult);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [detail]);
@@ -134,7 +144,9 @@ export default function CrossCheckResultPage() {
   // 건너뜀(skipped) 항목이 있어도 결재 요청 자체는 허용 — 결재자가 판단해 반려하면
   // reopen 으로 돌아와 다시 측정할 수 있는 흐름이 마련돼 있음. 본인이 빠른 길로
   // 즉시 수정하려면 카드의 "다시 측정" 버튼을 쓰면 됨.
-  const canSubmit = appearance !== null;
+  // 압출 종품은 경도값까지 입력돼야 결재 요청 가능 (열처리 후 입력).
+  const canSubmit =
+    appearance !== null && (!isExtrusionFinal || hardness.trim() !== "");
 
   if (needsFallback && detailQuery.isLoading) {
     return (
@@ -168,6 +180,9 @@ export default function CrossCheckResultPage() {
       await saveMut.mutateAsync({
         results: [],
         appearanceResult: appearance,
+        ...(isExtrusionFinal && hardness.trim()
+          ? { hardnessResult: hardness.trim() }
+          : {}),
         ...(note.trim() ? { note: note.trim() } : {}),
       });
       // 저장 직후 QUALITY_ADMIN 결재 대기로 전환 (DRAFT → PENDING_APPROVAL).
@@ -283,6 +298,31 @@ export default function CrossCheckResultPage() {
             })}
           </div>
         </div>
+
+        {isExtrusionFinal && (
+          <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4">
+            <label
+              htmlFor="cross-check-hardness"
+              className="block text-xs font-medium text-[#6B7280]"
+            >
+              경도 측정값 (압출 종품 · 필수)
+            </label>
+            <input
+              id="cross-check-hardness"
+              type="text"
+              value={hardness}
+              onChange={(e) => setHardness(e.target.value)}
+              placeholder="예: HV 47.5"
+              disabled={saveMut.isPending}
+              className="mt-2 h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+            />
+            <p className="mt-2 text-[11px] leading-relaxed text-[#6B7280]">
+              경도값은 열처리 완료 후 측정됩니다. 아직 값이 없으면 비워둔 채
+              나갔다가, 열처리 완료 후 <b>'작업 이어하기'</b>로 다시 들어와
+              입력하고 결재 요청하세요.
+            </p>
+          </div>
+        )}
 
         <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4">
           <label
