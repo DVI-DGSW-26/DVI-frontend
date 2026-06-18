@@ -19,6 +19,12 @@ import {
 } from "../lib/dateFilter";
 import CrossCheckCard from "./CrossCheckCard";
 import DateRangeFilter from "./DateRangeFilter";
+import CrossCheckHistoryFilter, {
+  EMPTY_HISTORY_FILTER,
+  isHistoryFilterActive,
+  matchesHistoryFilter,
+  type HistoryFilter,
+} from "./CrossCheckHistoryFilter";
 import Toast from "../../inspection/ui/Toast";
 
 type Tab = "assigned" | "history";
@@ -61,8 +67,9 @@ const CrossCheckPendingPage = () => {
   // 탭별 검사 일시 필터 (할당 대기 / 내 결재 이력 따로 유지).
   const [assignedFilter, setAssignedFilter] =
     useState<DateFilterValue>(DEFAULT_DATE_FILTER);
+  // 내 결재 이력은 통합관리자 보고서와 동일한 다중 필터(검색어/날짜/공정/제품/상태).
   const [historyFilter, setHistoryFilter] =
-    useState<DateFilterValue>(DEFAULT_DATE_FILTER);
+    useState<HistoryFilter>(EMPTY_HISTORY_FILTER);
 
   const { data: assigned = [], isLoading, isError } = useAssignedCrossChecks();
   const {
@@ -126,8 +133,7 @@ const CrossCheckPendingPage = () => {
   );
 
   const filteredHistory = useMemo(
-    () =>
-      history.filter((c) => matchesDateFilter(c.inspectionTime, historyFilter)),
+    () => history.filter((c) => matchesHistoryFilter(c, historyFilter)),
     [history, historyFilter],
   );
 
@@ -290,7 +296,7 @@ const CrossCheckPendingPage = () => {
       {tab === "history" && (
         <>
           {!historyLoading && !historyError && history.length > 0 && (
-            <DateRangeFilter value={historyFilter} onChange={setHistoryFilter} />
+            <CrossCheckHistoryFilter items={history} onChange={setHistoryFilter} />
           )}
 
           {historyLoading && (
@@ -327,7 +333,9 @@ const CrossCheckPendingPage = () => {
             history.length > 0 &&
             filteredHistory.length === 0 && (
               <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-                선택한 기간에 해당하는 이력이 없습니다.
+                {isHistoryFilterActive(historyFilter)
+                  ? "조건에 맞는 이력이 없습니다."
+                  : "결재 요청한 내역이 없습니다."}
               </p>
             )}
 
