@@ -7,6 +7,7 @@ import type { CrossCheckResultInfo, ProcessType } from "../api";
 import { useAuth } from "../../auth/AuthContext";
 import { getStage, STAGE_LABEL, STAGE_BADGE } from "../lib/stage";
 import PhotoCompareModal from "../../../components/shared/PhotoCompareModal";
+import { formatDateTime } from "../../../lib/datetime";
 
 const PROCESS_LABEL: Record<ProcessType, string> = {
   EXTRUSION: "압출",
@@ -204,7 +205,17 @@ export default function CrossCheckApprovalDetailPage() {
               return `${detail.typeLabel} (${detail.type})${stageText}`;
             })()}
           />
-          <InfoLine label="검사 시간" value={detail.inspectionTime} />
+          <InfoLine
+            label="검사 일시"
+            value={formatDateTime(detail.inspectionTime)}
+          />
+          <InfoLine label="작성일" value={formatDateTime(detail.createdAt)} />
+          {detail.status === "PENDING_APPROVAL" && (
+            <InfoLine
+              label="결재 요청일"
+              value={formatDateTime(detail.updatedAt)}
+            />
+          )}
         </dl>
       </section>
 

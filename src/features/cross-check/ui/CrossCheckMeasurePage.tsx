@@ -23,6 +23,7 @@ import {
   useSaveCrossCheckResults,
 } from "../api";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
+import { formatDateTime } from "../../../lib/datetime";
 
 type Phase = "capture" | "crop" | "input";
 
@@ -563,6 +564,10 @@ export default function CrossCheckMeasurePage() {
         </div>
         <InfoRow label="기계명" value={detail.equipment.name} />
         <InfoRow label="검사 차수" value={detail.typeLabel} />
+        <InfoRow
+          label="검사 일시"
+          value={formatDateTime(detail.inspectionTime)}
+        />
         <div className="mt-2 flex flex-col gap-2">
           <Stat label="제품명" value={detail.product.name} />
           <div className="grid grid-cols-2 gap-2">

@@ -10,6 +10,7 @@ import {
 import type { AssignedInspection, CrossCheckSummary } from "../api";
 import { elapsedFrom } from "../lib/elapsed";
 import { needsHardnessInput } from "../lib/stage";
+import { formatDateTime } from "../../../lib/datetime";
 import CrossCheckCard from "./CrossCheckCard";
 import Toast from "../../inspection/ui/Toast";
 
@@ -41,18 +42,6 @@ const STATUS_BADGE: Record<
   REJECTED: { label: "반려", bg: "#FEF2F2", fg: "#B91C1C" },
   DRAFT: { label: "진행 중", bg: "#F3F4F6", fg: "#6B7280" },
 };
-
-function formatDate(iso?: string): string {
-  if (!iso) return "-";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mi = String(d.getMinutes()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
-}
 
 const CrossCheckPendingPage = () => {
   const navigate = useNavigate();
@@ -376,6 +365,9 @@ function DraftResumeCard({
         <span className="mt-2 block truncate text-xs text-[#A8A8A8]">
           설비: {cc.equipment.name} · {cc.typeLabel}
         </span>
+        <span className="mt-1 block truncate text-xs text-[#A8A8A8]">
+          검사 일시: {formatDateTime(cc.inspectionTime)}
+        </span>
       </div>
       <Icon
         icon="solar:alt-arrow-right-linear"
@@ -421,8 +413,12 @@ function HistoryCard({
           <InfoLine label="설비" value={cc.equipment.name} />
           <InfoLine label="검사 차수" value={`${cc.typeLabel} (${cc.type})`} />
           <InfoLine
+            label="검사 일시"
+            value={formatDateTime(cc.inspectionTime)}
+          />
+          <InfoLine
             label="업데이트"
-            value={formatDate(cc.updatedAt ?? cc.createdAt)}
+            value={formatDateTime(cc.updatedAt ?? cc.createdAt)}
           />
         </dl>
       </div>
