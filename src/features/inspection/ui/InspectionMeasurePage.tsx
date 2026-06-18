@@ -51,6 +51,9 @@ interface MeasureLocationState {
   qualityName?: string;
   // result 페이지에서 "측정으로 돌아가기" 로 진입했을 때 allDone 자동 redirect 를 막기 위한 플래그.
   editMode?: boolean;
+  // result 페이지에서 특정 항목 "다시 측정" 으로 진입한 경우 — 해당 dim 으로 바로 이동하고
+  // 한 항목 재측정 후 다시 결과 화면으로 복귀시킨다.
+  targetDimNo?: number;
 }
 
 function isItemDone(item: MeasureItem): boolean {
@@ -226,6 +229,17 @@ export default function InspectionMeasurePage() {
     return s.editMode === true;
   }, [location.state]);
 
+  // result 페이지에서 "다시 측정" 으로 진입한 대상 dim. 해당 인덱스를 기본 위치로 사용.
+  const targetDimNo = useMemo<number | null>(() => {
+    const s = (location.state ?? {}) as MeasureLocationState;
+    return typeof s.targetDimNo === "number" ? s.targetDimNo : null;
+  }, [location.state]);
+
+  const targetIdx = useMemo(() => {
+    if (targetDimNo == null) return -1;
+    return items.findIndex((it) => it.dimNo === targetDimNo);
+  }, [targetDimNo, items]);
+
   useEffect(() => {
     if (!info || !allDone) return;
     if (editMode) return; // 사용자가 명시적으로 돌아온 경우 redirect 안 함
@@ -296,7 +310,9 @@ export default function InspectionMeasurePage() {
 
   const totalSteps = items.length;
   // allDone 케이스에서 startIdx + sessionResults.length 가 items 범위 초과할 수 있어 clamp.
-  const rawStepIndex = manualStepIdx ?? startIdx + sessionResults.length;
+  const rawStepIndex =
+    manualStepIdx ??
+    (targetIdx >= 0 ? targetIdx : startIdx + sessionResults.length);
   const stepIndex = Math.min(rawStepIndex, Math.max(0, items.length - 1));
   const currentDim = items[stepIndex];
   const isLastDim = stepIndex === totalSteps - 1;
@@ -499,6 +515,14 @@ export default function InspectionMeasurePage() {
 
       upsertSessionResult(next);
 
+      // 결과 화면에서 "다시 측정"(targetDimNo)으로 들어온 경우 — 한 항목만 고치고 결과로 복귀.
+      // 저장 mutation 이 detail 을 무효화하므로 results state 없이 이동해 최신 detail 로 다시 그린다.
+      if (targetDimNo != null) {
+        clearProgress(inspectionId);
+        navigate(`/inspection/${inspectionId}/result`, { replace: true });
+        return;
+      }
+
       if (isLastDim) {
         const finalResults = (() => {
           const idx = allStepResults.findIndex((s) => s.dimNo === next.dimNo);
@@ -532,6 +556,12 @@ export default function InspectionMeasurePage() {
     };
 
     upsertSessionResult(next);
+
+    if (targetDimNo != null) {
+      clearProgress(inspectionId);
+      navigate(`/inspection/${inspectionId}/result`, { replace: true });
+      return;
+    }
 
     if (isLastDim) {
       const finalResults = (() => {

@@ -265,6 +265,13 @@ export default function InspectionResultPage() {
     }
   };
 
+  // 검사 완료 전, 결과 화면에서 특정 항목을 다시 측정 — 측정 페이지의 해당 dim 으로 이동.
+  const handleRetake = (dimNo: number) => {
+    navigate(`/inspection/${inspectionId}/measure`, {
+      state: { editMode: true, targetDimNo: dimNo },
+    });
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-28">
       <section className="border-b border-gray-200 bg-white px-4 py-4">
@@ -286,6 +293,11 @@ export default function InspectionResultPage() {
                 step={idx + 1}
                 result={r}
                 isMachining={!!isMachining}
+                onRetake={
+                  postSubmitMode === null
+                    ? () => handleRetake(r.dimNo)
+                    : undefined
+                }
               />
             </li>
           ))}
@@ -448,10 +460,13 @@ function StepResultCard({
   step,
   result,
   isMachining,
+  onRetake,
 }: {
   step: number;
   result: StepResult;
   isMachining: boolean;
+  // 검사 완료 전에만 전달됨 — 해당 항목을 측정 페이지에서 다시 측정.
+  onRetake?: () => void;
 }) {
   const dimText = formatStandardWithTolerance(
     result.standardValue,
@@ -529,6 +544,16 @@ function StepResultCard({
           />
           <span className="mt-2 text-sm font-medium">사진 촬영 불가</span>
         </div>
+      )}
+      {onRetake && (
+        <button
+          type="button"
+          onClick={onRetake}
+          className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-[#931B82] bg-white text-sm font-semibold text-[#931B82] transition-colors hover:bg-[#F3E8FF]"
+        >
+          <Icon icon="solar:camera-linear" width={16} height={16} />
+          다시 측정
+        </button>
       )}
     </div>
   );
