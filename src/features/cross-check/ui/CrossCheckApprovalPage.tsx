@@ -1,10 +1,17 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { usePendingCrossChecks } from "../api";
 import type { CrossCheckSummary } from "../api";
 import { getStage, STAGE_LABEL, STAGE_BADGE } from "../lib/stage";
 import { formatDateTime } from "../../../lib/datetime";
+import {
+  DEFAULT_DATE_FILTER,
+  isDateFilterActive,
+  matchesDateFilter,
+  type DateFilterValue,
+} from "../lib/dateFilter";
+import DateRangeFilter from "./DateRangeFilter";
 
 const PROCESS_LABEL: Record<string, string> = {
   EXTRUSION: "압출",
@@ -21,6 +28,8 @@ export default function CrossCheckApprovalPage() {
     isLoading,
     isError,
   } = usePendingCrossChecks();
+  const [dateFilter, setDateFilter] =
+    useState<DateFilterValue>(DEFAULT_DATE_FILTER);
 
   // 최근 결재 요청부터 위로 (updatedAt 우선, 없으면 createdAt)
   const sorted = useMemo(
@@ -31,6 +40,12 @@ export default function CrossCheckApprovalPage() {
         return tb - ta;
       }),
     [crossChecks],
+  );
+
+  // 검사 일시 기준 필터.
+  const filtered = useMemo(
+    () => sorted.filter((cc) => matchesDateFilter(cc.inspectionTime, dateFilter)),
+    [sorted, dateFilter],
   );
 
   const handleOpen = (cc: CrossCheckSummary) => {
@@ -45,6 +60,10 @@ export default function CrossCheckApprovalPage() {
           결재 대기 {sorted.length}건
         </span>
       </div>
+
+      {!isLoading && !isError && sorted.length > 0 && (
+        <DateRangeFilter value={dateFilter} onChange={setDateFilter} />
+      )}
 
       {isLoading && (
         <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
@@ -75,9 +94,17 @@ export default function CrossCheckApprovalPage() {
         </div>
       )}
 
-      {!isLoading && !isError && sorted.length > 0 && (
+      {!isLoading && !isError && sorted.length > 0 && filtered.length === 0 && (
+        <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+          {isDateFilterActive(dateFilter)
+            ? "선택한 기간에 해당하는 결재 대기가 없습니다."
+            : "결재 대기 중인 순회검사가 없습니다"}
+        </p>
+      )}
+
+      {!isLoading && !isError && filtered.length > 0 && (
         <ul className="flex flex-col gap-3">
-          {sorted.map((cc) => (
+          {filtered.map((cc) => (
             <li key={cc.crossCheckId}>
               <button
                 type="button"
