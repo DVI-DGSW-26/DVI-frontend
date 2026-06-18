@@ -9,3 +9,27 @@ export function parseServerDate(iso: string | undefined | null): Date {
   // 공백 구분(예: "2026-06-04 10:00:00") 도 ISO 형태로 정규화 후 UTC 표기를 붙인다.
   return new Date(`${s.replace(" ", "T")}Z`);
 }
+
+// "2026-06-18 10:00" (KST). 파싱 실패 시 원본 문자열 반환, 값 없으면 "-".
+export function formatDateTime(iso: string | undefined | null): string {
+  if (!iso) return "-";
+  const d = parseServerDate(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+}
+
+// "2026-06-18" (KST). 파싱 실패 시 원본 문자열 반환, 값 없으면 "-".
+export function formatDate(iso: string | undefined | null): string {
+  if (!iso) return "-";
+  const d = parseServerDate(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
