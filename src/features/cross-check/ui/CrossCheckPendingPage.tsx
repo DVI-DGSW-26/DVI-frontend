@@ -23,6 +23,15 @@ const PROCESS_LABEL: Record<string, string> = {
   PRESS: "프레스",
 };
 
+// 할당 대기 목록을 공정별로 묶어 보여줄 때의 섹션 순서.
+const PROCESS_ORDER = [
+  "EXTRUSION",
+  "MACHINING",
+  "ST_CUTTING",
+  "AL_CUTTING",
+  "PRESS",
+] as const;
+
 const STATUS_BADGE: Record<
   string,
   { label: string; bg: string; fg: string }
@@ -72,6 +81,27 @@ const CrossCheckPendingPage = () => {
       ),
     [assigned],
   );
+
+  // 공정(압출/가공/ST절단 등)별로 묶는다 — 각 그룹 안에서는 위 대기시간순 정렬 유지.
+  // PROCESS_ORDER 에 정의된 순서를 먼저, 그 외 공정은 뒤에 노출.
+  const assignedGroups = useMemo(() => {
+    const map = new Map<string, AssignedInspection[]>();
+    for (const item of sortedAssigned) {
+      const list = map.get(item.process) ?? [];
+      list.push(item);
+      map.set(item.process, list);
+    }
+    const ordered = [
+      ...PROCESS_ORDER.filter((p) => map.has(p)),
+      ...[...map.keys()].filter(
+        (p) => !PROCESS_ORDER.includes(p as (typeof PROCESS_ORDER)[number]),
+      ),
+    ];
+    return ordered.map((process) => ({
+      process,
+      items: map.get(process) ?? [],
+    }));
+  }, [sortedAssigned]);
 
   // 결재 요청 이력: DRAFT 제외 (DRAFT 는 측정 중 — 할당 대기 탭에서 이어하기로 노출)
   const history = useMemo(
@@ -195,17 +225,31 @@ const CrossCheckPendingPage = () => {
           )}
 
           {!isLoading && !isError && sortedAssigned.length > 0 && (
-            <ul className="flex flex-col gap-3">
-              {sortedAssigned.map((item) => (
-                <li key={item.inspectionId}>
-                  <CrossCheckCard
-                    item={item}
-                    onClick={handleCardClick}
-                    isStarting={startingId === item.inspectionId}
-                  />
-                </li>
+            <div className="flex flex-col gap-5">
+              {assignedGroups.map((group) => (
+                <section key={group.process} className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-[#212121]">
+                      {PROCESS_LABEL[group.process] ?? group.process}
+                    </h3>
+                    <span className="inline-block rounded-full bg-[#F3E8F7] px-2 py-0.5 text-xs font-medium text-[#931B82]">
+                      {group.items.length}
+                    </span>
+                  </div>
+                  <ul className="flex flex-col gap-3">
+                    {group.items.map((item) => (
+                      <li key={item.inspectionId}>
+                        <CrossCheckCard
+                          item={item}
+                          onClick={handleCardClick}
+                          isStarting={startingId === item.inspectionId}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               ))}
-            </ul>
+            </div>
           )}
         </>
       )}
