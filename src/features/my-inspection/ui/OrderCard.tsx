@@ -8,7 +8,7 @@ import { getStatusBadge } from "../lib/inspectionStatus";
 
 interface Props {
   inspection: MyInspection;
-  /** DRAFT 검사 한정 — ⋮ 메뉴에 "삭제" 항목 노출. */
+  /** DRAFT·SKIPPED 검사 한정 — ⋮ 메뉴에 "삭제" 항목 노출. */
   onRequestDelete?: (inspection: MyInspection) => void;
   /** COMPLETED 검사 한정 — 다음 시점 시작 액션. 마지막 시점이면 부모가 nextType 을 안 넘김. */
   nextType?: string | null;
@@ -25,7 +25,9 @@ export default function OrderCard({
 }: Props) {
   const navigate = useNavigate();
   const badge = getStatusBadge(inspection.status);
-  const canDelete = !!onRequestDelete && inspection.status === "DRAFT";
+  const canDelete =
+    !!onRequestDelete &&
+    (inspection.status === "DRAFT" || inspection.status === "SKIPPED");
   const showNext =
     !!nextType && !!onStartNext && inspection.status === "COMPLETED";
 
