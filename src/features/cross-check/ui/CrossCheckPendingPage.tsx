@@ -11,7 +11,14 @@ import type { AssignedInspection, CrossCheckSummary } from "../api";
 import { elapsedFrom } from "../lib/elapsed";
 import { needsHardnessInput } from "../lib/stage";
 import { formatDateTime } from "../../../lib/datetime";
+import {
+  DEFAULT_DATE_FILTER,
+  isDateFilterActive,
+  matchesDateFilter,
+  type DateFilterValue,
+} from "../lib/dateFilter";
 import CrossCheckCard from "./CrossCheckCard";
+import DateRangeFilter from "./DateRangeFilter";
 import Toast from "../../inspection/ui/Toast";
 
 type Tab = "assigned" | "history";
@@ -51,6 +58,11 @@ const CrossCheckPendingPage = () => {
   const [tab, setTab] = useState<Tab>(initialTab);
   const [toast, setToast] = useState<string | null>(null);
   const [startingId, setStartingId] = useState<number | null>(null);
+  // 탭별 검사 일시 필터 (할당 대기 / 내 결재 이력 따로 유지).
+  const [assignedFilter, setAssignedFilter] =
+    useState<DateFilterValue>(DEFAULT_DATE_FILTER);
+  const [historyFilter, setHistoryFilter] =
+    useState<DateFilterValue>(DEFAULT_DATE_FILTER);
 
   const { data: assigned = [], isLoading, isError } = useAssignedCrossChecks();
   const {
@@ -73,9 +85,17 @@ const CrossCheckPendingPage = () => {
 
   // 공정(압출/가공/ST절단 등)별로 묶는다 — 각 그룹 안에서는 위 대기시간순 정렬 유지.
   // PROCESS_ORDER 에 정의된 순서를 먼저, 그 외 공정은 뒤에 노출.
+  const filteredAssigned = useMemo(
+    () =>
+      sortedAssigned.filter((i) =>
+        matchesDateFilter(i.inspectionTime, assignedFilter),
+      ),
+    [sortedAssigned, assignedFilter],
+  );
+
   const assignedGroups = useMemo(() => {
     const map = new Map<string, AssignedInspection[]>();
-    for (const item of sortedAssigned) {
+    for (const item of filteredAssigned) {
       const list = map.get(item.process) ?? [];
       list.push(item);
       map.set(item.process, list);
@@ -90,7 +110,7 @@ const CrossCheckPendingPage = () => {
       process,
       items: map.get(process) ?? [],
     }));
-  }, [sortedAssigned]);
+  }, [filteredAssigned]);
 
   // 결재 요청 이력: DRAFT 제외 (DRAFT 는 측정 중 — 할당 대기 탭에서 이어하기로 노출)
   const history = useMemo(
@@ -103,6 +123,12 @@ const CrossCheckPendingPage = () => {
             new Date(a.updatedAt ?? a.createdAt ?? 0).getTime(),
         ),
     [myCrossChecks],
+  );
+
+  const filteredHistory = useMemo(
+    () =>
+      history.filter((c) => matchesDateFilter(c.inspectionTime, historyFilter)),
+    [history, historyFilter],
   );
 
   // 진행 중(이어하기) — DRAFT 상태인 본인 cross-check. 측정 페이지 뒤로가기 후에도
@@ -195,6 +221,13 @@ const CrossCheckPendingPage = () => {
             </span>
           </div>
 
+          {!isLoading && !isError && sortedAssigned.length > 0 && (
+            <DateRangeFilter
+              value={assignedFilter}
+              onChange={setAssignedFilter}
+            />
+          )}
+
           {isLoading && (
             <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
               불러오는 중...
@@ -213,7 +246,18 @@ const CrossCheckPendingPage = () => {
             </p>
           )}
 
-          {!isLoading && !isError && sortedAssigned.length > 0 && (
+          {!isLoading &&
+            !isError &&
+            sortedAssigned.length > 0 &&
+            filteredAssigned.length === 0 && (
+              <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+                {isDateFilterActive(assignedFilter)
+                  ? "선택한 기간에 해당하는 검사가 없습니다."
+                  : "새 배정이 없습니다."}
+              </p>
+            )}
+
+          {!isLoading && !isError && filteredAssigned.length > 0 && (
             <div className="flex flex-col gap-5">
               {assignedGroups.map((group) => (
                 <section key={group.process} className="flex flex-col gap-2">
@@ -245,6 +289,10 @@ const CrossCheckPendingPage = () => {
 
       {tab === "history" && (
         <>
+          {!historyLoading && !historyError && history.length > 0 && (
+            <DateRangeFilter value={historyFilter} onChange={setHistoryFilter} />
+          )}
+
           {historyLoading && (
             <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
               불러오는 중...
@@ -274,9 +322,18 @@ const CrossCheckPendingPage = () => {
             </div>
           )}
 
-          {!historyLoading && !historyError && history.length > 0 && (
+          {!historyLoading &&
+            !historyError &&
+            history.length > 0 &&
+            filteredHistory.length === 0 && (
+              <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+                선택한 기간에 해당하는 이력이 없습니다.
+              </p>
+            )}
+
+          {!historyLoading && !historyError && filteredHistory.length > 0 && (
             <ul className="flex flex-col gap-3">
-              {history.map((cc) => (
+              {filteredHistory.map((cc) => (
                 <li key={cc.crossCheckId}>
                   <HistoryCard cc={cc} onClick={() => handleHistoryClick(cc)} />
                 </li>
