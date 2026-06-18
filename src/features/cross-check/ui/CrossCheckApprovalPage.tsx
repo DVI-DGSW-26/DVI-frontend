@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react";
 import { usePendingCrossChecks } from "../api";
 import type { CrossCheckSummary } from "../api";
 import { getStage, STAGE_LABEL, STAGE_BADGE } from "../lib/stage";
+import { formatDateTime } from "../../../lib/datetime";
 
 const PROCESS_LABEL: Record<string, string> = {
   EXTRUSION: "압출",
@@ -12,18 +13,6 @@ const PROCESS_LABEL: Record<string, string> = {
   MACHINING: "가공",
   PRESS: "프레스",
 };
-
-function formatDate(iso?: string): string {
-  if (!iso) return "-";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mi = String(d.getMinutes()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
-}
 
 export default function CrossCheckApprovalPage() {
   const navigate = useNavigate();
@@ -130,8 +119,12 @@ export default function CrossCheckApprovalPage() {
                       value={`${cc.typeLabel} (${cc.type})`}
                     />
                     <InfoLine
+                      label="검사 일시"
+                      value={formatDateTime(cc.inspectionTime)}
+                    />
+                    <InfoLine
                       label="결재 요청"
-                      value={formatDate(cc.updatedAt ?? cc.createdAt)}
+                      value={formatDateTime(cc.updatedAt ?? cc.createdAt)}
                     />
                   </dl>
                 </div>

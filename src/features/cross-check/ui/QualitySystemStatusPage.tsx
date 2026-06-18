@@ -3,15 +3,7 @@ import { Icon } from "@iconify/react";
 import { useNavigate } from "react-router-dom";
 import { useAssignedCrossChecks, useMyCrossChecks } from "../api";
 import type { CrossCheckStatus } from "../api";
-
-function formatTime(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  const mi = String(d.getMinutes()).padStart(2, "0");
-  const ampm = d.getHours() < 12 ? "AM" : "PM";
-  const h12 = d.getHours() % 12 || 12;
-  return `${String(h12).padStart(2, "0")}:${mi} ${ampm}`;
-}
+import { formatDateTime } from "../../../lib/datetime";
 
 const STATUS_META: Record<
   CrossCheckStatus,
@@ -156,7 +148,7 @@ const QualitySystemStatusPage = () => {
                     <span className="text-xs text-[#A8A8A8]">{meta.label}</span>
                   </div>
                   <span className="shrink-0 text-xs text-[#A8A8A8]">
-                    {when ? formatTime(when) : ""}
+                    {when ? formatDateTime(when) : ""}
                   </span>
                 </li>
               );

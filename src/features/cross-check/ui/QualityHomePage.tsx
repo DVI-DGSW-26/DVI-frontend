@@ -14,17 +14,7 @@ import {
 } from "../api";
 import type { CrossCheckSummary } from "../api";
 import { elapsedFrom } from "../lib/elapsed";
-
-function formatTime(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mi = String(d.getMinutes()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
-}
+import { formatDateTime } from "../../../lib/datetime";
 
 const QualityHomePage = () => {
   const navigate = useNavigate();
@@ -271,7 +261,7 @@ const QualityHomePage = () => {
                     {n.title}
                   </span>
                   <span className="truncate text-xs text-[#A8A8A8]">
-                    {formatTime(n.createdAt)}
+                    {formatDateTime(n.createdAt)}
                   </span>
                 </div>
               </li>
