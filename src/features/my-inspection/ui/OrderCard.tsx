@@ -14,6 +14,9 @@ interface Props {
   nextType?: string | null;
   onStartNext?: (inspection: MyInspection) => void;
   isStartingNext?: boolean;
+  /** COMPLETED 검사 한정 — 같은 슬롯으로 새 검사("다시 검사") 시작. */
+  onRestart?: (inspection: MyInspection) => void;
+  isRestarting?: boolean;
 }
 
 export default function OrderCard({
@@ -22,6 +25,8 @@ export default function OrderCard({
   nextType,
   onStartNext,
   isStartingNext,
+  onRestart,
+  isRestarting,
 }: Props) {
   const navigate = useNavigate();
   const badge = getStatusBadge(inspection.status);
@@ -30,6 +35,7 @@ export default function OrderCard({
     (inspection.status === "DRAFT" || inspection.status === "SKIPPED");
   const showNext =
     !!nextType && !!onStartNext && inspection.status === "COMPLETED";
+  const canRestart = !!onRestart && inspection.status === "COMPLETED";
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -72,6 +78,11 @@ export default function OrderCard({
   const handleStartNextClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onStartNext?.(inspection);
+  };
+
+  const handleRestartClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onRestart?.(inspection);
   };
 
   return (
@@ -127,26 +138,40 @@ export default function OrderCard({
         )}
       </div>
 
-      {showNext && (
-        <div className="border-t border-gray-100 pt-3">
-          <div className="flex items-center gap-1.5 text-xs text-[#6B7280]">
-            <Icon
-              icon="solar:arrow-right-linear"
-              width={14}
-              height={14}
-              className="text-[#931B82]"
-            />
-            <span>다음:</span>
-            <span className="font-medium text-[#212121]">{nextType}</span>
-          </div>
-          <button
-            type="button"
-            onClick={handleStartNextClick}
-            disabled={isStartingNext}
-            className="mt-2 h-10 w-full rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
-          >
-            {isStartingNext ? "시작 중..." : "다음 시점 시작"}
-          </button>
+      {(showNext || canRestart) && (
+        <div className="flex flex-col gap-2 border-t border-gray-100 pt-3">
+          {showNext && (
+            <div>
+              <div className="flex items-center gap-1.5 text-xs text-[#6B7280]">
+                <Icon
+                  icon="solar:arrow-right-linear"
+                  width={14}
+                  height={14}
+                  className="text-[#931B82]"
+                />
+                <span>다음:</span>
+                <span className="font-medium text-[#212121]">{nextType}</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleStartNextClick}
+                disabled={isStartingNext}
+                className="mt-2 h-10 w-full rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+              >
+                {isStartingNext ? "시작 중..." : "다음 시점 시작"}
+              </button>
+            </div>
+          )}
+          {canRestart && (
+            <button
+              type="button"
+              onClick={handleRestartClick}
+              disabled={isRestarting}
+              className="h-10 w-full rounded-md border border-[#931B82] bg-white text-sm font-semibold text-[#931B82] transition-colors hover:bg-[#F3E8F7] disabled:opacity-60"
+            >
+              {isRestarting ? "시작 중..." : "다시 검사 시작"}
+            </button>
+          )}
         </div>
       )}
     </div>
