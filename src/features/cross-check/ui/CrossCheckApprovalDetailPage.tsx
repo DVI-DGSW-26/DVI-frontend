@@ -2,7 +2,11 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
-import { useCrossCheckDetail, useDecideCrossCheck } from "../api";
+import {
+  useCrossCheckDetail,
+  useDecideCrossCheck,
+  useDeleteCrossCheck,
+} from "../api";
 import type { CrossCheckResultInfo, ProcessType } from "../api";
 import { useAuth } from "../../auth/AuthContext";
 import { getStage, STAGE_LABEL, STAGE_BADGE } from "../lib/stage";
@@ -71,6 +75,7 @@ export default function CrossCheckApprovalDetailPage() {
   const detailQuery = useCrossCheckDetail(crossCheckId);
   const detail = detailQuery.data;
   const decideMut = useDecideCrossCheck(crossCheckId);
+  const deleteMut = useDeleteCrossCheck(crossCheckId);
 
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
@@ -78,6 +83,24 @@ export default function CrossCheckApprovalDetailPage() {
   const [photoRow, setPhotoRow] = useState<CrossCheckResultInfo | null>(null);
 
   const goBack = () => navigate("/cross-check-approval", { replace: true });
+
+  const handleDelete = async () => {
+    if (!detail) return;
+    if (
+      !window.confirm(
+        "이 순회검사를 삭제하시겠습니까?\n측정값·사진이 모두 삭제되며 되돌릴 수 없습니다.",
+      )
+    ) {
+      return;
+    }
+    setError(null);
+    try {
+      await deleteMut.mutateAsync();
+      goBack();
+    } catch (err) {
+      setError(toErrorMessage(err));
+    }
+  };
 
   const handleApprove = async () => {
     if (!detail) return;
@@ -152,19 +175,36 @@ export default function CrossCheckApprovalDetailPage() {
   // 경도값은 순회검사자가 종품 측정 단계에서 입력한다. 결재자는 읽기 전용으로 확인만.
   const isExtrusionFinal =
     detail.product.process === "EXTRUSION" && /_3$/.test(detail.type);
+  // 관리자만 삭제 가능. APPROVED(보고서 발행)는 백엔드가 거부하므로 버튼도 숨김.
+  const canDelete =
+    (user?.role === "ADMIN" || user?.role === "QUALITY_ADMIN") &&
+    detail.status !== "APPROVED";
 
   return (
     <div className="flex flex-col gap-4 p-4 pb-32 md:p-6 md:pb-32">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">순회검사 결재</h1>
-        <button
-          type="button"
-          onClick={goBack}
-          className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-[#6B7280] transition-colors hover:bg-gray-50"
-        >
-          <Icon icon="solar:alt-arrow-left-linear" width={14} height={14} />
-          목록
-        </button>
+        <div className="flex items-center gap-2">
+          {canDelete && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleteMut.isPending}
+              className="flex items-center gap-1 rounded-md border border-[#EF4444] px-3 py-1.5 text-xs font-medium text-[#EF4444] transition-colors hover:bg-[#FEF2F2] disabled:opacity-60"
+            >
+              <Icon icon="solar:trash-bin-trash-linear" width={14} height={14} />
+              {deleteMut.isPending ? "삭제 중..." : "삭제"}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={goBack}
+            className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-[#6B7280] transition-colors hover:bg-gray-50"
+          >
+            <Icon icon="solar:alt-arrow-left-linear" width={14} height={14} />
+            목록
+          </button>
+        </div>
       </div>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5">
