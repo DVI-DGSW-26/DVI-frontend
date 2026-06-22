@@ -12,18 +12,29 @@ interface Props {
 const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
   const elapsed = elapsedFrom(item.completedAt);
   const color = TONE_COLOR[elapsed.tone];
+  // 이미 다른(또는 본인) 담당자가 시작한 건 — 목록엔 보이되 시작 불가.
+  const inProgress = item.status === "IN_PROGRESS";
 
   return (
     <button
       type="button"
-      onClick={() => onClick?.(item)}
-      disabled={isStarting}
+      onClick={() => {
+        if (!inProgress) onClick?.(item);
+      }}
+      disabled={isStarting || inProgress}
       className="flex w-full items-center gap-3 rounded-2xl bg-white px-5 py-4 text-left shadow-sm disabled:opacity-60"
     >
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="wrap-break-word text-base font-bold text-[#212121]">
-          {item.productName}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="wrap-break-word text-base font-bold text-[#212121]">
+            {item.productName}
+          </span>
+          {inProgress && (
+            <span className="shrink-0 rounded-md bg-[#FEF3C7] px-2 py-0.5 text-[10px] font-semibold text-[#B45309]">
+              진행 중
+            </span>
+          )}
+        </div>
         <div className="mt-1 flex items-center gap-1.5">
           <Icon
             icon="solar:user-circle-linear"
@@ -43,24 +54,29 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-2">
-        <span
-          className="inline-block h-2 w-2 rounded-full"
-          style={{ backgroundColor: color }}
-        />
-        <div className="flex items-center gap-1">
-          <span
-            className="text-sm font-bold"
-            style={{ color }}
-          >
-            {elapsed.label}
+        {inProgress ? (
+          <span className="text-right text-xs font-medium text-[#B45309]">
+            {item.ownerName ? `${item.ownerName} 진행 중` : "진행 중"}
           </span>
-          <Icon
-            icon="solar:alt-arrow-right-linear"
-            width={20}
-            height={20}
-            className="text-[#A8A8A8]"
-          />
-        </div>
+        ) : (
+          <>
+            <span
+              className="inline-block h-2 w-2 rounded-full"
+              style={{ backgroundColor: color }}
+            />
+            <div className="flex items-center gap-1">
+              <span className="text-sm font-bold" style={{ color }}>
+                {elapsed.label}
+              </span>
+              <Icon
+                icon="solar:alt-arrow-right-linear"
+                width={20}
+                height={20}
+                className="text-[#A8A8A8]"
+              />
+            </div>
+          </>
+        )}
       </div>
     </button>
   );
