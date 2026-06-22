@@ -3,6 +3,7 @@ import {
   completeCrossCheck,
   createCrossCheck,
   decideCrossCheck,
+  deleteCrossCheck,
   getAssignedCrossChecks,
   getCrossCheckDetail,
   getMyCrossChecks,
@@ -149,6 +150,17 @@ export function useRejectCrossCheck(crossCheckId: number) {
   return useMutation({
     mutationFn: (rejectReason: string) =>
       rejectCrossCheck(crossCheckId, rejectReason),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: crossCheckKeys.all });
+    },
+  });
+}
+
+// 관리자(ADMIN/QUALITY_ADMIN) 순회검사 삭제. 목록/홈/현황 캐시 갱신.
+export function useDeleteCrossCheck(crossCheckId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => deleteCrossCheck(crossCheckId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: crossCheckKeys.all });
     },

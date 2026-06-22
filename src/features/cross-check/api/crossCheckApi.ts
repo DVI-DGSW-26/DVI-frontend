@@ -88,6 +88,14 @@ export async function completeCrossCheck(crossCheckId: number): Promise<void> {
   );
 }
 
+// 관리자(ADMIN/QUALITY_ADMIN)가 순회검사 삭제. 허용 상태: DRAFT/PENDING_APPROVAL/REJECTED.
+// APPROVED(보고서 발행)는 거부(400 CROSS_CHECK_ALREADY_FINISHED) — 보고서부터 삭제 후 가능.
+export async function deleteCrossCheck(crossCheckId: number): Promise<void> {
+  await http.delete<ApiResponse<Record<string, never>>>(
+    `/cross-check/${crossCheckId}`,
+  );
+}
+
 // 반려(REJECTED) 된 순회검사를 다시 편집 가능한 상태(DRAFT) 로 복귀.
 // 측정값/사진/외관/경도 및 rejectReason 은 그대로 보존되어 사용자가 어디가 문제였는지 확인 가능.
 export async function reopenCrossCheck(crossCheckId: number): Promise<void> {
