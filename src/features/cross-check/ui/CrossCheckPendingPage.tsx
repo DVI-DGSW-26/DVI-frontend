@@ -71,7 +71,12 @@ const CrossCheckPendingPage = () => {
   const [historyFilter, setHistoryFilter] =
     useState<HistoryFilter>(EMPTY_HISTORY_FILTER);
 
-  const { data: assigned = [], isLoading, isError } = useAssignedCrossChecks();
+  const {
+    data: assigned = [],
+    isLoading,
+    isError,
+    refetch: refetchAssigned,
+  } = useAssignedCrossChecks();
   const {
     data: myCrossChecks = [],
     isLoading: historyLoading,
@@ -92,12 +97,30 @@ const CrossCheckPendingPage = () => {
 
   // 공정(압출/가공/ST절단 등)별로 묶는다 — 각 그룹 안에서는 위 대기시간순 정렬 유지.
   // PROCESS_ORDER 에 정의된 순서를 먼저, 그 외 공정은 뒤에 노출.
+  // 내가 이미 시작한(진행 중) 순회검사 id — 새 배정 목록에서 중복 노출되지 않게 제외용.
+  // (내 진행 건은 아래 "진행 중 (이어하기)" 섹션에서 보임)
+  const myInProgressIds = useMemo(
+    () =>
+      new Set(
+        myCrossChecks
+          .filter((c) => c.status === "DRAFT")
+          .map((c) => c.crossCheckId),
+      ),
+    [myCrossChecks],
+  );
+
   const filteredAssigned = useMemo(
     () =>
-      sortedAssigned.filter((i) =>
-        matchesDateFilter(i.inspectionTime, assignedFilter),
+      sortedAssigned.filter(
+        (i) =>
+          matchesDateFilter(i.inspectionTime, assignedFilter) &&
+          !(
+            i.status === "IN_PROGRESS" &&
+            i.crossCheckId != null &&
+            myInProgressIds.has(i.crossCheckId)
+          ),
       ),
-    [sortedAssigned, assignedFilter],
+    [sortedAssigned, assignedFilter, myInProgressIds],
   );
 
   const assignedGroups = useMemo(() => {
@@ -157,6 +180,8 @@ const CrossCheckPendingPage = () => {
 
   const handleCardClick = async (item: AssignedInspection) => {
     if (createMut.isPending) return;
+    // 이미 진행 중인 건은 시작 불가 (카드도 비활성이지만 방어).
+    if (item.status === "IN_PROGRESS") return;
     setStartingId(item.inspectionId);
     try {
       const detail = await createMut.mutateAsync({
@@ -166,9 +191,12 @@ const CrossCheckPendingPage = () => {
     } catch (err) {
       const msg =
         err instanceof AxiosError
-          ? err.response?.data?.message ?? "순회검사 시작에 실패했습니다."
+          ? err.response?.data?.message ??
+            "이미 다른 담당자가 진행 중이거나 시작에 실패했습니다."
           : "순회검사 시작에 실패했습니다.";
       setToast(msg);
+      // 그새 다른 담당자가 선점했을 수 있으니 목록 새로고침.
+      void refetchAssigned();
     } finally {
       setStartingId(null);
     }

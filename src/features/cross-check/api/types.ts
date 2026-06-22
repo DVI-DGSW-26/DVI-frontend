@@ -14,6 +14,7 @@ export type CrossCheckStatus =
   | "DRAFT"
   | "PENDING_APPROVAL"
   | "APPROVED"
+  
   | "REJECTED";
 
 export type ProcessType =
@@ -66,8 +67,7 @@ export interface CrossCheckSummary {
   updatedAt?: string;
 }
 
-// GET /cross-check/assigned 응답. 아직 순회검사가 시작 안 된 자주검사들.
-// CrossCheckSummary 와 달리 crossCheckId / status / 중첩 객체가 없다.
+// GET /cross-check/assigned 응답. 시작 가능(AVAILABLE) 또는 이미 시작된(IN_PROGRESS) 건.
 export interface AssignedInspection {
   inspectionId: number;
   productName: string;
@@ -79,6 +79,12 @@ export interface AssignedInspection {
   typeLabel: string;
   inspectionTime: string;
   completedAt: string;
+  // 선점 상태 — IN_PROGRESS 면 이미 다른(또는 본인) 담당자가 시작한 건.
+  status?: "AVAILABLE" | "IN_PROGRESS";
+  // 진행 중일 때 담당자 이름.
+  ownerName?: string | null;
+  // 진행 중일 때 시작된 순회검사 id.
+  crossCheckId?: number | null;
 }
 
 export interface DelegationInfo {
