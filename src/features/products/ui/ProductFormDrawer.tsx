@@ -23,6 +23,9 @@ interface Props {
 }
 
 interface DimDraft {
+  // 서버에서 불러온 기존 dim 의 id. 신규 추가 항목은 undefined.
+  // 저장 시 id 를 함께 보내 백엔드가 in-place 수정하도록 한다(사용 중 제품도 값 수정 가능).
+  id?: number;
   dimName: string;
   // PASS_FAIL 항목은 숫자값이 의미 없지만 폼 상태는 동일하게 string 유지 (입력 안 함).
   standardValue: string;
@@ -125,6 +128,7 @@ export default function ProductFormDrawer({
               .slice()
               .sort((a, b) => a.dimNo - b.dimNo)
               .map<DimDraft>((d) => ({
+                id: d.id,
                 dimName: d.dimName ?? "",
                 standardValue: String(d.standardValue ?? ""),
                 tolerancePlus: String(d.tolerancePlus ?? ""),
@@ -189,6 +193,7 @@ export default function ProductFormDrawer({
       // PASS_FAIL 항목은 측정 시 작업자가 OK/NG 직접 선택 — 기준값/공차 불필요.
       if (d.valueType === "PASS_FAIL") {
         dimsInput.push({
+          ...(d.id != null ? { id: d.id } : {}),
           dimNo: i + 1,
           dimName: d.dimName.trim(),
           valueType: "PASS_FAIL",
@@ -209,6 +214,7 @@ export default function ProductFormDrawer({
         return setError(`치수 ${i + 1}: 공차(-)를 입력하세요.`);
 
       dimsInput.push({
+        ...(d.id != null ? { id: d.id } : {}),
         dimNo: i + 1,
         dimName: d.dimName.trim(),
         standardValue: std,
@@ -249,10 +255,11 @@ export default function ProductFormDrawer({
             | { code?: string; message?: string }
             | undefined;
           const code = data?.code;
-          // RESOURCE_IN_USE: 이미 발행된 검사/보고서가 dim 을 참조하고 있어 백엔드가 교체 거부.
+          // RESOURCE_IN_USE: 검사·보고서가 참조 중인 dim 을 삭제하거나 종류를 바꾸려 할 때.
+          // (기준값/공차/이름 등 값 수정은 id 기반 in-place 로 가능. 삭제·종류변경만 거부됨.)
           if (code === "RESOURCE_IN_USE") {
             setError(
-              "이 제품으로 이미 검사·보고서가 발행되어 치수를 변경할 수 없습니다. 새 제품으로 등록하거나 백엔드 관리자에 문의해주세요.",
+              "이미 검사·보고서가 참조 중인 치수는 삭제하거나 종류를 바꿀 수 없습니다. 값(기준·공차·이름) 수정만 가능합니다.",
             );
             return;
           }

@@ -53,6 +53,9 @@ export interface ProductDetail {
 }
 
 export interface ProductDimInput {
+  // 기존 dim 은 id 를 실어 보낸다 → 백엔드가 통째 교체 대신 id 기준 in-place 수정 가능.
+  // (검사·보고서가 이미 참조 중인 dim 도 값/이름은 수정되도록.) 신규 항목은 id 없음.
+  id?: number;
   dimNo: number;
   dimName: string;
   // PASS_FAIL 항목은 standardValue/공차 불필요 — payload 생성 시 omit.
