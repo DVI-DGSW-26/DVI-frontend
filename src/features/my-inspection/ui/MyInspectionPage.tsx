@@ -7,7 +7,7 @@ import {
   useMyInspectionList,
   type DeleteInspectionErrorData,
 } from "../api";
-import { useStartNextInspection } from "../../inspection/api";
+import { useStartInspection, useStartNextInspection } from "../../inspection/api";
 import { getNextSlot } from "../../inspection/lib/slotSequence";
 import type { StartNextInspectionErrorData } from "../../inspection/type/types";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
@@ -55,6 +55,9 @@ export default function MyInspectionPage() {
   const [pendingNextPrevId, setPendingNextPrevId] = useState<number | null>(
     null,
   );
+  // 완료된 검사를 같은 슬롯으로 "다시 검사" 시작 (새 레코드 생성, 이전 건은 보존).
+  const startInspectionMutation = useStartInspection();
+  const [pendingRestartId, setPendingRestartId] = useState<number | null>(null);
 
   const myInspections = useMemo(
     () => inspectionsQuery.data ?? [],
@@ -134,6 +137,31 @@ export default function MyInspectionPage() {
       }
     } finally {
       setPendingNextPrevId(null);
+    }
+  };
+
+  const handleRestart = async (inspection: MyInspection) => {
+    if (pendingRestartId !== null) return;
+    setPendingRestartId(inspection.inspectionId);
+    try {
+      // 완료돼 있어도 같은 (제품·설비·차수)로 새 검사 생성 — 백엔드가 허용(이전 건 보존).
+      const created = await startInspectionMutation.mutateAsync({
+        productId: inspection.product.id,
+        equipmentId: inspection.equipment.id,
+        type: inspection.type,
+      });
+      navigate(`/inspection/${created.inspectionId}/measure`, {
+        state: { inspection: created },
+      });
+    } catch (err) {
+      const msg =
+        err instanceof AxiosError
+          ? ((err.response?.data as { message?: string } | undefined)
+              ?.message ?? "다시 검사를 시작하지 못했습니다.")
+          : "다시 검사를 시작하지 못했습니다.";
+      setToast(msg);
+    } finally {
+      setPendingRestartId(null);
     }
   };
 
@@ -233,6 +261,11 @@ export default function MyInspectionPage() {
                 isStartingNext={
                   startNextMutation.isPending &&
                   pendingNextPrevId === inspection.inspectionId
+                }
+                onRestart={handleRestart}
+                isRestarting={
+                  startInspectionMutation.isPending &&
+                  pendingRestartId === inspection.inspectionId
                 }
               />
             ))}
