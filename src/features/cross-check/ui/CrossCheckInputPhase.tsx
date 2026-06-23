@@ -137,7 +137,7 @@ export default function CrossCheckInputPhase({
           step="any"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder={isPreparing ? "OCR 인식 중..." : "예: 100.25"}
+          placeholder={isPreparing ? "OCR 인식 중..." : ""}
           disabled={inputDisabled}
           className="mt-1 h-11 w-full rounded-md border border-gray-300 px-3 text-base text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
         />
