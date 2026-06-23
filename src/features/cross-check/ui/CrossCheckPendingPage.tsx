@@ -97,15 +97,12 @@ const CrossCheckPendingPage = () => {
 
   // 공정(압출/가공/ST절단 등)별로 묶는다 — 각 그룹 안에서는 위 대기시간순 정렬 유지.
   // PROCESS_ORDER 에 정의된 순서를 먼저, 그 외 공정은 뒤에 노출.
-  // 내가 이미 시작한(진행 중) 순회검사 id — 새 배정 목록에서 중복 노출되지 않게 제외용.
-  // (내 진행 건은 아래 "진행 중 (이어하기)" 섹션에서 보임)
-  const myInProgressIds = useMemo(
-    () =>
-      new Set(
-        myCrossChecks
-          .filter((c) => c.status === "DRAFT")
-          .map((c) => c.crossCheckId),
-      ),
+  // 내 순회검사 id 전체 — 새 배정 목록에서 중복/잔상 노출 제외용.
+  // (내 진행 건은 "진행 중(이어하기)", 완료 건은 "내 결재 이력"에서 보임)
+  // ※ 백엔드 assigned 가 완료(PENDING_APPROVAL 등)된 건도 IN_PROGRESS 로 계속 반환하는
+  //   버그가 있어, 내가 시작한 건(상태 무관)은 새 배정 목록에서 숨긴다.
+  const myCrossCheckIds = useMemo(
+    () => new Set(myCrossChecks.map((c) => c.crossCheckId)),
     [myCrossChecks],
   );
 
@@ -117,10 +114,10 @@ const CrossCheckPendingPage = () => {
           !(
             i.status === "IN_PROGRESS" &&
             i.crossCheckId != null &&
-            myInProgressIds.has(i.crossCheckId)
+            myCrossCheckIds.has(i.crossCheckId)
           ),
       ),
-    [sortedAssigned, assignedFilter, myInProgressIds],
+    [sortedAssigned, assignedFilter, myCrossCheckIds],
   );
 
   const assignedGroups = useMemo(() => {
