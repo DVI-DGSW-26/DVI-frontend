@@ -34,7 +34,7 @@ interface DimDraft {
   valueType: ProductValueType;
 }
 
-const MAX_DIMS = 7;
+const MAX_DIMS = 10;
 
 function emptyDim(): DimDraft {
   return {
