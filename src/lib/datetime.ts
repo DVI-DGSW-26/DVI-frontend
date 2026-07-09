@@ -23,6 +23,29 @@ export function formatDateTime(iso: string | undefined | null): string {
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
 }
 
+// KST(Asia/Seoul) 기준 달력 날짜 키 "YYYY-MM-DD".
+// 브라우저 타임존과 무관하게 UTC+9 로 환산해서 계산 — 현장 기기가 KST 가 아니어도 안전.
+export function kstDateKey(d: Date): string {
+  if (Number.isNaN(d.getTime())) return "";
+  const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  const yyyy = kst.getUTCFullYear();
+  const mm = String(kst.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(kst.getUTCDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+// iso 가 KST 기준으로 now(기본: 현재)와 같은 날짜인지.
+// 값이 없거나 파싱 불가하면 null — "판단 보류"(호출부에서 기존 동작 유지용).
+export function isSameKstDay(
+  iso: string | undefined | null,
+  now: Date,
+): boolean | null {
+  if (!iso) return null;
+  const d = parseServerDate(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return kstDateKey(d) === kstDateKey(now);
+}
+
 // "2026-06-18" (KST). 파싱 실패 시 원본 문자열 반환, 값 없으면 "-".
 export function formatDate(iso: string | undefined | null): string {
   if (!iso) return "-";
