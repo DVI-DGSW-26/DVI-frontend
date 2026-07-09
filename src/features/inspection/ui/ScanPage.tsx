@@ -18,6 +18,7 @@ import {
   useMyInspectionList,
 } from "../../my-inspection/api";
 import { getRecentInspectionId } from "../lib/recentInspection";
+import { isSameKstDay } from "../../../lib/datetime";
 import SlotItem, { type SlotStatus } from "./SlotItem";
 import SkipModal from "./SkipModal";
 import Toast from "./Toast";
@@ -101,13 +102,26 @@ export default function ScanPage() {
   }, [hasContext, recentInspection, latestDraft, navigate]);
 
   // 같은 제품/설비 콘텍스트의 기존 검사를 시점별로 매핑.
+  //
+  // [KST 오늘 방어] 전날 검사가 오늘 슬롯을 막지 않도록 KST 오늘 것만 반영한다.
+  // 서버가 "오늘 검사" 판정을 UTC 로 해서 전날 검사를 KST 09:00(=UTC 자정)까지 계속
+  // 내려주는 경우, 날짜 구분 없이 type 으로 매핑하면 오늘 슬롯이 "완료"로 잠겨
+  // 새 검사가 안 열린다. createdAt 등 KST 날짜가 오늘과 다르면 슬롯 계산에서 제외.
+  // 날짜 필드가 없거나 파싱 불가하면(판단 보류) 기존 동작 유지 위해 통과시킨다.
   const inspectionByType = useMemo(() => {
     const map = new Map<string, MyInspection>();
+    const now = new Date();
     for (const ins of myInspectionsQuery.data ?? []) {
       if (
         ins.product?.id === productId &&
         ins.equipment?.id === equipmentId
       ) {
+        // inspectionTime 은 표시/스케줄용이라 신뢰도가 낮아 제외 — 실제 서버
+        // 타임스탬프(createdAt/completedAt/updatedAt) 로만 오늘 여부를 판정.
+        // 진행 중(DRAFT)은 자정을 넘겨 이어서 작업할 수 있으므로 날짜 무관하게 유지.
+        const dateSource = ins.createdAt ?? ins.completedAt ?? ins.updatedAt;
+        if (ins.status !== "DRAFT" && isSameKstDay(dateSource, now) === false)
+          continue;
         map.set(ins.type, ins);
       }
     }
