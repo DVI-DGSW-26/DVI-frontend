@@ -65,11 +65,12 @@ export function installAuthInterceptors() {
           // 다시 로그인해 세션이 바뀐 경우, 여기서 save 하면 죽은 세션이 되살아난다.
           // 시작 시점의 refresh 토큰 그대로이거나(아무도 안 건드림) 방금 발급받은
           // 토큰과 일치할 때(형제 요청이 rotation 후 이미 저장함)만 저장/재시도한다.
+          const nextRefreshToken = tokens.refreshToken ?? refreshToken;
           const current = tokenStorage.getRefresh();
-          if (current !== refreshToken && current !== tokens.refreshToken) {
+          if (current !== refreshToken && current !== nextRefreshToken) {
             return Promise.reject(error);
           }
-          tokenStorage.save(tokens);
+          tokenStorage.save({ accessToken: tokens.accessToken, refreshToken: nextRefreshToken });
           original.headers.Authorization = `Bearer ${tokens.accessToken}`;
           return http(original);
         } catch (refreshErr) {
