@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { AxiosError } from "axios";
 import { getMe, login as loginApi, tokenStorage } from "./api";
 import type { LoginRequest, User } from "./api";
 
@@ -34,9 +35,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     try {
       setUser(await getMe());
-    } catch {
-      tokenStorage.clear();
-      setUser(null);
+    } catch (err) {
+      // 401(인증 실패)일 때만 세션을 폐기한다. 재발급까지 실패한 진짜 만료
+      // 상황이다. 네트워크·서버 일시 오류(타임아웃/5xx/CORS)로 getMe 가 실패한
+      // 경우까지 토큰을 지우면, 멀쩡한 세션이 영구 로그아웃돼 재접속해도 계속
+      // 로그인 화면이 된다. 그 경우엔 토큰을 보존해 다음 새로고침에서 복구한다.
+      if (err instanceof AxiosError && err.response?.status === 401) {
+        tokenStorage.clear();
+        setUser(null);
+      }
     }
   }, []);
 
