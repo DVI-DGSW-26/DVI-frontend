@@ -61,6 +61,14 @@ export function installAuthInterceptors() {
             tokenStorage.clear();
             return Promise.reject(error);
           }
+          // 재발급이 진행되는 동안 사용자가 로그아웃했거나(clear) 다른 계정으로
+          // 다시 로그인해 세션이 바뀐 경우, 여기서 save 하면 죽은 세션이 되살아난다.
+          // 시작 시점의 refresh 토큰 그대로이거나(아무도 안 건드림) 방금 발급받은
+          // 토큰과 일치할 때(형제 요청이 rotation 후 이미 저장함)만 저장/재시도한다.
+          const current = tokenStorage.getRefresh();
+          if (current !== refreshToken && current !== tokens.refreshToken) {
+            return Promise.reject(error);
+          }
           tokenStorage.save(tokens);
           original.headers.Authorization = `Bearer ${tokens.accessToken}`;
           return http(original);
