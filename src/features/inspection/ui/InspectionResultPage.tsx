@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
@@ -22,6 +22,7 @@ import { getNextSlot } from "../lib/slotSequence";
 import JudgmentBadge from "./JudgmentBadge";
 import Toast from "./Toast";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
+import { useHeaderBackHandler } from "../../../lib/headerBack";
 
 interface ResultLocationState {
   results?: StepResult[];
@@ -154,6 +155,18 @@ export default function InspectionResultPage() {
 
   const isBusy =
     completeMut.isPending || incompleteMut.isPending || saveMut.isPending;
+
+  // 헤더 뒤로가기 → 방금 측정하던 측정 페이지로 복귀. 측정→결과는 replace 로 이동해
+  // 히스토리에 측정 페이지가 없으므로 navigate(-1) 대신 측정 경로로 직접 이동한다.
+  // editMode 로 진입해 "모든 항목 완료 → 결과로 자동 redirect" 를 막는다.
+  useHeaderBackHandler(
+    useCallback(() => {
+      navigate(`/inspection/${inspectionId}/measure`, {
+        state: { editMode: true },
+      });
+      return true;
+    }, [navigate, inspectionId]),
+  );
 
   if (needsFallback && detailQuery.isLoading) {
     return (
