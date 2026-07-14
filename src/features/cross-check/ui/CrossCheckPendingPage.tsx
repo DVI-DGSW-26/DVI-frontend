@@ -171,6 +171,17 @@ const CrossCheckPendingPage = () => {
     [myCrossChecks],
   );
 
+  // 상단 요약(구 품질 시스템 현황) — 미처리(배정 대기)/완료(승인)/진행중(DRAFT) 누적 집계.
+  const statCounts = useMemo(() => {
+    let approved = 0;
+    let draft = 0;
+    for (const c of myCrossChecks) {
+      if (c.status === "APPROVED") approved++;
+      else if (c.status === "DRAFT") draft++;
+    }
+    return { pending: assigned.length, approved, draft };
+  }, [myCrossChecks, assigned]);
+
   const handleResumeClick = (cc: CrossCheckSummary) => {
     navigate(`/cross-check/${cc.crossCheckId}/measure`);
   };
@@ -206,6 +217,34 @@ const CrossCheckPendingPage = () => {
 
   return (
     <div className="flex min-h-full flex-col gap-3 bg-[#F5F5F5] px-4 pb-21 pt-4">
+      {/* 요약 통계 — 미처리/완료/진행중. 클릭 시 해당 탭으로 이동. */}
+      <section className="grid grid-cols-3 gap-2">
+        <SummaryStat
+          label="미처리"
+          value={statCounts.pending}
+          icon="solar:danger-triangle-bold"
+          accent="#931B82"
+          iconBg="#F3E8F7"
+          onClick={() => setTab("assigned")}
+        />
+        <SummaryStat
+          label="완료"
+          value={statCounts.approved}
+          icon="solar:check-circle-bold"
+          accent="#22C55E"
+          iconBg="#DCFCE7"
+          onClick={() => setTab("history")}
+        />
+        <SummaryStat
+          label="진행중"
+          value={statCounts.draft}
+          icon="solar:pen-bold"
+          accent="#3B82F6"
+          iconBg="#DBEAFE"
+          onClick={() => setTab("assigned")}
+        />
+      </section>
+
       <div
         role="tablist"
         aria-label="순회검사 목록"
@@ -380,6 +419,39 @@ const CrossCheckPendingPage = () => {
     </div>
   );
 };
+
+function SummaryStat({
+  label,
+  value,
+  icon,
+  accent,
+  iconBg,
+  onClick,
+}: {
+  label: string;
+  value: number;
+  icon: string;
+  accent: string;
+  iconBg: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex flex-col gap-2 rounded-2xl bg-white px-3 py-3 text-left shadow-sm transition-transform active:scale-[0.98]"
+    >
+      <span
+        className="flex h-8 w-8 items-center justify-center rounded-full"
+        style={{ backgroundColor: iconBg }}
+      >
+        <Icon icon={icon} width={18} height={18} color={accent} />
+      </span>
+      <span className="text-xs text-[#A8A8A8]">{label}</span>
+      <span className="text-2xl font-bold text-[#212121]">{value}</span>
+    </button>
+  );
+}
 
 function TabButton({
   active,
