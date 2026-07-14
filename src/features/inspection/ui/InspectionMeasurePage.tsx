@@ -26,6 +26,7 @@ import {
 } from "../lib/measurementProgress";
 import { setRecentInspectionId } from "../lib/recentInspection";
 import { useHeaderBackHandler } from "../../../lib/headerBack";
+import { formatDate } from "../../../lib/datetime";
 import CapturePhase from "./CapturePhase";
 import CropPhase from "./CropPhase";
 import InputPhase from "./InputPhase";
@@ -615,6 +616,7 @@ export default function InspectionMeasurePage() {
       <section className="border-b border-gray-200 bg-white px-4 py-4">
         <InfoRow label="기계명" value={info.equipment.name} />
         <InfoRow label="검사 차수" value={info.typeLabel || "-"} />
+        <InfoRow label="검사 시작일" value={formatDate(info.createdAt)} />
         <div className="mt-2 grid grid-cols-2 gap-2">
           <Stat label="제품명" value={info.product.name} />
           <Stat label="담당자" value={user?.name ?? "-"} />

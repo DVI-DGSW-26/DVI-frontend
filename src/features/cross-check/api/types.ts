@@ -79,6 +79,8 @@ export interface AssignedInspection {
   typeLabel: string;
   inspectionTime: string;
   completedAt: string;
+  // 검사(자주검사)를 시작한 날짜. 백엔드가 보내주면 목록에 표시, 없으면 숨김.
+  createdAt?: string;
   // 선점 상태 — IN_PROGRESS 면 이미 다른(또는 본인) 담당자가 시작한 건.
   status?: "AVAILABLE" | "IN_PROGRESS";
   // 진행 중일 때 담당자 이름.
