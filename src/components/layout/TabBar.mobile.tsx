@@ -38,6 +38,7 @@ const TABS: TabItem[] = [
   { label: "순회검사 현황", to: "/cross-checks", icon: "icon-park-outline:big-clock", roles: ["QUALITY", "ADMIN"] },
   { label: "순회검사 결재", to: "/cross-check-approval", icon: "mdi:shield-check-outline", roles: ["QUALITY_ADMIN", "ADMIN"] },
 
+  { label: "자주검사 관리", to: "/admin-inspections", icon: "mdi:clipboard-remove-outline", roles: ["ADMIN"] },
   { label: "제품관리", to: "/products", icon: "mdi:cube", roles: ["ADMIN"] },
   { label: "설비관리", to: "/equipment", icon: "mdi:factory", roles: ["ADMIN"] },
   { label: "고객사 관리", to: "/customers", icon: "mdi:office-building", roles: ["ADMIN"] },

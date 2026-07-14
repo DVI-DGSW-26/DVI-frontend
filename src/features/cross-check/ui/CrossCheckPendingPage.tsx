@@ -10,7 +10,7 @@ import {
 import type { AssignedInspection, CrossCheckSummary } from "../api";
 import { elapsedFrom } from "../lib/elapsed";
 import { needsHardnessInput } from "../lib/stage";
-import { formatDateTime } from "../../../lib/datetime";
+import { formatDate, formatDateTime } from "../../../lib/datetime";
 import {
   DEFAULT_DATE_FILTER,
   isDateFilterActive,
@@ -528,7 +528,7 @@ function DraftResumeCard({
           설비: {cc.equipment.name} · {cc.typeLabel}
         </span>
         <span className="mt-1 block truncate text-xs text-[#A8A8A8]">
-          검사 일시: {formatDateTime(cc.inspectionTime)}
+          시작일: {formatDate(cc.createdAt)}
         </span>
       </div>
       <Icon
@@ -574,10 +574,7 @@ function HistoryCard({
           />
           <InfoLine label="설비" value={cc.equipment.name} />
           <InfoLine label="검사 차수" value={`${cc.typeLabel} (${cc.type})`} />
-          <InfoLine
-            label="검사 일시"
-            value={formatDateTime(cc.inspectionTime)}
-          />
+          <InfoLine label="시작일" value={formatDate(cc.createdAt)} />
           <InfoLine
             label="업데이트"
             value={formatDateTime(cc.updatedAt ?? cc.createdAt)}
