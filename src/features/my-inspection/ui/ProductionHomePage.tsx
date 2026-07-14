@@ -17,6 +17,7 @@ import type { MyInspection } from "../type/types";
 import { getStatusBadge } from "../lib/inspectionStatus";
 import { extractNextEligible } from "../lib/nextEligible";
 import { formatSlotTime } from "../../inspection/lib/format";
+import { formatDate } from "../../../lib/datetime";
 import SkipModal from "../../inspection/ui/SkipModal";
 import Toast from "../../inspection/ui/Toast";
 
@@ -325,6 +326,11 @@ export default function ProductionHomePage() {
                       <div className="mt-0.5 truncate text-xs text-[#6B7280]">
                         {previous.equipment.name}
                       </div>
+                      {previous.createdAt && (
+                        <div className="mt-0.5 truncate text-xs text-[#A8A8A8]">
+                          시작일: {formatDate(previous.createdAt)}
+                        </div>
+                      )}
                     </div>
                     <Icon
                       icon="solar:arrow-right-linear"
