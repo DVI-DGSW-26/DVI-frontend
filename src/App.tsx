@@ -24,7 +24,6 @@ import AdminReportPage from "./features/report/ui/AdminReportPage";
 import AdminReportDetailPage from "./features/report/ui/AdminReportDetailPage";
 import DashboardPage from "./features/dashboard/ui/DashboardPage";
 
-import QualitySystemStatusPage from "./features/cross-check/ui/QualitySystemStatusPage";
 import CrossCheckPendingPage from "./features/cross-check/ui/CrossCheckPendingPage";
 import CrossCheckMeasurePage from "./features/cross-check/ui/CrossCheckMeasurePage";
 import CrossCheckResultPage from "./features/cross-check/ui/CrossCheckResultPage";
@@ -113,11 +112,6 @@ function App() {
             </Route>
 
             <Route element={<RouteGuard roles={["QUALITY", "ADMIN"]} />}>
-              <Route
-                path="/quality-status"
-                element={<QualitySystemStatusPage />}
-              />
-
               <Route path="/cross-checks" element={<CrossCheckPendingPage />} />
 
               <Route
