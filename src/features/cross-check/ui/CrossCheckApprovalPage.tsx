@@ -4,7 +4,7 @@ import { Icon } from "@iconify/react";
 import { usePendingCrossChecks } from "../api";
 import type { CrossCheckSummary } from "../api";
 import { getStage, STAGE_LABEL, STAGE_BADGE } from "../lib/stage";
-import { formatDateTime } from "../../../lib/datetime";
+import { formatDate, formatDateTime } from "../../../lib/datetime";
 import {
   DEFAULT_DATE_FILTER,
   isDateFilterActive,
@@ -146,8 +146,8 @@ export default function CrossCheckApprovalPage() {
                       value={`${cc.typeLabel} (${cc.type})`}
                     />
                     <InfoLine
-                      label="검사 일시"
-                      value={formatDateTime(cc.inspectionTime)}
+                      label="시작일"
+                      value={formatDate(cc.createdAt)}
                     />
                     <InfoLine
                       label="결재 요청"
