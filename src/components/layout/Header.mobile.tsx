@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useUnreadCount } from "../../features/notification/api";
 import { useAuth } from "../../features/auth/AuthContext";
+import { runHeaderBackHandler } from "../../lib/headerBack";
 
 const ROUTE_TITLES: Record<string, string> = {
   "/": "홈",
@@ -40,11 +41,18 @@ const HeaderMobile = () => {
   const hasUnread = unreadCount > 0;
   const isNotificationsPage = pathname === "/notifications";
 
+  // 특정 페이지(측정 결과/측정 페이지)가 useHeaderBackHandler 로 뒤로가기 동작을
+  // 가로챌 수 있다. 가로채지 않으면 기본 히스토리 뒤로가기.
+  const handleBack = () => {
+    if (runHeaderBackHandler()) return;
+    navigate(-1);
+  };
+
   return (
     <header className="relative flex h-14 items-center justify-center border-b border-[#E5E7EB] bg-white px-4">
       <button
         type="button"
-        onClick={() => navigate(-1)}
+        onClick={handleBack}
         aria-label="뒤로가기"
         className="absolute left-4 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center text-[#212121]"
       >

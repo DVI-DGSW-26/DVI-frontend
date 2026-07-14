@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useAuth } from "../../auth/AuthContext";
@@ -25,6 +25,7 @@ import {
   writeProgress,
 } from "../lib/measurementProgress";
 import { setRecentInspectionId } from "../lib/recentInspection";
+import { useHeaderBackHandler } from "../../../lib/headerBack";
 import CapturePhase from "./CapturePhase";
 import CropPhase from "./CropPhase";
 import InputPhase from "./InputPhase";
@@ -88,6 +89,13 @@ export default function InspectionMeasurePage() {
   useEffect(() => {
     setRecentInspectionId(inspectionId);
   }, [inspectionId]);
+
+  // 헤더 뒤로가기를 화면 내 "이전 단계" 와 동일하게 동작시킨다. 이전 스텝이 있으면
+  // 결과 페이지로 나가지 않고 스텝만 뒤로 이동. 동작(canGoBack/goToPreviousStep)은 조기
+  // return 이후에 계산되므로 ref 에 담아두고, 실제 back 클릭 시(=이벤트 시점) 최신 값을 읽는다.
+  const headerBackRef = useRef<() => boolean>(() => false);
+  const handleHeaderBack = useCallback(() => headerBackRef.current(), []);
+  useHeaderBackHandler(handleHeaderBack);
 
   // 측정 페이지 진입 직후 detail 도착 전까지 빈 화면 방지를 위한 임시 메타 정보 소스.
   // 실제 측정 항목은 detail.results 로만 산출한다.
@@ -589,6 +597,18 @@ export default function InspectionMeasurePage() {
       </div>
     );
   }
+
+  // 헤더 뒤로가기가 참조할 최신 동작 반영 — 이전 스텝이 있으면 스텝 뒤로(true=소비),
+  // 없으면 false 로 넘겨 헤더 기본 뒤로가기가 실행되게 한다. 값이 조기 return 이후에
+  // 계산되므로 렌더 중 ref 에 기록한다(클릭 시점에만 읽으므로 안전).
+  // eslint-disable-next-line react-hooks/refs -- 이벤트 시점 최신값 전달용 (조기 return 뒤 계산값)
+  headerBackRef.current = () => {
+    if (canGoBack) {
+      goToPreviousStep();
+      return true;
+    }
+    return false;
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-24">
