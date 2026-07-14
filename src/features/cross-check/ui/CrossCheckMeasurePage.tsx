@@ -566,7 +566,7 @@ export default function CrossCheckMeasurePage() {
         <InfoRow label="검사 차수" value={detail.typeLabel} />
         <InfoRow
           label="검사 시작일"
-          value={formatDate(detail.createdAt)}
+          value={formatDate(inspectionDetailQuery.data?.createdAt ?? detail.createdAt)}
         />
         <div className="mt-2 flex flex-col gap-2">
           <Stat label="제품명" value={detail.product.name} />
