@@ -22,6 +22,7 @@ import CustomersPage from "./features/customers/ui/CustomersPage";
 
 import AdminReportPage from "./features/report/ui/AdminReportPage";
 import AdminReportDetailPage from "./features/report/ui/AdminReportDetailPage";
+import AdminInspectionListPage from "./features/admin-inspection/ui/AdminInspectionListPage";
 import DashboardPage from "./features/dashboard/ui/DashboardPage";
 
 import CrossCheckPendingPage from "./features/cross-check/ui/CrossCheckPendingPage";
@@ -73,6 +74,11 @@ function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
 
               <Route path="/reports" element={<AdminReportPage />} />
+
+              <Route
+                path="/admin-inspections"
+                element={<AdminInspectionListPage />}
+              />
 
               <Route path="/products" element={<ProductsPage />} />
               <Route path="/equipment" element={<EquipmentPage />} />

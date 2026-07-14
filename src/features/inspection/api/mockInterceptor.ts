@@ -183,6 +183,33 @@ const mockMyInspections: MyInspection[] = [
   ),
 ];
 
+// GET /inspection/all (관리자 전용) 목 데이터. 작성자(production) 포함.
+// let 로 두어 DELETE 목이 목록에서 실제로 제거하도록 한다.
+let mockAdminInspections: (MyInspection & {
+  production?: { id: number; name: string };
+})[] = [
+  {
+    ...makeMyInspection(8001, 9001, "DAY_1", "초", "08:00:00", "EXTRUSION", "DRAFT"),
+    production: { id: 11, name: "김생산" },
+    createdAt: `${todayYmd()}T08:05:00`,
+  },
+  {
+    ...makeMyInspection(8002, 9002, "DAY_2", "중", "13:00:00", "AL_CUTTING", "DRAFT"),
+    production: { id: 12, name: "이작업" },
+    createdAt: `${todayYmd()}T13:12:00`,
+  },
+  {
+    ...makeMyInspection(8003, 9003, "DAY_3", "종", "17:00:00", "MACHINING", "COMPLETED"),
+    production: { id: 11, name: "김생산" },
+    createdAt: `${todayYmd()}T17:20:00`,
+  },
+  {
+    ...makeMyInspection(8004, 9004, "NIGHT_1", "야간", "22:00:00", "ST_CUTTING", "INCOMPLETE"),
+    production: { id: 13, name: "박야간" },
+    createdAt: `${todayYmd()}T22:03:00`,
+  },
+];
+
 function envelope<T>(status: number, data: T, message = "OK") {
   return { status, message, data };
 }
@@ -266,6 +293,17 @@ function tryMock(
     return Promise.resolve(
       buildResponse(config, 200, envelope(200, mockMyInspections)),
     );
+  }
+
+  // GET /inspection/all — 관리자 전용 전체 자주검사 목록.
+  if (method === "get" && url === "/inspection/all") {
+    const params = (config.params ?? {}) as { status?: string; date?: string };
+    let list = mockAdminInspections;
+    if (params.status) list = list.filter((i) => i.status === params.status);
+    if (params.date) {
+      list = list.filter((i) => (i.createdAt ?? "").slice(0, 10) === params.date);
+    }
+    return delayed(200, buildResponse(config, 200, envelope(200, list)));
   }
 
   const detailMatch = url.match(/^\/inspection\/(\d+)$/);
@@ -402,6 +440,31 @@ function tryMock(
     return delayed(
       800,
       buildResponse(config, 201, envelope(201, { url: imageUrl })),
+    );
+  }
+
+  // DELETE /inspection/{id} — DRAFT 만 삭제 가능. 관리자 목록 목에서 실제 제거.
+  const deleteMatch = url.match(/^\/inspection\/(\d+)$/);
+  if (method === "delete" && deleteMatch) {
+    const id = Number(deleteMatch[1]);
+    const target = mockAdminInspections.find((i) => i.inspectionId === id);
+    if (target && target.status !== "DRAFT") {
+      return Promise.reject(
+        (() =>
+          rejectMock(
+            config,
+            400,
+            "INSPECTION_NOT_DELETABLE",
+            "작성중(DRAFT) 상태만 삭제할 수 있습니다.",
+          ))(),
+      );
+    }
+    mockAdminInspections = mockAdminInspections.filter(
+      (i) => i.inspectionId !== id,
+    );
+    return delayed(
+      300,
+      buildResponse(config, 200, envelope(200, {} as Record<string, never>)),
     );
   }
 

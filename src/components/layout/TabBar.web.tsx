@@ -14,6 +14,7 @@ type TabItem = {
 const TABS: TabItem[] = [
   { label: "대시보드", to: "/", icon: "flowbite:home-solid", roles: ["ADMIN"] },
   { label: "검사보고서", to: "/reports", icon: "basil:document-solid", roles: ["ADMIN"] },
+  { label: "자주검사 관리", to: "/admin-inspections", icon: "mdi:clipboard-remove-outline", roles: ["ADMIN"] },
   { label: "승인관리", to: "/approval-management", icon: "fluent:shield-task-48-filled", roles: ["QUALITY_ADMIN", "ADMIN"] },
   { label: "보고서", to: "/qm-reports", icon: "basil:document-solid", roles: ["QUALITY_ADMIN"] },
   { label: "순회검사 결재", to: "/cross-check-approval", icon: "mdi:shield-check-outline", roles: ["QUALITY_ADMIN", "ADMIN"] },
