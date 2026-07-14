@@ -1,6 +1,7 @@
 import { Icon } from "@iconify/react";
 import type { AssignedInspection } from "../api";
 import { elapsedFrom, TONE_COLOR } from "../lib/elapsed";
+import { formatDate } from "../../../lib/datetime";
 
 interface Props {
   item: AssignedInspection;
@@ -49,6 +50,11 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
         {item.equipmentName && (
           <span className="mt-2 truncate text-xs text-[#A8A8A8]">
             공정: {item.equipmentName}
+          </span>
+        )}
+        {item.createdAt && (
+          <span className="mt-1 truncate text-xs text-[#A8A8A8]">
+            시작일: {formatDate(item.createdAt)}
           </span>
         )}
       </div>

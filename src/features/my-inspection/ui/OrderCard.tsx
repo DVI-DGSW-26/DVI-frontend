@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import type { MyInspection } from "../type/types";
 import { getStatusBadge } from "../lib/inspectionStatus";
+import { formatDate } from "../../../lib/datetime";
 
 // 한 카드는 한 검사를 표현. /inspection/assigned 제거 후로는 my inspection 한 종류만 표시.
 
@@ -103,6 +104,11 @@ export default function OrderCard({
             <div className="mt-0.5 truncate text-xs text-[#6B7280]">
               {inspection.typeLabel}
             </div>
+            {inspection.createdAt && (
+              <div className="mt-0.5 truncate text-xs text-[#A8A8A8]">
+                시작일: {formatDate(inspection.createdAt)}
+              </div>
+            )}
           </div>
           <span
             className={`inline-flex shrink-0 items-center gap-1 text-xs font-medium ${badge.text}`}
