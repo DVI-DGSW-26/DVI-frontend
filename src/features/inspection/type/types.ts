@@ -193,3 +193,8 @@ export interface StepResult {
 export interface IncompleteRequest {
   reason: string;
 }
+
+// 품질 문제(금형 교체 등) 조기 마감 요청. 사유는 선택.
+export interface TerminateRequest {
+  reason?: string;
+}
