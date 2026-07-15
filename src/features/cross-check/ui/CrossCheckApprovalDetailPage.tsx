@@ -245,9 +245,14 @@ export default function CrossCheckApprovalDetailPage() {
               return `${detail.typeLabel} (${detail.type})${stageText}`;
             })()}
           />
-          <InfoLine label="작성일" value={formatDateTime(detail.createdAt)} />
+          <InfoLine
+            className="col-span-2 md:col-span-1"
+            label="작성일"
+            value={formatDateTime(detail.createdAt)}
+          />
           {detail.status === "PENDING_APPROVAL" && (
             <InfoLine
+              className="col-span-2 md:col-span-1"
               label="결재 요청일"
               value={formatDateTime(detail.updatedAt)}
             />
@@ -601,9 +606,19 @@ function JudgmentChip({ within }: { within: boolean | null }) {
   );
 }
 
-function InfoLine({ label, value }: { label: string; value: string }) {
+function InfoLine({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: string;
+  className?: string;
+}) {
   return (
-    <div className="flex items-center gap-1.5 text-[#6B7280]">
+    <div
+      className={`flex items-center gap-1.5 text-[#6B7280] ${className ?? ""}`}
+    >
       <span className="shrink-0">{label}</span>
       <span className="ml-auto min-w-0 truncate text-right text-[#212121]">
         {value}
