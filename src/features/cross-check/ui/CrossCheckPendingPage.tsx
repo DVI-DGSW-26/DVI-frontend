@@ -576,6 +576,7 @@ function HistoryCard({
           <InfoLine label="검사 차수" value={`${cc.typeLabel} (${cc.type})`} />
           <InfoLine label="시작일" value={formatDate(cc.createdAt)} />
           <InfoLine
+            className="col-span-2"
             label="업데이트"
             value={formatDateTime(cc.updatedAt ?? cc.createdAt)}
           />
@@ -588,9 +589,19 @@ function HistoryCard({
   );
 }
 
-function InfoLine({ label, value }: { label: string; value: string }) {
+function InfoLine({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: string;
+  className?: string;
+}) {
   return (
-    <div className="flex items-center gap-1.5 text-[#6B7280]">
+    <div
+      className={`flex items-center gap-1.5 text-[#6B7280] ${className ?? ""}`}
+    >
       <span className="shrink-0">{label}</span>
       <span className="ml-auto min-w-0 truncate text-right text-[#212121]">
         {value}
