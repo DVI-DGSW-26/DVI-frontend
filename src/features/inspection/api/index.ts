@@ -9,6 +9,7 @@ export {
   saveInspectionResults,
   completeInspection,
   incompleteInspection,
+  terminateInspection,
   reopenInspection,
 } from "./inspectionApi";
 export {
@@ -23,6 +24,7 @@ export {
   useSaveInspectionResults,
   useCompleteInspection,
   useIncompleteInspection,
+  useTerminateInspection,
   useReopenInspection,
   inspectionKeys,
 } from "./queries";

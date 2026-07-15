@@ -6,6 +6,7 @@ import {
   useInspectionDetail,
   useOcrInspectionImage,
   useSaveInspectionResults,
+  useTerminateInspection,
   useUploadInspectionImage,
 } from "../api";
 import type {
@@ -31,6 +32,7 @@ import CapturePhase from "./CapturePhase";
 import CropPhase from "./CropPhase";
 import InputPhase from "./InputPhase";
 import Toast from "./Toast";
+import TerminateInspectionModal from "./TerminateInspectionModal";
 
 type Phase = "capture" | "crop" | "input";
 
@@ -51,6 +53,8 @@ interface MeasureItem {
 interface MeasureLocationState {
   inspection?: MyInspection;
   qualityName?: string;
+  // 조기 마감(terminate) 후 재검사용 새 초품으로 이동했을 때, 그 화면에서 "보고서 발행됨" 안내용.
+  terminatedNotice?: boolean;
   // result 페이지에서 "측정으로 돌아가기" 로 진입했을 때 allDone 자동 redirect 를 막기 위한 플래그.
   editMode?: boolean;
   // result 페이지에서 특정 항목 "다시 측정" 으로 진입한 경우 — 해당 dim 으로 바로 이동하고
@@ -179,6 +183,9 @@ export default function InspectionMeasurePage() {
   // detail 이 아직 안 왔을 땐 items 가 stateInspection.dims 폴백(measuredValue 없음)일 수
   // 있어 firstEmptyIdx 가 항상 0 으로 잡힌다. 그 시점에 lock 되면 다음 마운트마다 dim 1
   // 부터 시작하는 버그가 생기므로 detail 도착 후에만 잠근다.
+  // 렌더 중 1회만 lock 하는 lazy 초기화(깜빡임 방지, 위 주석 참고) — 의도된 패턴이라
+  // react-hooks/refs 를 이 블록에 한해 끈다.
+  /* eslint-disable react-hooks/refs */
   if (
     lockedStartIdxRef.current === null &&
     detail &&
@@ -188,6 +195,7 @@ export default function InspectionMeasurePage() {
       firstEmptyIdx === -1 ? items.length : firstEmptyIdx;
   }
   const startIdx = lockedStartIdxRef.current ?? 0;
+  /* eslint-enable react-hooks/refs */
 
   // 이어하기 진입 시점에는 detail.results 가 (백엔드 응답에 따라) 비어 보일 수 있어 firstEmptyIdx
   // 가 0 으로 잡혀 처음부터 다시 시작되는 문제가 발생한다. 로컬 캐시에 진행 상태를 별도로
@@ -224,6 +232,37 @@ export default function InspectionMeasurePage() {
   );
   const [isPreparing, setIsPreparing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+
+  // 품질 문제(금형 교체 등) 조기 마감.
+  const [showTerminate, setShowTerminate] = useState(false);
+  const terminateMut = useTerminateInspection(inspectionId);
+  const terminatedNoticeShown = useRef(false);
+  // 마감 후 새 초품으로 진입했을 때 1회 안내 토스트.
+  useEffect(() => {
+    const s = (location.state ?? {}) as MeasureLocationState;
+    if (s.terminatedNotice && !terminatedNoticeShown.current) {
+      terminatedNoticeShown.current = true;
+      setToast("보고서가 발행되었습니다. 재검사(초품)를 시작합니다.");
+    }
+  }, [location.state]);
+
+  const handleTerminate = async (reason: string) => {
+    try {
+      const fresh = await terminateMut.mutateAsync({
+        reason: reason || undefined,
+      });
+      clearProgress(inspectionId);
+      setShowTerminate(false);
+      // 응답으로 받은 재검사용 새 초품 측정 화면으로 이동.
+      navigate(`/inspection/${fresh.inspectionId}/measure`, {
+        replace: true,
+        state: { terminatedNotice: true } satisfies MeasureLocationState,
+      });
+    } catch (err) {
+      setShowTerminate(false);
+      setToast(toErrorMessage(err));
+    }
+  };
 
   const uploadImage = useUploadInspectionImage();
   const ocrImage = useOcrInspectionImage();
@@ -621,6 +660,13 @@ export default function InspectionMeasurePage() {
           <Stat label="제품명" value={info.product.name} />
           <Stat label="담당자" value={user?.name ?? "-"} />
         </div>
+        <button
+          type="button"
+          onClick={() => setShowTerminate(true)}
+          className="mt-3 w-full rounded-md border border-[#B45309] px-3 py-2 text-xs font-medium text-[#B45309] transition-colors hover:bg-[#FFFBEB]"
+        >
+          품질 문제로 마감 · 보고서 발행
+        </button>
       </section>
 
       <section className="border-b border-gray-200 bg-white px-4 py-4">
@@ -736,6 +782,13 @@ export default function InspectionMeasurePage() {
           );
         })()}
       </section>
+
+      <TerminateInspectionModal
+        open={showTerminate}
+        isSubmitting={terminateMut.isPending}
+        onCancel={() => setShowTerminate(false)}
+        onConfirm={handleTerminate}
+      />
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
