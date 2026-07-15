@@ -143,7 +143,7 @@ export default function CrossCheckApprovalDetailPage() {
 
   if (detailQuery.isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
+      <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
         불러오는 중...
       </div>
     );
@@ -151,7 +151,7 @@ export default function CrossCheckApprovalDetailPage() {
 
   if (detailQuery.isError || !detail) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[#F5F5F5] px-6 text-center">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-[#F5F5F5] px-6 text-center">
         <span className="text-sm text-[#EF4444]">
           순회검사를 불러오지 못했습니다.
         </span>

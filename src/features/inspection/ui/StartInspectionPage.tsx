@@ -115,7 +115,7 @@ export default function StartInspectionPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-20 md:pb-6">
+    <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-20 md:pb-6">
       {/* StepBar + 선택된 제품 미리보기 + 검색/필터를 하나의 sticky 영역으로 묶음.
           Layout 의 <main overflow-y-auto> 안에서 top:0 으로 고정되어, 리스트만 스크롤된다.
           모바일(pb-20)에선 하단 TabBar(h-16)만큼, 데스크탑(md:pb-6)에선 TabBar 없으므로 작게. */}

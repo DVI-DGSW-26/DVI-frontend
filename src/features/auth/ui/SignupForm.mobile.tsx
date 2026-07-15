@@ -64,7 +64,7 @@ export default function SignupFormMobile({
     "h-[60px] border border-[#A8A8A8] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#931B82]";
 
   return (
-    <div className="relative min-h-screen w-full bg-white overflow-hidden">
+    <div className="relative min-h-dvh w-full bg-white overflow-hidden">
       {step < 3 && (
         <button
           type="button"
