@@ -75,7 +75,7 @@ const AdminUserSearchPageMobile = () => {
         </button>
       </div>
 
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4">
+      <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
         {FILTERS.map((f) => {
           const active = filter === f.key;
           return (

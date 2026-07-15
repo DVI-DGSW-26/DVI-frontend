@@ -11,6 +11,15 @@ html, body, #root {
   width: 100%;
 }
 
+/* 가로 스크롤 영역(공정 필터칩 등)에서 스크롤바 선을 숨긴다 — 스와이프로 넘기는 UI. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* react-image-crop 가 .ReactCrop, .ReactCrop__child-wrapper, 내부 img 모두에
    touch-action: none 을 강제해서 모바일 페이지 스크롤이 막힘.
    루트 + 자식 + 이미지까지 pan-y 로 override 해서 수직 스크롤만 허용.
