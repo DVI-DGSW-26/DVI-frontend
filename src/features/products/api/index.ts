@@ -21,6 +21,7 @@ export type {
   ProductDim,
   ProductDimInput,
   ProductListItem,
+  ProductScheduleType,
   ProductValueType,
   UpdateProductRequest,
 } from "./types";
