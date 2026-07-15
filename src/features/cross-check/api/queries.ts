@@ -166,3 +166,15 @@ export function useDeleteCrossCheck(crossCheckId: number) {
     },
   });
 }
+
+// 목록에서 임의 순회검사를 삭제 (mutate 시점에 id 받음). 결재 목록에서 상세를
+// 열지 않고 바로 삭제하는 데 사용. 삭제 후 목록/홈/현황 캐시 갱신.
+export function useDeleteCrossCheckById() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (crossCheckId: number) => deleteCrossCheck(crossCheckId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: crossCheckKeys.all });
+    },
+  });
+}
