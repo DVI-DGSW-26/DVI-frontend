@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   completeInspection,
@@ -19,6 +20,7 @@ import type {
 } from "../type/types";
 import type { MyInspection } from "../../my-inspection/type/types";
 import { myInspectionKeys } from "../../my-inspection/api";
+import { getNextSlot as getNextSlotStatic } from "../lib/slotSequence";
 
 // 새 inspection 이 만들어진 직후 invalidate 만 호출하면 refetch 가 완료되기 전에 화면이
 // 잠깐 OLD 상태로 보일 수 있다 (사용자가 빠르게 navigate/back 한 경우 "이어 작업하기" 카드가
@@ -64,6 +66,67 @@ export function useInspectionSlots(process: InspectionProcess | undefined) {
     queryFn: () => getInspectionSlots(process as InspectionProcess),
     enabled: !!process,
   });
+}
+
+// 모든 공정의 슬롯 순서를 백엔드에서 받아 "다음 시점" 계산 함수를 제공한다.
+// 하드코딩된 slotSequence 는 실제 백엔드 슬롯(코드/개수/순서)과 어긋날 수 있어
+// (예: AL_CUTTING) 다음 시점을 못 찾는 문제가 있었다. 실제 슬롯을 진실의 원천으로 삼되,
+// 아직 로드 전이거나 조회 실패한 공정은 하드코딩 시퀀스로 폴백한다.
+const ALL_PROCESSES: InspectionProcess[] = [
+  "EXTRUSION",
+  "PRESS",
+  "AL_CUTTING",
+  "ST_CUTTING",
+  "MACHINING",
+];
+
+export function useSlotSequences() {
+  const extrusion = useInspectionSlots("EXTRUSION");
+  const press = useInspectionSlots("PRESS");
+  const alCutting = useInspectionSlots("AL_CUTTING");
+  const stCutting = useInspectionSlots("ST_CUTTING");
+  const machining = useInspectionSlots("MACHINING");
+
+  const seqByProcess = useMemo(() => {
+    const queries = {
+      EXTRUSION: extrusion.data,
+      PRESS: press.data,
+      AL_CUTTING: alCutting.data,
+      ST_CUTTING: stCutting.data,
+      MACHINING: machining.data,
+    } as const;
+    const map: Partial<Record<InspectionProcess, string[]>> = {};
+    for (const process of ALL_PROCESSES) {
+      const slots = queries[process];
+      if (slots && slots.length > 0) {
+        map[process] = slots.map((s) => s.type);
+      }
+    }
+    return map;
+  }, [
+    extrusion.data,
+    press.data,
+    alCutting.data,
+    stCutting.data,
+    machining.data,
+  ]);
+
+  const getNextSlot = useMemo(
+    () =>
+      (process: string, currentType: string): string | null => {
+        const seq = seqByProcess[process as InspectionProcess];
+        if (seq && seq.length > 0) {
+          const idx = seq.indexOf(currentType);
+          if (idx === -1 || idx === seq.length - 1) return null;
+          return seq[idx + 1];
+        }
+        // 실제 슬롯이 아직 없으면 하드코딩 시퀀스로 폴백.
+        return getNextSlotStatic(process, currentType);
+      },
+    [seqByProcess],
+  );
+
+  return { getNextSlot };
 }
 
 export function useStartInspection() {

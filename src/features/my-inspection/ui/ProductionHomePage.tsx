@@ -7,6 +7,7 @@ import { useDeleteInspection, useMyInspectionList } from "../api";
 import {
   useReopenInspection,
   useSkipInspection,
+  useSlotSequences,
   useStartNextInspection,
 } from "../../inspection/api";
 import type {
@@ -15,9 +16,13 @@ import type {
 } from "../../inspection/type/types";
 import type { MyInspection } from "../type/types";
 import { getStatusBadge } from "../lib/inspectionStatus";
-import { extractNextEligible } from "../lib/nextEligible";
+import {
+  extractLatestCompletedNext,
+  extractNextEligible,
+} from "../lib/nextEligible";
 import { formatSlotTime } from "../../inspection/lib/format";
 import { formatDate } from "../../../lib/datetime";
+import LatestCompletedCard from "./LatestCompletedCard";
 import SkipModal from "../../inspection/ui/SkipModal";
 import Toast from "../../inspection/ui/Toast";
 
@@ -38,6 +43,8 @@ export default function ProductionHomePage() {
   const { user } = useAuth();
 
   const inspectionsQuery = useMyInspectionList({ includeFinished: true });
+  // 백엔드 실제 슬롯 순서 기반 "다음 시점" 계산기 — 하드코딩 시퀀스와 어긋나도 정확.
+  const { getNextSlot } = useSlotSequences();
   const startNextMutation = useStartNextInspection();
   const skipMutation = useSkipInspection();
   const deleteMutation = useDeleteInspection();
@@ -75,11 +82,21 @@ export default function ProductionHomePage() {
     [inspections],
   );
 
-  // "이어서 할 일" — 같은 제품/설비로 다음 시점 진입 가능한 후보.
-  const nextEligible = useMemo(
-    () => extractNextEligible(inspections),
-    [inspections],
+  // "가장 최근 완료" 1건 — 상단 강조 카드로 다음 시점을 바로 시작.
+  const latestCompleted = useMemo(
+    () => extractLatestCompletedNext(inspections, getNextSlot),
+    [inspections, getNextSlot],
   );
+
+  // "이어서 할 일" — 같은 제품/설비로 다음 시점 진입 가능한 후보.
+  // 상단 강조 카드로 이미 올린 1건은 중복되지 않게 목록에서 제외.
+  const nextEligible = useMemo(() => {
+    const all = extractNextEligible(inspections, getNextSlot);
+    if (!latestCompleted) return all;
+    return all.filter(
+      (e) => e.previous.inspectionId !== latestCompleted.previous.inspectionId,
+    );
+  }, [inspections, latestCompleted, getNextSlot]);
 
   const handleResume = (inspection: MyInspection) => {
     navigate(`/inspection/${inspection.inspectionId}/measure`, {
@@ -293,6 +310,24 @@ export default function ProductionHomePage() {
           </button>
         )}
       </div>
+
+      {/* "가장 최근 완료" — 마지막으로 끝낸 1건에서 다음 검사를 바로 시작. */}
+      {latestCompleted && (
+        <section className="px-4 pt-6">
+          <h2 className="mb-2 text-lg font-semibold text-[#525050]">
+            가장 최근에 한 검사 바로 이어하기
+          </h2>
+          <LatestCompletedCard
+            previous={latestCompleted.previous}
+            nextType={latestCompleted.nextType}
+            onStartNext={handleStartNext}
+            isStartingNext={
+              startNextMutation.isPending &&
+              pendingPrevId === latestCompleted.previous.inspectionId
+            }
+          />
+        </section>
+      )}
 
       {/* "이어서 할 일" — 같은 제품/설비로 다음 시점 검사를 한 번에 시작. 비어있으면 영역 숨김. */}
       {nextEligible.length > 0 && (
