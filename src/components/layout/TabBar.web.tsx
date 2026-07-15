@@ -40,7 +40,7 @@ const TabBarWeb = () => {
   const homePath = user ? ROLE_HOME[user.role] : "/";
 
   return (
-  <aside className="flex h-screen w-60 flex-col bg-white">
+  <aside className="flex h-dvh w-60 flex-col bg-white">
     <div className="flex items-center px-4 py-8 text-lg font-bold">
       <Link to={homePath} aria-label="홈으로 이동">
         <img src={Logo} className="w-14 xl:w-37 cursor-pointer" />

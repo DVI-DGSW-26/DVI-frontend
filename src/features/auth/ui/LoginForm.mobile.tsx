@@ -19,7 +19,7 @@ export default function LoginFormMobile({
 
   return (
     <form
-      className="relative min-h-screen w-full bg-white"
+      className="relative min-h-dvh w-full bg-white"
       onSubmit={(e) => {
         e.preventDefault();
         onSubmit(keepLoggedIn);

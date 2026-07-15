@@ -151,7 +151,7 @@ export default function CrossCheckResultPage() {
 
   if (needsFallback && detailQuery.isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
+      <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
         결과를 불러오는 중...
       </div>
     );
@@ -159,7 +159,7 @@ export default function CrossCheckResultPage() {
 
   if (results.length === 0) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
         <div className="text-sm font-medium text-[#212121]">
           결과 데이터가 없습니다.
         </div>
@@ -220,7 +220,7 @@ export default function CrossCheckResultPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-28">
+    <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-28">
       <section className="border-b border-gray-200 bg-white px-4 py-4">
         {detail &&
           (() => {

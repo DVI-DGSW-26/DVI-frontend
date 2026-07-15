@@ -21,7 +21,7 @@ export default function InspectionNgViewPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
+      <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
         불러오는 중...
       </div>
     );
@@ -29,7 +29,7 @@ export default function InspectionNgViewPage() {
 
   if (isError || !detail) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
         <div className="text-sm font-medium text-[#212121]">
           검사 정보를 찾을 수 없습니다.
         </div>
@@ -49,7 +49,7 @@ export default function InspectionNgViewPage() {
   const appearanceNg = detail.appearanceResult === "NG";
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-10">
+    <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-10">
       <section className="border-b border-gray-200 bg-white px-4 py-4">
         <div className="text-base font-semibold text-[#212121]">
           {detail.product.name}

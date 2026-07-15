@@ -48,9 +48,9 @@ export default function SignupFormWeb({
   onSubmit,
 }: SignupFormProps) {
   return (
-    <div className="flex h-screen w-full">
+    <div className="flex h-dvh w-full">
       {/* 왼쪽 고정 이미지 */}
-      <div className="fixed left-0 top-0 w-1/2 h-screen overflow-hidden lg:block hidden">
+      <div className="fixed left-0 top-0 w-1/2 h-dvh overflow-hidden lg:block hidden">
         <img src={authBackground} className="w-full h-full object-cover" />
         <img src={authLogo} className="absolute top-10 left-8 w-44" />
         <div className="absolute inset-0 flex flex-col justify-center left-12 gap-6">
@@ -65,7 +65,7 @@ export default function SignupFormWeb({
       </div>
 
       {/* 오른쪽 스크롤 영역 */}
-      <div className="fixed right-0 top-0 w-full lg:w-1/2 h-screen bg-white flex flex-col items-center justify-center">
+      <div className="fixed right-0 top-0 w-full lg:w-1/2 h-dvh bg-white flex flex-col items-center justify-center">
         <div className="flex flex-col w-full max-w-md px-6 lg:px-0 xl:max-w-xl 2xl:max-w-2xl">
           <div
             className="flex flex-col items-center gap-2"
