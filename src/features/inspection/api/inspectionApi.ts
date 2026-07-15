@@ -18,6 +18,7 @@ import type {
   StartInspectionResponse,
   StartNextInspectionApiResponse,
   StartNextInspectionResponse,
+  TerminateRequest,
   UploadImageApiResponse,
 } from "../type/types";
 
@@ -153,6 +154,20 @@ export async function incompleteInspection(
     `/inspection/${inspectionId}/incomplete`,
     body,
   );
+}
+
+// 품질 문제(금형 교체 등) 조기 마감 — 그 차수까지 묶어 보고서 즉시 발행(승인 불필요)하고
+// 재검사용 새 초품을 생성한다. 응답 data 는 새로 생성된 초품 검사 상세.
+// DRAFT 상태·본인 검사에서만 가능. (400 INSPECTION_ALREADY_FINISHED / 403 NOT_ASSIGNED_PRODUCTION)
+export async function terminateInspection(
+  inspectionId: number,
+  body: TerminateRequest,
+): Promise<InspectionDetail> {
+  const { data } = await http.post<InspectionDetailApiResponse>(
+    `/inspection/${inspectionId}/terminate`,
+    body,
+  );
+  return data.data;
 }
 
 // COMPLETED / INCOMPLETE_APPROVED 자주검사를 DRAFT 로 복귀시켜 재측정 가능하게.

@@ -11,15 +11,18 @@ import {
   skipInspection,
   startInspection,
   startNextInspection,
+  terminateInspection,
   uploadInspectionImage,
 } from "./inspectionApi";
 import type {
   IncompleteRequest,
   InspectionProcess,
   SaveResultsRequest,
+  TerminateRequest,
 } from "../type/types";
 import type { MyInspection } from "../../my-inspection/type/types";
 import { myInspectionKeys } from "../../my-inspection/api";
+import { reportKeys } from "../../report/api";
 import { getNextSlot as getNextSlotStatic } from "../lib/slotSequence";
 
 // 새 inspection 이 만들어진 직후 invalidate 만 호출하면 refetch 가 완료되기 전에 화면이
@@ -206,6 +209,21 @@ export function useIncompleteInspection(inspectionId: number) {
       incompleteInspection(inspectionId, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: myInspectionKeys.all });
+    },
+  });
+}
+
+// 품질 문제(금형 교체 등) 조기 마감 — 그 차수까지 묶어 보고서 즉시 발행 + 재검사용
+// 새 초품 생성. 성공 시 새 초품 검사 상세를 반환하므로 호출부에서 그 화면으로 이동한다.
+// 자주검사 목록/현황과 보고서 목록 모두 갱신(즉시 발행되므로 보고서 캐시도 무효화).
+export function useTerminateInspection(inspectionId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: TerminateRequest) =>
+      terminateInspection(inspectionId, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: myInspectionKeys.all });
+      qc.invalidateQueries({ queryKey: reportKeys.all });
     },
   });
 }
