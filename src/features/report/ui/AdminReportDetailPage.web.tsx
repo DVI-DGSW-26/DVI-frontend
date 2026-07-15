@@ -315,6 +315,11 @@ const AdminReportDetailPageWeb = () => {
         <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm lg:grid-cols-4">
           <InfoCell label="공정" value={processLabel} />
           <InfoCell label="설비" value={data.equipmentName} />
+          <InfoCell
+            label="검사일자"
+            value={data.targetDate ? data.targetDate.slice(0, 10) : "—"}
+          />
+          <InfoCell label="검사 차수" value={data.inspectionLabel || "—"} />
           <InfoCell label="작업자" value={data.productionName} />
           <InfoCell label="검사자" value={data.qualityName} />
         </dl>
