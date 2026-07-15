@@ -61,7 +61,7 @@ const DashboardPageMobile = () => {
             대기 중인 가입 요청이 없습니다.
           </p>
         ) : (
-          <ul className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
+          <ul className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
             {previewPending.map((u) => (
               <li
                 key={u.id}

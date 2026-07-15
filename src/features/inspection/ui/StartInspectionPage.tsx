@@ -349,7 +349,7 @@ function ProcessChipFilter({
   onChange: (v: ProcessFilter) => void;
 }) {
   return (
-    <div className="-mx-4 mt-3 overflow-x-auto px-4">
+    <div className="no-scrollbar -mx-4 mt-3 overflow-x-auto px-4">
       <div
         role="radiogroup"
         aria-label="공정 필터"
