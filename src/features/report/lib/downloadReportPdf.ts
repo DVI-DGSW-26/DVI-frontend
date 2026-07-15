@@ -220,8 +220,7 @@ function buildHtml(detail: ReportDetail): string {
     <div><span class="label">제품</span> ${escapeHtml(detail.productName)} (${escapeHtml(detail.productCode)})</div>
     <div><span class="label">공정</span> ${escapeHtml(detail.process)}</div>
     <div><span class="label">설비</span> ${escapeHtml(detail.equipmentName)}</div>
-    <div><span class="label">검사 구분</span> ${escapeHtml(detail.inspectionLabel)}</div>
-    <div><span class="label">검사 시각</span> ${escapeHtml(detail.inspectionTime)}</div>
+    <div><span class="label">검사 차수</span> ${escapeHtml(detail.inspectionLabel)}</div>
     <div><span class="label">자주검사</span> ${escapeHtml(detail.productionName)}</div>
     <div><span class="label">순회검사</span> ${escapeHtml(detail.qualityName)}</div>
     <div><span class="label">승인자</span> ${escapeHtml(detail.approvedByName)}</div>

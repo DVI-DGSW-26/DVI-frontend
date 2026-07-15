@@ -245,10 +245,6 @@ export default function CrossCheckApprovalDetailPage() {
               return `${detail.typeLabel} (${detail.type})${stageText}`;
             })()}
           />
-          <InfoLine
-            label="검사 일시"
-            value={formatDateTime(detail.inspectionTime)}
-          />
           <InfoLine label="작성일" value={formatDateTime(detail.createdAt)} />
           {detail.status === "PENDING_APPROVAL" && (
             <InfoLine

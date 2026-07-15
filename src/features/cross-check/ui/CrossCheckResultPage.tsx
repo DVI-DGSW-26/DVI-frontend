@@ -17,7 +17,7 @@ import {
 import type { AppearanceResult } from "../api";
 import { getStage, STAGE_LABEL, STAGE_BADGE } from "../lib/stage";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
-import { formatDateTime } from "../../../lib/datetime";
+import { formatDate } from "../../../lib/datetime";
 
 interface ResultLocationState {
   results?: StepResult[];
@@ -238,11 +238,8 @@ export default function CrossCheckResultPage() {
             );
           })()}
         <InfoRow label="기계명" value={equipmentName} />
-        {detail?.inspectionTime && (
-          <InfoRow
-            label="검사 일시"
-            value={formatDateTime(detail.inspectionTime)}
-          />
+        {detail && (
+          <InfoRow label="검사일자" value={formatDate(detail.createdAt)} />
         )}
         <div className="mt-2 grid grid-cols-3 gap-2">
           <Stat label="제품명" value={productName} />
