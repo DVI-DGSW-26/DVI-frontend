@@ -7,8 +7,11 @@ import {
   useMyInspectionList,
   type DeleteInspectionErrorData,
 } from "../api";
-import { useStartInspection, useStartNextInspection } from "../../inspection/api";
-import { getNextSlot } from "../../inspection/lib/slotSequence";
+import {
+  useSlotSequences,
+  useStartInspection,
+  useStartNextInspection,
+} from "../../inspection/api";
 import type { StartNextInspectionErrorData } from "../../inspection/type/types";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import type { MyInspection } from "../type/types";
@@ -18,10 +21,12 @@ import {
   type DateFilter,
   type Tab,
 } from "../lib/inspectionStatus";
+import { extractLatestCompletedNext } from "../lib/nextEligible";
 import TabBar from "./TabBar";
 import PullToRefreshIndicator from "./PullToRefreshIndicator";
 import EmptyState from "./EmptyState";
 import OrderCard from "./OrderCard";
+import LatestCompletedCard from "./LatestCompletedCard";
 import DeleteInspectionModal from "./DeleteInspectionModal";
 import Toast from "../../inspection/ui/Toast";
 
@@ -50,6 +55,8 @@ export default function MyInspectionPage() {
   const [dateFilter, setDateFilter] = useState<DateFilter>("TODAY");
 
   const inspectionsQuery = useMyInspectionList({ includeFinished: true });
+  // 백엔드 실제 슬롯 순서 기반 "다음 시점" 계산기 — 하드코딩 시퀀스와 어긋나도 정확.
+  const { getNextSlot } = useSlotSequences();
   const deleteMutation = useDeleteInspection();
   const startNextMutation = useStartNextInspection();
   const [pendingNextPrevId, setPendingNextPrevId] = useState<number | null>(
@@ -100,8 +107,17 @@ export default function MyInspectionPage() {
     return set;
   }, [myInspections]);
 
+  // "가장 최근 완료" 1건 — 상단 강조 카드로 다음 시점을 바로 시작.
+  // 날짜/탭 필터와 무관하게 전체 목록 기준으로 판단(작업 바로가기 성격).
+  const latestCompleted = useMemo(
+    () => extractLatestCompletedNext(myInspections, getNextSlot),
+    [myInspections, getNextSlot],
+  );
+
   const getNextTypeFor = (i: MyInspection): string | null => {
     if (i.status !== "COMPLETED") return null;
+    // 상단 강조 카드가 이미 다루는 1건은 카드 내 인라인 버튼 중복 노출을 피한다.
+    if (latestCompleted?.previous.inspectionId === i.inspectionId) return null;
     const next = getNextSlot(i.product.process, i.type);
     if (!next) return null;
     // 이미 다음 시점이 시작되어 있으면 노출하지 않음.
@@ -237,6 +253,19 @@ export default function MyInspectionPage() {
       />
 
       <div className="flex-1 px-4 py-4">
+        {latestCompleted && (
+          <div className="mb-3">
+            <LatestCompletedCard
+              previous={latestCompleted.previous}
+              nextType={latestCompleted.nextType}
+              onStartNext={handleStartNext}
+              isStartingNext={
+                startNextMutation.isPending &&
+                pendingNextPrevId === latestCompleted.previous.inspectionId
+              }
+            />
+          </div>
+        )}
         {inspectionsQuery.isLoading ? (
           <EmptyState label="불러오는 중..." />
         ) : inspectionsQuery.isError ? (

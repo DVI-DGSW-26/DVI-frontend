@@ -9,6 +9,12 @@ export default defineConfig({
   ],
   server: {
     host: true,
+    // 이 환경에서 네이티브 파일 이벤트가 HMR 을 트리거하지 못해(변경 감지 실패),
+    // 폴링 방식으로 파일 변경을 감시한다. (Windows/동기화 폴더 등에서 흔한 이슈)
+    watch: {
+      usePolling: true,
+      interval: 150,
+    },
     proxy: {
       '/api': {
         target: 'http://112.146.55.78:3378',

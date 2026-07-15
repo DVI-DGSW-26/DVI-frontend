@@ -14,6 +14,7 @@ export {
 export {
   useInspectionDetail,
   useInspectionSlots,
+  useSlotSequences,
   useStartInspection,
   useStartNextInspection,
   useSkipInspection,
