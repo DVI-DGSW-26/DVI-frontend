@@ -23,9 +23,12 @@ export function resolveNotificationLink(n: NotificationResponse): string {
       return n.linkUrl ?? "/notifications";
     }
 
-    case "CROSS_CHECK_PENDING_APPROVAL":
-      // 품질관리자에게 결재 요청 알림. 결재 대기 목록으로.
-      return "/cross-check-approval";
+    case "CROSS_CHECK_PENDING_APPROVAL": {
+      // 통합관리자(QUALITY_ADMIN)에게 결재 요청 알림. 결재 대기 목록으로 보내되,
+      // linkUrl 에 담긴 crossCheckId 를 highlight 쿼리로 넘겨 그 건을 강조/스크롤.
+      const m = n.linkUrl?.match(/(\d+)(?:\/[^/]*)?$/);
+      return m ? `/cross-check-approval?highlight=${m[1]}` : "/cross-check-approval";
+    }
 
     case "CROSS_CHECK_APPROVED":
       // 본인 순회검사 결과. linkUrl 이 /reports/{id} 면 그 보고서로, 아니면 결재 이력 탭.

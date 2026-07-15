@@ -25,6 +25,7 @@ export {
   useReopenCrossCheck,
   useRejectCrossCheck,
   useDeleteCrossCheck,
+  useDeleteCrossCheckById,
   crossCheckKeys,
 } from "./queries";
 export type {
