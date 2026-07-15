@@ -190,7 +190,7 @@ export default function CrossCheckMeasurePage() {
 
   if (detailQuery.isLoading || (!detail && !detailQuery.isError)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
+      <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
         불러오는 중...
       </div>
     );
@@ -198,7 +198,7 @@ export default function CrossCheckMeasurePage() {
 
   if (!detail) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
         <div className="text-sm font-medium text-[#212121]">
           순회검사 정보를 찾을 수 없습니다.
         </div>
@@ -216,7 +216,7 @@ export default function CrossCheckMeasurePage() {
   // editMode 면 allDone 이어도 화면 유지 — dim 별 수정 가능.
   if (allDone && !editMode) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
+      <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
         결과 화면으로 이동 중...
       </div>
     );
@@ -468,7 +468,7 @@ export default function CrossCheckMeasurePage() {
 
   if (totalSteps === 0) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
         <div className="text-sm font-medium text-[#212121]">
           측정할 항목이 없습니다.
         </div>
@@ -495,7 +495,7 @@ export default function CrossCheckMeasurePage() {
   const productionInspectorName = detail.production.name;
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-24">
+    <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-24">
       {detail.rejectReason && (
         <section className="border-b border-[#FECACA] bg-[#FEF2F2] px-4 py-3">
           <div className="flex items-start gap-2">

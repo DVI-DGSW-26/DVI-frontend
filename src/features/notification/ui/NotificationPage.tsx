@@ -93,7 +93,7 @@ const NotificationPage = () => {
   const groups = groupByDay(items);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-20">
+    <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-20">
       <div className="flex flex-col gap-6 px-4 pb-5 pt-3">
         <div className="flex justify-end">
           <button

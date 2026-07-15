@@ -217,7 +217,7 @@ export default function MyInspectionPage() {
     <div
       ref={scrollRef}
       {...bind}
-      className="relative flex min-h-screen flex-col bg-[#F5F5F5] pb-24"
+      className="relative flex min-h-dvh flex-col bg-[#F5F5F5] pb-24"
     >
       <div className="sticky top-0 z-10 bg-white">
         <div className="flex items-center gap-1 px-3 pb-1 pt-2">

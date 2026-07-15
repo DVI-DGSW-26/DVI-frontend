@@ -220,7 +220,7 @@ export default function ProductionHomePage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F5F5F5] pb-20">
+    <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-20">
       <div className="px-4 pt-4">
         <h1 className="text-lg font-semibold text-[#212121]">
           안녕하세요, {user?.name ?? ""}님
