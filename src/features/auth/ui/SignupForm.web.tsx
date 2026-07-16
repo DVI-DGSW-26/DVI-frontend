@@ -1,17 +1,19 @@
 import authBackground from "../../../assets/authBackground.png";
 import authLogo from "../../../assets/authLogo.svg";
 import Logo from "../../../assets/Logo.svg";
-import Select from "react-select";
+import Select, { type StylesConfig } from "react-select";
 import Button from "../../../components/shared/Button";
 import type { SignupFormProps } from "./SignupForm";
 
-const departmentOptions = [
+type DepartmentOption = { value: string; label: string };
+
+const departmentOptions: DepartmentOption[] = [
   { value: "PRODUCTION", label: "생산" },
   { value: "QUALITY", label: "품질" },
 ];
 
-const selectStyles = {
-  control: (base: any) => ({
+const selectStyles: StylesConfig<DepartmentOption, false> = {
+  control: (base) => ({
     ...base,
     height: "48px",
     minHeight: "48px",
@@ -25,7 +27,7 @@ const selectStyles = {
     boxShadow: "none",
     "&:hover": { borderColor: "#A8A8A8" },
   }),
-  dropdownIndicator: (base: any) => ({
+  dropdownIndicator: (base) => ({
     ...base,
     paddingRight: "12px",
   }),
@@ -106,7 +108,7 @@ export default function SignupFormWeb({
                 className="w-1/2 border border-[#A8A8A8] rounded-lg h-12 xl:h-15 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
               />
               <div className="w-1/2">
-                <Select
+                <Select<DepartmentOption, false>
                   placeholder="부서를 선택하세요."
                   options={departmentOptions}
                   value={departmentOptions.find((o) => o.value === department)}

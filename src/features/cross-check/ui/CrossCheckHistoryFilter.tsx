@@ -3,10 +3,12 @@ import { Icon } from "@iconify/react";
 import CheckboxMultiSelect, {
   type MultiOption,
 } from "../../report/ui/CheckboxMultiSelect";
+import { EMPTY_HISTORY_FILTER, type HistoryFilter } from "../lib/historyFilter";
 import type { CrossCheckSummary } from "../api";
 
 // 통합관리자 보고서 페이지와 동일한 필터 UI를 "내 결재 이력"에 적용.
 // 보고서의 "결과(합격/불합격)"는 순회검사 요약엔 없어서 "상태(대기/승인/반려)"로 대체.
+// 필터 상태 타입/순수 로직(matchesHistoryFilter 등)은 ../lib/historyFilter 참고.
 
 const PROCESS_OPTIONS: MultiOption[] = [
   { value: "EXTRUSION", label: "압출" },
@@ -21,58 +23,6 @@ const STATUS_OPTIONS: MultiOption[] = [
   { value: "APPROVED", label: "승인" },
   { value: "REJECTED", label: "반려" },
 ];
-
-export interface HistoryFilter {
-  keyword: string;
-  date: string; // YYYY-MM-DD
-  processes: string[];
-  products: string[]; // product code
-  statuses: string[];
-}
-
-export const EMPTY_HISTORY_FILTER: HistoryFilter = {
-  keyword: "",
-  date: "",
-  processes: [],
-  products: [],
-  statuses: [],
-};
-
-export function isHistoryFilterActive(f: HistoryFilter): boolean {
-  return (
-    f.keyword.trim() !== "" ||
-    f.date !== "" ||
-    f.processes.length > 0 ||
-    f.products.length > 0 ||
-    f.statuses.length > 0
-  );
-}
-
-export function matchesHistoryFilter(
-  cc: CrossCheckSummary,
-  f: HistoryFilter,
-): boolean {
-  if (f.date && (cc.inspectionTime ?? "").slice(0, 10) !== f.date) return false;
-  if (f.processes.length > 0 && !f.processes.includes(cc.product.process))
-    return false;
-  if (f.products.length > 0 && !f.products.includes(cc.product.code))
-    return false;
-  if (f.statuses.length > 0 && !f.statuses.includes(cc.status)) return false;
-  const kw = f.keyword.trim().toLowerCase();
-  if (kw) {
-    const haystack = [
-      cc.product.name,
-      cc.product.code,
-      cc.customer.name,
-      cc.production.name,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-    if (!haystack.includes(kw)) return false;
-  }
-  return true;
-}
 
 export default function CrossCheckHistoryFilter({
   items,
