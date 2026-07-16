@@ -6,12 +6,14 @@ import Logo from "../../../assets/Logo.svg";
 import Button from "../../../components/shared/Button";
 import type { SignupFormProps } from "./SignupForm";
 
-const departmentOptions = [
+type DepartmentOption = { value: string; label: string };
+
+const departmentOptions: DepartmentOption[] = [
   { value: "QUALITY", label: "품질" },
   { value: "PRODUCTION", label: "생산" }
 ];
 
-const selectStyles: StylesConfig = {
+const selectStyles: StylesConfig<DepartmentOption, false> = {
   control: (base) => ({
     ...base,
     height: "60px",

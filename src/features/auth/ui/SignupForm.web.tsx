@@ -5,12 +5,14 @@ import Select, { type StylesConfig } from "react-select";
 import Button from "../../../components/shared/Button";
 import type { SignupFormProps } from "./SignupForm";
 
-const departmentOptions = [
+type DepartmentOption = { value: string; label: string };
+
+const departmentOptions: DepartmentOption[] = [
   { value: "PRODUCTION", label: "생산" },
   { value: "QUALITY", label: "품질" },
 ];
 
-const selectStyles: StylesConfig = {
+const selectStyles: StylesConfig<DepartmentOption, false> = {
   control: (base) => ({
     ...base,
     height: "48px",
