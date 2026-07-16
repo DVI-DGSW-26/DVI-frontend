@@ -1,5 +1,6 @@
 import type { ApiResponse } from "../../auth/type/types";
 import type {
+  InspectionValueType,
   MyInspection,
   MyInspectionCustomer,
   MyInspectionEquipment,
@@ -17,9 +18,12 @@ export interface InspectionDetailResult {
   standardValue: number;
   tolerancePlus: number;
   toleranceMinus: number;
+  // 검사 항목 종류. PASS_FAIL 항목은 기준값/공차/측정값 없이 OK/NG 만 입력.
+  // 누락 응답(구형) 대비 optional — 없으면 NUMBER 로 간주.
+  valueType?: InspectionValueType;
   measuredValue: number | null;
   imageUrl: string | null;
-  // 가공(MACHINING) 공정 전용 — 작업자가 선택한 OK/NG 판정. 다른 공정은 null/undefined.
+  // 작업자가 선택한 OK/NG 판정. 가공(MACHINING) 공정 또는 PASS_FAIL 항목에서 사용.
   passFailResult?: PassFailResult | null;
 }
 
@@ -147,10 +151,11 @@ export type OcrApiResponse = ApiResponse<OcrResponseData>;
 
 export interface InspectionResultPayload {
   resultId: number;
-  measuredValue: number;
+  // PASS_FAIL 항목은 측정값 없이 저장하므로 optional. NUMBER 항목은 항상 포함해 보낸다.
+  measuredValue?: number;
   // 사진 없이 측정값만 입력하는 경우 생략 (백엔드에서 미수신 시 기존 imageUrl 유지).
   imageUrl?: string;
-  // 가공(MACHINING) 공정에서만 함께 전송. 다른 공정은 미포함.
+  // 가공(MACHINING) 공정 또는 PASS_FAIL 항목에서 함께 전송. 그 외엔 미포함.
   passFailResult?: PassFailResult;
 }
 
@@ -184,9 +189,11 @@ export interface StepResult {
   tolerancePlus: number;
   toleranceMinus: number;
   status: StepStatus;
+  // 항목 종류 — 결과 표시 분기에 사용. 없으면 NUMBER 로 간주.
+  valueType?: InspectionValueType;
   measuredValue?: number;
   imageUrl?: string;
-  // 가공 공정 한정 — 작업자가 선택한 OK/NG 판정.
+  // 가공 공정 또는 PASS_FAIL 항목 — 작업자가 선택한 OK/NG 판정.
   passFailResult?: PassFailResult;
 }
 
