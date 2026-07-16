@@ -19,12 +19,13 @@ import {
 } from "../lib/dateFilter";
 import CrossCheckCard from "./CrossCheckCard";
 import DateRangeFilter from "./DateRangeFilter";
-import CrossCheckHistoryFilter, {
+import CrossCheckHistoryFilter from "./CrossCheckHistoryFilter";
+import {
   EMPTY_HISTORY_FILTER,
   isHistoryFilterActive,
   matchesHistoryFilter,
   type HistoryFilter,
-} from "./CrossCheckHistoryFilter";
+} from "../lib/historyFilter";
 import Toast from "../../inspection/ui/Toast";
 
 type Tab = "assigned" | "history";
@@ -110,7 +111,13 @@ const CrossCheckPendingPage = () => {
     () =>
       sortedAssigned.filter(
         (i) =>
-          matchesDateFilter(i.inspectionTime, assignedFilter) &&
+          // inspectionTime 은 표시/스케줄용이라 신뢰도가 낮다(값이 비거나 파싱 불가하면
+          // 필터가 전부 통과시켜 "기간별이 안 먹는" 것처럼 보임). 실제 서버 타임스탬프
+          // (completedAt=자주검사 완료 시각)를 기준으로 필터링한다.
+          matchesDateFilter(
+            i.completedAt ?? i.createdAt ?? i.inspectionTime,
+            assignedFilter,
+          ) &&
           !(
             i.status === "IN_PROGRESS" &&
             i.crossCheckId != null &&

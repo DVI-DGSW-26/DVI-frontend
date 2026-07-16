@@ -92,9 +92,17 @@ export default function CrossCheckApprovalPage() {
     [crossChecks],
   );
 
-  // 검사 일시 기준 필터.
+  // 검사 일시 기준 필터. inspectionTime 은 표시/스케줄용이라 신뢰도가 낮아
+  // (비거나 파싱 불가하면 필터가 전부 통과 → "기간별이 안 먹음") 실제 서버
+  // 타임스탬프(createdAt=결재 요청 생성)를 기준으로 필터링한다.
   const filtered = useMemo(
-    () => sorted.filter((cc) => matchesDateFilter(cc.inspectionTime, dateFilter)),
+    () =>
+      sorted.filter((cc) =>
+        matchesDateFilter(
+          cc.createdAt ?? cc.updatedAt ?? cc.inspectionTime,
+          dateFilter,
+        ),
+      ),
     [sorted, dateFilter],
   );
 
