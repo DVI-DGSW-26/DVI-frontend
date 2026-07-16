@@ -6,10 +6,14 @@ import App from './App.tsx'
 import { installAuthInterceptors } from './features/auth/api'
 import { installInspectionMocks } from './features/inspection/api/mockInterceptor'
 import { AuthProvider } from './features/auth/AuthContext'
+import { registerPwa } from './lib/pwa'
 
 // axios interceptor 설치
 installAuthInterceptors()
 installInspectionMocks()
+
+// PWA 서비스워커 등록 + 영구 저장 요청 (홈 화면 설치 앱 세션 유지)
+registerPwa()
 
 // React Query 설정
 const queryClient = new QueryClient({
