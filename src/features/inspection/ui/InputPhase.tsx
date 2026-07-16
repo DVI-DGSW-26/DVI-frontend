@@ -61,12 +61,11 @@ export default function InputPhase({
     }
     // 2) blob 없고 기존 사진 URL 이 있으면 그걸로 미리보기 (이전 단계 복원).
     if (existingImageUrl) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- 외부 URL 은 정리할 자원 없어 단순 set
+      // 외부 URL 은 정리할 자원 없어 단순 set
       setImageSrc(toBackendImageUrl(existingImageUrl) ?? "");
       return;
     }
-    // 3) 둘 다 없으면 "사진 없이 측정값만" 안내.
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 위 케이스 모두 미해당 시 미리보기 비움
+    // 3) 둘 다 없으면 "사진 없이 측정값만" 안내. 위 케이스 모두 미해당 시 미리보기 비움.
     setImageSrc("");
   }, [blob, existingImageUrl]);
 

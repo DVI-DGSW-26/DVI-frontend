@@ -51,11 +51,11 @@ export default function CrossCheckInputPhase({
       return () => URL.revokeObjectURL(url);
     }
     if (existingImageUrl) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- 외부 URL 은 정리할 자원 없음
+      // 외부 URL 은 정리할 자원 없음
       setImageSrc(toBackendImageUrl(existingImageUrl) ?? "");
       return;
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 둘 다 없으면 미리보기 비움
+    // 둘 다 없으면 미리보기 비움
     setImageSrc("");
   }, [blob, existingImageUrl]);
 
