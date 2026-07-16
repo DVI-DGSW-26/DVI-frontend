@@ -41,15 +41,18 @@ const PROCESS_LABEL: Record<string, string> = {
 };
 
 // 결재 목록에 섞여 오는 상태별 배지/노출 순서.
-// PENDING_APPROVAL(결재 대기)을 먼저, DRAFT(진행중)를 뒤에 둔다.
+// PENDING_APPROVAL(종 차수 = 승인 대상)을 먼저, 그다음 초·중 완료(COMPLETED, 조회용),
+// 진행중(DRAFT) 순. 승인 모델 변경으로 초·중은 개별 승인 없이 COMPLETED 로 끝나
+// 결재 대기로 오지 않는다 — COMPLETED 를 빠뜨리면 초·중 완료 건이 목록에서 사라진다.
 const STATUS_META: Record<
   string,
   { label: string; bg: string; fg: string; order: number }
 > = {
   PENDING_APPROVAL: { label: "결재 대기", bg: "#FEF3C7", fg: "#B45309", order: 0 },
-  DRAFT: { label: "진행중", bg: "#DBEAFE", fg: "#1D4ED8", order: 1 },
-  REJECTED: { label: "반려", bg: "#FEE2E2", fg: "#B91C1C", order: 2 },
-  APPROVED: { label: "승인", bg: "#DCFCE7", fg: "#15803D", order: 3 },
+  COMPLETED: { label: "검사 완료", bg: "#ECFEFF", fg: "#0E7490", order: 1 },
+  DRAFT: { label: "진행중", bg: "#DBEAFE", fg: "#1D4ED8", order: 2 },
+  REJECTED: { label: "반려", bg: "#FEE2E2", fg: "#B91C1C", order: 3 },
+  APPROVED: { label: "승인", bg: "#DCFCE7", fg: "#15803D", order: 4 },
 };
 
 const STATUS_ORDER = Object.keys(STATUS_META).sort(
