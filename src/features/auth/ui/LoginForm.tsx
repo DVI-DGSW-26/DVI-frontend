@@ -11,6 +11,7 @@ const ROLE_HOME: Record<Role, string> = {
   ADMIN: "/dashboard",
   QUALITY_ADMIN: "/approval-management",
   PRODUCTION: "/",
+  PRODUCTION_MANAGER: "/inspection-orders",
   QUALITY: "/",
 };
 

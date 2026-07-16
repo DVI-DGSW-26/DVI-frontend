@@ -15,7 +15,6 @@ const ROUTE_TITLES: Record<string, string> = {
   "/products": "제품관리",
   "/equipment": "설비관리",
   "/customers": "고객사 관리",
-  "/notifications": "알림",
   "/cross-checks": "순회검사 현황",
   "/my-page": "마이페이지",
 };
@@ -23,8 +22,8 @@ const ROUTE_TITLES: Record<string, string> = {
 const HeaderMobile = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { data: unreadCount = 0 } = useUnreadCount();
   const { user } = useAuth();
+  const { data: unreadCount = 0 } = useUnreadCount();
 
   const title =
     pathname === "/" && user?.role === "ADMIN"
@@ -39,6 +38,8 @@ const HeaderMobile = () => {
 
   const hasUnread = unreadCount > 0;
   const isNotificationsPage = pathname === "/notifications";
+  // 생산 관리자(PRODUCTION_MANAGER)에게는 알림 기능을 노출하지 않는다.
+  const showBell = user?.role !== "PRODUCTION_MANAGER";
 
   // 특정 페이지(측정 결과/측정 페이지)가 useHeaderBackHandler 로 뒤로가기 동작을
   // 가로챌 수 있다. 가로채지 않으면 기본 히스토리 뒤로가기.
@@ -60,7 +61,7 @@ const HeaderMobile = () => {
 
       <h1 className="text-base font-semibold">{title}</h1>
 
-      {!isNotificationsPage && (
+      {showBell && !isNotificationsPage && (
         <button
           type="button"
           onClick={() => navigate("/notifications")}

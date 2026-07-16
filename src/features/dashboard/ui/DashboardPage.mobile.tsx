@@ -9,6 +9,7 @@ const ROLE_LABEL: Record<string, string> = {
   QUALITY_ADMIN: "품질 관리자",
   QUALITY: "품질 담당자",
   PRODUCTION: "생산 작업자",
+  PRODUCTION_MANAGER: "생산 관리자",
 };
 
 const DashboardPageMobile = () => {

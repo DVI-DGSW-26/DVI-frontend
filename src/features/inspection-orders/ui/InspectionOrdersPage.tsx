@@ -6,6 +6,7 @@ import { useDeleteInspectionOrder, useInspectionOrderList } from "../api";
 import type { InspectionOrder, InspectionOrderStatus } from "../api";
 
 const STATUS_LABEL: Record<string, string> = {
+  PENDING: "대기",
   DRAFT: "대기",
   INCOMPLETE: "진행중",
   INCOMPLETE_APPROVED: "완료(승인)",
@@ -13,6 +14,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_STYLE: Record<string, string> = {
+  PENDING: "bg-[#FEF3C7] text-[#B45309]",
   DRAFT: "bg-[#FEF3C7] text-[#B45309]",
   INCOMPLETE: "bg-[#DBEAFE] text-[#1D4ED8]",
   INCOMPLETE_APPROVED: "bg-[#DCFCE7] text-[#15803D]",
@@ -52,7 +54,7 @@ const SUMMARY_CARDS: {
 ];
 
 function summaryKeyOf(status: InspectionOrderStatus): SummaryKey | null {
-  if (status === "DRAFT") return "DRAFT";
+  if (status === "PENDING" || status === "DRAFT") return "DRAFT";
   if (status === "INCOMPLETE") return "INCOMPLETE";
   if (status === "COMPLETED" || status === "INCOMPLETE_APPROVED") return "DONE";
   return null;
@@ -72,14 +74,30 @@ export default function InspectionOrdersPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<InspectionOrder | null>(null);
   const [selectedDate, setSelectedDate] = useState("");
+  const [keyword, setKeyword] = useState("");
   const isMobile = useMediaQuery("(max-width: 767px)");
   const { data: orders = [], isLoading, isError } = useInspectionOrderList();
   const { mutate: remove, isPending: isDeleting } = useDeleteInspectionOrder();
 
   const filtered = useMemo(() => {
-    if (!selectedDate) return orders;
-    return orders.filter((o) => o.targetDate?.slice(0, 10) === selectedDate);
-  }, [orders, selectedDate]);
+    const kw = keyword.trim().toLowerCase();
+    return orders.filter((o) => {
+      if (selectedDate && o.targetDate?.slice(0, 10) !== selectedDate) return false;
+      if (!kw) return true;
+      // 제품명·제품코드·고객사·설비·자주검사자 이름을 통합 검색.
+      const haystack = [
+        o.product?.name,
+        o.product?.code,
+        o.customer?.name,
+        o.equipment?.name,
+        o.production?.name,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(kw);
+    });
+  }, [orders, selectedDate, keyword]);
 
   const counts = useMemo(() => {
     const c: Record<SummaryKey, number> = { DRAFT: 0, INCOMPLETE: 0, DONE: 0 };
@@ -223,8 +241,7 @@ function DesktopTable({ orders, isLoading, isError, isDeleting, onEdit, onDelete
             <th className="px-4 py-3 text-left font-medium">제품</th>
             <th className="px-4 py-3 text-left font-medium">설비</th>
             <th className="px-4 py-3 text-left font-medium">고객사</th>
-            <th className="px-4 py-3 text-left font-medium">자주검사</th>
-            <th className="px-4 py-3 text-left font-medium">순회검사</th>
+            <th className="px-4 py-3 text-left font-medium">자주검사자</th>
             <th className="px-4 py-3 text-left font-medium">상태</th>
             <th className="px-4 py-3 text-right font-medium">관리</th>
           </tr>
@@ -232,21 +249,21 @@ function DesktopTable({ orders, isLoading, isError, isDeleting, onEdit, onDelete
         <tbody className="divide-y divide-gray-100 text-[#212121]">
           {isLoading && (
             <tr>
-              <td colSpan={8} className="px-4 py-10 text-center text-[#A8A8A8]">
+              <td colSpan={7} className="px-4 py-10 text-center text-[#A8A8A8]">
                 불러오는 중...
               </td>
             </tr>
           )}
           {isError && (
             <tr>
-              <td colSpan={8} className="px-4 py-10 text-center text-[#EF4444]">
+              <td colSpan={7} className="px-4 py-10 text-center text-[#EF4444]">
                 목록을 불러오지 못했습니다.
               </td>
             </tr>
           )}
           {!isLoading && !isError && orders.length === 0 && (
             <tr>
-              <td colSpan={8} className="px-4 py-10 text-center text-[#A8A8A8]">
+              <td colSpan={7} className="px-4 py-10 text-center text-[#A8A8A8]">
                 해당 조건의 검사지시가 없습니다.
               </td>
             </tr>
@@ -258,7 +275,6 @@ function DesktopTable({ orders, isLoading, isError, isDeleting, onEdit, onDelete
               <td className="px-4 py-3">{order.equipment?.name ?? "-"}</td>
               <td className="px-4 py-3">{order.customer?.name ?? "-"}</td>
               <td className="px-4 py-3">{order.production?.name ?? "-"}</td>
-              <td className="px-4 py-3">{order.quality?.name ?? "-"}</td>
               <td className="px-4 py-3">{statusBadge(order.status)}</td>
               <td className="px-4 py-3">
                 <div className="flex items-center justify-end gap-1">
@@ -333,8 +349,7 @@ function MobileList({ orders, isLoading, isError, isDeleting, onEdit, onDelete }
 
           <div className="mt-3 grid grid-cols-1 gap-y-1.5 text-xs">
             <InfoRow icon="mdi:calendar-outline" label="지시일" value={order.targetDate} />
-            <InfoRow icon="mdi:account-hard-hat" label="자주검사" value={order.production?.name ?? "-"} />
-            <InfoRow icon="mdi:shield-check-outline" label="순회검사" value={order.quality?.name ?? "-"} />
+            <InfoRow icon="mdi:account-hard-hat" label="자주검사자" value={order.production?.name ?? "-"} />
           </div>
 
           <div className="mt-3 flex items-center justify-end gap-1 border-t border-gray-100 pt-2">

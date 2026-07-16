@@ -22,13 +22,16 @@ const TABS: TabItem[] = [
   { label: "제품관리", to: "/products", icon: "mdi:cube", roles: ["ADMIN"] },
   { label: "설비관리", to: "/equipment", icon: "mdi:factory", roles: ["ADMIN"] },
   { label: "고객사 관리", to: "/customers", icon: "mdi:office-building", roles: ["ADMIN"] },
-  { label: "마이페이지", to: "/my-page", icon: "mdi:account-circle", roles: ["ADMIN", "QUALITY_ADMIN", "PRODUCTION", "QUALITY"] },
+  { label: "검사지시", to: "/inspection-orders", icon: "mdi:clipboard-text-outline", roles: ["PRODUCTION_MANAGER"] },
+  { label: "내 검사지시", to: "/my-orders", icon: "mdi:clipboard-list-outline", roles: ["PRODUCTION"] },
+  { label: "마이페이지", to: "/my-page", icon: "mdi:account-circle", roles: ["ADMIN", "QUALITY_ADMIN", "PRODUCTION", "PRODUCTION_MANAGER", "QUALITY"] },
 ];
 
 const ROLE_HOME: Record<Role, string> = {
   ADMIN: "/dashboard",
   QUALITY_ADMIN: "/approval-management",
   PRODUCTION: "/",
+  PRODUCTION_MANAGER: "/inspection-orders",
   QUALITY: "/",
 };
 
