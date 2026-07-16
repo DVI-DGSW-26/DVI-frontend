@@ -19,6 +19,7 @@ import type {
   InspectionValueType,
   MyInspection,
 } from "../../my-inspection/type/types";
+import { useProductDetail } from "../../products/api";
 import {
   dimDisplayName,
   formatStandardWithTolerance,
@@ -125,6 +126,18 @@ export default function InspectionMeasurePage() {
   const detailQuery = useInspectionDetail(inspectionId);
   const detail = detailQuery.data;
 
+  // 검사 상세 results 에는 항목 이름(dimName)이 안 실려온다. 특히 OK/NG(PASS_FAIL)
+  // 항목은 기준값도 없어 이름이 없으면 무엇을 판정하는지 알 수 없다. 제품 정의의
+  // dims 에서 dimNo 로 이름을 보강한다. (권한 등으로 실패하면 "DIM N" 으로 fallback)
+  const productDetailQuery = useProductDetail(detail?.product.id ?? null);
+  const dimNameByNo = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const d of productDetailQuery.data?.dims ?? []) {
+      if (d.dimName) map.set(d.dimNo, d.dimName);
+    }
+    return map;
+  }, [productDetailQuery.data]);
+
   // TEMP DEBUG: 흰 화면 / 빈 results 원인 추적용.
   console.log("🟠 측정 페이지 진입 inspectionId:", inspectionId);
   console.log("🟠 location.state:", location.state);
@@ -154,7 +167,7 @@ export default function InspectionMeasurePage() {
         .map<MeasureItem>((r) => ({
           resultId: r.resultId,
           dimNo: r.dimNo,
-          dimName: r.dimName,
+          dimName: r.dimName ?? dimNameByNo.get(r.dimNo),
           standardValue: r.standardValue,
           tolerancePlus: r.tolerancePlus,
           toleranceMinus: r.toleranceMinus,
@@ -171,7 +184,7 @@ export default function InspectionMeasurePage() {
           // POST 응답의 dims[].id 가 PATCH 시 resultId 역할 — resultId 가 별도로 있으면 우선.
           resultId: d.resultId ?? d.id,
           dimNo: d.dimNo,
-          dimName: d.dimName,
+          dimName: d.dimName ?? dimNameByNo.get(d.dimNo),
           standardValue: d.standardValue,
           tolerancePlus: d.tolerancePlus,
           toleranceMinus: d.toleranceMinus,
@@ -180,7 +193,7 @@ export default function InspectionMeasurePage() {
         .sort((a, b) => a.dimNo - b.dimNo);
     }
     return [];
-  }, [detail, stateInspection]);
+  }, [detail, stateInspection, dimNameByNo]);
 
   const firstEmptyIdx = useMemo(
     () => items.findIndex((it) => !isItemDone(it)),
@@ -754,12 +767,14 @@ export default function InspectionMeasurePage() {
               DIM {currentDim.dimNo}
             </span>
             <span className="text-sm font-medium text-[#212121]">
-              {dimDisplayName(currentDim)}
+              {currentDim.valueType === "PASS_FAIL"
+                ? "OK/NG 판정 항목"
+                : dimDisplayName(currentDim)}
             </span>
           </div>
           <div className="mt-1 text-base font-semibold text-[#212121]">
             {currentDim.valueType === "PASS_FAIL"
-              ? "OK/NG 판정 항목"
+              ? dimDisplayName(currentDim)
               : formatStandardWithTolerance(
                   currentDim.standardValue,
                   currentDim.tolerancePlus,

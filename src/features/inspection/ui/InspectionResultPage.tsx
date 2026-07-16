@@ -16,6 +16,7 @@ import type {
   StartNextInspectionErrorData,
   StepResult,
 } from "../type/types";
+import { useProductDetail } from "../../products/api";
 import { dimDisplayName, formatStandardWithTolerance } from "../lib/format";
 import { judgeMeasurement } from "../lib/judgment";
 import { getNextSlot } from "../lib/slotSequence";
@@ -58,6 +59,16 @@ export default function InspectionResultPage() {
   const detailQuery = useInspectionDetail(inspectionId);
   const detail = detailQuery.data;
 
+  // 검사 상세 results 엔 dimName 이 없어 제품 정의의 dims 에서 dimNo 로 이름을 보강.
+  const productDetailQuery = useProductDetail(detail?.product.id ?? null);
+  const dimNameByNo = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const d of productDetailQuery.data?.dims ?? []) {
+      if (d.dimName) map.set(d.dimNo, d.dimName);
+    }
+    return map;
+  }, [productDetailQuery.data]);
+
   // detail.results 를 StepResult[] 형태로 재구성 (MeasurePage items 매핑과 동일 규약).
   const fallbackResults = useMemo<StepResult[]>(() => {
     if (!needsFallback || !detail?.results?.length) return [];
@@ -74,7 +85,7 @@ export default function InspectionResultPage() {
             : measured != null && !!imageUrl;
         return {
           dimNo: r.dimNo,
-          dimName: r.dimName,
+          dimName: r.dimName ?? dimNameByNo.get(r.dimNo),
           standardValue: r.standardValue,
           tolerancePlus: r.tolerancePlus,
           toleranceMinus: r.toleranceMinus,
@@ -86,7 +97,7 @@ export default function InspectionResultPage() {
         };
       })
       .sort((a, b) => a.dimNo - b.dimNo);
-  }, [needsFallback, detail]);
+  }, [needsFallback, detail, dimNameByNo]);
 
   // 가공 공정 여부 — StepResultCard 의 OK/NG 표시 분기에 사용.
   const isMachining = detail?.product.process === "MACHINING";
