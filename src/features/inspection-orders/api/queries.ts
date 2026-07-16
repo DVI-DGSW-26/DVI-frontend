@@ -4,7 +4,10 @@ import { getProducts } from "./productApi";
 import {
   createInspectionOrder,
   deleteInspectionOrder,
+  getInspectionOrderDetail,
   getInspectionOrders,
+  getMyInspectionOrders,
+  getProductionInspectionOrders,
   updateInspectionOrder,
 } from "./inspectionOrderApi";
 import type { CreateInspectionOrderRequest } from "./types";
@@ -14,6 +17,10 @@ import type { Role } from "../../auth/type/types";
 export const inspectionOrderKeys = {
   all: ["inspection-orders"] as const,
   list: () => [...inspectionOrderKeys.all, "list"] as const,
+  my: () => [...inspectionOrderKeys.all, "my"] as const,
+  detail: (id: number) => [...inspectionOrderKeys.all, "detail", id] as const,
+  byProduction: (productionId: number) =>
+    [...inspectionOrderKeys.all, "by-production", productionId] as const,
 };
 
 export const equipmentKeys = {
@@ -50,8 +57,8 @@ export function useUsersByRole(role: Role) {
   return useQuery({
     queryKey: userKeys.byRole(role),
     queryFn: getUsers,
-    select: (users) =>
-      users.filter((u) => u.role === role && u.status === "ACTIVE"),
+    // 상태(ACTIVE/PENDING 등)와 무관하게 해당 역할 전원 노출 — 미승인 작업자에게도 지시 가능.
+    select: (users) => users.filter((u) => u.role === role),
   });
 }
 
@@ -59,6 +66,31 @@ export function useInspectionOrderList() {
   return useQuery({
     queryKey: inspectionOrderKeys.list(),
     queryFn: getInspectionOrders,
+  });
+}
+
+// 현재 로그인한 생산 작업자에게 배정된 검사 지시 목록.
+export function useMyInspectionOrders() {
+  return useQuery({
+    queryKey: inspectionOrderKeys.my(),
+    queryFn: getMyInspectionOrders,
+  });
+}
+
+export function useInspectionOrderDetail(orderId: number | null) {
+  return useQuery({
+    queryKey: inspectionOrderKeys.detail(orderId ?? -1),
+    queryFn: () => getInspectionOrderDetail(orderId as number),
+    enabled: orderId !== null && orderId !== undefined,
+  });
+}
+
+// 특정 생산 작업자에게 배정된 검사 지시 목록 (PRODUCTION_MANAGER 용).
+export function useProductionInspectionOrders(productionId: number | null) {
+  return useQuery({
+    queryKey: inspectionOrderKeys.byProduction(productionId ?? -1),
+    queryFn: () => getProductionInspectionOrders(productionId as number),
+    enabled: productionId !== null && productionId !== undefined,
   });
 }
 
