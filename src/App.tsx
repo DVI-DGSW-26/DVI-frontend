@@ -11,7 +11,6 @@ import ReportPage from "./features/report/ui/ReportPage";
 import MyInspectionPage from "./features/my-inspection/ui/MyInspectionPage";
 import ProductionHomePage from "./features/my-inspection/ui/ProductionHomePage";
 import ScanPage from "./features/inspection/ui/ScanPage";
-import StartInspectionPage from "./features/inspection/ui/StartInspectionPage";
 import InspectionDetailPage from "./features/inspection/ui/InspectionDetailPage";
 import InspectionMeasurePage from "./features/inspection/ui/InspectionMeasurePage";
 import InspectionResultPage from "./features/inspection/ui/InspectionResultPage";
@@ -150,11 +149,6 @@ function App() {
 
             <Route element={<RouteGuard roles={["PRODUCTION", "QUALITY"]} />}>
               <Route path="/scan" element={<ScanPage />} />
-
-              <Route
-                path="/start-inspection"
-                element={<StartInspectionPage />}
-              />
 
               <Route
                 path="/inspection/:inspectionId"

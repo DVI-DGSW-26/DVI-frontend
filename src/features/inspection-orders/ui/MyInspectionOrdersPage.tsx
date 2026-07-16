@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useMyInspectionOrders } from "../api";
 import type { InspectionOrder, InspectionOrderStatus } from "../api";
+import type { InspectionProcess } from "../../inspection/type/types";
 
 // 자주검사자(생산 작업자)가 생산 관리자에게 배정받은 검사 지시 목록 (GET /inspection-order/my).
 // 읽기 전용 — 실제 자주검사 수행은 기존 검사 흐름에서 진행한다.
@@ -35,6 +37,7 @@ function statusBadge(status: InspectionOrderStatus) {
 }
 
 export default function MyInspectionOrdersPage() {
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState("");
   const { data: orders = [], isLoading, isError } = useMyInspectionOrders();
 
@@ -43,9 +46,26 @@ export default function MyInspectionOrdersPage() {
     return orders.filter((o) => o.targetDate?.slice(0, 10) === selectedDate);
   }, [orders, selectedDate]);
 
+  // 지시를 탭하면 해당 제품·설비 컨텍스트로 시점(ScanPage) 선택 화면으로 이동한다.
+  // 실제 검사 시작(POST /inspection)은 시점 선택 시 ScanPage 가 담당.
+  const handleStart = (order: InspectionOrder) => {
+    navigate("/scan", {
+      state: {
+        productId: order.product.id,
+        equipmentId: order.equipment.id,
+        process: order.product.process as InspectionProcess,
+      },
+    });
+  };
+
   return (
     <div className="flex min-h-dvh flex-col gap-4 bg-[#F5F5F5] p-4 pb-24 md:p-6">
-      <h1 className="text-xl font-semibold">내 검사지시</h1>
+      <div>
+        <h1 className="text-xl font-semibold">내 검사지시</h1>
+        <p className="mt-1 text-xs text-[#6B7280]">
+          배정된 검사 지시를 선택하면 시점을 골라 검사를 시작합니다.
+        </p>
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative">
@@ -88,7 +108,11 @@ export default function MyInspectionOrdersPage() {
       ) : (
         <div className="flex flex-col gap-2.5">
           {filtered.map((order) => (
-            <OrderCard key={order.id} order={order} />
+            <OrderCard
+              key={order.id}
+              order={order}
+              onStart={() => handleStart(order)}
+            />
           ))}
         </div>
       )}
@@ -96,9 +120,19 @@ export default function MyInspectionOrdersPage() {
   );
 }
 
-function OrderCard({ order }: { order: InspectionOrder }) {
+function OrderCard({
+  order,
+  onStart,
+}: {
+  order: InspectionOrder;
+  onStart: () => void;
+}) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+    <button
+      type="button"
+      onClick={onStart}
+      className="rounded-xl border border-gray-200 bg-white p-4 text-left shadow-sm transition-colors hover:bg-gray-50"
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="truncate text-base font-semibold text-[#212121]">
@@ -114,8 +148,12 @@ function OrderCard({ order }: { order: InspectionOrder }) {
       <div className="mt-3 flex items-center gap-1.5 text-xs text-[#6B7280]">
         <Icon icon="mdi:calendar-outline" width={14} height={14} className="shrink-0" />
         <span className="shrink-0">지시일</span>
-        <span className="ml-auto text-[#212121]">{order.targetDate}</span>
+        <span className="text-[#212121]">{order.targetDate}</span>
+        <span className="ml-auto flex items-center gap-0.5 font-medium text-[#931B82]">
+          검사 시작
+          <Icon icon="solar:arrow-right-linear" width={14} height={14} />
+        </span>
       </div>
-    </div>
+    </button>
   );
 }

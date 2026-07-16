@@ -305,7 +305,7 @@ export default function MyInspectionPage() {
       {/* 새 검사 시작 — 어떤 탭에서든 노출되는 floating CTA. */}
       <button
         type="button"
-        onClick={() => navigate("/start-inspection")}
+        onClick={() => navigate("/my-orders")}
         aria-label="새 검사 시작"
         className="fixed bottom-24 right-4 z-20 flex h-14 items-center gap-2 rounded-full bg-[#931B82] pl-4 pr-5 text-white shadow-lg ring-1 ring-[#6A0F5D]/40 transition-colors hover:bg-[#6A0F5D]"
       >
