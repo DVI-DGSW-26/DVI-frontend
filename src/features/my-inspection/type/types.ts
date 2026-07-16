@@ -1,5 +1,9 @@
 import type { ApiResponse } from "../../auth/type/types";
 
+// 검사 항목 종류 — 제품 등록 시 항목별로 지정.
+// NUMBER = 치수(측정값 입력), PASS_FAIL = 사진·측정값 없이 OK/NG 만 선택.
+export type InspectionValueType = "NUMBER" | "PASS_FAIL";
+
 export type MyInspectionStatus =
   | "DRAFT"
   | "COMPLETED"
@@ -37,6 +41,8 @@ export interface MyInspectionDim {
   standardValue: number;
   tolerancePlus: number;
   toleranceMinus: number;
+  // 검사 항목 종류. PASS_FAIL 이면 측정값 없이 OK/NG 만 입력. 누락 시 NUMBER 로 간주.
+  valueType?: InspectionValueType;
 }
 
 // 신규 명세는 작업자가 검사를 직접 시작하는 흐름. orderId 는 응답에 없을 수 있어 optional.
