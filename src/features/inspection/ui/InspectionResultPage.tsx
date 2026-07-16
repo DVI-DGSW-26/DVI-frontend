@@ -16,6 +16,7 @@ import type {
   StartNextInspectionErrorData,
   StepResult,
 } from "../type/types";
+import { useProductDetail } from "../../products/api";
 import { dimDisplayName, formatStandardWithTolerance } from "../lib/format";
 import { judgeMeasurement } from "../lib/judgment";
 import { getNextSlot } from "../lib/slotSequence";
@@ -58,28 +59,45 @@ export default function InspectionResultPage() {
   const detailQuery = useInspectionDetail(inspectionId);
   const detail = detailQuery.data;
 
+  // 검사 상세 results 엔 dimName 이 없어 제품 정의의 dims 에서 dimNo 로 이름을 보강.
+  const productDetailQuery = useProductDetail(detail?.product.id ?? null);
+  const dimNameByNo = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const d of productDetailQuery.data?.dims ?? []) {
+      if (d.dimName) map.set(d.dimNo, d.dimName);
+    }
+    return map;
+  }, [productDetailQuery.data]);
+
   // detail.results 를 StepResult[] 형태로 재구성 (MeasurePage items 매핑과 동일 규약).
   const fallbackResults = useMemo<StepResult[]>(() => {
     if (!needsFallback || !detail?.results?.length) return [];
     return detail.results
       .map<StepResult>((r) => {
+        const valueType = r.valueType ?? "NUMBER";
         const measured = r.measuredValue ?? undefined;
         const imageUrl = r.imageUrl ?? undefined;
-        const done = measured != null && !!imageUrl;
+        const passFail = r.passFailResult ?? undefined;
+        // PASS_FAIL 항목은 OK/NG 선택만으로 완료. NUMBER 는 기존대로 측정값+사진.
+        const done =
+          valueType === "PASS_FAIL"
+            ? passFail != null
+            : measured != null && !!imageUrl;
         return {
           dimNo: r.dimNo,
-          dimName: r.dimName,
+          dimName: r.dimName ?? dimNameByNo.get(r.dimNo),
           standardValue: r.standardValue,
           tolerancePlus: r.tolerancePlus,
           toleranceMinus: r.toleranceMinus,
+          valueType,
           status: done ? "completed" : "skipped",
           measuredValue: measured,
           imageUrl,
-          passFailResult: r.passFailResult ?? undefined,
+          passFailResult: passFail,
         };
       })
       .sort((a, b) => a.dimNo - b.dimNo);
-  }, [needsFallback, detail]);
+  }, [needsFallback, detail, dimNameByNo]);
 
   // 가공 공정 여부 — StepResultCard 의 OK/NG 표시 분기에 사용.
   const isMachining = detail?.product.process === "MACHINING";
@@ -481,13 +499,17 @@ function StepResultCard({
   // 검사 완료 전에만 전달됨 — 해당 항목을 측정 페이지에서 다시 측정.
   onRetake?: () => void;
 }) {
-  const dimText = formatStandardWithTolerance(
-    result.standardValue,
-    result.tolerancePlus,
-    result.toleranceMinus,
-  );
-  // 가공 공정이면 저장된 작업자 판정값 우선, 다른 공정은 자동 계산값.
-  const judgment = isMachining
+  const isPassFail = result.valueType === "PASS_FAIL";
+  const dimText = isPassFail
+    ? "OK/NG 판정 항목"
+    : formatStandardWithTolerance(
+        result.standardValue,
+        result.tolerancePlus,
+        result.toleranceMinus,
+      );
+  // PASS_FAIL 항목 또는 가공 공정이면 작업자 판정값(OK/NG), 그 외는 측정값 자동 계산.
+  const usePassFail = isPassFail || isMachining;
+  const judgment = usePassFail
     ? result.passFailResult === "OK"
       ? "pass"
       : result.passFailResult === "NG"
@@ -515,7 +537,27 @@ function StepResultCard({
       </div>
       <div className="mt-1 text-sm text-[#6B7280]">{dimText}</div>
 
-      {result.status === "completed" ? (
+      {isPassFail ? (
+        // PASS_FAIL 항목 — 사진·측정값 없이 OK/NG 만 표시.
+        result.passFailResult ? (
+          <div className="mt-3 flex items-baseline justify-between rounded-lg bg-[#F9FAFB] px-3 py-2">
+            <span className="text-xs text-[#6B7280]">판정</span>
+            <span
+              className={`text-base font-semibold ${
+                result.passFailResult === "OK"
+                  ? "text-[#15803D]"
+                  : "text-[#B91C1C]"
+              }`}
+            >
+              {result.passFailResult}
+            </span>
+          </div>
+        ) : (
+          <div className="mt-3 rounded-lg border border-dashed border-[#D1D5DB] bg-[#F3F4F6] px-3 py-4 text-center text-sm text-[#6B7280]">
+            미판정
+          </div>
+        )
+      ) : result.status === "completed" ? (
         <>
           {result.imageUrl && (
             <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-[#F9FAFB]">
