@@ -3,20 +3,46 @@ import type { InternalAxiosRequestConfig } from "axios";
 import { http } from "../../../lib/http";
 import { reissue } from "./authApi";
 import { tokenStorage } from "./tokenStorage";
-import type { TokenData } from "../type/types";
 
 type RetriableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
 // 동시에 여러 요청이 401 을 맞아도 재발급은 한 번만 수행한다. refresh 토큰이
 // 1회용(rotation)인 백엔드에서, 병렬 재발급의 두 번째 요청이 이미 무효화된
 // refresh 토큰으로 실패해 세션이 통째로 날아가는 것을 막는다.
-let reissuePromise: Promise<TokenData> | null = null;
+//
+// ※ 저장(save)까지 이 Promise 안에서 끝낸 뒤 리셋한다. 예전엔 finally 로 먼저
+//   reissuePromise 를 null 로 지운 뒤 호출부에서 save 했는데, 그 사이 짧은 창에
+//   또 다른 요청이 401 을 맞으면 아직 저장 안 된 "옛(무효화된) refresh 토큰"으로
+//   재발급을 재시도해 세션이 통째로 clear 되는 레이스가 있었다. (브라우저 재시작
+//   처럼 동시 요청이 많을 때 로그아웃되던 원인)
+let reissuePromise: Promise<string> | null = null;
 
-function reissueOnce(refreshToken: string): Promise<TokenData> {
+// 재발급 성공 시 새 토큰을 저장하고 새 accessToken 을 반환. 실패/세션변경 시 throw.
+function reissueOnce(refreshToken: string): Promise<string> {
   if (!reissuePromise) {
-    reissuePromise = reissue(refreshToken).finally(() => {
-      reissuePromise = null;
-    });
+    reissuePromise = reissue(refreshToken)
+      .then((tokens) => {
+        if (!tokens?.accessToken) {
+          // 2xx 여도 토큰이 비어 오면 "undefined" 저장을 막기 위해 세션 폐기.
+          tokenStorage.clear();
+          throw new Error("reissue: empty accessToken");
+        }
+        const nextRefreshToken = tokens.refreshToken ?? refreshToken;
+        // 재발급 도중 사용자가 로그아웃(clear)했거나 다른 세션으로 바뀌었으면
+        // 죽은 세션을 되살리지 않는다.
+        const current = tokenStorage.getRefresh();
+        if (current !== refreshToken && current !== nextRefreshToken) {
+          throw new Error("reissue: session changed");
+        }
+        tokenStorage.save({
+          accessToken: tokens.accessToken,
+          refreshToken: nextRefreshToken,
+        });
+        return tokens.accessToken;
+      })
+      .finally(() => {
+        reissuePromise = null;
+      });
   }
   return reissuePromise;
 }
@@ -54,24 +80,10 @@ export function installAuthInterceptors() {
           return Promise.reject(error);
         }
         try {
-          const tokens = await reissueOnce(refreshToken);
-          if (!tokens?.accessToken) {
-            // 재발급이 2xx 여도 토큰이 비어 오면 깨진 토큰을 저장하지 않는다 —
-            // "undefined" 가 저장되면 이후 모든 요청이 무한 로그아웃된다.
-            tokenStorage.clear();
-            return Promise.reject(error);
-          }
-          // 재발급이 진행되는 동안 사용자가 로그아웃했거나(clear) 다른 계정으로
-          // 다시 로그인해 세션이 바뀐 경우, 여기서 save 하면 죽은 세션이 되살아난다.
-          // 시작 시점의 refresh 토큰 그대로이거나(아무도 안 건드림) 방금 발급받은
-          // 토큰과 일치할 때(형제 요청이 rotation 후 이미 저장함)만 저장/재시도한다.
-          const nextRefreshToken = tokens.refreshToken ?? refreshToken;
-          const current = tokenStorage.getRefresh();
-          if (current !== refreshToken && current !== nextRefreshToken) {
-            return Promise.reject(error);
-          }
-          tokenStorage.save({ accessToken: tokens.accessToken, refreshToken: nextRefreshToken });
-          original.headers.Authorization = `Bearer ${tokens.accessToken}`;
+          // 재발급 + 새 토큰 저장을 한 번에 끝낸 뒤 새 accessToken 으로 재시도.
+          // (저장까지 reissueOnce 안에서 원자적으로 처리되므로 옛 토큰 재사용 레이스 없음)
+          const accessToken = await reissueOnce(refreshToken);
+          original.headers.Authorization = `Bearer ${accessToken}`;
           return http(original);
         } catch (refreshErr) {
           // refresh 토큰 자체가 무효(401/403)일 때만 세션을 폐기한다. 네트워크·
