@@ -314,18 +314,17 @@ export default function ScanPage() {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
         <div className="text-sm font-medium text-[#212121]">
-          제품과 설비를 먼저 선택해주세요.
+          검사 지시를 먼저 선택해주세요.
         </div>
         <p className="mt-1 text-xs text-[#6B7280]">
-          "검사 시작" 화면에서 제품 → 설비를 선택하면 시간대 선택으로
-          이동합니다.
+          "내 검사지시" 에서 배정된 지시를 선택하면 시간대 선택으로 이동합니다.
         </p>
         <button
           type="button"
-          onClick={() => navigate("/start-inspection", { replace: true })}
+          onClick={() => navigate("/my-orders", { replace: true })}
           className="mt-4 h-10 rounded-md bg-[#931B82] px-4 text-sm font-medium text-white hover:bg-[#6A0F5D]"
         >
-          검사 시작 화면으로
+          내 검사지시로
         </button>
       </div>
     );
