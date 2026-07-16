@@ -74,12 +74,15 @@ export default function CropPhase({
     !!completedCrop && completedCrop.width > 0 && completedCrop.height > 0;
 
   return (
-    // 모바일에서 ReactCrop 이 이미지 위 터치를 다 캡쳐해 페이지 스크롤이 막힌다.
     // 안내문 + 액션 버튼을 화면 하단에 sticky 로 고정해 스크롤 없이도 접근 가능.
     <div className="flex flex-col gap-3 pb-2">
-      <div className="flex w-full justify-center overflow-hidden rounded-xl">
+      {/* 사진(크롭) 영역엔 상하좌우 여백을 둔다. 크롭 영역 자체는 touch-none 으로
+          터치를 크롭 조작에만 쓰고(페이지 스크롤 방지), 사진 밖 여백에서만
+          페이지 스크롤이 되게 한다. 사진도 축소(55vh)해 여백을 확보. */}
+      <div className="flex w-full justify-center overflow-hidden rounded-xl px-6 py-4">
         {imageSrc && (
           <ReactCrop
+            className="touch-none"
             crop={crop}
             onChange={(c) => setCrop(c)}
             onComplete={(c) => setCompletedCrop(c)}
@@ -92,7 +95,7 @@ export default function CropPhase({
               src={imageSrc}
               alt="크롭 대상"
               onLoad={handleImageLoad}
-              className="block max-h-[70vh] w-auto select-none"
+              className="block max-h-[55vh] w-auto select-none"
               draggable={false}
             />
           </ReactCrop>
