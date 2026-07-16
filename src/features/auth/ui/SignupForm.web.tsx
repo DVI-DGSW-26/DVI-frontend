@@ -108,7 +108,7 @@ export default function SignupFormWeb({
                 className="w-1/2 border border-[#A8A8A8] rounded-lg h-12 xl:h-15 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
               />
               <div className="w-1/2">
-                <Select
+                <Select<DepartmentOption, false>
                   placeholder="부서를 선택하세요."
                   options={departmentOptions}
                   value={departmentOptions.find((o) => o.value === department)}

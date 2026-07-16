@@ -176,7 +176,7 @@ export default function SignupFormMobile({
               width: "calc(100% - 48px)",
             }}
           >
-            <Select
+            <Select<DepartmentOption, false>
               placeholder="부서를 선택하세요."
               options={departmentOptions}
               value={departmentOptions.find((o) => o.value === department)}
