@@ -1,7 +1,7 @@
 import authBackground from "../../../assets/authBackground.png";
 import authLogo from "../../../assets/authLogo.svg";
 import Logo from "../../../assets/Logo.svg";
-import Select from "react-select";
+import Select, { type StylesConfig } from "react-select";
 import Button from "../../../components/shared/Button";
 import type { SignupFormProps } from "./SignupForm";
 
@@ -10,8 +10,8 @@ const departmentOptions = [
   { value: "QUALITY", label: "품질" },
 ];
 
-const selectStyles = {
-  control: (base: any) => ({
+const selectStyles: StylesConfig = {
+  control: (base) => ({
     ...base,
     height: "48px",
     minHeight: "48px",
@@ -25,7 +25,7 @@ const selectStyles = {
     boxShadow: "none",
     "&:hover": { borderColor: "#A8A8A8" },
   }),
-  dropdownIndicator: (base: any) => ({
+  dropdownIndicator: (base) => ({
     ...base,
     paddingRight: "12px",
   }),

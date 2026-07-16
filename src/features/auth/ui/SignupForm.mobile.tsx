@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
-import Select from "react-select";
+import Select, { type StylesConfig } from "react-select";
 import Logo from "../../../assets/Logo.svg";
 import Button from "../../../components/shared/Button";
 import type { SignupFormProps } from "./SignupForm";
@@ -11,8 +11,8 @@ const departmentOptions = [
   { value: "PRODUCTION", label: "생산" }
 ];
 
-const selectStyles = {
-  control: (base: any) => ({
+const selectStyles: StylesConfig = {
+  control: (base) => ({
     ...base,
     height: "60px",
     minHeight: "60px",
@@ -22,7 +22,7 @@ const selectStyles = {
     boxShadow: "none",
     "&:hover": { borderColor: "#A8A8A8" },
   }),
-  dropdownIndicator: (base: any) => ({ ...base, paddingRight: "12px" }),
+  dropdownIndicator: (base) => ({ ...base, paddingRight: "12px" }),
   indicatorSeparator: () => ({ display: "none" }),
 };
 
