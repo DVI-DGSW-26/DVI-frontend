@@ -172,6 +172,21 @@ export default function InspectionOrdersPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-45 flex-1">
+          <input
+            type="text"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="제품·고객사·설비·검사자 검색"
+            className="h-9 w-full rounded-full border border-gray-300 bg-white pl-9 pr-3 text-xs focus:border-[#931B82] focus:outline-none"
+          />
+          <Icon
+            icon="solar:magnifer-linear"
+            width={16}
+            height={16}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]"
+          />
+        </div>
         <div className="relative">
           <input
             type="date"
