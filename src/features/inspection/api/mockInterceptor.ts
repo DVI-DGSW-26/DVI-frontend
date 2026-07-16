@@ -28,7 +28,6 @@ import type {
 } from "../type/types";
 
 const MOCK_PRODUCTION = { id: 0, name: "임시 생산 작업자" };
-const MOCK_QUALITY = { id: 1, name: "QM 담당자" };
 const MOCK_CUSTOMER = { id: 1, name: "샘플 고객사" };
 
 function todayYmd(): string {
@@ -57,7 +56,6 @@ function makeOrder(
     equipment: { id: 1, name: "MOCK 설비", process },
     customer: MOCK_CUSTOMER,
     production: MOCK_PRODUCTION,
-    quality: MOCK_QUALITY,
     targetDate: `${todayYmd()}T00:00:00`,
     status: "PENDING",
     createdAt: nowIso,

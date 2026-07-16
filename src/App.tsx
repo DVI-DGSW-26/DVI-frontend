@@ -19,6 +19,8 @@ import InspectionNgViewPage from "./features/inspection/ui/InspectionNgViewPage"
 import ProductsPage from "./features/products/ui/ProductsPage";
 import EquipmentPage from "./features/equipment/ui/EquipmentPage";
 import CustomersPage from "./features/customers/ui/CustomersPage";
+import InspectionOrdersPage from "./features/inspection-orders/ui/InspectionOrdersPage";
+import MyInspectionOrdersPage from "./features/inspection-orders/ui/MyInspectionOrdersPage";
 
 import AdminReportPage from "./features/report/ui/AdminReportPage";
 import AdminReportDetailPage from "./features/report/ui/AdminReportDetailPage";
@@ -38,6 +40,7 @@ function HomePage() {
   const { user } = useAuth();
 
   if (user?.role === "PRODUCTION") return <ProductionHomePage />;
+  if (user?.role === "PRODUCTION_MANAGER") return <InspectionOrdersPage />;
   if (user?.role === "ADMIN") return <DashboardPage />;
   if (user?.role === "QUALITY") return <QualityHomePage />;
 
@@ -133,6 +136,16 @@ function App() {
 
             <Route element={<RouteGuard roles={["PRODUCTION"]} />}>
               <Route path="/inspections" element={<MyInspectionPage />} />
+              {/* 자주검사자가 생산 관리자에게 배정받은 검사 지시 목록 (GET /inspection-order/my). */}
+              <Route path="/my-orders" element={<MyInspectionOrdersPage />} />
+            </Route>
+
+            {/* 생산 관리자 — 자주검사자에게 검사 지시 배정/관리 (PRODUCTION_MANAGER 전용). */}
+            <Route element={<RouteGuard roles={["PRODUCTION_MANAGER"]} />}>
+              <Route
+                path="/inspection-orders"
+                element={<InspectionOrdersPage />}
+              />
             </Route>
 
             <Route element={<RouteGuard roles={["PRODUCTION", "QUALITY"]} />}>

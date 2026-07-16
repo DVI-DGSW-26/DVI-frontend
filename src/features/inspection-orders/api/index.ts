@@ -6,12 +6,18 @@ export {
   updateInspectionOrder,
   deleteInspectionOrder,
   getInspectionOrders,
+  getInspectionOrderDetail,
+  getMyInspectionOrders,
+  getProductionInspectionOrders,
 } from "./inspectionOrderApi";
 export {
   useEquipmentList,
   useProductList,
   useUsersByRole,
   useInspectionOrderList,
+  useMyInspectionOrders,
+  useInspectionOrderDetail,
+  useProductionInspectionOrders,
   useCreateInspectionOrder,
   useUpdateInspectionOrder,
   useDeleteInspectionOrder,

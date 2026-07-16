@@ -24,15 +24,17 @@ export interface Product {
   createdAt: string;
 }
 
+// 검사 지시 생성/수정 body. PRODUCTION_MANAGER 가 생산 작업자(productionId)에게 배정.
+// (예전 모델의 qualityId 는 제거됨 — 검사 지시엔 순회검사 품질 담당자 배정이 없다.)
 export interface CreateInspectionOrderRequest {
   productId: number;
   equipmentId: number;
   productionId: number;
-  qualityId: number;
   targetDate: string;
 }
 
 export type InspectionOrderStatus =
+  | "PENDING"
   | "DRAFT"
   | "INCOMPLETE"
   | "INCOMPLETE_APPROVED"
@@ -68,8 +70,8 @@ export interface InspectionOrder {
   product: InspectionOrderProduct;
   equipment: InspectionOrderEquipment;
   customer: InspectionOrderCustomer;
+  // 배정된 생산 작업자.
   production: InspectionOrderUserRef;
-  quality: InspectionOrderUserRef;
   targetDate: string;
   status: InspectionOrderStatus;
   createdAt: string;
@@ -79,3 +81,4 @@ export interface InspectionOrder {
 export type EquipmentListResponse = ApiResponse<Equipment[]>;
 export type ProductListResponse = ApiResponse<Product[]>;
 export type InspectionOrderListResponse = ApiResponse<InspectionOrder[]>;
+export type InspectionOrderDetailResponse = ApiResponse<InspectionOrder>;

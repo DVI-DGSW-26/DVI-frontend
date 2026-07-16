@@ -11,6 +11,7 @@ const ROLE_LABEL: Record<Role, string> = {
   ADMIN: "통합 관리자",
   QUALITY_ADMIN: "품질 관리자",
   PRODUCTION: "생산자",
+  PRODUCTION_MANAGER: "생산 관리자",
   QUALITY: "품질 담당자",
 };
 
