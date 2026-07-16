@@ -11,9 +11,12 @@ import {
   useStartNextInspection,
 } from "../../inspection/api";
 import type {
+  InspectionProcess,
   SkipInspectionErrorData,
   StartNextInspectionErrorData,
 } from "../../inspection/type/types";
+import { useMyInspectionOrders } from "../../inspection-orders/api";
+import type { InspectionOrder } from "../../inspection-orders/api";
 import type { MyInspection } from "../type/types";
 import { getStatusBadge } from "../lib/inspectionStatus";
 import {
@@ -58,6 +61,30 @@ export default function ProductionHomePage() {
     () => inspectionsQuery.data ?? [],
     [inspectionsQuery.data],
   );
+
+  // 프로덕트 매니저가 배정한 검사 지시 중 오늘(targetDate) 것만 홈에 노출.
+  const { data: myOrders = [] } = useMyInspectionOrders();
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${d.getFullYear()}-${mm}-${dd}`;
+  }, []);
+  const todaysOrders = useMemo(
+    () => myOrders.filter((o) => o.targetDate?.slice(0, 10) === todayStr),
+    [myOrders, todayStr],
+  );
+
+  // 검사 지시를 탭하면 해당 제품·설비·공정으로 시점 선택 화면(ScanPage)으로 이동.
+  const handleStartOrder = (order: InspectionOrder) => {
+    navigate("/scan", {
+      state: {
+        productId: order.product.id,
+        equipmentId: order.equipment.id,
+        process: order.product.process as InspectionProcess,
+      },
+    });
+  };
 
   const latestDraft: MyInspection | undefined = useMemo(
     () => inspections.find((i) => i.status === "DRAFT"),
@@ -264,7 +291,7 @@ export default function ProductionHomePage() {
 
             <button
               type="button"
-              onClick={() => navigate("/start-inspection")}
+              onClick={() => navigate("/my-orders")}
               className="mt-2 flex w-full items-center justify-between gap-3 rounded-xl border border-[#E5E7EB] bg-white p-3 text-left text-[#212121] transition-colors hover:bg-gray-50"
             >
               <div className="min-w-0">
@@ -272,11 +299,11 @@ export default function ProductionHomePage() {
                   새 검사 시작
                 </div>
                 <div className="mt-0.5 text-sm text-[#212121]">
-                  제품·설비를 선택해서 시작
+                  배정된 검사 지시에서 시작
                 </div>
               </div>
               <Icon
-                icon="solar:add-circle-linear"
+                icon="solar:clipboard-list-linear"
                 width={22}
                 height={22}
                 className="shrink-0 text-[#931B82]"
@@ -284,10 +311,10 @@ export default function ProductionHomePage() {
             </button>
           </>
         ) : (
-          // 검사 지시 사전 등록이 더 이상 필수가 아니므로 직접 시작을 메인 CTA 로 노출.
+          // 검사는 프로덕트 매니저가 배정한 검사 지시에서만 시작한다.
           <button
             type="button"
-            onClick={() => navigate("/start-inspection")}
+            onClick={() => navigate("/my-orders")}
             className="mt-3 flex w-full items-center justify-between gap-3 rounded-xl bg-[#931B82] p-4 text-left text-white shadow-md ring-1 ring-[#6A0F5D]/30 transition-colors hover:bg-[#6A0F5D]"
           >
             <div className="min-w-0">
@@ -295,14 +322,14 @@ export default function ProductionHomePage() {
                 새 검사 시작
               </div>
               <div className="mt-1 truncate text-base font-semibold text-white">
-                제품·설비를 선택해서 시작하기
+                배정된 검사 지시에서 시작하기
               </div>
               <div className="mt-0.5 truncate text-xs text-[#F3E8FF]/90">
-                제품 → 설비 → 시점 선택
+                검사 지시 → 시점 선택
               </div>
             </div>
             <Icon
-              icon="solar:add-circle-bold"
+              icon="solar:clipboard-list-bold"
               width={26}
               height={26}
               className="shrink-0 text-white"
@@ -310,6 +337,50 @@ export default function ProductionHomePage() {
           </button>
         )}
       </div>
+
+      {/* 오늘 배정된 검사 지시 — 탭하면 시점 선택 후 검사 시작. */}
+      {todaysOrders.length > 0 && (
+        <section className="px-4 pt-6">
+          <div className="mb-2 flex items-baseline justify-between">
+            <h2 className="text-sm font-semibold text-[#212121]">
+              오늘 할당된 검사
+            </h2>
+            <span className="text-xs font-medium text-[#931B82]">
+              {todaysOrders.length}건
+            </span>
+          </div>
+
+          <ul className="flex flex-col gap-2">
+            {todaysOrders.map((order) => (
+              <li key={order.id}>
+                <button
+                  type="button"
+                  onClick={() => handleStartOrder(order)}
+                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-3 text-left shadow-sm transition-colors hover:bg-gray-50"
+                >
+                  <div className="min-w-0">
+                    <div className="wrap-break-word text-sm font-semibold text-[#212121]">
+                      {order.product?.name ?? "-"}
+                    </div>
+                    <div className="mt-0.5 truncate text-xs text-[#6B7280]">
+                      {order.customer?.name ?? "-"} ·{" "}
+                      {order.equipment?.name ?? "-"}
+                    </div>
+                  </div>
+                  <span className="flex shrink-0 items-center gap-0.5 text-xs font-medium text-[#931B82]">
+                    검사 시작
+                    <Icon
+                      icon="solar:arrow-right-linear"
+                      width={14}
+                      height={14}
+                    />
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* "가장 최근 완료" — 마지막으로 끝낸 1건에서 다음 검사를 바로 시작. */}
       {latestCompleted && (

@@ -29,9 +29,7 @@ const TABS: TabItem[] = [
     roles: ["PRODUCTION"],
     // 작업 중인 측정/결과 페이지에서도 이 탭이 활성화 보이도록.
     activeMatch: (p) =>
-      p === "/scan" ||
-      p === "/start-inspection" ||
-      p.startsWith("/inspection/"),
+      p === "/scan" || p.startsWith("/inspection/"),
   },
 
   { label: "홈", to: "/", icon: "flowbite:home-solid", roles: ["QUALITY"], iconSize: 34 },
