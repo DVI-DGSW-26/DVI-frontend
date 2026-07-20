@@ -8,7 +8,6 @@ import {
 } from "../api";
 import type {
   InspectionProcess,
-  SkipInspectionErrorData,
   StartInspectionErrorCode,
   StartInspectionErrorData,
 } from "../type/types";
@@ -18,6 +17,7 @@ import {
   useMyInspectionList,
 } from "../../my-inspection/api";
 import { getRecentInspectionId } from "../lib/recentInspection";
+import { skipErrorMessage, SKIP_DELETE_DRAFT_ERROR } from "../lib/skipError";
 import { isSameKstDay } from "../../../lib/datetime";
 import SlotItem, { type SlotStatus } from "./SlotItem";
 import SkipModal from "./SkipModal";
@@ -47,6 +47,11 @@ export default function ScanPage() {
   const [toast, setToast] = useState<ToastInfo | null>(null);
   const [pendingType, setPendingType] = useState<string | null>(null);
   const [skipTargetType, setSkipTargetType] = useState<string | null>(null);
+  // 방금 건너뛴 시점(type) 로컬 기록. skip 응답/목록 refetch 에 product·equipment 가
+  // 온전히 안 담겨 inspectionByType 매핑에서 누락되면 배지가 "건너뜀"으로 안 바뀌는
+  // 문제가 있어(예: AL절단 14시), 성공 시점을 화면에서 직접 기억해 즉시 반영한다.
+  // skip 은 되돌릴 수 없는 종결 상태라 로컬 기록이 서버와 어긋날 일이 없다.
+  const [skippedTypes, setSkippedTypes] = useState<Set<string>>(new Set());
 
   const slotsQuery = useInspectionSlots(process);
   // 슬롯 상태(잠금/이어하기 등) 정확히 계산하려면 COMPLETED/INCOMPLETE_APPROVED 등
@@ -137,8 +142,11 @@ export default function ScanPage() {
     let allPrevDone = true;
     for (const s of slots) {
       const ins = inspectionByType.get(s.type);
+      // 로컬로 기억한 건너뜀은 서버 상태보다 우선 — refetch 지연/누락과 무관하게 즉시 반영.
+      const locallySkipped = skippedTypes.has(s.type);
       let status: SlotStatus;
-      if (ins?.status === "COMPLETED") status = "COMPLETED";
+      if (locallySkipped) status = "SKIPPED";
+      else if (ins?.status === "COMPLETED") status = "COMPLETED";
       else if (ins?.status === "DRAFT") status = "DRAFT";
       else if (ins?.status === "INCOMPLETE") status = "INCOMPLETE";
       else if (ins?.status === "INCOMPLETE_APPROVED")
@@ -149,13 +157,14 @@ export default function ScanPage() {
 
       // 이전 시점이 "종결" 상태인지 — COMPLETED / INCOMPLETE_APPROVED / SKIPPED 가 다음 진행 허용.
       const terminal =
+        locallySkipped ||
         ins?.status === "COMPLETED" ||
         ins?.status === "INCOMPLETE_APPROVED" ||
         ins?.status === "SKIPPED";
       if (!terminal) allPrevDone = false;
     }
     return map;
-  }, [slots, inspectionByType]);
+  }, [slots, inspectionByType, skippedTypes]);
 
   const getSlotStatus = (type: string): SlotStatus =>
     slotStatusByType.get(type) ?? "NONE";
@@ -258,7 +267,13 @@ export default function ScanPage() {
       // 던지므로, skip 호출 전 해당 DRAFT 를 먼저 삭제해서 NONE 상태로 되돌린다.
       const existing = inspectionByType.get(type);
       if (existing && existing.status === "DRAFT") {
-        await deleteMutation.mutateAsync(existing.inspectionId);
+        try {
+          await deleteMutation.mutateAsync(existing.inspectionId);
+        } catch {
+          setSkipTargetType(null);
+          setToast({ message: SKIP_DELETE_DRAFT_ERROR });
+          return;
+        }
       }
       await skipMutation.mutateAsync({
         productId,
@@ -266,20 +281,18 @@ export default function ScanPage() {
         type,
         ...(reason ? { reason } : {}),
       });
+      // 서버 목록 반영 여부와 무관하게 배지를 즉시 "건너뜀"으로 고정.
+      setSkippedTypes((prev) => {
+        const next = new Set(prev);
+        next.add(type);
+        return next;
+      });
       setSkipTargetType(null);
       const label = slots.find((s) => s.type === type)?.label ?? type;
       setToast({ message: `${label} 시점을 건너뛰었습니다.` });
     } catch (err) {
-      if (err instanceof AxiosError) {
-        const data = err.response?.data as SkipInspectionErrorData | undefined;
-        if (data?.code === "INSPECTION_ALREADY_EXISTS") {
-          setSkipTargetType(null);
-          setToast({ message: "이미 처리된 시점입니다." });
-          return;
-        }
-      }
       setSkipTargetType(null);
-      setToast({ message: "건너뛰지 못했습니다." });
+      setToast({ message: skipErrorMessage(err) });
     }
   };
 
