@@ -247,7 +247,7 @@ export default function CrossCheckApprovalPage() {
 
                 {!run.explicitKey && (
                   <p className="text-[11px] text-[#A8A8A8]">
-                    * 제품·설비 기준 묶음 (서버 그룹핑 키 미제공)
+                    * 제품·설비·작업일 기준 추정 묶음 (서버 그룹핑 키 미제공)
                   </p>
                 )}
 
