@@ -12,4 +12,6 @@ export type {
   ReportResultItem,
   ReportProcess,
   ReportInspectionType,
+  ReportStage,
+  ReportStageInfo,
 } from "./types";
