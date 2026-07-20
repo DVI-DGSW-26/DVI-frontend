@@ -6,6 +6,7 @@ import { usePendingCrossChecks, useDeleteCrossCheckById } from "../api";
 import type { CrossCheckSummary } from "../api";
 import { useAuth } from "../../auth/AuthContext";
 import { getStage, STAGE_LABEL, STAGE_BADGE } from "../lib/stage";
+import { groupByRun, runStatus } from "../lib/runGroup";
 import { formatDate, formatDateTime } from "../../../lib/datetime";
 import {
   DEFAULT_DATE_FILTER,
@@ -59,6 +60,11 @@ const STATUS_ORDER = Object.keys(STATUS_META).sort(
   (a, b) => STATUS_META[a].order - STATUS_META[b].order,
 );
 
+function statusRank(status: string): number {
+  const idx = STATUS_ORDER.indexOf(status);
+  return idx === -1 ? STATUS_ORDER.length : idx;
+}
+
 export default function CrossCheckApprovalPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -109,15 +115,18 @@ export default function CrossCheckApprovalPage() {
     [sorted, dateFilter],
   );
 
-  // 상태별 섹션으로 묶는다 — 결재 대기 → 진행중 → (반려/승인) 순.
-  const groups = useMemo(
-    () =>
-      STATUS_ORDER.map((status) => ({
-        status,
-        items: filtered.filter((cc) => cc.status === status),
-      })).filter((g) => g.items.length > 0),
-    [filtered],
-  );
+  // 생산 run(초·중·종 묶음)별 섹션. 승인 단위가 종 차수 1회 + 통합 보고서 1개라
+  // 결재자가 한 run 의 초·중·종을 한 화면에서 보고 종에서 승인하도록 묶는다.
+  // 승인 대기 run 을 위로, 그다음 최근 활동 순.
+  const runs = useMemo(() => {
+    const grouped = groupByRun(filtered);
+    return [...grouped].sort((a, b) => {
+      const ra = statusRank(runStatus(a));
+      const rb = statusRank(runStatus(b));
+      if (ra !== rb) return ra - rb;
+      return b.latestTs - a.latestTs;
+    });
+  }, [filtered]);
 
   // 상단 요약 카운트 (날짜 필터와 무관하게 전체 기준).
   const pendingCount = sorted.filter(
@@ -204,25 +213,46 @@ export default function CrossCheckApprovalPage() {
         </p>
       )}
 
-      {!isLoading && !isError && groups.length > 0 && (
+      {!isLoading && !isError && runs.length > 0 && (
         <div className="flex flex-col gap-5">
-          {groups.map((group) => {
-            const meta = STATUS_META[group.status];
+          {runs.map((run) => {
+            const head = run.items[0];
+            const status = runStatus(run);
+            const meta = STATUS_META[status] ?? STATUS_META.DRAFT;
             return (
-              <section key={group.status} className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-semibold text-[#212121]">
-                    {meta.label}
+              <section
+                key={run.key}
+                className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-[#FAFAFA] p-3"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="wrap-break-word text-sm font-semibold text-[#212121]">
+                    {head.product.name}
                   </h2>
+                  <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-medium text-[#931B82]">
+                    {head.product.code}
+                  </span>
+                  <span className="text-xs text-[#6B7280]">
+                    {head.equipment.name}
+                  </span>
                   <span
-                    className="inline-block rounded-full px-2 py-0.5 text-xs font-medium"
+                    className="ml-auto rounded-full px-2 py-0.5 text-xs font-semibold"
                     style={{ backgroundColor: meta.bg, color: meta.fg }}
                   >
-                    {group.items.length}
+                    {run.final ? meta.label : "진행중"}
+                  </span>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-xs text-[#6B7280]">
+                    {run.items.length}차수
                   </span>
                 </div>
+
+                {!run.explicitKey && (
+                  <p className="text-[11px] text-[#A8A8A8]">
+                    * 제품·설비 기준 묶음 (서버 그룹핑 키 미제공)
+                  </p>
+                )}
+
                 <ul className="flex flex-col gap-3">
-                  {group.items.map((cc) => {
+                  {run.items.map((cc) => {
                     const highlighted = cc.crossCheckId === highlightId;
                     return (
                       <li
@@ -288,19 +318,8 @@ function ApprovalCard({
         className="flex min-w-0 flex-1 items-stretch gap-4 rounded-l-2xl p-4 text-left transition-colors hover:bg-[#FDF7FB]"
       >
         <div className="flex-1 min-w-0">
+          {/* 제품·설비는 run 섹션 헤더에 이미 있어, 카드는 차수 정보부터 보여준다. */}
           <div className="flex items-center gap-2">
-            <span className="wrap-break-word text-base font-semibold text-[#212121]">
-              {cc.product.name}
-            </span>
-            <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-medium text-[#931B82]">
-              {cc.product.code}
-            </span>
-            <span
-              className="rounded-md px-2 py-0.5 text-xs font-semibold"
-              style={{ backgroundColor: meta.bg, color: meta.fg }}
-            >
-              {meta.label}
-            </span>
             {stage && (
               <span
                 className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${STAGE_BADGE[stage]}`}
@@ -308,16 +327,23 @@ function ApprovalCard({
                 {STAGE_LABEL[stage]}
               </span>
             )}
+            <span className="text-sm font-semibold text-[#212121]">
+              {cc.typeLabel}
+            </span>
+            <span
+              className="rounded-md px-2 py-0.5 text-xs font-semibold"
+              style={{ backgroundColor: meta.bg, color: meta.fg }}
+            >
+              {meta.label}
+            </span>
           </div>
           <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
             <InfoLine
               label="공정"
               value={PROCESS_LABEL[cc.product.process] ?? cc.product.process}
             />
-            <InfoLine label="설비" value={cc.equipment.name} />
             <InfoLine label="고객사" value={cc.customer.name} />
             <InfoLine label="작업자" value={cc.production.name} />
-            <InfoLine label="검사 차수" value={`${cc.typeLabel} (${cc.type})`} />
             <InfoLine label="시작일" value={formatDate(cc.createdAt)} />
             <InfoLine
               className="col-span-2"
