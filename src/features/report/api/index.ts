@@ -14,4 +14,5 @@ export type {
   ReportInspectionType,
   ReportStage,
   ReportStageInfo,
+  ReportMeasurement,
 } from "./types";
