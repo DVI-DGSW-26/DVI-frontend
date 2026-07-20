@@ -14,6 +14,8 @@ import { downloadReportPdf } from "../lib/downloadReportPdf";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import PhotoCompareModal from "../../../components/shared/PhotoCompareModal";
 import ReportStagesSection from "./ReportStagesSection";
+import ReportMeasurementsSection from "./ReportMeasurementsSection";
+import { hasStageMeasurements } from "../lib/stageMeasurements";
 import DeleteReportModal from "./DeleteReportModal";
 import Toast from "../../inspection/ui/Toast";
 import { useAuth } from "../../auth/AuthContext";
@@ -361,47 +363,64 @@ const AdminReportDetailPageWeb = () => {
         </Section>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Section title="자주검사" trailing={inspectionBadge}>
-          {data.results.length === 0 ? (
-            <p className="rounded-xl bg-[#F5F5F5] px-4 py-6 text-center text-xs text-[#A8A8A8]">
-              측정 데이터 없음
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {data.results.map((r) => (
-                <MeasureCard
-                  key={`prod-${r.dimNo}`}
-                  item={r}
-                  measuredValue={r.productionValue}
-                  imageUrl={r.productionImageUrl}
-                  onOpenPhotos={() => setPhotoItem(r)}
-                />
-              ))}
-            </ul>
-          )}
+      {/* 차수별 측정값이 오면 dim x 초·중·종 표 하나로, 아니면 기존 자주/순회 2단 표로. */}
+      {hasStageMeasurements(data.results) ? (
+        <Section title="측정값" trailing={inspectionBadge}>
+          <ReportMeasurementsSection
+            results={data.results}
+            variant="web"
+            onOpenPhotos={(item, m) =>
+              setPhotoItem({
+                ...item,
+                productionImageUrl: m.productionImageUrl,
+                qualityImageUrl: m.qualityImageUrl,
+              })
+            }
+          />
         </Section>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Section title="자주검사" trailing={inspectionBadge}>
+            {data.results.length === 0 ? (
+              <p className="rounded-xl bg-[#F5F5F5] px-4 py-6 text-center text-xs text-[#A8A8A8]">
+                측정 데이터 없음
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {data.results.map((r) => (
+                  <MeasureCard
+                    key={`prod-${r.dimNo}`}
+                    item={r}
+                    measuredValue={r.productionValue}
+                    imageUrl={r.productionImageUrl}
+                    onOpenPhotos={() => setPhotoItem(r)}
+                  />
+                ))}
+              </ul>
+            )}
+          </Section>
 
-        <Section title="순회검사" trailing={inspectionBadge}>
-          {data.results.length === 0 ? (
-            <p className="rounded-xl bg-[#F5F5F5] px-4 py-6 text-center text-xs text-[#A8A8A8]">
-              측정 데이터 없음
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {data.results.map((r) => (
-                <MeasureCard
-                  key={`qual-${r.dimNo}`}
-                  item={r}
-                  measuredValue={r.qualityValue}
-                  imageUrl={r.qualityImageUrl}
-                  onOpenPhotos={() => setPhotoItem(r)}
-                />
-              ))}
-            </ul>
-          )}
-        </Section>
-      </div>
+          <Section title="순회검사" trailing={inspectionBadge}>
+            {data.results.length === 0 ? (
+              <p className="rounded-xl bg-[#F5F5F5] px-4 py-6 text-center text-xs text-[#A8A8A8]">
+                측정 데이터 없음
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {data.results.map((r) => (
+                  <MeasureCard
+                    key={`qual-${r.dimNo}`}
+                    item={r}
+                    measuredValue={r.qualityValue}
+                    imageUrl={r.qualityImageUrl}
+                    onOpenPhotos={() => setPhotoItem(r)}
+                  />
+                ))}
+              </ul>
+            )}
+          </Section>
+        </div>
+      )}
 
       <div className="flex justify-end gap-2">
         {isAdmin && (

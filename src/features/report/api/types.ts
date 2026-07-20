@@ -39,6 +39,21 @@ export interface ReportSummary {
   createdAt: string;
 }
 
+// 통합 보고서에서 dim 1개의 차수별 측정값 한 칸. 성적서 양식이 "dim = 행,
+// 초·중·종 = 열" 이라 dim 안에 차수 배열이 들어간다.
+export interface ReportMeasurement {
+  type: ReportInspectionType;
+  typeLabel: string;
+  stage: ReportStage;
+  productionValue: number | null;
+  qualityValue: number | null;
+  productionImageUrl: string | null;
+  qualityImageUrl: string | null;
+  productionPassFailResult: AppearanceResult | null;
+  qualityPassFailResult: AppearanceResult | null;
+  result: JudgeResult;
+}
+
 export interface ReportResultItem {
   dimNo: number;
   dimName: string;
@@ -54,6 +69,9 @@ export interface ReportResultItem {
   productionPassFailResult: AppearanceResult | null;
   qualityPassFailResult: AppearanceResult | null;
   result: JudgeResult;
+  // 차수별 측정값. 통합 보고서 발행분에만 있고, 단일 차수 보고서에서는 안 온다.
+  // 없으면 위 단수 필드(종 차수 기준)로 폴백해 기존 표를 그대로 그린다.
+  measurements?: ReportMeasurement[];
 }
 
 export type ReportStage = "INITIAL" | "MIDDLE" | "FINAL";
