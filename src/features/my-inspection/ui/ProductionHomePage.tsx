@@ -316,7 +316,7 @@ export default function ProductionHomePage() {
           <button
             type="button"
             onClick={() => navigate("/my-orders")}
-            className="mt-3 flex w-full items-center justify-between gap-3 rounded-xl bg-[#931B82] p-4 text-left text-white shadow-md ring-1 ring-[#6A0F5D]/30 transition-colors hover:bg-[#6A0F5D]"
+            className="mt-3 flex w-full items-center justify-between gap-3 rounded-xl bg-[rgb(147,27,130)] p-4 text-left text-white shadow-md ring-1 ring-[#6A0F5D]/30 transition-colors hover:bg-[#6A0F5D]"
           >
             <div className="min-w-0">
               <div className="text-xs font-medium uppercase tracking-wide text-[#F3E8FF]">

@@ -95,12 +95,13 @@ export default function MonitorPage() {
   );
 
   return (
+    // 카드 높이를 화면에 맞춰 늘이지 않는다 — 각 영역이 내용만큼만 차지한다.
     <div
-      className="flex h-dvh flex-col overflow-hidden"
+      className="min-h-dvh"
       style={{ backgroundColor: T.neutral.sub, color: T.neutral.ink }}
     >
       <header
-        className="flex shrink-0 items-center justify-between px-8 py-5"
+        className="flex items-center justify-between px-8 py-5"
         style={{
           backgroundColor: T.neutral.white,
           borderBottom: `1px solid ${T.neutral.border}`,
@@ -120,7 +121,7 @@ export default function MonitorPage() {
         </div>
       </header>
 
-      <div className="grid shrink-0 grid-cols-4 gap-5 px-6 pt-5 pb-4">
+      <div className="grid grid-cols-4 gap-5 px-6 pt-5 pb-4">
         <StatCard label="완료" value={totals.done} color={T.success[700]} />
         <StatCard label="진행중" value={totals.active} color={T.primary[500]} />
         <StatCard label="건너뜀" value={totals.skipped} color={T.inkSub} />
@@ -131,7 +132,8 @@ export default function MonitorPage() {
         />
       </div>
 
-      <main className="grid min-h-0 flex-1 grid-cols-[2.4fr_1fr] gap-5 px-6 pb-6">
+      {/* items-start — 두 카드가 서로의 높이에 끌려가지 않게 한다. */}
+      <main className="grid grid-cols-[2.4fr_1fr] items-start gap-5 px-6 pb-6">
         <Card>
           <CardHead
             title="시점별 진행도"
@@ -140,7 +142,7 @@ export default function MonitorPage() {
           >
             <Legend />
           </CardHead>
-          <div className="min-h-0 flex-1 overflow-hidden px-6">
+          <div className="px-6">
             {rowPage.visible.map((row, i) => (
               <ProgressRowView
                 key={row.key}
@@ -168,7 +170,7 @@ export default function MonitorPage() {
               {snapshot?.crossChecks.length ?? "–"}건
             </span>
           </CardHead>
-          <div className="min-h-0 flex-1 overflow-hidden px-6">
+          <div className="px-6">
             {ccPage.visible.map((it, i) => (
               <CrossCheckRow
                 key={it.crossCheckId}
@@ -192,7 +194,7 @@ export default function MonitorPage() {
 function Card({ children }: { children: React.ReactNode }) {
   return (
     <section
-      className="flex min-h-0 flex-col overflow-hidden rounded-xl"
+      className="overflow-hidden rounded-xl"
       style={{
         backgroundColor: T.neutral.white,
         border: `1px solid ${T.neutral.border}`,
@@ -216,7 +218,7 @@ function CardHead({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex shrink-0 items-center justify-between px-6 pt-5 pb-4">
+    <div className="flex items-center justify-between px-6 pt-5 pb-4">
       <div className="flex items-baseline gap-3">
         <h2 className="text-xl font-bold">{title}</h2>
         {/* 자동으로 넘어가는 중이라는 걸 알려야 "왜 화면이 바뀌지?"가 안 생긴다. */}
@@ -450,7 +452,7 @@ function FinishedStrip({
 }) {
   return (
     <div
-      className="shrink-0 px-6 py-4"
+      className="mt-1 px-6 py-4"
       style={{
         borderTop: `1px solid ${T.neutral.border}`,
         backgroundColor: T.neutral.sub,
