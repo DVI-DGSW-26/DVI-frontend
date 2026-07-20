@@ -2,7 +2,7 @@ export { signup, login, reissue } from "./authApi";
 export { getMe, changeMyPassword } from "./userApi";
 export type { ChangePasswordRequest } from "./userApi";
 export { tokenStorage } from "./tokenStorage";
-export { installAuthInterceptors } from "./interceptors";
+export { installAuthInterceptors, refreshAccessToken } from "./interceptors";
 export { AuthError } from "../type/types";
 export type {
   ApiResponse,

@@ -33,6 +33,8 @@ import QualityHomePage from "./features/cross-check/ui/QualityHomePage";
 import CrossCheckApprovalPage from "./features/cross-check/ui/CrossCheckApprovalPage";
 import CrossCheckApprovalDetailPage from "./features/cross-check/ui/CrossCheckApprovalDetailPage";
 
+import MonitorPage from "./features/monitor/ui/MonitorPage";
+
 import { useAuth } from "./features/auth/AuthContext";
 
 function HomePage() {
@@ -54,6 +56,11 @@ function App() {
         <Route path="/login" element={<LoginForm />} />
 
         <Route element={<RouteGuard />}>
+          {/* 공장 벽걸이 모니터 — 헤더/탭바 없이 전체화면으로 띄운다. 조작 대상이
+              아니라 표시 전용이라 Layout 밖에 둔다. 권한은 인증만(백엔드 기준
+              "로그인한 모든 역할"). */}
+          <Route path="/monitor" element={<MonitorPage />} />
+
           <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/notifications" element={<NotificationPage />} />
