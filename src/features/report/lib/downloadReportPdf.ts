@@ -2,10 +2,31 @@ import type {
   AppearanceResult,
   JudgeResult,
   ReportDetail,
+  ReportMeasurement,
   ReportResultItem,
+  ReportStage,
+  ReportStageInfo,
 } from "../api/types";
 import { getReportDetail } from "../api/reportApi";
+import {
+  collectStageColumns,
+  findMeasurement,
+  hasStageMeasurements,
+  STAGE_LABEL,
+  STAGE_ORDER,
+  type StageColumn,
+} from "./stageMeasurements";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
+
+function stageTitle(s: { stage: ReportStage; typeLabel: string }): string {
+  return `${STAGE_LABEL[s.stage] ?? ""} ${s.typeLabel ?? ""}`.trim();
+}
+
+function orderedStageInfos(detail: ReportDetail): ReportStageInfo[] {
+  return [...(detail.stages ?? [])].sort(
+    (a, b) => (STAGE_ORDER[a.stage] ?? 9) - (STAGE_ORDER[b.stage] ?? 9),
+  );
+}
 
 function escapeHtml(s: string | number): string {
   return String(s)
@@ -43,7 +64,67 @@ function imgCell(url: string | null): string {
   return `<img src="${escapeHtml(resolved)}" alt="측정 사진" class="thumb" />`;
 }
 
+// 통합 보고서 측정 결과 — dim 1행 x 초·중·종 열. 차수마다 자주/순회 2개 하위 열.
+function stageMeasureTable(detail: ReportDetail): string {
+  const columns = collectStageColumns(detail.results);
+
+  const topCells =
+    `<th rowspan="2">번호</th><th rowspan="2">기준</th><th rowspan="2">공차</th>` +
+    columns
+      .map((c) => `<th colspan="2">${escapeHtml(c.label)}</th>`)
+      .join("") +
+    `<th rowspan="2">판정</th>`;
+  const subCells = columns.map(() => `<th>자주</th><th>순회</th>`).join("");
+  const colCount = 4 + columns.length * 2;
+
+  // 가공(MACHINING)처럼 수치 대신 OK/NG 로 판정하는 항목은 값이 null 이라
+  // 수치만 그리면 표가 통째로 "-" 가 된다. 공정으로 분기하지 않고 응답에 판정이
+  // 실려 있는지로 판단해, dim 마다 방식이 다른 경우도 그대로 따라간다.
+  const cell = (m: ReportMeasurement | undefined, side: "prod" | "qual") => {
+    if (!m) return "-";
+    const passFail =
+      side === "prod" ? m.productionPassFailResult : m.qualityPassFailResult;
+    const value = side === "prod" ? m.productionValue : m.qualityValue;
+    if (passFail != null && value == null) return appearanceBadge(passFail);
+    return fmtValue(value);
+  };
+
+  const rows = detail.results
+    .map((r: ReportResultItem) => {
+      const cells = columns
+        .map((c) => {
+          const m = findMeasurement(r, c);
+          return `<td>${cell(m, "prod")}</td><td>${cell(m, "qual")}</td>`;
+        })
+        .join("");
+      return `
+        <tr>
+          <td>${r.dimNo}</td>
+          <td>${r.standardValue}</td>
+          <td>${fmtTolerance(r.tolerancePlus, r.toleranceMinus)}</td>
+          ${cells}
+          <td>${judgeBadge(r.result)}</td>
+        </tr>`;
+    })
+    .join("");
+
+  const empty = `<tr><td colspan="${colCount}" style="text-align:center;color:#A8A8A8">측정 데이터 없음</td></tr>`;
+
+  return `
+    <section>
+      <h2>측정 결과 (초·중·종)</h2>
+      <table>
+        <thead>
+          <tr>${topCells}</tr>
+          <tr>${subCells}</tr>
+        </thead>
+        <tbody>${rows || empty}</tbody>
+      </table>
+    </section>`;
+}
+
 function measureTable(detail: ReportDetail): string {
+  if (hasStageMeasurements(detail.results)) return stageMeasureTable(detail);
   const isMachining = detail.process === "MACHINING";
 
   const headerCells = isMachining
@@ -91,8 +172,93 @@ function measureTable(detail: ReportDetail): string {
     </section>`;
 }
 
+// 차수별 검사 정보 — 검사자·시각·외관·경도는 차수마다 다르므로 단수 필드로는
+// 종 차수 값만 나온다. stages 가 오면 표로 펼친다.
+function stagesSection(detail: ReportDetail): string {
+  const stages = orderedStageInfos(detail);
+  if (stages.length === 0) return "";
+  const hasHardness = stages.some((s) => s.qualityHardnessResult);
+
+  const rows = stages
+    .map(
+      (s) => `
+        <tr>
+          <td>${escapeHtml(stageTitle(s))}</td>
+          <td>${escapeHtml(fmtInspected(s))}</td>
+          <td>${escapeHtml(s.productionName ?? "-")}</td>
+          <td>${escapeHtml(s.qualityName ?? "-")}</td>
+          <td>${appearanceBadge(s.productionAppearanceResult)}</td>
+          <td>${appearanceBadge(s.qualityAppearanceResult)}</td>
+          ${hasHardness ? `<td>${escapeHtml(s.qualityHardnessResult ?? "-")}</td>` : ""}
+          <td>${escapeHtml(s.remarks ?? "-")}</td>
+        </tr>`,
+    )
+    .join("");
+
+  return `
+    <section>
+      <h2>차수별 검사 정보</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>차수</th><th>검사 시각</th><th>자주검사자</th><th>순회검사자</th>
+            <th>자주 외관</th><th>순회 외관</th>
+            ${hasHardness ? "<th>경도</th>" : ""}
+            <th>비고</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </section>`;
+}
+
+// 실제 검사 시각 우선. 없으면 예정 슬롯을 괄호로 구분해 폴백 — 슬롯값은 실제로
+// 언제 측정했는지가 아니다.
+function fmtInspected(s: ReportStageInfo): string {
+  if (s.inspectedAt) {
+    const d = new Date(s.inspectedAt);
+    if (!Number.isNaN(d.getTime())) return d.toLocaleString("ko-KR");
+  }
+  if (s.inspectionTime) return `(${s.inspectionTime.slice(0, 5)} 예정)`;
+  return "-";
+}
+
+// 차수별 측정 사진 — dim 1행 x 차수 열, 칸마다 자주/순회 2장.
+function stagePhotoSection(detail: ReportDetail): string {
+  const columns = collectStageColumns(detail.results);
+  const rows = detail.results
+    .map((r) => {
+      const cells = columns
+        .map((c) => {
+          const m = findMeasurement(r, c);
+          return `<td>${imgCell(m?.productionImageUrl ?? null)}</td><td>${imgCell(
+            m?.qualityImageUrl ?? null,
+          )}</td>`;
+        })
+        .join("");
+      return `<tr><td>${r.dimNo}</td>${cells}</tr>`;
+    })
+    .join("");
+
+  return `
+    <section>
+      <h2>측정 사진 (초·중·종)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th rowspan="2">번호</th>
+            ${columns.map((c: StageColumn) => `<th colspan="2">${escapeHtml(c.label)}</th>`).join("")}
+          </tr>
+          <tr>${columns.map(() => `<th>자주</th><th>순회</th>`).join("")}</tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </section>`;
+}
+
 function photoSection(detail: ReportDetail): string {
   if (detail.results.length === 0) return "";
+  if (hasStageMeasurements(detail.results)) return stagePhotoSection(detail);
   const rows = detail.results
     .map(
       (r) => `
@@ -116,6 +282,8 @@ function photoSection(detail: ReportDetail): string {
 }
 
 function appearanceSection(detail: ReportDetail): string {
+  // 차수별 표에 이미 외관이 들어가 있으면 종 차수 값만 다시 보여줄 필요가 없다.
+  if (orderedStageInfos(detail).length > 0) return "";
   return `
     <section>
       <h2>외관 검사</h2>
@@ -131,6 +299,8 @@ function appearanceSection(detail: ReportDetail): string {
 }
 
 function hardnessSection(detail: ReportDetail): string {
+  // 경도도 차수별 표에 열로 들어간다.
+  if (orderedStageInfos(detail).length > 0) return "";
   if (!detail.qualityHardnessResult) return "";
   return `
     <section>
@@ -158,7 +328,26 @@ function sketchSection(detail: ReportDetail): string {
     </section>`;
 }
 
+// 통합 보고서에서 단수 inspectionLabel 은 종 차수 값이라, 그대로 쓰면 초·중이
+// 함께 담긴 보고서가 "종물"로만 보인다. 차수가 여럿이면 묶음임을 드러낸다.
+function inspectionLabelText(detail: ReportDetail): string {
+  const stages = orderedStageInfos(detail);
+  if (stages.length > 1) {
+    return `${stages.map(stageTitle).join(" · ")} 통합`;
+  }
+  // stages 없이 measurements 만 오는 조합도 있다. 이때 단수 label 을 그대로 쓰면
+  // 표는 초·중·종인데 머리말만 "종물" 이 되므로 측정값 쪽 차수로 표기를 맞춘다.
+  const columns = collectStageColumns(detail.results);
+  if (columns.length > 1) {
+    return `${columns.map((c) => c.label).join(" · ")} 통합`;
+  }
+  return detail.inspectionLabel;
+}
+
 function buildHtml(detail: ReportDetail): string {
+  // 차수 열이 붙은 통합 보고서는 표가 넓어 A4 세로로는 잘린다.
+  const wide =
+    hasStageMeasurements(detail.results) || orderedStageInfos(detail).length > 1;
   return `<!doctype html>
 <html lang="ko">
 <head>
@@ -201,6 +390,7 @@ function buildHtml(detail: ReportDetail): string {
   .text-block { font-size: 13px; color: #212121; }
   .text-block.pre { white-space: pre-wrap; }
   .footer { margin-top: 32px; font-size: 12px; color: #6B7280; }
+  ${wide ? "@page { size: A4 landscape; }" : ""}
   @media print {
     body { margin: 16mm; }
     button { display: none; }
@@ -220,7 +410,7 @@ function buildHtml(detail: ReportDetail): string {
     <div><span class="label">제품</span> ${escapeHtml(detail.productName)} (${escapeHtml(detail.productCode)})</div>
     <div><span class="label">공정</span> ${escapeHtml(detail.process)}</div>
     <div><span class="label">설비</span> ${escapeHtml(detail.equipmentName)}</div>
-    <div><span class="label">검사 차수</span> ${escapeHtml(detail.inspectionLabel)}</div>
+    <div><span class="label">검사 차수</span> ${escapeHtml(inspectionLabelText(detail))}</div>
     <div><span class="label">자주검사</span> ${escapeHtml(detail.productionName)}</div>
     <div><span class="label">순회검사</span> ${escapeHtml(detail.qualityName)}</div>
     <div><span class="label">승인자</span> ${escapeHtml(detail.approvedByName)}</div>
@@ -228,6 +418,7 @@ function buildHtml(detail: ReportDetail): string {
   </div>
 
   ${sketchSection(detail)}
+  ${stagesSection(detail)}
   ${measureTable(detail)}
   ${photoSection(detail)}
   ${appearanceSection(detail)}
