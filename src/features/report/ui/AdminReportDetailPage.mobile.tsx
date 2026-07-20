@@ -14,6 +14,11 @@ import { downloadReportPdf } from "../lib/downloadReportPdf";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import PhotoCompareModal from "../../../components/shared/PhotoCompareModal";
 import ReportStagesSection from "./ReportStagesSection";
+import ReportMeasurementsSection from "./ReportMeasurementsSection";
+import {
+  hasDuplicateDimNo,
+  hasStageMeasurements,
+} from "../lib/stageMeasurements";
 import DeleteReportModal from "./DeleteReportModal";
 import Toast from "../../inspection/ui/Toast";
 import { useAuth } from "../../auth/AuthContext";
@@ -340,59 +345,93 @@ const AdminReportDetailPageMobile = () => {
         </ul>
       </Section>
 
-      <Section
-        title="자주검사"
-        trailing={
-          <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
-            {data.inspectionLabel || "—"}
-          </span>
-        }
-      >
-        {data.results.length === 0 ? (
-          <p className="rounded-xl bg-[#F5F5F5] px-4 py-6 text-center text-xs text-[#A8A8A8]">
-            측정 데이터 없음
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {data.results.map((r) => (
-              <MeasureCard
-                key={`prod-${r.dimNo}`}
-                item={r}
-                measuredValue={r.productionValue}
-                imageUrl={r.productionImageUrl}
-                onOpenPhotos={() => setPhotoItem(r)}
-              />
-            ))}
-          </ul>
-        )}
-      </Section>
+      {/* 차수별 측정값이 오면 dim x 초·중·종 하나로, 아니면 기존 자주/순회 2섹션으로. */}
+      {hasStageMeasurements(data.results) ? (
+        <Section
+          title="측정값"
+          trailing={
+            <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
+              {data.inspectionLabel || "—"}
+            </span>
+          }
+        >
+          <ReportMeasurementsSection
+            results={data.results}
+            variant="mobile"
+            onOpenPhotos={(item, m) =>
+              setPhotoItem({
+                ...item,
+                productionImageUrl: m.productionImageUrl,
+                qualityImageUrl: m.qualityImageUrl,
+              })
+            }
+          />
+        </Section>
+      ) : (
+        <>
+          {/* 차수별 측정값 없이 초·중·종이 results[] 에 이어 붙어 온 경우 —
+              같은 DIM 이 반복되는데 행마다 어느 차수인지 알 방법이 없다. */}
+          {hasDuplicateDimNo(data.results) && (
+            <p className="rounded-xl border border-[#FED7AA] bg-[#FFF7ED] px-4 py-3 text-xs text-[#9A3412]">
+              같은 DIM 번호가 여러 번 표시됩니다. 차수(초·중·종) 구분 정보가 없어
+              어느 행이 어느 차수인지 표시할 수 없습니다.
+            </p>
+          )}
+          <Section
+            title="자주검사"
+            trailing={
+              <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
+                {data.inspectionLabel || "—"}
+              </span>
+            }
+          >
+            {data.results.length === 0 ? (
+              <p className="rounded-xl bg-[#F5F5F5] px-4 py-6 text-center text-xs text-[#A8A8A8]">
+                측정 데이터 없음
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {data.results.map((r, idx) => (
+                  <MeasureCard
+                    key={`prod-${r.dimNo}-${idx}`}
+                    item={r}
+                    measuredValue={r.productionValue}
+                    imageUrl={r.productionImageUrl}
+                    onOpenPhotos={() => setPhotoItem(r)}
+                  />
+                ))}
+              </ul>
+            )}
+          </Section>
 
-      <Section
-        title="순회검사"
-        trailing={
-          <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
-            {data.inspectionLabel || "—"}
-          </span>
-        }
-      >
-        {data.results.length === 0 ? (
-          <p className="rounded-xl bg-[#F5F5F5] px-4 py-6 text-center text-xs text-[#A8A8A8]">
-            측정 데이터 없음
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {data.results.map((r) => (
-              <MeasureCard
-                key={`qual-${r.dimNo}`}
-                item={r}
-                measuredValue={r.qualityValue}
-                imageUrl={r.qualityImageUrl}
-                onOpenPhotos={() => setPhotoItem(r)}
-              />
-            ))}
-          </ul>
-        )}
-      </Section>
+          <Section
+            title="순회검사"
+            trailing={
+              <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
+                {data.inspectionLabel || "—"}
+              </span>
+            }
+          >
+            {data.results.length === 0 ? (
+              <p className="rounded-xl bg-[#F5F5F5] px-4 py-6 text-center text-xs text-[#A8A8A8]">
+                측정 데이터 없음
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {data.results.map((r, idx) => (
+                  <MeasureCard
+                    key={`qual-${r.dimNo}-${idx}`}
+                    item={r}
+                    measuredValue={r.qualityValue}
+                    imageUrl={r.qualityImageUrl}
+                    onOpenPhotos={() => setPhotoItem(r)}
+                  />
+                ))}
+              </ul>
+            )}
+          </Section>
+        </>
+      )}
 
       <button
         type="button"

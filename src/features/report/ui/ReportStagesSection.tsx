@@ -3,19 +3,8 @@ import type {
   ReportStage,
   ReportStageInfo,
 } from "../api/types";
-
 // 초 → 중 → 종 고정 순서. 백엔드가 stages 를 어떤 순서로 주든 성적서 읽는 순서로 맞춘다.
-const STAGE_ORDER: Record<ReportStage, number> = {
-  INITIAL: 0,
-  MIDDLE: 1,
-  FINAL: 2,
-};
-
-const STAGE_LABEL: Record<ReportStage, string> = {
-  INITIAL: "초",
-  MIDDLE: "중",
-  FINAL: "종",
-};
+import { STAGE_LABEL, STAGE_ORDER } from "../lib/stageMeasurements";
 
 const STAGE_BADGE: Record<ReportStage, string> = {
   INITIAL: "border-[#DBEAFE] bg-[#EFF6FF] text-[#1D4ED8]",
@@ -54,9 +43,11 @@ function StageBadge({ stage, label }: { stage: ReportStage; label: string }) {
   return (
     <span className="inline-flex items-center gap-1.5">
       <span
-        className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${STAGE_BADGE[stage]}`}
+        className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${
+          STAGE_BADGE[stage] ?? "border-[#E5E7EB] bg-[#F5F5F5] text-[#6B7280]"
+        }`}
       >
-        {STAGE_LABEL[stage]}
+        {STAGE_LABEL[stage] ?? "?"}
       </span>
       <span className="text-[#212121]">{label}</span>
     </span>
@@ -88,9 +79,9 @@ export default function ReportStagesSection({
   if (variant === "mobile") {
     return (
       <ul className="flex flex-col gap-3">
-        {ordered.map((s) => (
+        {ordered.map((s, idx) => (
           <li
-            key={s.crossCheckId}
+            key={`${s.type}-${s.crossCheckId ?? idx}`}
             className="flex flex-col gap-2 rounded-xl border border-[#E5E7EB] p-3"
           >
             <div className="flex items-center justify-between gap-2">
@@ -141,8 +132,8 @@ export default function ReportStagesSection({
           </tr>
         </thead>
         <tbody className="divide-y divide-[#F0F0F0]">
-          {ordered.map((s) => (
-            <tr key={s.crossCheckId} className="align-top">
+          {ordered.map((s, idx) => (
+            <tr key={`${s.type}-${s.crossCheckId ?? idx}`} className="align-top">
               <td className="py-3 pr-3">
                 <StageBadge stage={s.stage} label={s.typeLabel} />
               </td>
