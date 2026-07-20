@@ -13,8 +13,9 @@ export type CrossCheckType =
 export type CrossCheckStatus =
   | "DRAFT"
   | "PENDING_APPROVAL"
+  // 승인 모델 변경 후 초·중 차수가 끝나는 상태 — 개별 승인 없이 결과만 보존된다.
+  | "COMPLETED"
   | "APPROVED"
-  
   | "REJECTED";
 
 export type ProcessType =
@@ -65,6 +66,9 @@ export interface CrossCheckSummary {
   hardnessPending?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  // 초·중·종 순회검사를 묶는 검사 지시(InspectionOrder) ID. 결재 목록의 run 그룹핑 키.
+  // 미배포 서버 대비로 optional — 없으면 lib/runGroup.ts 가 제품·설비로 폴백한다.
+  orderId?: number | null;
 }
 
 // GET /cross-check/assigned 응답. 시작 가능(AVAILABLE) 또는 이미 시작된(IN_PROGRESS) 건.
