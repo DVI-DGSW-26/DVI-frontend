@@ -12,7 +12,6 @@ import {
 } from "../../inspection/api";
 import type {
   InspectionProcess,
-  SkipInspectionErrorData,
   StartNextInspectionErrorData,
 } from "../../inspection/type/types";
 import { useMyInspectionOrders } from "../../inspection-orders/api";
@@ -24,6 +23,10 @@ import {
   extractNextEligible,
 } from "../lib/nextEligible";
 import { formatSlotTime } from "../../inspection/lib/format";
+import {
+  skipErrorMessage,
+  SKIP_DELETE_DRAFT_ERROR,
+} from "../../inspection/lib/skipError";
 import { formatDate } from "../../../lib/datetime";
 import LatestCompletedCard from "./LatestCompletedCard";
 import SkipModal from "../../inspection/ui/SkipModal";
@@ -192,7 +195,13 @@ export default function ProductionHomePage() {
       // DRAFT 가 이미 있으면 백엔드가 INSPECTION_ALREADY_EXISTS 를 던지므로,
       // skip 호출 전 DRAFT 를 먼저 삭제해 NONE 상태로 되돌린다.
       if (target.draftInspectionIdToDelete != null) {
-        await deleteMutation.mutateAsync(target.draftInspectionIdToDelete);
+        try {
+          await deleteMutation.mutateAsync(target.draftInspectionIdToDelete);
+        } catch {
+          setSkipTarget(null);
+          setToast(SKIP_DELETE_DRAFT_ERROR);
+          return;
+        }
       }
       await skipMutation.mutateAsync({
         productId: target.productId,
@@ -203,16 +212,8 @@ export default function ProductionHomePage() {
       setSkipTarget(null);
       setToast(`${target.label} 시점을 건너뛰었습니다.`);
     } catch (err) {
-      if (err instanceof AxiosError) {
-        const data = err.response?.data as SkipInspectionErrorData | undefined;
-        if (data?.code === "INSPECTION_ALREADY_EXISTS") {
-          setSkipTarget(null);
-          setToast("이미 처리된 시점입니다.");
-          return;
-        }
-      }
       setSkipTarget(null);
-      setToast("건너뛰지 못했습니다.");
+      setToast(skipErrorMessage(err));
     }
   };
 
