@@ -4,33 +4,38 @@ import { useAllSlots } from "../api/useAllSlots";
 import { useTodayInspections } from "../api/useTodayInspections";
 import { buildProgressRows } from "../lib/buildProgress";
 import type { CellStatus, ProgressRow } from "../lib/buildProgress";
+import { usePagedList } from "../lib/usePagedList";
+import { T } from "../lib/tokens";
 import type {
   MonitorConnection,
   MonitorCrossCheck,
   MonitorCrossCheckStatus,
 } from "../type/types";
 
-// 공장 벽걸이 모니터. 원거리 가독성이 최우선이라 큰 글자, 조작 요소 없음.
+// 공장 벽걸이 모니터. 멀리서 읽히는 것이 최우선이고 조작 요소는 없다.
 //
-// 중심은 "시점별 진행도" — 작업자·설비 한 줄마다 시점(초·중·종 또는 08:00…) 칸을
-// 늘어놓고 완료/진행중/건너뜀/미시작을 보여준다. 데이터는
-// GET /inspection/all?date=오늘 (전 작업자) + GET /inspection/slots (칸 정의).
+// 한 줄 = 작업자 × 제품·설비. 시점(초·중·종 또는 08:00…02:00)을 꽉 찬 세그먼트 바로
+// 늘어놓아 어디까지 갔는지 한눈에 보이게 한다.
 //
-// 색은 흰 표면 기준으로 검증했다 — 브랜드 #931B82 는 대비 7.72 로 안전.
-// 상태는 색만으로 구분하지 않는다. 칸마다 기호(✓ ▶ ⊘ ·)를 함께 찍고 범례를 둔다.
+// 아무도 스크롤할 수 없으므로 넘치는 항목은 자동으로 페이지를 넘겨 전부 보여준다.
+//
+// 색은 디자인 토큰(lib/tokens.ts)만 쓰고 흰 배경 기준 대비를 검증했다.
+// 상태는 색만으로 구분하지 않는다 — 세그먼트마다 기호(✓ ▶ ⊘ ·)와 라벨을 함께 넣고
+// 범례를 둔다.
 
-const BRAND = "#931B82";
+const ROWS_PER_PAGE = 5;
+const CROSS_CHECKS_PER_PAGE = 5;
+const PAGE_INTERVAL_MS = 8000;
 
-// 1080p 기준 한 화면에 들어가는 양. 넘치면 잘리지 않게 개수로 알린다.
-const MAX_ROWS = 6;
-const MAX_CROSS_CHECKS = 5;
+const CARD_SHADOW =
+  "0 1px 3px rgba(16,24,40,0.06), 0 1px 2px rgba(16,24,40,0.04)";
 
 export default function MonitorPage() {
   const { snapshot, connection, updatedAt } = useMonitorStream();
   const now = useNow();
-  // 자정을 넘겨도 날짜가 따라가도록 분 단위로만 재계산한다.
   const today = useMemo(
     () => kstToday(now),
+    // 자정을 넘겨도 날짜가 따라가되 초마다 재계산하지는 않는다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [Math.floor(now.getTime() / 60000)],
   );
@@ -43,9 +48,7 @@ export default function MonitorPage() {
     [inspections, slotsByProcess],
   );
 
-  // 마지막 시점까지 끝난 줄은 칸을 다 보여줄 이유가 없다. 그렇다고 목록에서 밀려
-  // 사라지면 "오늘 저 설비 끝났나?"를 확인할 수 없으므로, 한 줄짜리로 압축해
-  // 아래에 남긴다.
+  // 마지막 시점까지 끝난 줄은 한 줄짜리로 압축해 아래에 남긴다.
   const { ongoing, finished } = useMemo(() => {
     const ongoing: ProgressRow[] = [];
     const finished: ProgressRow[] = [];
@@ -54,9 +57,6 @@ export default function MonitorPage() {
     }
     return { ongoing, finished };
   }, [rows]);
-
-  // 마감 줄을 아래에 깔면 그만큼 위 공간이 줄어든다.
-  const maxRows = finished.length > 0 ? MAX_ROWS - 1 : MAX_ROWS;
 
   // 접속 여부는 모니터 스냅샷(SSE)에서 온다 — 진행도와 출처가 다르다.
   const online = useMemo(
@@ -87,85 +87,185 @@ export default function MonitorPage() {
     [snapshot?.crossChecks],
   );
 
+  const rowPage = usePagedList(ongoing, ROWS_PER_PAGE, PAGE_INTERVAL_MS);
+  const ccPage = usePagedList(
+    crossChecks,
+    CROSS_CHECKS_PER_PAGE,
+    PAGE_INTERVAL_MS,
+  );
+
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-[#f4f4f2] text-[#0b0b0b]">
-      <header className="flex shrink-0 items-center justify-between px-8 pt-6 pb-4">
-        <h1 className="text-3xl font-semibold tracking-tight">
-          검사 진행 현황
-          <span className="ml-3 text-xl font-normal text-[#52514e]">
+    <div
+      className="flex h-dvh flex-col overflow-hidden"
+      style={{ backgroundColor: T.neutral.sub, color: T.neutral.ink }}
+    >
+      <header
+        className="flex shrink-0 items-center justify-between px-8 py-5"
+        style={{
+          backgroundColor: T.neutral.white,
+          borderBottom: `1px solid ${T.neutral.border}`,
+        }}
+      >
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-3xl font-bold tracking-tight">검사 진행 현황</h1>
+          <span className="text-xl" style={{ color: T.inkSub }}>
             {today}
           </span>
-        </h1>
-        <div className="flex items-center gap-6">
+        </div>
+        <div className="flex items-center gap-5">
           <ConnectionBadge connection={connection} updatedAt={updatedAt} />
-          <div className="text-4xl font-semibold tabular-nums">
+          <div className="text-3xl font-bold tabular-nums">
             {formatClock(now)}
           </div>
         </div>
       </header>
 
-      <div className="grid shrink-0 grid-cols-4 gap-4 px-8 pb-5">
-        <StatTile label="완료" value={totals.done} accent="#0a6b0a" />
-        <StatTile label="진행중" value={totals.active} accent={BRAND} />
-        <StatTile label="건너뜀" value={totals.skipped} accent="#6b6a66" />
-        <StatTile label="남은 시점" value={totals.remaining} accent="#8a5a00" />
+      <div className="grid shrink-0 grid-cols-4 gap-5 px-6 pt-5 pb-4">
+        <StatCard label="완료" value={totals.done} color={T.success[700]} />
+        <StatCard label="진행중" value={totals.active} color={T.primary[500]} />
+        <StatCard label="건너뜀" value={totals.skipped} color={T.inkSub} />
+        <StatCard
+          label="남은 시점"
+          value={totals.remaining}
+          color={T.neutral.ink}
+        />
       </div>
 
-      <main className="grid min-h-0 flex-1 grid-cols-[2.2fr_1fr] gap-4 px-8 pb-6">
-        <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-black/10">
-          <div className="flex shrink-0 items-center justify-between px-6 pt-5 pb-3">
-            <h2 className="text-2xl font-semibold">시점별 진행도</h2>
+      <main className="grid min-h-0 flex-1 grid-cols-[2.4fr_1fr] gap-5 px-6 pb-6">
+        <Card>
+          <CardHead
+            title="시점별 진행도"
+            page={rowPage.page}
+            pageCount={rowPage.pageCount}
+          >
             <Legend />
-          </div>
-          <div className="min-h-0 flex-1 space-y-2 overflow-hidden px-4">
-            {ongoing.slice(0, maxRows).map((row) => (
+          </CardHead>
+          <div className="min-h-0 flex-1 overflow-hidden px-6">
+            {rowPage.visible.map((row, i) => (
               <ProgressRowView
                 key={row.key}
                 row={row}
                 online={online.has(row.workerName)}
+                first={i === 0}
               />
             ))}
             {inspections && rows.length === 0 && (
-              <div className="px-2 py-10 text-center text-xl text-[#898781]">
-                오늘 등록된 검사가 없습니다
-              </div>
-            )}
-            {ongoing.length > maxRows && (
-              <div className="px-2 pt-1 text-center text-lg text-[#898781]">
-                외 {ongoing.length - maxRows}줄 더
-              </div>
+              <Empty text="오늘 등록된 검사가 없습니다" />
             )}
           </div>
-
           {finished.length > 0 && (
             <FinishedStrip rows={finished} online={online} />
           )}
-        </section>
+        </Card>
 
-        <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-black/10">
-          <div className="flex shrink-0 items-baseline justify-between px-6 pt-5 pb-3">
-            <h2 className="text-2xl font-semibold">순회검사</h2>
-            <span className="text-xl tabular-nums text-[#898781]">
+        <Card>
+          <CardHead
+            title="순회검사"
+            page={ccPage.page}
+            pageCount={ccPage.pageCount}
+          >
+            <span className="text-lg tabular-nums" style={{ color: T.inkSub }}>
               {snapshot?.crossChecks.length ?? "–"}건
             </span>
-          </div>
-          <div className="min-h-0 flex-1 space-y-2 overflow-hidden px-4">
-            {crossChecks.slice(0, MAX_CROSS_CHECKS).map((it) => (
-              <CrossCheckRow key={it.crossCheckId} item={it} now={now} />
+          </CardHead>
+          <div className="min-h-0 flex-1 overflow-hidden px-6">
+            {ccPage.visible.map((it, i) => (
+              <CrossCheckRow
+                key={it.crossCheckId}
+                item={it}
+                now={now}
+                first={i === 0}
+              />
             ))}
             {snapshot && crossChecks.length === 0 && (
-              <div className="px-2 py-10 text-center text-xl text-[#898781]">
-                진행중인 순회검사가 없습니다
-              </div>
+              <Empty text="진행중인 순회검사가 없습니다" />
             )}
           </div>
-          {crossChecks.length > MAX_CROSS_CHECKS && (
-            <div className="shrink-0 px-6 py-3 text-center text-lg text-[#898781]">
-              외 {crossChecks.length - MAX_CROSS_CHECKS}건 더
-            </div>
-          )}
-        </section>
+        </Card>
       </main>
+    </div>
+  );
+}
+
+/* ── 카드 ─────────────────────────────────────────────────── */
+
+function Card({ children }: { children: React.ReactNode }) {
+  return (
+    <section
+      className="flex min-h-0 flex-col overflow-hidden rounded-xl"
+      style={{
+        backgroundColor: T.neutral.white,
+        border: `1px solid ${T.neutral.border}`,
+        boxShadow: CARD_SHADOW,
+      }}
+    >
+      {children}
+    </section>
+  );
+}
+
+function CardHead({
+  title,
+  page,
+  pageCount,
+  children,
+}: {
+  title: string;
+  page: number;
+  pageCount: number;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="flex shrink-0 items-center justify-between px-6 pt-5 pb-4">
+      <div className="flex items-baseline gap-3">
+        <h2 className="text-xl font-bold">{title}</h2>
+        {/* 자동으로 넘어가는 중이라는 걸 알려야 "왜 화면이 바뀌지?"가 안 생긴다. */}
+        {pageCount > 1 && (
+          <span className="text-base tabular-nums" style={{ color: T.inkSub }}>
+            {page + 1} / {pageCount}
+          </span>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number;
+  color: string;
+}) {
+  return (
+    <div
+      className="rounded-xl px-6 py-4"
+      style={{
+        backgroundColor: T.neutral.white,
+        border: `1px solid ${T.neutral.border}`,
+        boxShadow: CARD_SHADOW,
+      }}
+    >
+      <div className="text-lg" style={{ color: T.inkSub }}>
+        {label}
+      </div>
+      <div
+        className="mt-1.5 text-5xl leading-none font-bold tabular-nums"
+        style={{ color }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function Empty({ text }: { text: string }) {
+  return (
+    <div className="py-12 text-xl" style={{ color: T.inkSub }}>
+      {text}
     </div>
   );
 }
@@ -175,47 +275,171 @@ export default function MonitorPage() {
 function ProgressRowView({
   row,
   online,
+  first,
 }: {
   row: ProgressRow;
   online: boolean;
+  first: boolean;
 }) {
   return (
-    <div className="rounded-xl bg-[#f9f9f7] px-4 py-3 ring-1 ring-black/5">
+    <div
+      className="py-4"
+      style={first ? undefined : { borderTop: `1px solid ${T.neutral.border}` }}
+    >
       <div className="flex items-baseline justify-between gap-4">
-        <div className="flex min-w-0 items-baseline gap-3">
-          <span className="flex shrink-0 items-center gap-2 text-2xl font-semibold">
-            {/* 접속 여부는 점만이 아니라 title 로도 — 색만으로 전달하지 않는다. */}
-            <span
-              aria-hidden
-              title={online ? "접속중" : "미접속"}
-              className="size-2.5 shrink-0 rounded-full"
-              style={{ backgroundColor: online ? "#0ca30c" : "#c3c2b7" }}
-            />
-            {row.workerName}
-          </span>
-          <span className="truncate text-xl text-[#52514e]">
+        <div className="flex min-w-0 items-center gap-3">
+          <Avatar name={row.workerName} online={online} />
+          <span className="shrink-0 text-2xl font-bold">{row.workerName}</span>
+          <span className="truncate text-xl" style={{ color: T.inkSub }}>
             {row.productName}
-            <span className="text-[#898781]"> · {row.equipmentName}</span>
+            <span style={{ color: T.neutral.muted }}>
+              {" · "}
+              {row.equipmentName}
+            </span>
           </span>
         </div>
-        <span className="shrink-0 text-xl tabular-nums text-[#898781]">
-          {row.settled}/{row.cells.length}
+        <span className="shrink-0 text-xl tabular-nums">
+          <span className="font-bold">{row.settled}</span>
+          <span style={{ color: T.neutral.muted }}> / {row.cells.length}</span>
         </span>
       </div>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {row.cells.map((cell) => (
-          <Cell key={cell.type} label={cell.label} status={cell.status} />
-        ))}
-      </div>
+
+      <SegmentBar cells={row.cells} />
+    </div>
+  );
+}
+
+function Avatar({ name, online }: { name: string; online: boolean }) {
+  return (
+    <span className="relative shrink-0">
+      <span
+        className="flex size-9 items-center justify-center rounded-full text-lg font-bold"
+        style={{ backgroundColor: T.primary[100], color: T.primary[700] }}
+      >
+        {name.slice(0, 1)}
+      </span>
+      {/* 접속 여부는 부가 정보 — 점 + title 로만 표시하고 판단을 여기에 걸지 않는다. */}
+      <span
+        aria-hidden
+        title={online ? "접속중" : "미접속"}
+        className="absolute right-0 bottom-0 size-3 rounded-full"
+        style={{
+          backgroundColor: online ? T.success[500] : T.neutral.border,
+          outline: `2px solid ${T.neutral.white}`,
+        }}
+      />
+    </span>
+  );
+}
+
+/**
+ * 시점을 꽉 찬 세그먼트로 늘어놓은 막대.
+ * 세그먼트 사이 2px 흰 간격을 둬 경계가 색에만 의존하지 않게 한다.
+ */
+function SegmentBar({ cells }: { cells: ProgressRow["cells"] }) {
+  return (
+    <div className="mt-3 flex w-full gap-0.5">
+      {cells.map((cell, i) => {
+        const s = CELL_STYLE[cell.status];
+        return (
+          <div
+            key={cell.type}
+            className="flex h-11 flex-1 items-center justify-center gap-1.5 text-lg font-bold tabular-nums"
+            style={{
+              backgroundColor: s.bg,
+              color: s.fg,
+              border: s.border ? `1px solid ${s.border}` : undefined,
+              borderTopLeftRadius: i === 0 ? 8 : 0,
+              borderBottomLeftRadius: i === 0 ? 8 : 0,
+              borderTopRightRadius: i === cells.length - 1 ? 8 : 0,
+              borderBottomRightRadius: i === cells.length - 1 ? 8 : 0,
+            }}
+            title={`${cell.label} ${s.name}`}
+          >
+            <span aria-hidden>{s.mark}</span>
+            {cell.label}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// 색 + 기호 + 라벨 3중 표기 — 색약·원거리에서도 상태가 구분되도록.
+// 채운 세그먼트는 흰 글자 대비를 통과하는 단계만 쓴다(success 500 은 2.28 로 탈락).
+const CELL_STYLE: Record<
+  CellStatus,
+  { bg: string; fg: string; border?: string; mark: string; name: string }
+> = {
+  COMPLETED: {
+    bg: T.success[700],
+    fg: T.neutral.white,
+    mark: "✓",
+    name: "완료",
+  },
+  DRAFT: {
+    bg: T.primary[500],
+    fg: T.neutral.white,
+    mark: "▶",
+    name: "진행중",
+  },
+  SKIPPED: {
+    bg: T.neutral.border,
+    fg: "#5B5B5B",
+    mark: "⊘",
+    name: "건너뜀",
+  },
+  INCOMPLETE: {
+    bg: T.warning[700],
+    fg: T.neutral.white,
+    mark: "!",
+    name: "미완료",
+  },
+  INCOMPLETE_APPROVED: {
+    bg: T.warning[100],
+    fg: T.warning[700],
+    border: "#F5E3B4",
+    mark: "✓",
+    name: "미완료 승인",
+  },
+  NONE: {
+    bg: T.neutral.sub,
+    fg: "#6B6B6B",
+    border: T.neutral.border,
+    mark: "·",
+    name: "미시작",
+  },
+};
+
+function Legend() {
+  const items: CellStatus[] = ["COMPLETED", "DRAFT", "SKIPPED", "NONE"];
+  return (
+    <div
+      className="flex items-center gap-4 text-base"
+      style={{ color: T.inkSub }}
+    >
+      {items.map((k) => (
+        <span key={k} className="inline-flex items-center gap-1.5">
+          <span
+            aria-hidden
+            className="size-3.5 rounded-sm"
+            style={{
+              backgroundColor: CELL_STYLE[k].bg,
+              border: CELL_STYLE[k].border
+                ? `1px solid ${CELL_STYLE[k].border}`
+                : undefined,
+            }}
+          />
+          {CELL_STYLE[k].name}
+        </span>
+      ))}
     </div>
   );
 }
 
 /**
- * 오늘치를 끝낸 줄 — 한 줄짜리 알약으로 압축해 패널 아래에 남긴다.
- *
- * 진행중인 줄과 같은 크기로 두면 자리를 다 먹고, 정렬상 아래로 밀려 잘리면
- * "저 설비 오늘 끝났나?"를 확인할 수 없어진다. 압축해서 계속 보이게 한다.
+ * 오늘치를 끝낸 줄 — 한 줄짜리로 압축해 카드 아래에 남긴다.
+ * 전부 건너뛴 줄을 "완료"로 오인하지 않도록 완료·건너뜀을 따로 센다.
  */
 function FinishedStrip({
   rows,
@@ -225,15 +449,25 @@ function FinishedStrip({
   online: Set<string>;
 }) {
   return (
-    <div className="shrink-0 border-t border-black/10 px-6 py-3">
-      <div className="mb-2 text-lg text-[#52514e]">
+    <div
+      className="shrink-0 px-6 py-4"
+      style={{
+        borderTop: `1px solid ${T.neutral.border}`,
+        backgroundColor: T.neutral.sub,
+      }}
+    >
+      <div className="mb-2.5 text-base" style={{ color: T.inkSub }}>
         오늘 마감 <span className="tabular-nums">{rows.length}</span>줄
       </div>
       <div className="flex flex-wrap gap-2">
         {rows.map((r) => (
           <span
             key={r.key}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#f9f9f7] px-3 py-1.5 text-lg ring-1 ring-black/10"
+            className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-base"
+            style={{
+              backgroundColor: T.neutral.white,
+              border: `1px solid ${T.neutral.border}`,
+            }}
             title={`${r.productName} · ${r.equipmentName} — 완료 ${r.completed}, 건너뜀 ${r.skipped}`}
           >
             <span
@@ -242,138 +476,30 @@ function FinishedStrip({
               className="size-2 shrink-0 rounded-full"
               style={{
                 backgroundColor: online.has(r.workerName)
-                  ? "#0ca30c"
-                  : "#c3c2b7",
+                  ? T.success[500]
+                  : T.neutral.border,
               }}
             />
-            <span className="font-semibold text-[#0b0b0b]">{r.workerName}</span>
-            <span className="text-[#52514e]">{r.equipmentName}</span>
-            {/* 전부 건너뛴 줄을 "완료"로 오인하지 않도록 완료·건너뜀을 따로 센다. */}
+            <span className="font-bold">{r.workerName}</span>
+            <span style={{ color: T.inkSub }}>{r.equipmentName}</span>
             {r.completed > 0 && (
-              <span className="tabular-nums font-semibold text-[#0a6b0a]">
+              <span
+                className="font-bold tabular-nums"
+                style={{ color: T.success[700] }}
+              >
                 ✓{r.completed}
               </span>
             )}
             {r.skipped > 0 && (
-              <span className="tabular-nums font-semibold text-[#6b6a66]">
+              <span
+                className="font-bold tabular-nums"
+                style={{ color: "#5B5B5B" }}
+              >
                 ⊘{r.skipped}
               </span>
             )}
           </span>
         ))}
-      </div>
-    </div>
-  );
-}
-
-// 색 + 기호 + 라벨 3중 표기 — 색약·원거리에서도 상태가 구분되도록.
-const CELL_STYLE: Record<
-  CellStatus,
-  { bg: string; fg: string; ring: string; mark: string; name: string }
-> = {
-  COMPLETED: {
-    bg: "#e3f3e3",
-    fg: "#0a6b0a",
-    ring: "#bcdfbc",
-    mark: "✓",
-    name: "완료",
-  },
-  DRAFT: { bg: BRAND, fg: "#ffffff", ring: BRAND, mark: "▶", name: "진행중" },
-  SKIPPED: {
-    bg: "#eeeeec",
-    fg: "#6b6a66",
-    ring: "#dcdbd5",
-    mark: "⊘",
-    name: "건너뜀",
-  },
-  INCOMPLETE: {
-    bg: "#fdf0d9",
-    fg: "#8a5a00",
-    ring: "#f0dcb4",
-    mark: "!",
-    name: "미완료",
-  },
-  INCOMPLETE_APPROVED: {
-    bg: "#fdf0d9",
-    fg: "#8a5a00",
-    ring: "#f0dcb4",
-    mark: "✓",
-    name: "미완료 승인",
-  },
-  NONE: {
-    bg: "#ffffff",
-    fg: "#898781",
-    ring: "#e1e0d9",
-    mark: "·",
-    name: "미시작",
-  },
-};
-
-function Cell({ label, status }: { label: string; status: CellStatus }) {
-  const s = CELL_STYLE[status];
-  return (
-    <span
-      className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-lg font-semibold tabular-nums ring-1"
-      style={
-        {
-          backgroundColor: s.bg,
-          color: s.fg,
-          "--tw-ring-color": s.ring,
-        } as React.CSSProperties
-      }
-      title={`${label} ${s.name}`}
-    >
-      <span aria-hidden>{s.mark}</span>
-      {label}
-    </span>
-  );
-}
-
-function Legend() {
-  const items: CellStatus[] = ["COMPLETED", "DRAFT", "SKIPPED", "NONE"];
-  return (
-    <div className="flex items-center gap-3 text-base text-[#52514e]">
-      {items.map((k) => (
-        <span key={k} className="inline-flex items-center gap-1.5">
-          <span
-            aria-hidden
-            className="inline-flex size-5 items-center justify-center rounded text-sm font-semibold ring-1"
-            style={
-              {
-                backgroundColor: CELL_STYLE[k].bg,
-                color: CELL_STYLE[k].fg,
-                "--tw-ring-color": CELL_STYLE[k].ring,
-              } as React.CSSProperties
-            }
-          >
-            {CELL_STYLE[k].mark}
-          </span>
-          {CELL_STYLE[k].name}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-/* ── 요약 타일 ─────────────────────────────────────────────── */
-
-function StatTile({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: number | undefined;
-  accent: string;
-}) {
-  return (
-    <div className="rounded-2xl bg-white px-6 py-5 ring-1 ring-black/10">
-      <div className="text-lg text-[#52514e]">{label}</div>
-      <div
-        className="mt-1 text-6xl leading-none font-semibold"
-        style={{ color: accent }}
-      >
-        {value ?? "–"}
       </div>
     </div>
   );
@@ -389,33 +515,56 @@ const CROSS_CHECK_PRIORITY: Record<MonitorCrossCheckStatus, number> = {
 
 const CROSS_CHECK_STATUS: Record<
   MonitorCrossCheckStatus,
-  { label: string; color: string }
+  { label: string; bg: string; fg: string }
 > = {
-  DRAFT: { label: "작성중", color: "#52514e" },
-  PENDING_APPROVAL: { label: "승인대기", color: "#8a5a00" },
-  REJECTED: { label: "반려", color: "#d03b3b" },
+  DRAFT: { label: "작성중", bg: T.neutral.sub, fg: T.inkSub },
+  PENDING_APPROVAL: {
+    label: "승인대기",
+    bg: T.warning[100],
+    fg: T.warning[700],
+  },
+  REJECTED: { label: "반려", bg: T.error[100], fg: T.error[700] },
 };
 
-function CrossCheckRow({ item, now }: { item: MonitorCrossCheck; now: Date }) {
-  const status = CROSS_CHECK_STATUS[item.status];
+function CrossCheckRow({
+  item,
+  now,
+  first,
+}: {
+  item: MonitorCrossCheck;
+  now: Date;
+  first: boolean;
+}) {
+  const s = CROSS_CHECK_STATUS[item.status];
   return (
-    <div className="rounded-xl bg-[#f9f9f7] px-4 py-3 ring-1 ring-black/5">
+    <div
+      className="py-4"
+      style={first ? undefined : { borderTop: `1px solid ${T.neutral.border}` }}
+    >
       <div className="flex items-baseline justify-between gap-3">
-        <div className="truncate text-xl font-semibold">{item.productName}</div>
-        <div
-          className="shrink-0 text-lg font-semibold"
-          style={{ color: status.color }}
+        <div className="truncate text-xl font-bold">{item.productName}</div>
+        <span
+          className="shrink-0 rounded-md px-2.5 py-1 text-base font-bold"
+          style={{ backgroundColor: s.bg, color: s.fg }}
         >
-          {status.label}
-        </div>
+          {s.label}
+        </span>
       </div>
-      <div className="mt-1 flex items-baseline justify-between gap-3 text-lg text-[#52514e]">
-        <div className="truncate">{item.equipmentName}</div>
-        <div className="shrink-0 tabular-nums text-[#898781]">
+      <div
+        className="mt-1.5 flex items-baseline justify-between gap-3 text-lg"
+        style={{ color: T.inkSub }}
+      >
+        <div className="truncate">
+          {item.equipmentName}
+          <span style={{ color: T.neutral.muted }}>
+            {" · "}
+            {item.checkerName}
+          </span>
+        </div>
+        <div className="shrink-0 tabular-nums">
           {formatElapsed(item.updatedAt, now)}
         </div>
       </div>
-      <div className="mt-0.5 truncate text-lg">{item.checkerName}</div>
     </div>
   );
 }
@@ -424,12 +573,12 @@ function CrossCheckRow({ item, now }: { item: MonitorCrossCheck; now: Date }) {
 
 const CONNECTION_LABEL: Record<
   MonitorConnection,
-  { text: string; color: string }
+  { text: string; color: string; bg: string }
 > = {
-  connecting: { text: "연결중", color: "#8a5a00" },
-  live: { text: "실시간", color: "#0a6b0a" },
-  polling: { text: "5초 갱신", color: "#8a5a00" },
-  down: { text: "연결 끊김", color: "#d03b3b" },
+  connecting: { text: "연결중", color: T.warning[700], bg: T.warning[100] },
+  live: { text: "실시간", color: T.success[700], bg: T.success[100] },
+  polling: { text: "5초 갱신", color: T.warning[700], bg: T.warning[100] },
+  down: { text: "연결 끊김", color: T.error[700], bg: T.error[100] },
 };
 
 function ConnectionBadge({
@@ -439,19 +588,22 @@ function ConnectionBadge({
   connection: MonitorConnection;
   updatedAt: Date | null;
 }) {
-  const { text, color } = CONNECTION_LABEL[connection];
+  const { text, color, bg } = CONNECTION_LABEL[connection];
   return (
-    <div className="flex items-center gap-2 rounded-full bg-white px-4 py-2 ring-1 ring-black/10">
+    <div className="flex items-center gap-3">
       <span
-        aria-hidden
-        className="size-3 rounded-full"
-        style={{ backgroundColor: color }}
-      />
-      <span className="text-xl" style={{ color }}>
+        className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-lg font-bold"
+        style={{ backgroundColor: bg, color }}
+      >
+        <span
+          aria-hidden
+          className="size-2.5 rounded-full"
+          style={{ backgroundColor: color }}
+        />
         {text}
       </span>
       {updatedAt && (
-        <span className="text-xl tabular-nums text-[#898781]">
+        <span className="text-lg tabular-nums" style={{ color: T.inkSub }}>
           {formatClock(updatedAt)}
         </span>
       )}
