@@ -56,6 +56,28 @@ export interface ReportResultItem {
   result: JudgeResult;
 }
 
+export type ReportStage = "INITIAL" | "MIDDLE" | "FINAL";
+
+// 통합 보고서의 차수(초·중·종) 한 건. 승인 모델이 종 1회 승인 + 통합 보고서 1장으로
+// 바뀌면서 검사자·시각·외관·경도가 차수마다 달라져, 단수 필드로는 담을 수 없게 됐다.
+// 기존 단수 필드(qualityName 등)는 하위호환으로 남아 있고 종(FINAL) 기준 값이 채워진다.
+export interface ReportStageInfo {
+  type: ReportInspectionType;
+  typeLabel: string;
+  stage: ReportStage;
+  crossCheckId: number;
+  inspectionTime: string;
+  productionName: string;
+  qualityName: string;
+  productionAppearanceResult: AppearanceResult | null;
+  qualityAppearanceResult: AppearanceResult | null;
+  // 압출 종물 한정.
+  qualityHardnessResult: string | null;
+  remarks: string | null;
+  // 예정 슬롯(inspectionTime)이 아닌 실제 검사 시각.
+  inspectedAt: string | null;
+}
+
 export interface ReportDetail extends ReportSummary {
   sketchUrl: string | null;
   inspectionTime: string;
@@ -66,4 +88,6 @@ export interface ReportDetail extends ReportSummary {
   // 검사자 비고 (없을 수 있음).
   remarks: string | null;
   results: ReportResultItem[];
+  // 차수별 메타. 통합 보고서 발행분에만 있고, 구 보고서·미배포 서버에선 안 온다.
+  stages?: ReportStageInfo[];
 }

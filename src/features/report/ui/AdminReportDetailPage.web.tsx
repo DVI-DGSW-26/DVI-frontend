@@ -13,6 +13,7 @@ import type {
 import { downloadReportPdf } from "../lib/downloadReportPdf";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import PhotoCompareModal from "../../../components/shared/PhotoCompareModal";
+import ReportStagesSection from "./ReportStagesSection";
 import DeleteReportModal from "./DeleteReportModal";
 import Toast from "../../inspection/ui/Toast";
 import { useAuth } from "../../auth/AuthContext";
@@ -324,6 +325,12 @@ const AdminReportDetailPageWeb = () => {
           <InfoCell label="검사자" value={data.qualityName} />
         </dl>
       </Section>
+
+      {data.stages && data.stages.length > 0 && (
+        <Section title="차수별 검사 정보">
+          <ReportStagesSection stages={data.stages} variant="web" />
+        </Section>
+      )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Section title="도면" className="lg:col-span-2">
