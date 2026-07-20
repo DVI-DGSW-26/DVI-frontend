@@ -43,6 +43,21 @@ export default function MonitorPage() {
     [inspections, slotsByProcess],
   );
 
+  // 마지막 시점까지 끝난 줄은 칸을 다 보여줄 이유가 없다. 그렇다고 목록에서 밀려
+  // 사라지면 "오늘 저 설비 끝났나?"를 확인할 수 없으므로, 한 줄짜리로 압축해
+  // 아래에 남긴다.
+  const { ongoing, finished } = useMemo(() => {
+    const ongoing: ProgressRow[] = [];
+    const finished: ProgressRow[] = [];
+    for (const r of rows) {
+      (r.settled === r.cells.length ? finished : ongoing).push(r);
+    }
+    return { ongoing, finished };
+  }, [rows]);
+
+  // 마감 줄을 아래에 깔면 그만큼 위 공간이 줄어든다.
+  const maxRows = finished.length > 0 ? MAX_ROWS - 1 : MAX_ROWS;
+
   // 접속 여부는 모니터 스냅샷(SSE)에서 온다 — 진행도와 출처가 다르다.
   const online = useMemo(
     () =>
@@ -103,7 +118,7 @@ export default function MonitorPage() {
             <Legend />
           </div>
           <div className="min-h-0 flex-1 space-y-2 overflow-hidden px-4">
-            {rows.slice(0, MAX_ROWS).map((row) => (
+            {ongoing.slice(0, maxRows).map((row) => (
               <ProgressRowView
                 key={row.key}
                 row={row}
@@ -115,11 +130,15 @@ export default function MonitorPage() {
                 오늘 등록된 검사가 없습니다
               </div>
             )}
+            {ongoing.length > maxRows && (
+              <div className="px-2 pt-1 text-center text-lg text-[#898781]">
+                외 {ongoing.length - maxRows}줄 더
+              </div>
+            )}
           </div>
-          {rows.length > MAX_ROWS && (
-            <div className="shrink-0 px-6 py-3 text-center text-lg text-[#898781]">
-              외 {rows.length - MAX_ROWS}줄 더
-            </div>
+
+          {finished.length > 0 && (
+            <FinishedStrip rows={finished} online={online} />
           )}
         </section>
 
@@ -186,6 +205,61 @@ function ProgressRowView({
       <div className="mt-2 flex flex-wrap gap-1.5">
         {row.cells.map((cell) => (
           <Cell key={cell.type} label={cell.label} status={cell.status} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 오늘치를 끝낸 줄 — 한 줄짜리 알약으로 압축해 패널 아래에 남긴다.
+ *
+ * 진행중인 줄과 같은 크기로 두면 자리를 다 먹고, 정렬상 아래로 밀려 잘리면
+ * "저 설비 오늘 끝났나?"를 확인할 수 없어진다. 압축해서 계속 보이게 한다.
+ */
+function FinishedStrip({
+  rows,
+  online,
+}: {
+  rows: ProgressRow[];
+  online: Set<string>;
+}) {
+  return (
+    <div className="shrink-0 border-t border-black/10 px-6 py-3">
+      <div className="mb-2 text-lg text-[#52514e]">
+        오늘 마감 <span className="tabular-nums">{rows.length}</span>줄
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {rows.map((r) => (
+          <span
+            key={r.key}
+            className="inline-flex items-center gap-2 rounded-lg bg-[#f9f9f7] px-3 py-1.5 text-lg ring-1 ring-black/10"
+            title={`${r.productName} · ${r.equipmentName} — 완료 ${r.completed}, 건너뜀 ${r.skipped}`}
+          >
+            <span
+              aria-hidden
+              title={online.has(r.workerName) ? "접속중" : "미접속"}
+              className="size-2 shrink-0 rounded-full"
+              style={{
+                backgroundColor: online.has(r.workerName)
+                  ? "#0ca30c"
+                  : "#c3c2b7",
+              }}
+            />
+            <span className="font-semibold text-[#0b0b0b]">{r.workerName}</span>
+            <span className="text-[#52514e]">{r.equipmentName}</span>
+            {/* 전부 건너뛴 줄을 "완료"로 오인하지 않도록 완료·건너뜀을 따로 센다. */}
+            {r.completed > 0 && (
+              <span className="tabular-nums font-semibold text-[#0a6b0a]">
+                ✓{r.completed}
+              </span>
+            )}
+            {r.skipped > 0 && (
+              <span className="tabular-nums font-semibold text-[#6b6a66]">
+                ⊘{r.skipped}
+              </span>
+            )}
+          </span>
         ))}
       </div>
     </div>

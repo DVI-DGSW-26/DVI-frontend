@@ -26,6 +26,10 @@ export interface ProgressRow {
   cells: ProgressCell[];
   /** 종결된 시점 수 (완료 + 건너뜀 + 미완료승인) — 진행률 표시용. */
   settled: number;
+  /** 실제로 검사한 시점 수. 전부 건너뛴 줄을 "완료"로 오인하지 않도록 따로 센다. */
+  completed: number;
+  /** 건너뛴 시점 수. */
+  skipped: number;
   /** 지금 진행중(DRAFT)인 시점이 있는지. */
   active: boolean;
 }
@@ -84,6 +88,10 @@ export function buildProgressRows(
           c.status === "SKIPPED" ||
           c.status === "INCOMPLETE_APPROVED",
       ).length,
+      completed: cells.filter(
+        (c) => c.status === "COMPLETED" || c.status === "INCOMPLETE_APPROVED",
+      ).length,
+      skipped: cells.filter((c) => c.status === "SKIPPED").length,
       active: cells.some((c) => c.status === "DRAFT"),
     });
   }
