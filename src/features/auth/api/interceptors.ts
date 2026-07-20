@@ -47,6 +47,32 @@ function reissueOnce(refreshToken: string): Promise<string> {
   return reissuePromise;
 }
 
+/**
+ * axios 를 거치지 않는 요청(SSE 등)에서 401 을 맞았을 때 쓰는 재발급 진입점.
+ *
+ * 위 인터셉터와 같은 reissuePromise 를 공유하므로, SSE 재연결과 일반 API 요청이
+ * 동시에 401 을 맞아도 재발급은 한 번만 일어난다(= 1회용 refresh 토큰 레이스 방지).
+ *
+ * 성공하면 새 accessToken 을 반환. refresh 토큰이 없거나 재발급이 실패하면 throw.
+ */
+export function refreshAccessToken(): Promise<string> {
+  const refreshToken = tokenStorage.getRefresh();
+  if (!refreshToken) {
+    tokenStorage.clear();
+    return Promise.reject(new Error("refreshAccessToken: no refresh token"));
+  }
+  return reissueOnce(refreshToken).catch((err: unknown) => {
+    // 인터셉터와 동일 규칙 — refresh 토큰 자체가 무효일 때만 세션 폐기.
+    if (
+      err instanceof AxiosError &&
+      (err.response?.status === 401 || err.response?.status === 403)
+    ) {
+      tokenStorage.clear();
+    }
+    throw err;
+  });
+}
+
 export function installAuthInterceptors() {
   http.interceptors.request.use((config) => {
     const token = tokenStorage.getAccess();
