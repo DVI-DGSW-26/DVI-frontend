@@ -8,34 +8,15 @@ import type {
   ReportStageInfo,
 } from "../api/types";
 import { getReportDetail } from "../api/reportApi";
-import { hasStageMeasurements } from "./stageMeasurements";
+import {
+  collectStageColumns,
+  findMeasurement,
+  hasStageMeasurements,
+  STAGE_LABEL,
+  STAGE_ORDER,
+  type StageColumn,
+} from "./stageMeasurements";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
-
-const STAGE_ORDER: Record<ReportStage, number> = {
-  INITIAL: 0,
-  MIDDLE: 1,
-  FINAL: 2,
-};
-
-const STAGE_LABEL: Record<ReportStage, string> = {
-  INITIAL: "초",
-  MIDDLE: "중",
-  FINAL: "종",
-};
-
-// 보고서 전체에 등장하는 차수를 초→중→종 순으로. dim 마다 측정된 차수가 다를 수
-// 있어(중간 차수 건너뜀 등) 합집합을 잡아야 열이 어긋나지 않는다.
-function collectStages(detail: ReportDetail): ReportMeasurement[] {
-  const byType = new Map<string, ReportMeasurement>();
-  for (const r of detail.results) {
-    for (const m of r.measurements ?? []) {
-      if (!byType.has(m.type)) byType.set(m.type, m);
-    }
-  }
-  return [...byType.values()].sort(
-    (a, b) => (STAGE_ORDER[a.stage] ?? 9) - (STAGE_ORDER[b.stage] ?? 9),
-  );
-}
 
 function stageTitle(s: { stage: ReportStage; typeLabel: string }): string {
   return `${STAGE_LABEL[s.stage] ?? ""} ${s.typeLabel ?? ""}`.trim();
@@ -84,35 +65,35 @@ function imgCell(url: string | null): string {
 }
 
 // 통합 보고서 측정 결과 — dim 1행 x 초·중·종 열. 차수마다 자주/순회 2개 하위 열.
-// 가공(MACHINING)은 수치 대신 OK/NG 판정이 들어간다.
 function stageMeasureTable(detail: ReportDetail): string {
-  const stages = collectStages(detail);
-  const isMachining = detail.process === "MACHINING";
+  const columns = collectStageColumns(detail.results);
 
   const topCells =
     `<th rowspan="2">번호</th><th rowspan="2">기준</th><th rowspan="2">공차</th>` +
-    stages
-      .map((s) => `<th colspan="2">${escapeHtml(stageTitle(s))}</th>`)
+    columns
+      .map((c) => `<th colspan="2">${escapeHtml(c.label)}</th>`)
       .join("") +
     `<th rowspan="2">판정</th>`;
-  const subCells = stages.map(() => `<th>자주</th><th>순회</th>`).join("");
-  const colCount = 4 + stages.length * 2;
+  const subCells = columns.map(() => `<th>자주</th><th>순회</th>`).join("");
+  const colCount = 4 + columns.length * 2;
 
+  // 가공(MACHINING)처럼 수치 대신 OK/NG 로 판정하는 항목은 값이 null 이라
+  // 수치만 그리면 표가 통째로 "-" 가 된다. 공정으로 분기하지 않고 응답에 판정이
+  // 실려 있는지로 판단해, dim 마다 방식이 다른 경우도 그대로 따라간다.
   const cell = (m: ReportMeasurement | undefined, side: "prod" | "qual") => {
     if (!m) return "-";
-    if (isMachining) {
-      const pf =
-        side === "prod" ? m.productionPassFailResult : m.qualityPassFailResult;
-      return appearanceBadge(pf);
-    }
-    return fmtValue(side === "prod" ? m.productionValue : m.qualityValue);
+    const passFail =
+      side === "prod" ? m.productionPassFailResult : m.qualityPassFailResult;
+    const value = side === "prod" ? m.productionValue : m.qualityValue;
+    if (passFail != null && value == null) return appearanceBadge(passFail);
+    return fmtValue(value);
   };
 
   const rows = detail.results
     .map((r: ReportResultItem) => {
-      const cells = stages
-        .map((s) => {
-          const m = r.measurements?.find((x) => x.type === s.type);
+      const cells = columns
+        .map((c) => {
+          const m = findMeasurement(r, c);
           return `<td>${cell(m, "prod")}</td><td>${cell(m, "qual")}</td>`;
         })
         .join("");
@@ -244,12 +225,12 @@ function fmtInspected(s: ReportStageInfo): string {
 
 // 차수별 측정 사진 — dim 1행 x 차수 열, 칸마다 자주/순회 2장.
 function stagePhotoSection(detail: ReportDetail): string {
-  const stages = collectStages(detail);
+  const columns = collectStageColumns(detail.results);
   const rows = detail.results
     .map((r) => {
-      const cells = stages
-        .map((s) => {
-          const m = r.measurements?.find((x) => x.type === s.type);
+      const cells = columns
+        .map((c) => {
+          const m = findMeasurement(r, c);
           return `<td>${imgCell(m?.productionImageUrl ?? null)}</td><td>${imgCell(
             m?.qualityImageUrl ?? null,
           )}</td>`;
@@ -266,9 +247,9 @@ function stagePhotoSection(detail: ReportDetail): string {
         <thead>
           <tr>
             <th rowspan="2">번호</th>
-            ${stages.map((s) => `<th colspan="2">${escapeHtml(stageTitle(s))}</th>`).join("")}
+            ${columns.map((c: StageColumn) => `<th colspan="2">${escapeHtml(c.label)}</th>`).join("")}
           </tr>
-          <tr>${stages.map(() => `<th>자주</th><th>순회</th>`).join("")}</tr>
+          <tr>${columns.map(() => `<th>자주</th><th>순회</th>`).join("")}</tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
@@ -353,6 +334,12 @@ function inspectionLabelText(detail: ReportDetail): string {
   const stages = orderedStageInfos(detail);
   if (stages.length > 1) {
     return `${stages.map(stageTitle).join(" · ")} 통합`;
+  }
+  // stages 없이 measurements 만 오는 조합도 있다. 이때 단수 label 을 그대로 쓰면
+  // 표는 초·중·종인데 머리말만 "종물" 이 되므로 측정값 쪽 차수로 표기를 맞춘다.
+  const columns = collectStageColumns(detail.results);
+  if (columns.length > 1) {
+    return `${columns.map((c) => c.label).join(" · ")} 통합`;
   }
   return detail.inspectionLabel;
 }

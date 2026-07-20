@@ -15,7 +15,10 @@ import { toBackendImageUrl } from "../../../lib/imageUrl";
 import PhotoCompareModal from "../../../components/shared/PhotoCompareModal";
 import ReportStagesSection from "./ReportStagesSection";
 import ReportMeasurementsSection from "./ReportMeasurementsSection";
-import { hasStageMeasurements } from "../lib/stageMeasurements";
+import {
+  hasDuplicateDimNo,
+  hasStageMeasurements,
+} from "../lib/stageMeasurements";
 import DeleteReportModal from "./DeleteReportModal";
 import Toast from "../../inspection/ui/Toast";
 import { useAuth } from "../../auth/AuthContext";
@@ -366,6 +369,14 @@ const AdminReportDetailPageMobile = () => {
         </Section>
       ) : (
         <>
+          {/* 차수별 측정값 없이 초·중·종이 results[] 에 이어 붙어 온 경우 —
+              같은 DIM 이 반복되는데 행마다 어느 차수인지 알 방법이 없다. */}
+          {hasDuplicateDimNo(data.results) && (
+            <p className="rounded-xl border border-[#FED7AA] bg-[#FFF7ED] px-4 py-3 text-xs text-[#9A3412]">
+              같은 DIM 번호가 여러 번 표시됩니다. 차수(초·중·종) 구분 정보가 없어
+              어느 행이 어느 차수인지 표시할 수 없습니다.
+            </p>
+          )}
           <Section
             title="자주검사"
             trailing={
@@ -380,9 +391,9 @@ const AdminReportDetailPageMobile = () => {
               </p>
             ) : (
               <ul className="flex flex-col gap-2">
-                {data.results.map((r) => (
+                {data.results.map((r, idx) => (
                   <MeasureCard
-                    key={`prod-${r.dimNo}`}
+                    key={`prod-${r.dimNo}-${idx}`}
                     item={r}
                     measuredValue={r.productionValue}
                     imageUrl={r.productionImageUrl}
@@ -407,9 +418,9 @@ const AdminReportDetailPageMobile = () => {
               </p>
             ) : (
               <ul className="flex flex-col gap-2">
-                {data.results.map((r) => (
+                {data.results.map((r, idx) => (
                   <MeasureCard
-                    key={`qual-${r.dimNo}`}
+                    key={`qual-${r.dimNo}-${idx}`}
                     item={r}
                     measuredValue={r.qualityValue}
                     imageUrl={r.qualityImageUrl}
