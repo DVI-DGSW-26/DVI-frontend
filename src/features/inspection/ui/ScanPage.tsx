@@ -8,7 +8,6 @@ import {
 } from "../api";
 import type {
   InspectionProcess,
-  SkipInspectionErrorData,
   StartInspectionErrorCode,
   StartInspectionErrorData,
 } from "../type/types";
@@ -18,6 +17,7 @@ import {
   useMyInspectionList,
 } from "../../my-inspection/api";
 import { getRecentInspectionId } from "../lib/recentInspection";
+import { skipErrorMessage, SKIP_DELETE_DRAFT_ERROR } from "../lib/skipError";
 import { isSameKstDay } from "../../../lib/datetime";
 import SlotItem, { type SlotStatus } from "./SlotItem";
 import SkipModal from "./SkipModal";
@@ -267,7 +267,13 @@ export default function ScanPage() {
       // 던지므로, skip 호출 전 해당 DRAFT 를 먼저 삭제해서 NONE 상태로 되돌린다.
       const existing = inspectionByType.get(type);
       if (existing && existing.status === "DRAFT") {
-        await deleteMutation.mutateAsync(existing.inspectionId);
+        try {
+          await deleteMutation.mutateAsync(existing.inspectionId);
+        } catch {
+          setSkipTargetType(null);
+          setToast({ message: SKIP_DELETE_DRAFT_ERROR });
+          return;
+        }
       }
       await skipMutation.mutateAsync({
         productId,
@@ -285,16 +291,8 @@ export default function ScanPage() {
       const label = slots.find((s) => s.type === type)?.label ?? type;
       setToast({ message: `${label} 시점을 건너뛰었습니다.` });
     } catch (err) {
-      if (err instanceof AxiosError) {
-        const data = err.response?.data as SkipInspectionErrorData | undefined;
-        if (data?.code === "INSPECTION_ALREADY_EXISTS") {
-          setSkipTargetType(null);
-          setToast({ message: "이미 처리된 시점입니다." });
-          return;
-        }
-      }
       setSkipTargetType(null);
-      setToast({ message: "건너뛰지 못했습니다." });
+      setToast({ message: skipErrorMessage(err) });
     }
   };
 
