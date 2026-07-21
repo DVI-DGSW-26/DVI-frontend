@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
 import {
@@ -22,7 +22,7 @@ interface Props {
 // 주의: AL 절단은 AL 이 아니라 ST 담당이다(설비명과 담당 구분이 일치하지 않음).
 // 공정명만 보고 AL 로 되돌리지 말 것 — 현업 확인된 규칙(2026-07-21).
 const PROCESSES_BY_WORKTYPE: Record<WorkType, string[]> = {
-  ST: ["ST_CUTTING", "AL_CUTTING"],
+  ST: ["ST_CUTTING", "AL_CUTTING", "PRESS"],
   AL: ["EXTRUSION", "MACHINING"],
 };
 
@@ -54,6 +54,21 @@ export default function CreateInspectionOrderDrawer({
   const [equipmentId, setEquipmentId] = useState<number | "">("");
   const [productId, setProductId] = useState<number | "">("");
   const [productionId, setProductionId] = useState<number | "">("");
+
+  // 드로어가 열릴 때(등록/수정 대상이 바뀔 때) 폼을 초기화한다.
+  // effect 가 아니라 "렌더 중 state 조정" 패턴 — 열자마자 빈 폼을 한 번 그린 뒤
+  // 다시 그리는 연쇄 렌더가 없다. 닫힌 동안(sessionKey=null)엔 건드리지 않는다.
+  const sessionKey = open ? (order ? `edit:${order.id}` : "create") : null;
+  const [prevSessionKey, setPrevSessionKey] = useState(sessionKey);
+  if (sessionKey !== prevSessionKey) {
+    setPrevSessionKey(sessionKey);
+    if (sessionKey !== null) {
+      setTargetDate(order ? order.targetDate : todayISO());
+      setEquipmentId(order ? order.equipment.id : "");
+      setProductId(order ? order.product.id : "");
+      setProductionId(order ? order.production.id : "");
+    }
+  }
 
   const { data: equipment = [], isLoading: loadingEquipment } = useEquipmentList();
   const { data: products = [], isLoading: loadingProducts } = useProductList();
@@ -96,21 +111,6 @@ export default function CreateInspectionOrderDrawer({
           (u) => u.workType === managerWorkType || u.id === productionId,
         )
       : productionUsers;
-
-  useEffect(() => {
-    if (!open) return;
-    if (order) {
-      setTargetDate(order.targetDate);
-      setEquipmentId(order.equipment.id);
-      setProductId(order.product.id);
-      setProductionId(order.production.id);
-    } else {
-      setTargetDate(todayISO());
-      setEquipmentId("");
-      setProductId("");
-      setProductionId("");
-    }
-  }, [open, order]);
 
   const canSubmit =
     !!targetDate &&
