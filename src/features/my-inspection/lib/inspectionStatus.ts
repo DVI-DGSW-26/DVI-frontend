@@ -1,3 +1,4 @@
+import { kstWorkDayKey, parseServerDate } from "../../../lib/datetime";
 import type { MyInspection } from "../type/types";
 
 // /inspection/assigned 제거 이후 탭 구성: 전체 / 진행 중 / 완료 / 미완료.
@@ -21,18 +22,12 @@ export const DATE_FILTERS: { key: DateFilter; label: string }[] = [
   { key: "ALL", label: "전체" },
 ];
 
-function startOfDay(d: Date) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
-
-function startOfWeek(d: Date) {
-  const x = startOfDay(d);
-  const day = x.getDay();
-  const diff = day === 0 ? 6 : day - 1; // 월요일 시작
-  x.setDate(x.getDate() - diff);
-  return x;
+// 작업일 키("YYYY-MM-DD")끼리는 사전순 비교가 곧 날짜 비교라, 주 시작만 키로 구하면 된다.
+function weekStartKey(todayKey: string): string {
+  const d = new Date(`${todayKey}T00:00:00Z`);
+  const day = d.getUTCDay();
+  d.setUTCDate(d.getUTCDate() - (day === 0 ? 6 : day - 1)); // 월요일 시작
+  return d.toISOString().slice(0, 10);
 }
 
 export function isWithinDateFilter(
@@ -40,25 +35,29 @@ export function isWithinDateFilter(
   filter: DateFilter,
 ): boolean {
   if (filter === "ALL") return true;
-  // 미완료는 날짜 무시하고 항상 노출 (피드백: "미완료는 남겨야겠지만")
+  // 아직 끝나지 않은 건 날짜 무시하고 항상 노출.
+  // - 미완료(피드백: "미완료는 남겨야겠지만")
+  // - 진행 중(DRAFT): 어제 시작해 아직 못 끝낸 검사가 작업일 경계 때문에
+  //   목록에서 사라지면 작업자가 이어서 할 방법이 없다.
   if (
+    inspection.status === "DRAFT" ||
     inspection.status === "INCOMPLETE" ||
     inspection.status === "INCOMPLETE_APPROVED"
   ) {
     return true;
   }
-  // 백엔드가 날짜 필드를 안 보내면 안전하게 통과 — 기존 누적 동작 유지
+  // 기준은 "언제 끝냈나"가 아니라 "언제 한 작업인가"(작업일)다.
+  // completedAt 을 쓰면 20일 검사를 21일에 완료했을 때 오늘 목록에 섞여 들어온다.
+  // createdAt 을 우선하고, 카드에 찍히는 날짜(formatWorkDay)와 같은 필드를 봐야 한다.
   const iso =
-    inspection.completedAt ?? inspection.updatedAt ?? inspection.createdAt;
+    inspection.createdAt ?? inspection.updatedAt ?? inspection.completedAt;
+  // 백엔드가 날짜 필드를 안 보내면 안전하게 통과 — 기존 누적 동작 유지
   if (!iso) return true;
-  const t = new Date(iso).getTime();
-  if (Number.isNaN(t)) return true;
-  const now = new Date();
-  const from =
-    filter === "TODAY"
-      ? startOfDay(now).getTime()
-      : startOfWeek(now).getTime();
-  return t >= from;
+  // parseServerDate 필수: 백엔드가 오프셋 없는 UTC 를 주므로 raw new Date 는 9시간 어긋난다.
+  const key = kstWorkDayKey(parseServerDate(iso));
+  if (!key) return true;
+  const todayKey = kstWorkDayKey(new Date());
+  return key >= (filter === "TODAY" ? todayKey : weekStartKey(todayKey));
 }
 
 export interface StatusBadge {
