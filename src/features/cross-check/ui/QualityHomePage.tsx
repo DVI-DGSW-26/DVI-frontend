@@ -14,6 +14,7 @@ import {
 } from "../api";
 import type { CrossCheckSummary } from "../api";
 import { elapsedFrom } from "../lib/elapsed";
+import { countUnprocessed } from "../lib/assigned";
 import { formatDateTime } from "../../../lib/datetime";
 
 const QualityHomePage = () => {
@@ -29,7 +30,9 @@ const QualityHomePage = () => {
   const [reopeningId, setReopeningId] = useState<number | null>(null);
   const [reopenError, setReopenError] = useState<string | null>(null);
 
-  const pendingCount = assigned.length;
+  // 미처리 = 아직 아무도 시작하지 않은 건. 진행중(IN_PROGRESS)은 순회검사 목록의
+  // 미처리 카드와 같은 기준으로 제외해 두 화면 숫자를 맞춘다.
+  const pendingCount = useMemo(() => countUnprocessed(assigned), [assigned]);
 
   const handleNotificationClick = (n: NotificationResponse) => {
     if (!n.isRead) markAsRead.mutate(n.id);
