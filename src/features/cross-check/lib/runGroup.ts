@@ -1,21 +1,14 @@
+import { kstWorkDayKey, parseServerDate } from "../../../lib/datetime";
 import type { CrossCheckSummary } from "../api";
 import { getStage } from "./stage";
 
-// 야간 작업이 자정을 넘겨도 한 run 으로 남도록, 작업일 경계를 06:00 으로 둔다.
-// 06:00 이전 건은 전날 작업분으로 본다. 폴백 키에서만 쓰는 근사값이다.
-const WORK_DAY_START_HOUR = 6;
-
-// 폴백 키에 쓰는 "작업일". createdAt 이 없거나 파싱 불가면 날짜로 나누지 않는다
+// 폴백 키에 쓰는 "작업일"(KST, 06:00 경계 — kstWorkDayKey 참고).
+// createdAt 이 없거나 파싱 불가면 날짜로 나누지 않는다
 // (같은 제품·설비끼리는 합쳐 두는 편이 안전).
 function workDayKey(cc: CrossCheckSummary): string {
   const raw = cc.createdAt ?? cc.updatedAt;
   if (!raw) return "unknown";
-  const d = new Date(raw);
-  if (Number.isNaN(d.getTime())) return "unknown";
-  if (d.getHours() < WORK_DAY_START_HOUR) d.setDate(d.getDate() - 1);
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${d.getFullYear()}${mm}${dd}`;
+  return kstWorkDayKey(parseServerDate(raw)) || "unknown";
 }
 
 // 초·중·종을 한 생산 run 으로 묶는 키.

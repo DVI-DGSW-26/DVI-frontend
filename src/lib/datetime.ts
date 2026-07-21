@@ -34,6 +34,18 @@ export function kstDateKey(d: Date): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+// 야간 작업이 자정을 넘겨도 한 작업분으로 남도록, 작업일 경계를 KST 06:00 에 둔다.
+// 06:00 이전 기록은 전날 작업분으로 본다.
+export const WORK_DAY_START_HOUR = 6;
+
+// KST "작업일" 키 "YYYY-MM-DD". 달력 날짜가 아니라 06:00 경계 기준이다.
+// 예) 20일 16시 검사를 21일 02시에 기록해도 작업일은 "20일".
+// 06 시간을 먼저 빼고 kstDateKey 에 넘기면 경계가 그대로 06:00 으로 밀린다.
+export function kstWorkDayKey(d: Date): string {
+  if (Number.isNaN(d.getTime())) return "";
+  return kstDateKey(new Date(d.getTime() - WORK_DAY_START_HOUR * 60 * 60 * 1000));
+}
+
 // iso 가 KST 기준으로 now(기본: 현재)와 같은 날짜인지.
 // 값이 없거나 파싱 불가하면 null — "판단 보류"(호출부에서 기존 동작 유지용).
 export function isSameKstDay(
@@ -44,6 +56,15 @@ export function isSameKstDay(
   const d = parseServerDate(iso);
   if (Number.isNaN(d.getTime())) return null;
   return kstDateKey(d) === kstDateKey(now);
+}
+
+// "2026-06-18" (KST 작업일). formatDate 와 달리 06:00 경계를 적용한다 —
+// 목록 카드에 찍히는 날짜와 작업일 기준 필터가 어긋나지 않게 하려면 이쪽을 쓴다.
+export function formatWorkDay(iso: string | undefined | null): string {
+  if (!iso) return "-";
+  const d = parseServerDate(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return kstWorkDayKey(d);
 }
 
 // "2026-06-18" (KST). 파싱 실패 시 원본 문자열 반환, 값 없으면 "-".
