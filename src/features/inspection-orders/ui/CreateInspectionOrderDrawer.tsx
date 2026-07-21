@@ -19,9 +19,11 @@ interface Props {
 }
 
 // 담당 구분(ST/AL) → 해당 구분이 다루는 설비/제품 공정.
+// 주의: AL 절단은 AL 이 아니라 ST 담당이다(설비명과 담당 구분이 일치하지 않음).
+// 공정명만 보고 AL 로 되돌리지 말 것 — 현업 확인된 규칙(2026-07-21).
 const PROCESSES_BY_WORKTYPE: Record<WorkType, string[]> = {
-  ST: ["ST_CUTTING"],
-  AL: ["AL_CUTTING"],
+  ST: ["ST_CUTTING", "AL_CUTTING"],
+  AL: ["EXTRUSION", "MACHINING"],
 };
 
 // 로그인한 관리자의 담당 구분을 구한다. API 가 workType 을 내려주면 그 값을 쓰고,
