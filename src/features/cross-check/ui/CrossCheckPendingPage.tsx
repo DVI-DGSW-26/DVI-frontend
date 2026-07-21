@@ -9,6 +9,7 @@ import {
 } from "../api";
 import type { AssignedInspection, CrossCheckSummary } from "../api";
 import { elapsedFrom } from "../lib/elapsed";
+import { countUnprocessed } from "../lib/assigned";
 import { needsHardnessInput } from "../lib/stage";
 import { formatDate, formatDateTime } from "../../../lib/datetime";
 import {
@@ -179,6 +180,8 @@ const CrossCheckPendingPage = () => {
   );
 
   // 상단 요약(구 품질 시스템 현황) — 미처리(배정 대기)/완료(승인)/진행중(DRAFT) 누적 집계.
+  // 미처리는 아래 목록과 같은 대상을 세야 하므로 filteredAssigned(날짜 필터·본인 진행건
+  // 제외 반영) 기준. 여기서 다시 IN_PROGRESS 를 걷어내 "시작 가능한 건"만 남긴다.
   const statCounts = useMemo(() => {
     let approved = 0;
     let draft = 0;
@@ -186,8 +189,8 @@ const CrossCheckPendingPage = () => {
       if (c.status === "APPROVED") approved++;
       else if (c.status === "DRAFT") draft++;
     }
-    return { pending: assigned.length, approved, draft };
-  }, [myCrossChecks, assigned]);
+    return { pending: countUnprocessed(filteredAssigned), approved, draft };
+  }, [myCrossChecks, filteredAssigned]);
 
   const handleResumeClick = (cc: CrossCheckSummary) => {
     navigate(`/cross-check/${cc.crossCheckId}/measure`);
