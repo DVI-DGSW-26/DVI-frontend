@@ -53,7 +53,8 @@ export function isWithinDateFilter(
     inspection.createdAt ?? inspection.updatedAt ?? inspection.completedAt;
   // 백엔드가 날짜 필드를 안 보내면 안전하게 통과 — 기존 누적 동작 유지
   if (!iso) return true;
-  // parseServerDate 필수: 백엔드가 오프셋 없는 UTC 를 주므로 raw new Date 는 9시간 어긋난다.
+  // parseServerDate 필수: 백엔드가 오프셋 없는 KST 를 주므로 기기 시간대가 KST 가
+  // 아니면 raw new Date 는 어긋난다.
   const key = kstWorkDayKey(parseServerDate(iso));
   if (!key) return true;
   const todayKey = kstWorkDayKey(new Date());

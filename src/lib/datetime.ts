@@ -1,13 +1,32 @@
-// 백엔드가 타임존 표기 없이(UTC 기준) 내려주는 타임스탬프를 안전하게 파싱.
-// 'Z' 나 +09:00 같은 오프셋이 이미 있으면 그대로 두고, 없을 때만 UTC 로 간주한다.
-// (오프셋 없는 ISO 를 JS 가 로컬시간으로 해석해 KST 기준 9시간 어긋나던 문제 방지)
+// 백엔드가 타임존 표기 없이 내려주는 타임스탬프를 안전하게 파싱.
+// 'Z' 나 +09:00 같은 오프셋이 이미 있으면 그대로 두고, 없을 때만 KST 로 간주한다.
+//
+// 서버는 오프셋 없이 "한국 시간"을 내려준다(백엔드 확인, 2026-07-21). 이걸 UTC 로
+// 보면 9시간이 더해져, 20일 21시 이후 검사가 21일 06시 이후로 밀리며 작업일이
+// 다음날로 잡혔다. (그냥 오프셋을 떼고 로컬로 파싱하면 KST 가 아닌 기기에서 다시
+// 어긋나므로, +09:00 을 명시해 기기 시간대와 무관하게 고정한다.)
+const KST_OFFSET = "+09:00";
+
 export function parseServerDate(iso: string | undefined | null): Date {
   if (!iso) return new Date(NaN);
   const s = iso.trim();
   const hasTz = /[zZ]$|[+-]\d{2}:?\d{2}$/.test(s);
   if (hasTz) return new Date(s);
-  // 공백 구분(예: "2026-06-04 10:00:00") 도 ISO 형태로 정규화 후 UTC 표기를 붙인다.
-  return new Date(`${s.replace(" ", "T")}Z`);
+  // 공백 구분(예: "2026-06-04 10:00:00") 도 ISO 형태로 정규화 후 KST 표기를 붙인다.
+  return new Date(`${s.replace(" ", "T")}${KST_OFFSET}`);
+}
+
+// KST 로 환산한 달력 필드. 기기 시간대와 무관하게 UTC+9 로 계산한다 —
+// 현장 태블릿의 시간대가 잘못 잡혀 있어도 표시가 흔들리지 않게.
+function kstParts(d: Date) {
+  const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  return {
+    yyyy: kst.getUTCFullYear(),
+    mm: String(kst.getUTCMonth() + 1).padStart(2, "0"),
+    dd: String(kst.getUTCDate()).padStart(2, "0"),
+    hh: String(kst.getUTCHours()).padStart(2, "0"),
+    mi: String(kst.getUTCMinutes()).padStart(2, "0"),
+  };
 }
 
 // "2026-06-18 10:00" (KST). 파싱 실패 시 원본 문자열 반환, 값 없으면 "-".
@@ -15,11 +34,7 @@ export function formatDateTime(iso: string | undefined | null): string {
   if (!iso) return "-";
   const d = parseServerDate(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mi = String(d.getMinutes()).padStart(2, "0");
+  const { yyyy, mm, dd, hh, mi } = kstParts(d);
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
 }
 
@@ -72,8 +87,6 @@ export function formatDate(iso: string | undefined | null): string {
   if (!iso) return "-";
   const d = parseServerDate(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
+  const { yyyy, mm, dd } = kstParts(d);
   return `${yyyy}-${mm}-${dd}`;
 }
