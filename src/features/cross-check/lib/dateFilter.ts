@@ -16,6 +16,13 @@ export const DEFAULT_DATE_FILTER: DateFilterValue = {
   end: "",
 };
 
+// 목록 진입 시 기본으로 오늘자 검사만 보이도록 하는 초기 필터.
+export const TODAY_DATE_FILTER: DateFilterValue = {
+  preset: "today",
+  start: "",
+  end: "",
+};
+
 // 로컬 자정(00:00:00) 기준 Date.
 function startOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());

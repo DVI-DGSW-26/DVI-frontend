@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react";
 import { useMyInspectionOrders } from "../api";
 import type { InspectionOrder, InspectionOrderStatus } from "../api";
 import type { InspectionProcess } from "../../inspection/type/types";
+import { kstDateKey } from "../../../lib/datetime";
 
 // 자주검사자(생산 작업자)가 생산 관리자에게 배정받은 검사 지시 목록 (GET /inspection-order/my).
 // 읽기 전용 — 실제 자주검사 수행은 기존 검사 흐름에서 진행한다.
@@ -38,7 +39,8 @@ function statusBadge(status: InspectionOrderStatus) {
 
 export default function MyInspectionOrdersPage() {
   const navigate = useNavigate();
-  const [selectedDate, setSelectedDate] = useState("");
+  // 진입 시 기본으로 오늘자 지시만 보여준다(KST 기준). 초기화하면 전체가 보인다.
+  const [selectedDate, setSelectedDate] = useState(() => kstDateKey(new Date()));
   const { data: orders = [], isLoading, isError } = useMyInspectionOrders();
 
   const filtered = useMemo(() => {
@@ -73,7 +75,7 @@ export default function MyInspectionOrdersPage() {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="h-9 rounded-full border border-gray-300 bg-white pl-3 pr-8 text-xs focus:border-[#931B82] focus:outline-none [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:m-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+            className="h-9 min-w-38 rounded-full border border-gray-300 bg-white pl-3 pr-8 text-xs focus:border-[#931B82] focus:outline-none [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:m-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
           />
           <Icon
             icon="solar:calendar-linear"

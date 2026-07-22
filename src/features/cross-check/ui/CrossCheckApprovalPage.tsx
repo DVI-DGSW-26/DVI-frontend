@@ -9,7 +9,7 @@ import { getStage, STAGE_LABEL, STAGE_BADGE } from "../lib/stage";
 import { groupByRun, runStatus } from "../lib/runGroup";
 import { formatDate, formatDateTime } from "../../../lib/datetime";
 import {
-  DEFAULT_DATE_FILTER,
+  TODAY_DATE_FILTER,
   isDateFilterActive,
   matchesDateFilter,
   type DateFilterValue,
@@ -76,8 +76,9 @@ export default function CrossCheckApprovalPage() {
     isLoading,
     isError,
   } = usePendingCrossChecks();
+  // 진입 시 기본으로 오늘자 결재만 보여주고, 필요하면 필터를 넓힐 수 있게 한다.
   const [dateFilter, setDateFilter] =
-    useState<DateFilterValue>(DEFAULT_DATE_FILTER);
+    useState<DateFilterValue>(TODAY_DATE_FILTER);
   // 목록에서 바로 삭제 — 확인 모달 대상.
   const [deleteTarget, setDeleteTarget] = useState<CrossCheckSummary | null>(
     null,

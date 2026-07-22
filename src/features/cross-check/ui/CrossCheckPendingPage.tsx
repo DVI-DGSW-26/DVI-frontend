@@ -13,7 +13,7 @@ import { countUnprocessed } from "../lib/assigned";
 import { needsHardnessInput } from "../lib/stage";
 import { formatDate, formatDateTime } from "../../../lib/datetime";
 import {
-  DEFAULT_DATE_FILTER,
+  TODAY_DATE_FILTER,
   isDateFilterActive,
   matchesDateFilter,
   type DateFilterValue,
@@ -67,8 +67,9 @@ const CrossCheckPendingPage = () => {
   const [toast, setToast] = useState<string | null>(null);
   const [startingId, setStartingId] = useState<number | null>(null);
   // 탭별 검사 일시 필터 (할당 대기 / 내 결재 이력 따로 유지).
+  // 할당 대기는 진입 시 오늘자 검사만 기본 노출.
   const [assignedFilter, setAssignedFilter] =
-    useState<DateFilterValue>(DEFAULT_DATE_FILTER);
+    useState<DateFilterValue>(TODAY_DATE_FILTER);
   // 내 결재 이력은 통합관리자 보고서와 동일한 다중 필터(검색어/날짜/공정/제품/상태).
   const [historyFilter, setHistoryFilter] =
     useState<HistoryFilter>(EMPTY_HISTORY_FILTER);
