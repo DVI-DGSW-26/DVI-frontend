@@ -108,4 +108,10 @@ export interface ReportDetail extends ReportSummary {
   results: ReportResultItem[];
   // 차수별 메타. 통합 보고서 발행분에만 있고, 구 보고서·미배포 서버에선 안 온다.
   stages?: ReportStageInfo[];
+  // 품질 문제(금형 교체 등) 조기 마감으로 순회검사·통합관리자 승인을 거치지 않고
+  // 즉시 발행된 보고서인지. 백엔드가 아직 안 내려주면 undefined → 일반 보고서로 표시.
+  // (백엔드 TODO: /report/{id} 응답 및 목록에 이 두 필드 추가 필요.)
+  terminated?: boolean;
+  // 조기 마감 시 작성자가 입력한 사유(선택). terminated=true 일 때만 의미 있음.
+  terminateReason?: string | null;
 }
