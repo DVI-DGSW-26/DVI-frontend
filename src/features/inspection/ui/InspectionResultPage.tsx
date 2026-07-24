@@ -177,13 +177,20 @@ export default function InspectionResultPage() {
   // 헤더 뒤로가기 → 방금 측정하던 측정 페이지로 복귀. 측정→결과는 replace 로 이동해
   // 히스토리에 측정 페이지가 없으므로 navigate(-1) 대신 측정 경로로 직접 이동한다.
   // editMode 로 진입해 "모든 항목 완료 → 결과로 자동 redirect" 를 막는다.
+  // 단, 이미 종결된 검사(완료·미완료·금형교체 등 조기마감 발행)는 측정 페이지가 DRAFT 가
+  // 아니면 즉시 결과로 되돌려보내(InspectionMeasurePage 의 status!=="DRAFT" 가드) 이 화면에
+  // 갇힌다 — 측정으로 보내지 말고 홈으로 나간다.
   useHeaderBackHandler(
     useCallback(() => {
+      if (postSubmitMode !== null) {
+        navigate("/", { replace: true });
+        return true;
+      }
       navigate(`/inspection/${inspectionId}/measure`, {
         state: { editMode: true },
       });
       return true;
-    }, [navigate, inspectionId]),
+    }, [navigate, inspectionId, postSubmitMode]),
   );
 
   if (needsFallback && detailQuery.isLoading) {
