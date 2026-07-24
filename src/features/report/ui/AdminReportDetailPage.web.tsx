@@ -294,28 +294,57 @@ const AdminReportDetailPageWeb = () => {
             <span className="text-xl font-bold text-[#212121]">
               {data.reportNumber}
             </span>
-            <span
-              className={`flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-white ${
-                isPass ? "bg-[#22C55E]" : "bg-[#EF4444]"
-              }`}
-            >
-              <Icon
-                icon={
-                  isPass
-                    ? "solar:check-circle-bold"
-                    : "solar:close-circle-bold"
-                }
-                width={14}
-                height={14}
-              />
-              {isPass ? "승인" : "반려"}
-            </span>
+            {data.terminated ? (
+              // 조기 마감 즉시 발행분은 순회검사·승인을 거치지 않아 승인/반려로 볼 수 없다.
+              <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#B45309] px-3 py-1 text-xs font-medium text-white">
+                <Icon icon="solar:bolt-circle-bold" width={14} height={14} />
+                바로 발행
+              </span>
+            ) : (
+              <span
+                className={`flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-white ${
+                  isPass ? "bg-[#22C55E]" : "bg-[#EF4444]"
+                }`}
+              >
+                <Icon
+                  icon={
+                    isPass
+                      ? "solar:check-circle-bold"
+                      : "solar:close-circle-bold"
+                  }
+                  width={14}
+                  height={14}
+                />
+                {isPass ? "승인" : "반려"}
+              </span>
+            )}
           </div>
           <span className="text-sm text-[#A8A8A8]">
             {formatDateTime(data.createdAt)}
           </span>
         </div>
       </div>
+
+      {data.terminated && (
+        <div className="rounded-2xl border border-[#FCD34D] bg-[#FFFBEB] p-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-[#B45309]">
+            <Icon icon="solar:danger-triangle-bold" width={18} height={18} />
+            순회검사 없이 바로 발행된 보고서
+          </div>
+          <p className="mt-1 text-xs text-[#92400E]">
+            품질 문제(금형 교체 등)로 검사가 조기 마감되어, 순회검사·통합관리자
+            승인을 거치지 않고 즉시 발행되었습니다.
+          </p>
+          {data.terminateReason && (
+            <div className="mt-2 rounded-lg bg-white/70 px-3 py-2">
+              <div className="text-xs text-[#92400E]">사유</div>
+              <div className="mt-0.5 whitespace-pre-wrap text-sm text-[#212121]">
+                {data.terminateReason}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <Section title="기본 정보">
         <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm lg:grid-cols-4">
