@@ -7,6 +7,7 @@ import NotFoundPage from "./components/layout/NotFoundPage";
 import RouteGuard from "./features/auth/RouteGuard";
 import NotificationPage from "./features/notification/ui/NotificationPage";
 import ApprovalManagementPage from "./features/incomplete/ui/ApprovalManagementPage";
+import AccountApprovalPage from "./features/account-approval/ui/AccountApprovalPage";
 import ReportPage from "./features/report/ui/ReportPage";
 import MyInspectionPage from "./features/my-inspection/ui/MyInspectionPage";
 import ProductionHomePage from "./features/my-inspection/ui/ProductionHomePage";
@@ -81,6 +82,9 @@ function App() {
 
             <Route element={<RouteGuard roles={["ADMIN"]} />}>
               <Route path="/dashboard" element={<DashboardPage />} />
+
+              {/* 계정(가입 요청) 승인 — 대시보드 "빠른 승인 대기"의 전체보기 진입점. */}
+              <Route path="/approval" element={<AccountApprovalPage />} />
 
               <Route path="/reports" element={<AdminReportPage />} />
 

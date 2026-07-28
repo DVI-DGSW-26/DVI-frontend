@@ -62,10 +62,6 @@ const AccountApprovalPageMobile = () => {
     });
   };
 
-  const handleReject = () => {
-    alert("반려 기능은 준비 중입니다.");
-  };
-
   return (
     <div className="flex min-h-full flex-col gap-4 bg-[#F5F5F5] pb-21">
       <nav className="flex bg-white">
@@ -142,16 +138,9 @@ const AccountApprovalPageMobile = () => {
                       신청: {formatDate(u.createdAt)}
                     </p>
 
+                    {/* 반려 버튼은 두지 않는다 — 승인하지 않으면 대기 상태로 남는 것으로 충분. */}
                     {tab === "PENDING" ? (
                       <div className="mt-2 flex gap-2">
-                        <button
-                          type="button"
-                          onClick={handleReject}
-                          disabled={processing}
-                          className="flex-1 rounded-lg border border-[#E5E7EB] py-2 text-sm font-medium text-[#212121] disabled:opacity-40"
-                        >
-                          반려
-                        </button>
                         <button
                           type="button"
                           onClick={() => handleApprove(u)}
