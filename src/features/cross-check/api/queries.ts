@@ -10,6 +10,7 @@ import {
   getMyDelegation,
   getPendingCrossChecks,
   rejectCrossCheck,
+  releaseCrossCheck,
   reopenCrossCheck,
   saveCrossCheckResults,
 } from "./crossCheckApi";
@@ -173,6 +174,21 @@ export function useDeleteCrossCheckById() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (crossCheckId: number) => deleteCrossCheck(crossCheckId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: crossCheckKeys.all });
+    },
+  });
+}
+
+// 순회검사자가 자주검사(대상)를 잘못 골라 시작했을 때 "취소"(= 담당 해제/release).
+// 관리자 삭제(DELETE)와 달리 순회검사 레코드를 지우지 않고 담당만 놓아 다른 검사자가
+// 이어받을 수 있게 한다. 측정값은 보존되고, 반려와 달리 작업자에게 재측정으로 튕기지
+// 않는다. 담당 해제 후엔 내 목록에서 빠지고 다시 대기 상태가 되므로 전체 캐시 무효화.
+// id 는 mutate 시점에 받아 측정 페이지·진행중 카드 양쪽에서 재사용한다.
+export function useCancelCrossCheck() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (crossCheckId: number) => releaseCrossCheck(crossCheckId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: crossCheckKeys.all });
     },

@@ -116,3 +116,14 @@ export async function rejectCrossCheck(
     { decision: "REJECT", rejectReason },
   );
 }
+
+// 순회검사자가 자주검사(대상)를 잘못 골라 시작했을 때 "취소".
+// 관리자 삭제(DELETE)와 달리 순회검사 레코드를 지우지 않고 담당만 놓아(release)
+// 다른 검사자가 이어받을 수 있는 상태로 되돌린다. 입력한 측정값은 보존되며,
+// 반려와 달리 자주검사가 작업자에게 재측정으로 튕기지 않는다.
+// 서버 응답 메시지: "순회검사를 취소했습니다. 다른 검사자가 이어받을 수 있습니다."
+export async function releaseCrossCheck(crossCheckId: number): Promise<void> {
+  await http.post<ApiResponse<Record<string, never>>>(
+    `/cross-check/${crossCheckId}/release`,
+  );
+}

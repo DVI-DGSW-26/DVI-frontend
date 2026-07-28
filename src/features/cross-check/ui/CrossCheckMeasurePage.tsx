@@ -18,10 +18,12 @@ import {
 } from "../../inspection/api";
 import CrossCheckInputPhase from "./CrossCheckInputPhase";
 import {
+  useCancelCrossCheck,
   useCrossCheckDetail,
   useRejectCrossCheck,
   useSaveCrossCheckResults,
 } from "../api";
+import { toCancelErrorMessage } from "../lib/cancelError";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import { formatDate } from "../../../lib/datetime";
 
@@ -159,11 +161,15 @@ export default function CrossCheckMeasurePage() {
   const [toast, setToast] = useState<string | null>(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  // 취소 실패 사유는 모달 안에 띄운다 — 토스트는 모달 오버레이 뒤에 가려 안 보인다.
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   const uploadImage = useUploadInspectionImage();
   const ocrImage = useOcrInspectionImage();
   const saveResults = useSaveCrossCheckResults(crossCheckId);
   const rejectMut = useRejectCrossCheck(crossCheckId);
+  const cancelMut = useCancelCrossCheck();
 
   useEffect(() => {
     if (!detail || !allDone) return;
@@ -464,6 +470,26 @@ export default function CrossCheckMeasurePage() {
     }
   };
 
+  // 자주검사자(대상)를 잘못 골라 시작했을 때 — 이 순회검사의 담당을 해제(release)한다.
+  // 반려와 달리 작업자에게 재측정으로 튕기지 않고, 측정값을 유지한 채 할당 대기 목록으로
+  // 돌아가 다른 검사자가 이어받을 수 있게 된다.
+  const confirmCancel = async () => {
+    setCancelError(null);
+    try {
+      await cancelMut.mutateAsync(crossCheckId);
+      navigate("/cross-checks", { replace: true });
+    } catch (err) {
+      // 실패해도 모달은 열어둔다 — 사유를 읽고 "닫기"로 측정을 이어갈 수 있게.
+      setCancelError(toCancelErrorMessage(err));
+    }
+  };
+
+  const closeCancelModal = () => {
+    if (cancelMut.isPending) return;
+    setCancelError(null);
+    setShowCancelModal(false);
+  };
+
   const productionNg = detail.productionAppearanceResult === "NG";
 
   if (totalSteps === 0) {
@@ -554,13 +580,25 @@ export default function CrossCheckMeasurePage() {
           <span className="text-sm font-semibold text-[#212121]">
             순회검사 측정
           </span>
-          <button
-            type="button"
-            onClick={() => setShowRejectModal(true)}
-            className="h-8 rounded-md border border-[#EF4444] px-3 text-xs font-semibold text-[#EF4444] transition-colors hover:bg-[#FEF2F2]"
-          >
-            반려
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setCancelError(null);
+                setShowCancelModal(true);
+              }}
+              className="h-8 rounded-md border border-[#D1D5DB] px-3 text-xs font-semibold text-[#6B7280] transition-colors hover:bg-[#F3F4F6]"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowRejectModal(true)}
+              className="h-8 rounded-md border border-[#EF4444] px-3 text-xs font-semibold text-[#EF4444] transition-colors hover:bg-[#FEF2F2]"
+            >
+              반려
+            </button>
+          </div>
         </div>
         <InfoRow label="기계명" value={detail.equipment.name} />
         <InfoRow label="검사 차수" value={detail.typeLabel} />
@@ -767,6 +805,52 @@ export default function CrossCheckMeasurePage() {
                 className="h-11 flex-1 rounded-md bg-[#EF4444] text-sm font-semibold text-white transition-colors hover:bg-[#DC2626] disabled:bg-[#D1D5DB]"
               >
                 {rejectMut.isPending ? "처리 중..." : "반려 확정"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCancelModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center"
+          onClick={closeCancelModal}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-t-2xl bg-white p-5 sm:rounded-2xl"
+          >
+            <h3 className="text-base font-semibold text-[#212121]">
+              순회검사 취소
+            </h3>
+            <p className="mt-1 text-xs text-[#6B7280]">
+              자주검사자를 잘못 선택했나요? 취소하면 이 순회검사의 담당이 해제되어
+              다른 검사자가 이어받을 수 있습니다. 입력한 측정값은 보존되며, 반려와
+              달리 작업자에게 재측정 요청이 가지 않습니다.
+            </p>
+            {cancelError && (
+              <p className="mt-3 rounded-md bg-[#FEF2F2] px-3 py-2 text-xs font-medium text-[#B91C1C]">
+                {cancelError}
+              </p>
+            )}
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={closeCancelModal}
+                disabled={cancelMut.isPending}
+                className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-60"
+              >
+                닫기
+              </button>
+              <button
+                type="button"
+                onClick={confirmCancel}
+                disabled={cancelMut.isPending}
+                className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+              >
+                {cancelMut.isPending ? "취소 중..." : "취소 확정"}
               </button>
             </div>
           </div>
