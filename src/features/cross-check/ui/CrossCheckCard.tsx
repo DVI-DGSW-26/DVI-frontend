@@ -2,6 +2,7 @@ import { Icon } from "@iconify/react";
 import type { AssignedInspection } from "../api";
 import { isTakeoverable } from "../lib/assigned";
 import { elapsedFrom, TONE_COLOR } from "../lib/elapsed";
+import { getStage, STAGE_BADGE, STAGE_LABEL } from "../lib/stage";
 import { formatDate } from "../../../lib/datetime";
 
 interface Props {
@@ -18,6 +19,8 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
   const takeoverable = isTakeoverable(item);
   // 남이 진행 중인 IN_PROGRESS — 목록엔 보이되 시작 불가(클릭 X). 이어받기 건은 제외.
   const owned = item.status === "IN_PROGRESS" && !takeoverable;
+  // 검사 차수 — 결재 목록과 동일하게 초/중/종 배지 + 차수 라벨로 노출.
+  const stage = getStage(item.type, item.process);
 
   return (
     <button
@@ -29,7 +32,14 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
       className="flex w-full items-center gap-3 rounded-2xl bg-white px-5 py-4 text-left shadow-sm disabled:opacity-60"
     >
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {stage && (
+            <span
+              className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${STAGE_BADGE[stage]}`}
+            >
+              {STAGE_LABEL[stage]}
+            </span>
+          )}
           <span className="wrap-break-word text-base font-bold text-[#212121]">
             {item.productName}
           </span>
@@ -55,8 +65,13 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
             {item.productionName}
           </span>
         </div>
-        {item.equipmentName && (
+        {item.typeLabel && (
           <span className="mt-2 truncate text-xs text-[#A8A8A8]">
+            검사 차수: {item.typeLabel}
+          </span>
+        )}
+        {item.equipmentName && (
+          <span className="mt-1 truncate text-xs text-[#A8A8A8]">
             공정: {item.equipmentName}
           </span>
         )}
