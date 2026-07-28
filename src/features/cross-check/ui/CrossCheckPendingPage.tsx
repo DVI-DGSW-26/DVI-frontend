@@ -12,7 +12,12 @@ import type { AssignedInspection, CrossCheckSummary } from "../api";
 import { elapsedFrom } from "../lib/elapsed";
 import { countUnprocessed, isTakeoverable } from "../lib/assigned";
 import { toCancelErrorMessage } from "../lib/cancelError";
-import { needsHardnessInput } from "../lib/stage";
+import {
+  getStage,
+  needsHardnessInput,
+  STAGE_BADGE,
+  STAGE_LABEL,
+} from "../lib/stage";
 import { formatDate, formatDateTime } from "../../../lib/datetime";
 import {
   TODAY_DATE_FILTER,
@@ -595,6 +600,7 @@ function DraftResumeCard({
 }) {
   // 카드 전체가 "이어하기" 버튼이므로, 취소 버튼은 중첩(button 안 button)이 되지
   // 않도록 형제 요소로 분리하고 relative 컨테이너 위에 얹는다.
+  const stage = getStage(cc.type, cc.product.process);
   return (
     <div className="relative">
       <button
@@ -603,7 +609,14 @@ function DraftResumeCard({
         className="flex w-full items-center gap-3 rounded-2xl border border-[#931B82] bg-[#FDF7FB] px-5 py-4 pr-14 text-left shadow-sm transition-colors hover:bg-[#F3E8FF]"
       >
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {stage && (
+              <span
+                className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${STAGE_BADGE[stage]}`}
+              >
+                {STAGE_LABEL[stage]}
+              </span>
+            )}
             <span className="wrap-break-word text-base font-bold text-[#212121]">
               {cc.product.name}
             </span>
@@ -628,7 +641,10 @@ function DraftResumeCard({
             </span>
           </div>
           <span className="mt-2 block truncate text-xs text-[#A8A8A8]">
-            설비: {cc.equipment.name} · {cc.typeLabel}
+            검사 차수: {cc.typeLabel}
+          </span>
+          <span className="mt-1 block truncate text-xs text-[#A8A8A8]">
+            설비: {cc.equipment.name}
           </span>
           <span className="mt-1 block truncate text-xs text-[#A8A8A8]">
             시작일: {formatDate(cc.createdAt)}
@@ -661,6 +677,7 @@ function HistoryCard({
   onClick: () => void;
 }) {
   const badge = STATUS_BADGE[cc.status] ?? STATUS_BADGE.DRAFT;
+  const stage = getStage(cc.type, cc.product.process);
   return (
     <button
       type="button"
@@ -668,7 +685,14 @@ function HistoryCard({
       className="flex w-full items-stretch gap-4 rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm transition-colors hover:border-[#931B82] hover:bg-[#FDF7FB]"
     >
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {stage && (
+            <span
+              className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${STAGE_BADGE[stage]}`}
+            >
+              {STAGE_LABEL[stage]}
+            </span>
+          )}
           <span className="wrap-break-word text-base font-semibold text-[#212121]">
             {cc.product.name}
           </span>
