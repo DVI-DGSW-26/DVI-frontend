@@ -10,6 +10,7 @@ export {
   completeCrossCheck,
   reopenCrossCheck,
   rejectCrossCheck,
+  releaseCrossCheck,
   deleteCrossCheck,
 } from "./crossCheckApi";
 export {
@@ -26,6 +27,7 @@ export {
   useRejectCrossCheck,
   useDeleteCrossCheck,
   useDeleteCrossCheckById,
+  useCancelCrossCheck,
   crossCheckKeys,
 } from "./queries";
 export type {
