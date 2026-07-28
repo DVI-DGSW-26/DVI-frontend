@@ -60,10 +60,6 @@ const AccountApprovalPageWeb = () => {
     });
   };
 
-  const handleReject = () => {
-    alert("반려 기능은 준비 중입니다.");
-  };
-
   const list = tab === "PENDING" ? pending : completed;
 
   return (
@@ -139,16 +135,9 @@ const AccountApprovalPageWeb = () => {
                   </span>
                 </div>
 
+                {/* 반려 버튼은 두지 않는다 — 승인하지 않으면 대기 상태로 남는 것으로 충분. */}
                 {tab === "PENDING" ? (
                   <div className="flex shrink-0 gap-2">
-                    <button
-                      type="button"
-                      onClick={handleReject}
-                      disabled={processing}
-                      className="h-10 rounded-lg border border-[#E5E7EB] bg-white px-7 text-sm font-medium text-[#212121] transition-colors hover:border-[#931B82] hover:text-[#931B82] disabled:opacity-40"
-                    >
-                      반려
-                    </button>
                     <button
                       type="button"
                       onClick={() => handleApprove(u)}
