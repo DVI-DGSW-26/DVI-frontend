@@ -48,7 +48,7 @@ export default function MonitorPage() {
     [inspections, slotsByProcess],
   );
 
-  // 마지막 시점까지 끝난 줄은 한 줄짜리로 압축해 아래에 남긴다.
+  // 마지막 시점까지 끝난 줄은 한 줄짜리로 압축해 순회검사 카드 아래에 남긴다.
   const { ongoing, finished } = useMemo(() => {
     const ongoing: ProgressRow[] = [];
     const finished: ProgressRow[] = [];
@@ -124,7 +124,7 @@ export default function MonitorPage() {
       <div className="grid grid-cols-4 gap-5 px-6 pt-5 pb-4">
         <StatCard label="완료" value={totals.done} color={T.success[700]} />
         <StatCard label="진행중" value={totals.active} color={T.primary[500]} />
-        <StatCard label="건너뜀" value={totals.skipped} color={T.inkSub} />
+        <StatCard label="모델교환" value={totals.skipped} color={T.inkSub} />
         <StatCard
           label="남은 시점"
           value={totals.remaining}
@@ -155,9 +155,6 @@ export default function MonitorPage() {
               <Empty text="오늘 등록된 검사가 없습니다" />
             )}
           </div>
-          {finished.length > 0 && (
-            <FinishedStrip rows={finished} online={online} />
-          )}
         </Card>
 
         <Card>
@@ -183,6 +180,9 @@ export default function MonitorPage() {
               <Empty text="진행중인 순회검사가 없습니다" />
             )}
           </div>
+          {finished.length > 0 && (
+            <FinishedStrip rows={finished} online={online} />
+          )}
         </Card>
       </main>
     </div>
@@ -389,7 +389,7 @@ const CELL_STYLE: Record<
     bg: T.neutral.border,
     fg: "#5B5B5B",
     mark: "⊘",
-    name: "건너뜀",
+    name: "모델교환",
   },
   INCOMPLETE: {
     bg: T.warning[700],
@@ -440,8 +440,8 @@ function Legend() {
 }
 
 /**
- * 오늘치를 끝낸 줄 — 한 줄짜리로 압축해 카드 아래에 남긴다.
- * 전부 건너뛴 줄을 "완료"로 오인하지 않도록 완료·건너뜀을 따로 센다.
+ * 오늘치를 끝낸 줄 — 한 줄짜리로 압축해 순회검사 카드 아래에 남긴다.
+ * 전부 건너뛴 줄을 "완료"로 오인하지 않도록 완료·모델교환을 따로 센다.
  */
 function FinishedStrip({
   rows,
@@ -470,7 +470,7 @@ function FinishedStrip({
               backgroundColor: T.neutral.white,
               border: `1px solid ${T.neutral.border}`,
             }}
-            title={`${r.productName} · ${r.equipmentName} — 완료 ${r.completed}, 건너뜀 ${r.skipped}`}
+            title={`${r.productName} · ${r.equipmentName} — 완료 ${r.completed}, 모델교환 ${r.skipped}`}
           >
             <span
               aria-hidden
