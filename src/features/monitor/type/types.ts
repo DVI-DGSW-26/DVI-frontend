@@ -23,7 +23,13 @@ export type MonitorCrossCheckStatus = "DRAFT" | "PENDING_APPROVAL" | "REJECTED";
 
 export interface MonitorCrossCheck {
   crossCheckId: number;
+  /** 대상 자주검사 id — 진행도 줄의 어느 칸인지 이걸로 정확히 맞춘다. */
+  inspectionId: number;
   status: MonitorCrossCheckStatus;
+  /** 슬롯 코드 (DAY_1 등). slotLabel 이 없을 때 대신 표시. */
+  type: string;
+  /** 표시용 슬롯 라벨 — "초/중/종" 또는 "08:00". null 이면 type 으로 표시. */
+  slotLabel: string | null;
   productName: string;
   equipmentName: string;
   checkerName: string;
