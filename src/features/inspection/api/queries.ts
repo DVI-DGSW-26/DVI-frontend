@@ -228,6 +228,23 @@ export function useTerminateInspection(inspectionId: number) {
   });
 }
 
+// 목록에서 여러 검사 중 하나를 골라 마감하는 호출부용 — 훅을 만들 때는 대상 id 를
+// 모르므로 mutate 시점에 함께 넘긴다. 갱신 대상은 useTerminateInspection 과 같다.
+export function useTerminateInspectionById() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      inspectionId,
+      ...body
+    }: TerminateRequest & { inspectionId: number }) =>
+      terminateInspection(inspectionId, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: myInspectionKeys.all });
+      qc.invalidateQueries({ queryKey: reportKeys.all });
+    },
+  });
+}
+
 // 종결된 자주검사를 DRAFT 로 복귀. 측정값/사진은 보존, status 만 변경.
 // 호출 후 detail/list 모두 invalidate — 홈/리스트에서 status 표시 즉시 갱신.
 export function useReopenInspection() {

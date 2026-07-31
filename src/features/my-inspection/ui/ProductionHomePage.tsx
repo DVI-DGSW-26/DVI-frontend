@@ -9,11 +9,14 @@ import {
   useSkipInspection,
   useSlotSequences,
   useStartNextInspection,
+  useTerminateInspectionById,
 } from "../../inspection/api";
 import type {
+  ApiErrorData,
   InspectionProcess,
   StartNextInspectionErrorData,
 } from "../../inspection/type/types";
+import { isTerminableInspection } from "../../inspection/lib/process";
 import { useMyInspectionOrders } from "../../inspection-orders/api";
 import type { InspectionOrder } from "../../inspection-orders/api";
 import type { MyInspection } from "../type/types";
@@ -30,6 +33,7 @@ import {
 import { formatDate } from "../../../lib/datetime";
 import LatestCompletedCard from "./LatestCompletedCard";
 import SkipModal from "../../inspection/ui/SkipModal";
+import TerminateInspectionModal from "../../inspection/ui/TerminateInspectionModal";
 import Toast from "../../inspection/ui/Toast";
 
 // 건너뛰기 모달 대상 — latestDraft(DRAFT 인 검사 자체 건너뛰기) 와
@@ -55,10 +59,15 @@ export default function ProductionHomePage() {
   const skipMutation = useSkipInspection();
   const deleteMutation = useDeleteInspection();
   const reopenMutation = useReopenInspection();
+  const terminateMutation = useTerminateInspectionById();
   const [toast, setToast] = useState<string | null>(null);
   const [pendingPrevId, setPendingPrevId] = useState<number | null>(null);
   const [pendingReopenId, setPendingReopenId] = useState<number | null>(null);
   const [skipTarget, setSkipTarget] = useState<SkipTarget | null>(null);
+  // 조기 마감 확인 모달의 대상 검사. 진행중 목록과 "이어서 할 일" 목록이 공유한다.
+  const [terminateTarget, setTerminateTarget] = useState<MyInspection | null>(
+    null,
+  );
 
   const inspections = useMemo(
     () => inspectionsQuery.data ?? [],
@@ -89,10 +98,14 @@ export default function ProductionHomePage() {
     });
   };
 
-  const latestDraft: MyInspection | undefined = useMemo(
-    () => inspections.find((i) => i.status === "DRAFT"),
+  // 진행중(DRAFT) 검사 — 상단 카드는 그중 1건을 바로 잇기 위한 지름길이고,
+  // 아래 목록은 여러 건을 각각 이어하거나 마감하기 위한 전체 목록이다.
+  const draftInspections = useMemo(
+    () => inspections.filter((i) => i.status === "DRAFT"),
     [inspections],
   );
+
+  const latestDraft: MyInspection | undefined = draftInspections[0];
 
   // 검토 대기 중인 미완료 검사들 (생산자가 후속 조치 필요).
   const incompleteInspections = useMemo(
@@ -217,6 +230,26 @@ export default function ProductionHomePage() {
     }
   };
 
+  // 금형 교체 등으로 그 차수까지 묶어 마감 — 보고서가 즉시 발행되고 재검사용 새 초품이
+  // 생성되므로, 측정 화면에서 마감했을 때와 같이 그 새 초품으로 넘겨준다.
+  const handleTerminateConfirm = async (reason: string) => {
+    if (!terminateTarget) return;
+    const target = terminateTarget;
+    try {
+      const fresh = await terminateMutation.mutateAsync({
+        inspectionId: target.inspectionId,
+        ...(reason ? { reason } : {}),
+      });
+      setTerminateTarget(null);
+      navigate(`/inspection/${fresh.inspectionId}/measure`, {
+        state: { terminatedNotice: true },
+      });
+    } catch (err) {
+      setTerminateTarget(null);
+      setToast(terminateErrorMessage(err));
+    }
+  };
+
   const handleStartNext = async (previous: MyInspection) => {
     setPendingPrevId(previous.inspectionId);
     try {
@@ -338,6 +371,54 @@ export default function ProductionHomePage() {
           </button>
         )}
       </div>
+
+      {/* 진행중 검사 — 이어서 하거나, 금형 교체 등으로 여기서 바로 마감한다. */}
+      {draftInspections.length > 0 && (
+        <section className="px-4 pt-6">
+          <div className="mb-2 flex items-baseline justify-between">
+            <h2 className="text-sm font-semibold text-[#212121]">진행중 검사</h2>
+            <span className="text-xs font-medium text-[#931B82]">
+              {draftInspections.length}건
+            </span>
+          </div>
+
+          <ul className="flex flex-col gap-2">
+            {draftInspections.map((i) => (
+              <li
+                key={i.inspectionId}
+                className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm"
+              >
+                <div className="min-w-0">
+                  <div className="wrap-break-word text-sm font-semibold text-[#212121]">
+                    {i.product.name}
+                  </div>
+                  <div className="mt-0.5 truncate text-xs text-[#6B7280]">
+                    {i.equipment.name} · {i.typeLabel || i.type}
+                  </div>
+                  {i.createdAt && (
+                    <div className="mt-0.5 truncate text-xs text-[#A8A8A8]">
+                      시작일: {formatDate(i.createdAt)}
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleResume(i)}
+                  className="mt-3 h-10 w-full rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D]"
+                >
+                  이어서 하기
+                </button>
+                {isTerminableInspection(i) && (
+                  <TerminateButton
+                    onClick={() => setTerminateTarget(i)}
+                    disabled={terminateMutation.isPending}
+                  />
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* 오늘 배정된 검사 지시 — 탭하면 시점 선택 후 검사 시작. */}
       {todaysOrders.length > 0 && (
@@ -479,6 +560,12 @@ export default function ProductionHomePage() {
                       건너뛰기
                     </button>
                   </div>
+                  {isTerminableInspection(previous) && (
+                    <TerminateButton
+                      onClick={() => setTerminateTarget(previous)}
+                      disabled={terminateMutation.isPending}
+                    />
+                  )}
                 </li>
               );
             })}
@@ -598,8 +685,58 @@ export default function ProductionHomePage() {
         onConfirm={handleSkipConfirm}
       />
 
+      {/* 대상이 바뀌면 새로 마운트해 앞 검사에 쓰던 사유가 남지 않게 한다. */}
+      <TerminateInspectionModal
+        key={terminateTarget?.inspectionId ?? "none"}
+        open={!!terminateTarget}
+        isSubmitting={terminateMutation.isPending}
+        onCancel={() => {
+          if (terminateMutation.isPending) return;
+          setTerminateTarget(null);
+        }}
+        onConfirm={handleTerminateConfirm}
+      />
+
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
+  );
+}
+
+// 마감은 진행중(DRAFT)인 본인 검사에만 허용된다 — 서버가 거부한 이유를 그대로 알린다.
+function terminateErrorMessage(err: unknown): string {
+  const fallback = "마감하지 못했습니다.";
+  if (!(err instanceof AxiosError)) return fallback;
+  const data = err.response?.data as ApiErrorData | undefined;
+  switch (data?.code) {
+    case "INSPECTION_ALREADY_FINISHED":
+      return "이미 끝난 차수는 마감할 수 없습니다. 진행중인 검사에서 마감해주세요.";
+    case "NOT_ASSIGNED_PRODUCTION":
+      return "본인이 맡은 검사만 마감할 수 있습니다.";
+    default:
+      return data?.message ?? fallback;
+  }
+}
+
+/**
+ * 조기 마감 버튼 — 되돌릴 수 없고 보고서가 즉시 나가므로 주 동작(이어하기·다음 시점)과
+ * 같은 줄에 두지 않고 아래에 따로 둔다.
+ */
+function TerminateButton({
+  onClick,
+  disabled,
+}: {
+  onClick: () => void;
+  disabled: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="mt-2 h-10 w-full rounded-md border border-[#B45309] bg-white text-sm font-medium text-[#B45309] transition-colors hover:bg-[#FFFBEB] disabled:opacity-50"
+    >
+      품질 문제로 마감
+    </button>
   );
 }
 

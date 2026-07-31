@@ -25,6 +25,7 @@ export {
   useCompleteInspection,
   useIncompleteInspection,
   useTerminateInspection,
+  useTerminateInspectionById,
   useReopenInspection,
   inspectionKeys,
 } from "./queries";
