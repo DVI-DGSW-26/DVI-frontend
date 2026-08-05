@@ -4,42 +4,52 @@ import { Icon } from "@iconify/react";
 import { AxiosError } from "axios";
 import { useAuth } from "../AuthContext";
 import { ROLE_HOME, ROLE_LABEL } from "../constants";
-import type { StoredAccount } from "../api";
+import { SWITCHABLE_ACCOUNTS } from "../switchableAccounts";
+import type { SwitchableAccount } from "../switchableAccounts";
 
 interface Props {
-  /** 전환/계정 추가로 화면을 떠날 때 호출 — 헤더 팝오버 닫기 용도. */
+  /** 전환으로 화면을 떠날 때 호출 — 헤더 팝오버 닫기 용도. */
   onDone?: () => void;
 }
 
 export default function AccountSwitcher({ onDone }: Props) {
-  const { user, accounts, switchAccount, removeAccount } = useAuth();
+  const { user, accounts, switchAccount, login } = useAuth();
   const navigate = useNavigate();
   const [busyLoginId, setBusyLoginId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const activeLoginId = user?.loginId ?? null;
-  // 현재 계정을 항상 맨 위에.
-  const ordered = [...accounts].sort((a, b) => {
-    if (a.loginId === activeLoginId) return -1;
-    if (b.loginId === activeLoginId) return 1;
-    return a.name.localeCompare(b.name);
-  });
 
-  const handleSwitch = async (account: StoredAccount) => {
-    if (account.loginId === activeLoginId || busyLoginId) return;
+  const handleSwitch = async (target: SwitchableAccount) => {
+    if (target.loginId === activeLoginId || busyLoginId) return;
     setError(null);
-    setBusyLoginId(account.loginId);
+    setBusyLoginId(target.loginId);
+    const credentials = {
+      loginId: target.loginId,
+      password: target.password,
+    };
+    const saved = accounts.some((a) => a.loginId === target.loginId);
     try {
-      const me = await switchAccount(account.loginId);
+      let me;
+      if (saved) {
+        try {
+          // 저장된 토큰으로 즉시 전환 (네트워크 로그인 없음).
+          me = await switchAccount(target.loginId);
+        } catch {
+          // 토큰이 만료됐으면 자격증명으로 조용히 다시 로그인한다.
+          me = await login(credentials);
+        }
+      } else {
+        me = await login(credentials);
+      }
       onDone?.();
       navigate(ROLE_HOME[me.role] ?? "/", { replace: true });
     } catch (err) {
-      const expired =
-        err instanceof AxiosError &&
-        (err.response?.status === 401 || err.response?.status === 403);
+      const badCredentials =
+        err instanceof AxiosError && err.response?.status === 401;
       setError(
-        expired
-          ? `${account.name} 계정의 로그인이 만료됐습니다. 다시 로그인해주세요.`
+        badCredentials
+          ? `${target.label}(${target.loginId}) 계정 정보가 서버와 맞지 않습니다.`
           : "계정 전환에 실패했습니다. 잠시 후 다시 시도해주세요.",
       );
     } finally {
@@ -47,25 +57,24 @@ export default function AccountSwitcher({ onDone }: Props) {
     }
   };
 
-  const handleAdd = () => {
-    onDone?.();
-    navigate("/login", { state: { addAccount: true } });
-  };
-
   return (
     <div className="flex flex-col">
       <ul className="divide-y divide-gray-100">
-        {ordered.map((account) => {
-          const isActive = account.loginId === activeLoginId;
-          const isBusy = busyLoginId === account.loginId;
+        {SWITCHABLE_ACCOUNTS.map((target) => {
+          const isActive = target.loginId === activeLoginId;
+          const isBusy = busyLoginId === target.loginId;
+          // 한 번이라도 로그인했다면 서버가 준 실제 이름을 쓴다.
+          const name =
+            accounts.find((a) => a.loginId === target.loginId)?.name ??
+            target.label;
           return (
-            <li key={account.loginId} className="flex items-center">
+            <li key={target.loginId}>
               <button
                 type="button"
-                onClick={() => handleSwitch(account)}
+                onClick={() => handleSwitch(target)}
                 disabled={isActive || busyLoginId !== null}
                 aria-current={isActive ? "true" : undefined}
-                className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left transition-colors enabled:hover:bg-[#FAF5FB] disabled:cursor-default"
+                className="flex w-full min-w-0 items-center gap-3 px-4 py-3 text-left transition-colors enabled:hover:bg-[#FAF5FB] disabled:cursor-default"
               >
                 <span
                   className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
@@ -74,14 +83,19 @@ export default function AccountSwitcher({ onDone }: Props) {
                       : "bg-[#F3F4F6] text-[#6B7280]"
                   }`}
                 >
-                  {account.name?.[0] ?? "?"}
+                  {name?.[0] ?? "?"}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-[#212121]">
-                    {account.name}
+                    {name}
+                    {target.note && (
+                      <span className="ml-1 text-xs font-normal text-[#6B7280]">
+                        ({target.note})
+                      </span>
+                    )}
                   </span>
                   <span className="block truncate text-xs text-[#6B7280]">
-                    {ROLE_LABEL[account.role]} · {account.loginId}
+                    {ROLE_LABEL[target.role]} · {target.loginId}
                   </span>
                 </span>
                 {isBusy ? (
@@ -100,17 +114,6 @@ export default function AccountSwitcher({ onDone }: Props) {
                   />
                 ) : null}
               </button>
-              {!isActive && (
-                <button
-                  type="button"
-                  onClick={() => removeAccount(account.loginId)}
-                  disabled={busyLoginId !== null}
-                  aria-label={`${account.name} 계정 제거`}
-                  className="mr-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[#9CA3AF] transition-colors hover:bg-[#F3F4F6] hover:text-[#6B7280]"
-                >
-                  <Icon icon="mdi:close" width={16} height={16} />
-                </button>
-              )}
             </li>
           );
         })}
@@ -121,20 +124,6 @@ export default function AccountSwitcher({ onDone }: Props) {
           {error}
         </p>
       )}
-
-      <button
-        type="button"
-        onClick={handleAdd}
-        disabled={busyLoginId !== null}
-        className="flex items-center gap-3 border-t border-gray-100 px-4 py-3 text-left transition-colors hover:bg-[#FAF5FB]"
-      >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-dashed border-[#D1D5DB] text-[#6B7280]">
-          <Icon icon="mdi:plus" width={18} height={18} />
-        </span>
-        <span className="text-sm font-medium text-[#931B82]">
-          다른 계정 추가
-        </span>
-      </button>
     </div>
   );
 }
