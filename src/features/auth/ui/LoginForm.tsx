@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { Icon } from "@iconify/react";
+import { useNavigate } from "react-router-dom";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import { AuthError } from "../api";
 import { useAuth } from "../AuthContext";
@@ -24,14 +23,7 @@ export default function Login() {
 
   const isMobile = useMediaQuery("(max-width: 767px)");
   const navigate = useNavigate();
-  const location = useLocation();
-  const { login, user } = useAuth();
-
-  // 계정 전환의 "다른 계정 추가"로 들어온 경우 — 아직 기존 계정으로 로그인된
-  // 상태이므로, 잘못 눌렀을 때 되돌아갈 수 있어야 한다.
-  const isAddingAccount =
-    (location.state as { addAccount?: boolean } | null)?.addAccount === true &&
-    user !== null;
+  const { login } = useAuth();
 
   const handleSubmit = async (keepLoggedIn: boolean) => {
     try {
@@ -61,19 +53,5 @@ export default function Login() {
     onSubmit: handleSubmit,
   };
 
-  return (
-    <>
-      {isAddingAccount && (
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="fixed left-4 top-4 z-10 flex items-center gap-1 rounded-md px-2 py-1 text-sm text-[#6B7280] transition-colors hover:bg-[#F3F4F6]"
-        >
-          <Icon icon="solar:alt-arrow-left-linear" width={18} height={18} />
-          {user?.name} 계정으로 돌아가기
-        </button>
-      )}
-      {isMobile ? <LoginFormMobile {...props} /> : <LoginFormWeb {...props} />}
-    </>
-  );
+  return isMobile ? <LoginFormMobile {...props} /> : <LoginFormWeb {...props} />;
 }
