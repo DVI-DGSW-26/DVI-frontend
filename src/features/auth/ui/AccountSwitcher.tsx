@@ -88,11 +88,6 @@ export default function AccountSwitcher({ onDone }: Props) {
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-[#212121]">
                     {name}
-                    {target.note && (
-                      <span className="ml-1 text-xs font-normal text-[#6B7280]">
-                        ({target.note})
-                      </span>
-                    )}
                   </span>
                   <span className="block truncate text-xs text-[#6B7280]">
                     {ROLE_LABEL[target.role]} · {target.loginId}

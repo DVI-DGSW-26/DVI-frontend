@@ -13,11 +13,9 @@ import type { Role } from "./api";
 export interface SwitchableAccount {
   loginId: string;
   password: string;
-  /** 아직 한 번도 로그인한 적 없어 서버 이름을 모를 때 보여줄 라벨. */
+  /** 아직 한 번도 로그인한 적 없어 서버 이름을 모를 때 보여줄 라벨(= 서버상 이름). */
   label: string;
   role: Role;
-  /** 같은 역할이 여러 개일 때 구분용 (생산 관리자 ST/AL). */
-  note?: string;
 }
 
 export const SWITCHABLE_ACCOUNTS: SwitchableAccount[] = [
@@ -30,33 +28,31 @@ export const SWITCHABLE_ACCOUNTS: SwitchableAccount[] = [
   {
     loginId: "quality_admin",
     password: "quality_admin",
-    label: "품질관리자",
+    label: "퀄리티어드민",
     role: "QUALITY_ADMIN",
   },
   {
     loginId: "production1",
     password: "production1",
-    label: "생산자",
+    label: "김생산",
     role: "PRODUCTION",
   },
   {
     loginId: "quality1",
     password: "quality1",
-    label: "품질 담당자",
+    label: "김품질",
     role: "QUALITY",
   },
   {
     loginId: "pro_s",
     password: "1234",
-    label: "생산 관리자",
+    label: "생산관리 ST",
     role: "PRODUCTION_MANAGER",
-    note: "ST",
   },
   {
     loginId: "pro_a",
     password: "1234",
-    label: "생산 관리자",
+    label: "생산관리 AL",
     role: "PRODUCTION_MANAGER",
-    note: "AL",
   },
 ];
