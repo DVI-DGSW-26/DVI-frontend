@@ -4,16 +4,10 @@ import { Icon } from "@iconify/react";
 import { AxiosError } from "axios";
 import { useAuth } from "../AuthContext";
 import { changeMyPassword } from "../api";
-import type { Role, UserStatus } from "../api";
+import type { UserStatus } from "../api";
+import { canSwitchAccounts, ROLE_LABEL } from "../constants";
+import AccountSwitcher from "./AccountSwitcher";
 import Toast from "../../inspection/ui/Toast";
-
-const ROLE_LABEL: Record<Role, string> = {
-  ADMIN: "통합 관리자",
-  QUALITY_ADMIN: "품질 관리자",
-  PRODUCTION: "생산자",
-  PRODUCTION_MANAGER: "생산 관리자",
-  QUALITY: "품질 담당자",
-};
 
 const STATUS_LABEL: Record<UserStatus, string> = {
   ACTIVE: "활성",
@@ -28,14 +22,22 @@ const STATUS_STYLE: Record<UserStatus, string> = {
 };
 
 export default function MyPage() {
-  const { user, logout } = useAuth();
+  const { user, accounts, logout } = useAuth();
   const navigate = useNavigate();
 
   const [pwOpen, setPwOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
+  const showSwitcher = canSwitchAccounts(user, accounts);
+
   const handleLogout = () => {
-    if (!window.confirm("로그아웃 하시겠습니까?")) return;
+    // 로그아웃은 이 기기에 저장된 계정을 전부 해제한다. 전환용으로 남겨둔 다른
+    // 계정만 살아남으면 그 세션으로 몰래 들어갈 수 있으므로 함께 정리한다.
+    const message =
+      accounts.length > 1
+        ? `로그아웃 하시겠습니까?\n저장된 ${accounts.length}개 계정이 모두 해제됩니다.`
+        : "로그아웃 하시겠습니까?";
+    if (!window.confirm(message)) return;
     logout();
     navigate("/login", { replace: true });
   };
@@ -112,6 +114,15 @@ export default function MyPage() {
           />
         )}
       </section>
+
+      {showSwitcher && (
+        <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+          <h2 className="border-b border-gray-100 px-5 py-3 text-sm font-semibold text-[#212121]">
+            계정 전환
+          </h2>
+          <AccountSwitcher />
+        </section>
+      )}
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5">
         <button

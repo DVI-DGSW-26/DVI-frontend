@@ -2,6 +2,7 @@ import { NavLink, Link } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import Logo from "../../assets/Logo.svg";
 import { useAuth } from "../../features/auth/AuthContext";
+import { ROLE_HOME } from "../../features/auth/constants";
 import type { Role } from "../../features/auth/api";
 
 type TabItem = {
@@ -26,14 +27,6 @@ const TABS: TabItem[] = [
   { label: "내 검사지시", to: "/my-orders", icon: "mdi:clipboard-list-outline", roles: ["PRODUCTION"] },
   { label: "마이페이지", to: "/my-page", icon: "mdi:account-circle", roles: ["ADMIN", "QUALITY_ADMIN", "PRODUCTION", "PRODUCTION_MANAGER", "QUALITY"] },
 ];
-
-const ROLE_HOME: Record<Role, string> = {
-  ADMIN: "/dashboard",
-  QUALITY_ADMIN: "/approval-management",
-  PRODUCTION: "/",
-  PRODUCTION_MANAGER: "/inspection-orders",
-  QUALITY: "/",
-};
 
 const TabBarWeb = () => {
   const { user } = useAuth();
