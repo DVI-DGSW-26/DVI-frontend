@@ -7,16 +7,24 @@ import {
   type ReactNode,
 } from "react";
 import { AxiosError } from "axios";
-import { getMe, login as loginApi, tokenStorage } from "./api";
-import type { LoginRequest, User } from "./api";
+import { useQueryClient } from "@tanstack/react-query";
+import { accountStorage, getMe, login as loginApi, tokenStorage } from "./api";
+import type { LoginRequest, StoredAccount, User } from "./api";
 
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
+  // 이 기기에 저장된 계정 목록 (계정 전환용). 현재 계정도 포함된다.
+  accounts: StoredAccount[];
   // persist=true (기본): localStorage 에 token 저장 (브라우저 종료 후에도 유지)
   // persist=false: sessionStorage 에 저장 (브라우저 종료 시 자동 로그아웃)
   login: (body: LoginRequest, persist?: boolean) => Promise<User>;
+  // 이 기기에서 완전히 로그아웃 — 저장된 계정 전부 해제.
   logout: () => void;
+  // 저장된 계정으로 비밀번호 없이 전환. 토큰이 만료됐으면 throw 하고 원래 계정으로 복귀.
+  switchAccount: (loginId: string) => Promise<User>;
+  // 저장 목록에서 계정 제거 (현재 로그인된 계정은 제거 불가 — 로그아웃을 쓴다).
+  removeAccount: (loginId: string) => void;
   refresh: () => Promise<void>;
 }
 
@@ -24,17 +32,25 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [accounts, setAccounts] = useState<StoredAccount[]>(() =>
+    accountStorage.list(),
+  );
   const [loading, setLoading] = useState<boolean>(
     () => tokenStorage.getAccess() !== null,
   );
+  const queryClient = useQueryClient();
 
   const refresh = useCallback(async () => {
     if (!tokenStorage.getAccess()) {
       setUser(null);
+      setAccounts(accountStorage.list());
       return;
     }
     try {
-      setUser(await getMe());
+      const me = await getMe();
+      // 저장된 계정의 이름/역할/토큰을 최신 상태로 유지한다.
+      accountStorage.upsert(me);
+      setUser(me);
     } catch (err) {
       // 401(인증 실패)일 때만 세션을 폐기한다. 재발급까지 실패한 진짜 만료
       // 상황이다. 네트워크·서버 일시 오류(타임아웃/5xx/CORS)로 getMe 가 실패한
@@ -44,6 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         tokenStorage.clear();
         setUser(null);
       }
+    } finally {
+      setAccounts(accountStorage.list());
     }
   }, []);
 
@@ -59,21 +77,72 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           "로그인 응답에 accessToken 이 없습니다. 백엔드 응답 형태를 확인해주세요.",
         );
       }
+      // 아직 누구로 로그인했는지 모르는 구간 — 활성 포인터를 비워야 save() 가
+      // "직전 계정"의 저장된 토큰을 새 토큰으로 덮어쓰지 않는다.
+      accountStorage.clearActive();
       tokenStorage.save(tokens, persist);
       const me = await getMe();
+      accountStorage.upsert(me);
+      // 이전 사용자로 받아둔 캐시가 새 계정 화면에 그대로 뜨는 것을 막는다.
+      queryClient.clear();
       setUser(me);
+      setAccounts(accountStorage.list());
       return me;
     },
-    [],
+    [queryClient],
   );
 
-  const logout = useCallback(() => {
-    tokenStorage.clear();
-    setUser(null);
+  const switchAccount = useCallback(
+    async (loginId: string) => {
+      const previous = accountStorage.activeLoginId();
+      if (!accountStorage.activate(loginId)) {
+        throw new Error("저장된 계정이 아닙니다.");
+      }
+      try {
+        const me = await getMe();
+        accountStorage.upsert(me);
+        // 역할마다 보이는 데이터가 다르므로 이전 계정의 캐시는 통째로 버린다.
+        queryClient.clear();
+        setUser(me);
+        setAccounts(accountStorage.list());
+        return me;
+      } catch (err) {
+        // 전환 실패 — 토큰 만료(재발급까지 실패)거나 일시적 서버 오류.
+        // 어느 쪽이든 직전 계정으로 되돌려 사용자를 로그인 화면에 버리지 않는다.
+        if (previous) accountStorage.activate(previous);
+        setAccounts(accountStorage.list());
+        throw err;
+      }
+    },
+    [queryClient],
+  );
+
+  const removeAccount = useCallback((loginId: string) => {
+    if (accountStorage.activeLoginId() === loginId) return;
+    accountStorage.remove(loginId);
+    setAccounts(accountStorage.list());
   }, []);
 
+  const logout = useCallback(() => {
+    tokenStorage.clearAll();
+    queryClient.clear();
+    setUser(null);
+    setAccounts([]);
+  }, [queryClient]);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refresh }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        accounts,
+        login,
+        logout,
+        switchAccount,
+        removeAccount,
+        refresh,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
