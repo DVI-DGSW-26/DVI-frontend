@@ -16,15 +16,14 @@ interface AuthContextValue {
   loading: boolean;
   // 이 기기에 저장된 계정 목록 (계정 전환용). 현재 계정도 포함된다.
   accounts: StoredAccount[];
-  // persist=true (기본): localStorage 에 token 저장 (브라우저 종료 후에도 유지)
+  // persist=true: localStorage 에 token 저장 (브라우저 종료 후에도 유지)
   // persist=false: sessionStorage 에 저장 (브라우저 종료 시 자동 로그아웃)
+  // 미지정: 직전 로그인에서 고른 설정을 그대로 유지 (계정 전환용)
   login: (body: LoginRequest, persist?: boolean) => Promise<User>;
   // 이 기기에서 완전히 로그아웃 — 저장된 계정 전부 해제.
   logout: () => void;
   // 저장된 계정으로 비밀번호 없이 전환. 토큰이 만료됐으면 throw 하고 원래 계정으로 복귀.
   switchAccount: (loginId: string) => Promise<User>;
-  // 저장 목록에서 계정 제거 (현재 로그인된 계정은 제거 불가 — 로그아웃을 쓴다).
-  removeAccount: (loginId: string) => void;
   refresh: () => Promise<void>;
 }
 
@@ -70,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   const login = useCallback(
-    async (body: LoginRequest, persist: boolean = true) => {
+    async (body: LoginRequest, persist?: boolean) => {
       const tokens = await loginApi(body);
       if (!tokens?.accessToken) {
         throw new Error(
@@ -117,12 +116,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [queryClient],
   );
 
-  const removeAccount = useCallback((loginId: string) => {
-    if (accountStorage.activeLoginId() === loginId) return;
-    accountStorage.remove(loginId);
-    setAccounts(accountStorage.list());
-  }, []);
-
   const logout = useCallback(() => {
     tokenStorage.clearAll();
     queryClient.clear();
@@ -139,7 +132,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         switchAccount,
-        removeAccount,
         refresh,
       }}
     >

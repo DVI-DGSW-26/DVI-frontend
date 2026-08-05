@@ -194,10 +194,6 @@ export const accountStorage = {
     writeAccounts([...rest, entry]);
     writeRaw(ACTIVE_KEY, user.loginId, primaryStorage());
   },
-  remove(loginId: string) {
-    writeAccounts(readAccounts().filter((a) => a.loginId !== loginId));
-    if (readRaw(ACTIVE_KEY) === loginId) removeRaw(ACTIVE_KEY);
-  },
   /**
    * 저장된 계정의 토큰을 현재 세션으로 올린다. 계정이 없으면 false.
    * 실제 사용자 정보는 호출부에서 getMe 로 확인한다(토큰이 만료됐을 수 있으므로).
