@@ -28,8 +28,8 @@ export const SWITCHABLE_ACCOUNTS: SwitchableAccount[] = [
     role: "ADMIN",
   },
   {
-    loginId: "quality-admin",
-    password: "quality-admin",
+    loginId: "quality_admin",
+    password: "quality_admin",
     label: "품질관리자",
     role: "QUALITY_ADMIN",
   },
