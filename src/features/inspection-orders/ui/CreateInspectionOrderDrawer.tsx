@@ -9,6 +9,7 @@ import {
   useUsersByRole,
 } from "../api";
 import type { InspectionOrder } from "../api";
+import { orderWorkers } from "../lib/orderWorkers";
 import { useAuth } from "../../auth/AuthContext";
 import type { User, WorkType } from "../../auth/type/types";
 
@@ -53,7 +54,8 @@ export default function CreateInspectionOrderDrawer({
   const [targetDate, setTargetDate] = useState(todayISO);
   const [equipmentId, setEquipmentId] = useState<number | "">("");
   const [productId, setProductId] = useState<number | "">("");
-  const [productionId, setProductionId] = useState<number | "">("");
+  // 공동 작업자 — 인원 제한 없이 여러 명 배정 가능(1명이어도 배열로 보낸다).
+  const [workerIds, setWorkerIds] = useState<number[]>([]);
 
   // 드로어가 열릴 때(등록/수정 대상이 바뀔 때) 폼을 초기화한다.
   // effect 가 아니라 "렌더 중 state 조정" 패턴 — 열자마자 빈 폼을 한 번 그린 뒤
@@ -66,7 +68,7 @@ export default function CreateInspectionOrderDrawer({
       setTargetDate(order ? order.targetDate : todayISO());
       setEquipmentId(order ? order.equipment.id : "");
       setProductId(order ? order.product.id : "");
-      setProductionId(order ? order.production.id : "");
+      setWorkerIds(order ? orderWorkers(order).map((w) => w.id) : []);
     }
   }
 
@@ -108,15 +110,21 @@ export default function CreateInspectionOrderDrawer({
   const assignableWorkers =
     managerWorkType && workersHaveWorkType
       ? productionUsers.filter(
-          (u) => u.workType === managerWorkType || u.id === productionId,
+          (u) => u.workType === managerWorkType || workerIds.includes(u.id),
         )
       : productionUsers;
+
+  const toggleWorker = (id: number) => {
+    setWorkerIds((prev) =>
+      prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id],
+    );
+  };
 
   const canSubmit =
     !!targetDate &&
     equipmentId !== "" &&
     productId !== "" &&
-    productionId !== "" &&
+    workerIds.length > 0 &&
     !isPending;
 
   const handleSubmit = (e: { preventDefault: () => void }) => {
@@ -125,7 +133,7 @@ export default function CreateInspectionOrderDrawer({
     const body = {
       productId: productId as number,
       equipmentId: equipmentId as number,
-      productionId: productionId as number,
+      workerIds,
       targetDate,
     };
     const handlers = {
@@ -261,29 +269,56 @@ export default function CreateInspectionOrderDrawer({
             </select>
           </label>
 
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[#212121]">
+          <fieldset className="flex flex-col gap-1.5">
+            <legend className="text-sm font-medium text-[#212121]">
               자주검사 작업자 (생산부)
-            </span>
-            <select
-              value={productionId}
-              onChange={(e) =>
-                setProductionId(e.target.value === "" ? "" : Number(e.target.value))
-              }
-              required
-              disabled={loadingProduction}
-              className="h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none disabled:bg-gray-50"
-            >
-              <option value="">
-                {loadingProduction ? "불러오는 중..." : "작업자를 선택하세요"}
-              </option>
-              {assignableWorkers.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name} ({u.loginId})
-                </option>
-              ))}
-            </select>
-          </label>
+            </legend>
+            <p className="text-xs text-[#6B7280]">
+              공동 작업자는 여러 명 선택할 수 있습니다.
+              {workerIds.length > 0 && (
+                <span className="ml-1 font-medium text-[#931B82]">
+                  {workerIds.length}명 선택됨
+                </span>
+              )}
+            </p>
+            <div className="max-h-56 overflow-y-auto rounded-lg border border-gray-300">
+              {loadingProduction ? (
+                <p className="px-3 py-4 text-sm text-[#A8A8A8]">불러오는 중...</p>
+              ) : assignableWorkers.length === 0 ? (
+                <p className="px-3 py-4 text-sm text-[#A8A8A8]">
+                  배정 가능한 작업자가 없습니다.
+                </p>
+              ) : (
+                <ul className="divide-y divide-gray-100">
+                  {assignableWorkers.map((u) => {
+                    const checked = workerIds.includes(u.id);
+                    return (
+                      <li key={u.id}>
+                        <label
+                          className={`flex cursor-pointer items-center gap-3 px-3 py-2.5 text-sm transition-colors hover:bg-[#FAF5FB] ${
+                            checked ? "bg-[#FAF5FB]" : ""
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleWorker(u.id)}
+                            className="h-4 w-4 shrink-0 accent-[#931B82]"
+                          />
+                          <span className="min-w-0 truncate text-[#212121]">
+                            {u.name}
+                            <span className="ml-1 text-xs text-[#6B7280]">
+                              ({u.loginId})
+                            </span>
+                          </span>
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </fieldset>
 
           <div className="mt-auto flex gap-2 pt-4">
             <button

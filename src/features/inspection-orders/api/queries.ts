@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getEquipment } from "./equipmentApi";
 import { getProducts } from "./productApi";
 import {
+  copyInspectionOrders,
   createInspectionOrder,
   deleteInspectionOrder,
   getInspectionOrderDetail,
@@ -10,7 +11,7 @@ import {
   getProductionInspectionOrders,
   updateInspectionOrder,
 } from "./inspectionOrderApi";
-import type { CreateInspectionOrderRequest } from "./types";
+import type { CreateInspectionOrderRequest, InspectionOrder } from "./types";
 import { getUsers } from "./userApi";
 import type { Role } from "../../auth/type/types";
 
@@ -114,6 +115,23 @@ export function useUpdateInspectionOrder() {
       orderId: number;
       body: Partial<CreateInspectionOrderRequest>;
     }) => updateInspectionOrder(orderId, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: inspectionOrderKeys.list() });
+    },
+  });
+}
+
+// 어제 지시를 오늘로 복제 (조회 + 생성 API 조합 — 전용 API 없음).
+export function useCopyInspectionOrders() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      orders,
+      targetDate,
+    }: {
+      orders: InspectionOrder[];
+      targetDate: string;
+    }) => copyInspectionOrders(orders, targetDate),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: inspectionOrderKeys.list() });
     },
