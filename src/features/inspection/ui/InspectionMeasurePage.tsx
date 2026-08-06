@@ -82,14 +82,15 @@ function isItemDone(item: MeasureItem): boolean {
   return item.measuredValue != null;
 }
 
-function toCompletedStep(item: MeasureItem): StepResult {
+function toStepResult(item: MeasureItem): StepResult {
   return {
     dimNo: item.dimNo,
     dimName: item.dimName,
     standardValue: item.standardValue,
     tolerancePlus: item.tolerancePlus,
     toleranceMinus: item.toleranceMinus,
-    status: "completed",
+    // 측정값이 없는 항목을 "completed" 로 넘기면 결과 화면이 측정값 "-" 로 그린다.
+    status: isItemDone(item) ? "completed" : "skipped",
     valueType: item.valueType,
     measuredValue: item.measuredValue,
     imageUrl: item.imageUrl,
@@ -323,7 +324,7 @@ export default function InspectionMeasurePage() {
     navigate(`/inspection/${inspectionId}/result`, {
       replace: true,
       state: {
-        results: items.map(toCompletedStep),
+        results: items.map(toStepResult),
         equipmentName: info.equipment.name,
         productName: info.product.name,
         inspectorName: user?.name ?? "-",
@@ -341,7 +342,7 @@ export default function InspectionMeasurePage() {
     navigate(`/inspection/${inspectionId}/result`, {
       replace: true,
       state: {
-        results: items.length > 0 ? items.map(toCompletedStep) : undefined,
+        results: items.length > 0 ? items.map(toStepResult) : undefined,
         equipmentName: detail.equipment.name,
         productName: detail.product.name,
         inspectorName: user?.name ?? "-",
@@ -419,13 +420,14 @@ export default function InspectionMeasurePage() {
     ? 0
     : Math.round((stepIndex / totalSteps) * 100);
 
-  // 이전 단계로 돌아가 재저장하면 sessionResults 에 해당 dim 의 새 값이 들어가므로
-  // persistedDoneSteps 에서는 같은 dimNo 를 제외해 결과 페이지로 중복 전달되지 않게 한다.
-  const persistedDoneSteps = items
-    .slice(0, startIdx)
-    .filter((it) => !sessionResults.some((s) => s.dimNo === it.dimNo))
-    .map(toCompletedStep);
-  const allStepResults = [...persistedDoneSteps, ...sessionResults];
+  // 결과 화면에 넘길 전체 목록. 항목 목록(items)을 기준으로 놓고 이번 세션에서 입력한
+  // 값만 덮어쓴다 — 세션 값을 쌓아 올리는 방식은 못 쓴다. 항목을 저장할 때마다 detail 이
+  // 무효화·refetch 되고, 그때 위의 useEffect 가 backend 에 반영된 dim 을 sessionResults
+  // 에서 지운다. 그렇게 지워진 dim 은 startIdx(진입 시점에 고정) 이후라 어디서도 다시
+  // 안 채워져, 처음부터 쭉 측정한 검사는 마지막 한 항목만 남은 채 결과 화면으로 넘어갔다.
+  const allStepResults = items.map(
+    (it) => sessionResults.find((s) => s.dimNo === it.dimNo) ?? toStepResult(it),
+  );
 
   const isSaving = saveResults.isPending;
 
