@@ -2,8 +2,14 @@ import { useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import CreateInspectionOrderDrawer from "./CreateInspectionOrderDrawer";
-import { useDeleteInspectionOrder, useInspectionOrderList } from "../api";
+import {
+  useCopyInspectionOrders,
+  useDeleteInspectionOrder,
+  useInspectionOrderList,
+} from "../api";
 import type { InspectionOrder, InspectionOrderStatus } from "../api";
+import { orderWorkers, workerNames } from "../lib/orderWorkers";
+import { kstDateKey } from "../../../lib/datetime";
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "대기",
@@ -78,19 +84,34 @@ export default function InspectionOrdersPage() {
   const isMobile = useMediaQuery("(max-width: 767px)");
   const { data: orders = [], isLoading, isError } = useInspectionOrderList();
   const { mutate: remove, isPending: isDeleting } = useDeleteInspectionOrder();
+  const { mutate: copyOrders, isPending: isCopying } = useCopyInspectionOrders();
+
+  // 어제 지시를 오늘로 그대로 옮겨 등록하는 기능용 (KST 기준 달력 날짜).
+  // 화면 진입 시점에 한 번만 계산한다 — 렌더 중 현재시각을 읽지 않기 위해.
+  const [{ today, yesterday }] = useState(() => {
+    const now = new Date();
+    return {
+      today: kstDateKey(now),
+      yesterday: kstDateKey(new Date(now.getTime() - 24 * 60 * 60 * 1000)),
+    };
+  });
+  const yesterdayOrders = useMemo(
+    () => orders.filter((o) => o.targetDate?.slice(0, 10) === yesterday),
+    [orders, yesterday],
+  );
 
   const filtered = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
     return orders.filter((o) => {
       if (selectedDate && o.targetDate?.slice(0, 10) !== selectedDate) return false;
       if (!kw) return true;
-      // 제품명·제품코드·고객사·설비·자주검사자 이름을 통합 검색.
+      // 제품명·제품코드·고객사·설비·자주검사자(공동 작업자 전원) 이름을 통합 검색.
       const haystack = [
         o.product?.name,
         o.product?.code,
         o.customer?.name,
         o.equipment?.name,
-        o.production?.name,
+        ...orderWorkers(o).map((w) => w.name),
       ]
         .filter(Boolean)
         .join(" ")
@@ -123,6 +144,29 @@ export default function InspectionOrdersPage() {
     setEditing(null);
   };
 
+  // 어제 지시를 오늘 날짜로 복제. 이미 등록된 동일 지시는 백엔드가 409 로
+  // 막으므로 실패가 아니라 "건너뜀"으로 집계해 결과만 알려준다.
+  const handleCopyYesterday = () => {
+    if (isCopying || yesterdayOrders.length === 0) return;
+    const confirmed = window.confirm(
+      `어제(${yesterday}) 검사지시 ${yesterdayOrders.length}건을 오늘(${today})로 복제할까요?\n` +
+        `이미 등록된 동일 지시는 건너뜁니다.`,
+    );
+    if (!confirmed) return;
+    copyOrders(
+      { orders: yesterdayOrders, targetDate: today },
+      {
+        onSuccess: (result) => {
+          const parts = [`복제 ${result.created}건`];
+          if (result.duplicated > 0) parts.push(`중복 건너뜀 ${result.duplicated}건`);
+          if (result.failed > 0) parts.push(`실패 ${result.failed}건`);
+          alert(parts.join(" · "));
+        },
+        onError: () => alert("복제 중 오류가 발생했습니다."),
+      },
+    );
+  };
+
   const handleDelete = (order: InspectionOrder) => {
     if (isDeleting) return;
     const label = order.product?.name ?? "이 검사지시";
@@ -138,15 +182,42 @@ export default function InspectionOrdersPage() {
     <div className="flex flex-col gap-4 p-4 pb-20 md:p-6 md:pb-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">검사지시관리</h1>
-        <button
-          type="button"
-          onClick={openCreate}
-          className="flex items-center gap-1.5 rounded-lg bg-[#931B82] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D] md:px-4"
-        >
-          <Icon icon="mdi:plus" width={18} height={18} />
-          <span className="hidden sm:inline">검사지시 등록</span>
-          <span className="sm:hidden">등록</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleCopyYesterday}
+            disabled={isCopying || yesterdayOrders.length === 0}
+            title={
+              yesterdayOrders.length === 0
+                ? `어제(${yesterday}) 검사지시가 없습니다`
+                : `어제(${yesterday}) 지시 ${yesterdayOrders.length}건을 오늘로 복제`
+            }
+            className="flex items-center gap-1.5 rounded-lg border border-[#931B82] px-3 py-2 text-sm font-medium text-[#931B82] transition-colors hover:bg-[#F3E8F7] disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-[#A8A8A8] disabled:hover:bg-transparent md:px-4"
+          >
+            <Icon
+              icon={isCopying ? "mdi:loading" : "mdi:content-copy"}
+              width={18}
+              height={18}
+              className={isCopying ? "animate-spin" : undefined}
+            />
+            <span className="hidden sm:inline">
+              {isCopying ? "복제 중..." : "어제 지시 복제"}
+            </span>
+            <span className="sm:hidden">복제</span>
+            {yesterdayOrders.length > 0 && !isCopying && (
+              <span className="text-xs">({yesterdayOrders.length})</span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={openCreate}
+            className="flex items-center gap-1.5 rounded-lg bg-[#931B82] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D] md:px-4"
+          >
+            <Icon icon="mdi:plus" width={18} height={18} />
+            <span className="hidden sm:inline">검사지시 등록</span>
+            <span className="sm:hidden">등록</span>
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-2 md:gap-4">
@@ -289,7 +360,7 @@ function DesktopTable({ orders, isLoading, isError, isDeleting, onEdit, onDelete
               <td className="px-4 py-3">{order.product?.name ?? "-"}</td>
               <td className="px-4 py-3">{order.equipment?.name ?? "-"}</td>
               <td className="px-4 py-3">{order.customer?.name ?? "-"}</td>
-              <td className="px-4 py-3">{order.production?.name ?? "-"}</td>
+              <td className="px-4 py-3">{workerNames(order)}</td>
               <td className="px-4 py-3">{statusBadge(order.status)}</td>
               <td className="px-4 py-3">
                 <div className="flex items-center justify-end gap-1">
@@ -364,7 +435,7 @@ function MobileList({ orders, isLoading, isError, isDeleting, onEdit, onDelete }
 
           <div className="mt-3 grid grid-cols-1 gap-y-1.5 text-xs">
             <InfoRow icon="mdi:calendar-outline" label="지시일" value={order.targetDate} />
-            <InfoRow icon="mdi:account-hard-hat" label="자주검사자" value={order.production?.name ?? "-"} />
+            <InfoRow icon="mdi:account-hard-hat" label="자주검사자" value={workerNames(order)} />
           </div>
 
           <div className="mt-3 flex items-center justify-end gap-1 border-t border-gray-100 pt-2">

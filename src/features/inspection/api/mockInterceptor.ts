@@ -55,7 +55,7 @@ function makeOrder(
     },
     equipment: { id: 1, name: "MOCK 설비", process },
     customer: MOCK_CUSTOMER,
-    production: MOCK_PRODUCTION,
+    workers: [MOCK_PRODUCTION],
     targetDate: `${todayYmd()}T00:00:00`,
     status: "PENDING",
     createdAt: nowIso,
