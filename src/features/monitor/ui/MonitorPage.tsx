@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Icon } from "@iconify/react";
 import { useMonitorStream } from "../api/useMonitorStream";
 import { useAllSlots } from "../api/useAllSlots";
 import { useTodayInspections } from "../api/useTodayInspections";
@@ -8,7 +9,8 @@ import type {
   CrossCellStatus,
   ProgressRow,
 } from "../lib/buildProgress";
-import { usePagedList } from "../lib/usePagedList";
+import { usePagedList, type PagedList } from "../lib/usePagedList";
+import { useFitCount } from "../lib/useFitCount";
 import { T } from "../lib/tokens";
 import type {
   MonitorConnection,
@@ -29,15 +31,34 @@ import type {
 // 보여주는 건 오늘(KST) 자주검사와 거기 걸린 순회검사뿐이다. 어제 검사분을 오늘
 // 올리는 순회검사도 오늘 줄에 짝이 없으면 빼둔다 — 벽 화면은 지금 현장 상황용이다.
 //
-// 아무도 스크롤할 수 없으므로 넘치는 항목은 자동으로 페이지를 넘겨 전부 보여준다.
+// 화면은 정확히 뷰포트 높이에 맞춘다 — 벽에 걸린 모니터에는 스크롤바를 굴릴 사람이
+// 없으므로, 넘치는 만큼은 잘라 두는 게 아니라 페이지로 넘겨 전부 보여준다. 한 페이지에
+// 몇 줄이 들어가는지는 남은 높이를 실제로 재서 정한다(줄 높이는 ROW_HEIGHT 로 고정).
+//
+// 자동 넘김만으로는 방금 지나간 줄을 다시 볼 수 없어, 목록마다 멈춤과 좌우 이동을 둔다.
+// 멈춤은 그 목록에만 걸리고 저장하지도 공유하지도 않는다 — 한 화면에서 멈춰도 다른
+// 모니터는 계속 돈다.
 //
 // 색은 디자인 토큰(lib/tokens.ts)만 쓰고 흰 배경 기준 대비를 검증했다. 자주·순회 두 줄은
 // 같은 상태에 같은 색을 쓰고, 구분은 높이와 왼쪽 라벨이 맡는다.
 // 상태는 색만으로 구분하지 않는다 — 세그먼트마다 기호(✓ ▶ ⊘ ·)와 라벨을 함께 넣고
 // 범례를 둔다.
 
-const ROWS_PER_PAGE = 5;
 const PAGE_INTERVAL_MS = 8000;
+
+/**
+ * 진행도 한 줄의 높이(px). 남은 높이를 이 값으로 나눠 한 페이지 줄 수를 정하므로,
+ * 줄이 실제로 이 높이여야 한다 — 내용에 따라 늘어나면 계산이 어긋난다.
+ * 내부 구성: 이름줄 36 + 간격 12 + 자주 막대 44 + 간격 6 + 순회 막대 28 = 126, 여백 32.
+ */
+const ROW_HEIGHT = 158;
+
+/** "오늘 마감" 칩 한 개의 크기(px) — 개수 계산이 맞도록 실제로 이 크기로 그린다. */
+const CHIP_WIDTH = 240;
+const CHIP_HEIGHT = 36;
+const CHIP_GAP = 8;
+/** 마감 칩을 몇 줄까지 쓸지. 아래쪽은 부가 정보라 진행도 줄에 높이를 양보한다. */
+const CHIP_LINES = 2;
 
 const CARD_SHADOW =
   "0 1px 3px rgba(16,24,40,0.06), 0 1px 2px rgba(16,24,40,0.04)";
@@ -122,16 +143,20 @@ export default function MonitorPage() {
     [todayCrossChecks],
   );
 
-  const rowPage = usePagedList(ongoing, ROWS_PER_PAGE, PAGE_INTERVAL_MS);
+  // 진행도 줄이 쓸 수 있는 높이를 실제로 재서 한 페이지 줄 수를 정한다 — 상수로 박으면
+  // 모니터 해상도가 조금만 달라져도 잘리거나 아래가 비어 보인다.
+  const rowsRef = useRef<HTMLDivElement>(null);
+  const rowsPerPage = useFitCount(rowsRef, ROW_HEIGHT);
+  const rowPage = usePagedList(ongoing, rowsPerPage, PAGE_INTERVAL_MS);
 
   return (
-    // 카드 높이를 화면에 맞춰 늘이지 않는다 — 각 영역이 내용만큼만 차지한다.
+    // 화면 밖으로 넘기지 않는다 — 넘치는 항목은 스크롤이 아니라 페이지로 보여준다.
     <div
-      className="min-h-dvh"
+      className="flex h-dvh flex-col overflow-hidden"
       style={{ backgroundColor: T.neutral.sub, color: T.neutral.ink }}
     >
       <header
-        className="flex items-center justify-between px-8 py-5"
+        className="flex shrink-0 items-center justify-between px-8 py-5"
         style={{
           backgroundColor: T.neutral.white,
           borderBottom: `1px solid ${T.neutral.border}`,
@@ -151,7 +176,7 @@ export default function MonitorPage() {
         </div>
       </header>
 
-      <div className="grid grid-cols-5 gap-4 px-6 pt-5 pb-4">
+      <div className="grid shrink-0 grid-cols-5 gap-4 px-6 pt-5 pb-4">
         <StatCard label="완료" value={totals.done} color={T.success[700]} />
         <StatCard label="진행중" value={totals.active} color={T.primary[500]} />
         <StatCard label="건너뜀" value={totals.skipped} color={T.inkSub} />
@@ -187,16 +212,13 @@ export default function MonitorPage() {
         />
       </div>
 
-      <main className="px-6 pb-6">
+      <main className="flex min-h-0 flex-1 px-6 pb-6">
         <Card>
-          <CardHead
-            title="시점별 진행도"
-            page={rowPage.page}
-            pageCount={rowPage.pageCount}
-          >
+          <CardHead title="시점별 진행도" pager={rowPage} pagerLabel="진행도">
             <Legend />
           </CardHead>
-          <div className="px-6">
+          {/* 남은 높이를 전부 쓰고, 넘치는 줄은 잘리는 대신 다음 페이지로 간다. */}
+          <div ref={rowsRef} className="min-h-0 flex-1 overflow-hidden px-6">
             {rowPage.visible.map((row, i) => (
               <ProgressRowView
                 key={row.key}
@@ -224,7 +246,7 @@ export default function MonitorPage() {
 function Card({ children }: { children: React.ReactNode }) {
   return (
     <section
-      className="overflow-hidden rounded-xl"
+      className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl"
       style={{
         backgroundColor: T.neutral.white,
         border: `1px solid ${T.neutral.border}`,
@@ -238,28 +260,116 @@ function Card({ children }: { children: React.ReactNode }) {
 
 function CardHead({
   title,
-  page,
-  pageCount,
+  pager,
+  pagerLabel,
   children,
 }: {
   title: string;
-  page: number;
-  pageCount: number;
+  pager: PagedList<unknown>;
+  pagerLabel: string;
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between px-6 pt-5 pb-4">
-      <div className="flex items-baseline gap-3">
+    // 좁은 화면에서 범례가 잘리는 대신 접히게 둔다 — 머리말이 커지면 아래 진행도 줄
+    // 수가 그만큼 줄어들 뿐이라(높이를 재서 정한다) 화면이 넘치지 않는다.
+    <div className="flex shrink-0 flex-wrap items-center justify-between gap-4 px-6 pt-5 pb-4">
+      <div className="flex items-center gap-3">
         <h2 className="text-xl font-bold">{title}</h2>
-        {/* 자동으로 넘어가는 중이라는 걸 알려야 "왜 화면이 바뀌지?"가 안 생긴다. */}
-        {pageCount > 1 && (
-          <span className="text-base tabular-nums" style={{ color: T.inkSub }}>
-            {page + 1} / {pageCount}
-          </span>
-        )}
+        <Pager pager={pager} label={pagerLabel} />
       </div>
       {children}
     </div>
+  );
+}
+
+/* ── 페이지 넘김 조작 ───────────────────────────────────────── */
+
+/**
+ * 자동으로 넘어가는 목록의 조작부 — 현재 위치, 좌우 이동, 멈춤.
+ *
+ * 벽 화면은 기본적으로 알아서 돌아야 하므로 자동 넘김은 그대로 두고, 잠깐 붙잡아
+ * 두거나 되돌려 보고 싶을 때만 쓰는 보조 수단이다. 멈춤 상태는 이 목록에만 걸린다.
+ * 한 페이지뿐이면 넘길 것이 없으므로 통째로 감춘다.
+ */
+function Pager({
+  pager,
+  label,
+}: {
+  pager: PagedList<unknown>;
+  label: string;
+}) {
+  if (pager.pageCount <= 1) return null;
+  return (
+    <div className="flex items-center gap-1.5">
+      <PagerButton
+        icon="solar:alt-arrow-left-linear"
+        label={`${label} 이전 페이지`}
+        onClick={pager.prev}
+      />
+      {/* 자동으로 넘어가는 중이라는 걸 알려야 "왜 화면이 바뀌지?"가 안 생긴다. */}
+      <span
+        className="min-w-14 text-center text-base tabular-nums"
+        style={{ color: T.inkSub }}
+      >
+        {pager.page + 1} / {pager.pageCount}
+      </span>
+      <PagerButton
+        icon="solar:alt-arrow-right-linear"
+        label={`${label} 다음 페이지`}
+        onClick={pager.next}
+      />
+      {/* 멈춤 여부는 색이 아니라 기호와 글자로 알린다 — 벽에서 색만으론 안 읽힌다. */}
+      <button
+        type="button"
+        onClick={pager.togglePause}
+        aria-pressed={pager.paused}
+        title={
+          pager.paused
+            ? `${label} 자동 넘김 다시 시작`
+            : `${label} 자동 넘김 멈춤`
+        }
+        className="ml-1 flex h-9 items-center gap-1.5 rounded-lg px-3 text-base font-bold"
+        style={{
+          backgroundColor: pager.paused ? T.warning[100] : T.neutral.sub,
+          color: pager.paused ? T.warning[700] : T.inkSub,
+          border: `1px solid ${pager.paused ? "#F5E3B4" : T.neutral.border}`,
+        }}
+      >
+        <Icon
+          icon={pager.paused ? "solar:play-bold" : "solar:pause-bold"}
+          width={18}
+          height={18}
+        />
+        {pager.paused ? "멈춤" : "자동"}
+      </button>
+    </div>
+  );
+}
+
+function PagerButton({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: string;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className="flex size-9 items-center justify-center rounded-lg"
+      style={{
+        backgroundColor: T.neutral.sub,
+        border: `1px solid ${T.neutral.border}`,
+        color: T.neutral.ink,
+      }}
+    >
+      <Icon icon={icon} width={22} height={22} />
+    </button>
   );
 }
 
@@ -340,11 +450,16 @@ function ProgressRowView({
     .filter((cc): cc is MonitorCrossCheck => cc !== null);
 
   return (
+    // 높이를 고정한다 — 한 페이지 줄 수를 이 값으로 나눠 구하므로 내용에 따라 늘어나면
+    // 계산이 어긋나 마지막 줄이 잘린다.
     <div
-      className="py-4"
-      style={first ? undefined : { borderTop: `1px solid ${T.neutral.border}` }}
+      className="flex flex-col justify-center overflow-hidden"
+      style={{
+        height: ROW_HEIGHT,
+        ...(first ? {} : { borderTop: `1px solid ${T.neutral.border}` }),
+      }}
     >
-      <div className="flex items-baseline justify-between gap-4">
+      <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           <Avatar name={row.workerName} online={online} />
           <span className="shrink-0 text-2xl font-bold">{row.workerName}</span>
@@ -646,7 +761,7 @@ function Legend() {
   ];
   return (
     <div
-      className="flex items-center gap-5 text-base"
+      className="flex flex-wrap items-center gap-x-5 gap-y-2 text-base"
       style={{ color: T.inkSub }}
     >
       <LegendGroup
@@ -709,23 +824,46 @@ function FinishedStrip({
   rows: ProgressRow[];
   online: Set<string>;
 }) {
+  // 진행도 줄과 따로 논다 — 여기서 멈춰도 위 목록은 계속 돌고, 그 반대도 마찬가지.
+  const chipsRef = useRef<HTMLDivElement>(null);
+  const perPage = useFitCount(chipsRef, CHIP_WIDTH, {
+    axis: "x",
+    gap: CHIP_GAP,
+    lines: CHIP_LINES,
+  });
+  const page = usePagedList(rows, perPage, PAGE_INTERVAL_MS);
+
   return (
     <div
-      className="mt-1 px-6 py-4"
+      className="shrink-0 px-6 py-4"
       style={{
         borderTop: `1px solid ${T.neutral.border}`,
         backgroundColor: T.neutral.sub,
       }}
     >
-      <div className="mb-2.5 text-base" style={{ color: T.inkSub }}>
-        오늘 마감 <span className="tabular-nums">{rows.length}</span>줄
+      <div className="mb-2.5 flex items-center justify-between gap-4">
+        <div className="text-base" style={{ color: T.inkSub }}>
+          오늘 마감 <span className="tabular-nums">{rows.length}</span>줄
+        </div>
+        <Pager pager={page} label="오늘 마감" />
       </div>
-      <div className="flex flex-wrap gap-2">
-        {rows.map((r) => (
+      {/* 칩 크기를 고정해야 한 페이지 개수 계산이 맞는다. 높이도 줄 수만큼으로 묶어
+          아래로 자라지 않게 한다 — 자라면 위 진행도 줄의 높이를 뺏는다. */}
+      <div
+        ref={chipsRef}
+        className="flex flex-wrap content-start overflow-hidden"
+        style={{
+          gap: CHIP_GAP,
+          height: CHIP_LINES * CHIP_HEIGHT + (CHIP_LINES - 1) * CHIP_GAP,
+        }}
+      >
+        {page.visible.map((r) => (
           <span
             key={r.key}
-            className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-base"
+            className="inline-flex items-center gap-2 overflow-hidden rounded-lg px-3 text-base"
             style={{
+              width: CHIP_WIDTH,
+              height: CHIP_HEIGHT,
               backgroundColor: T.neutral.white,
               border: `1px solid ${T.neutral.border}`,
             }}
@@ -741,32 +879,36 @@ function FinishedStrip({
                   : T.neutral.border,
               }}
             />
-            <span className="font-bold">{r.workerName}</span>
-            <span style={{ color: T.inkSub }}>{r.equipmentName}</span>
-            {r.completed > 0 && (
-              <span
-                className="font-bold tabular-nums"
-                style={{ color: T.success[700] }}
-              >
-                ✓{r.completed}
-              </span>
-            )}
-            {r.skipped > 0 && (
-              <span
-                className="font-bold tabular-nums"
-                style={{ color: "#5B5B5B" }}
-              >
-                ⊘{r.skipped}
-              </span>
-            )}
-            {r.crossChecked > 0 && (
-              <span
-                className="font-bold tabular-nums"
-                style={{ color: T.success[700] }}
-              >
-                순회 {r.crossChecked}
-              </span>
-            )}
+            <span className="shrink-0 font-bold">{r.workerName}</span>
+            <span className="truncate" style={{ color: T.inkSub }}>
+              {r.equipmentName}
+            </span>
+            <span className="ml-auto flex shrink-0 items-center gap-2">
+              {r.completed > 0 && (
+                <span
+                  className="font-bold tabular-nums"
+                  style={{ color: T.success[700] }}
+                >
+                  ✓{r.completed}
+                </span>
+              )}
+              {r.skipped > 0 && (
+                <span
+                  className="font-bold tabular-nums"
+                  style={{ color: "#5B5B5B" }}
+                >
+                  ⊘{r.skipped}
+                </span>
+              )}
+              {r.crossChecked > 0 && (
+                <span
+                  className="font-bold tabular-nums"
+                  style={{ color: T.success[700] }}
+                >
+                  순회 {r.crossChecked}
+                </span>
+              )}
+            </span>
           </span>
         ))}
       </div>
