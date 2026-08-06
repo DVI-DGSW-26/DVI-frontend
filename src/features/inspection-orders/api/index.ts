@@ -2,6 +2,7 @@ export { getEquipment } from "./equipmentApi";
 export { getProducts } from "./productApi";
 export { getUsers } from "./userApi";
 export {
+  copyInspectionOrders,
   createInspectionOrder,
   updateInspectionOrder,
   deleteInspectionOrder,
@@ -20,6 +21,7 @@ export {
   useProductionInspectionOrders,
   useCreateInspectionOrder,
   useUpdateInspectionOrder,
+  useCopyInspectionOrders,
   useDeleteInspectionOrder,
   inspectionOrderKeys,
   equipmentKeys,
@@ -33,4 +35,6 @@ export type {
   CreateInspectionOrderRequest,
   InspectionOrder,
   InspectionOrderStatus,
+  InspectionOrderUserRef,
 } from "./types";
+export type { CopyOrdersResult } from "./inspectionOrderApi";

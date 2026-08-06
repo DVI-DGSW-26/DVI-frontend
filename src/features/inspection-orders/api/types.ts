@@ -24,12 +24,13 @@ export interface Product {
   createdAt: string;
 }
 
-// 검사 지시 생성/수정 body. PRODUCTION_MANAGER 가 생산 작업자(productionId)에게 배정.
+// 검사 지시 생성/수정 body. PRODUCTION_MANAGER 가 생산 작업자에게 배정한다.
+// workerIds 로 공동 작업자를 인원 제한 없이 지정할 수 있다(1명이어도 배열).
 // (예전 모델의 qualityId 는 제거됨 — 검사 지시엔 순회검사 품질 담당자 배정이 없다.)
 export interface CreateInspectionOrderRequest {
   productId: number;
   equipmentId: number;
-  productionId: number;
+  workerIds: number[];
   targetDate: string;
 }
 
@@ -70,8 +71,14 @@ export interface InspectionOrder {
   product: InspectionOrderProduct;
   equipment: InspectionOrderEquipment;
   customer: InspectionOrderCustomer;
-  // 배정된 생산 작업자.
-  production: InspectionOrderUserRef;
+  // 배정된 생산 작업자들. 단독 배정이어도 배열로 내려온다.
+  workers: InspectionOrderUserRef[];
+  /**
+   * @deprecated 서버가 workers 배열로 바꿨다(단일 객체 → 배열).
+   * 구버전 응답이 섞여 들어올 때만 쓰이는 폴백 — 화면에서 직접 참조하지 말고
+   * orderWorkers() 를 쓸 것.
+   */
+  production?: InspectionOrderUserRef | null;
   targetDate: string;
   status: InspectionOrderStatus;
   createdAt: string;
