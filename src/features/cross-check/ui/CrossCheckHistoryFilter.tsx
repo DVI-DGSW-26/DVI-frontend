@@ -18,8 +18,11 @@ const PROCESS_OPTIONS: MultiOption[] = [
   { value: "PRESS", label: "프레스" },
 ];
 
+// 이력 목록은 DRAFT 를 뺀 나머지 상태가 모두 들어온다. 초·중 차수는 개별 결재 없이
+// COMPLETED 로 끝나므로 이게 빠지면 이력의 상당수를 상태로 골라낼 수 없다.
 const STATUS_OPTIONS: MultiOption[] = [
   { value: "PENDING_APPROVAL", label: "결재 대기" },
+  { value: "COMPLETED", label: "검사 완료" },
   { value: "APPROVED", label: "승인" },
   { value: "REJECTED", label: "반려" },
 ];

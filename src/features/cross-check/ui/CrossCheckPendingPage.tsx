@@ -55,15 +55,26 @@ const PROCESS_ORDER = [
   "PRESS",
 ] as const;
 
+// 승인 모델 변경으로 초·중 차수는 개별 결재 없이 COMPLETED 로 끝난다 — 이 표에서
+// 빠뜨리면 끝난 초·중이 폴백에 걸려 "진행 중"으로 계속 남는다(결재 승인해도 안 없어짐).
 const STATUS_BADGE: Record<
   string,
   { label: string; bg: string; fg: string }
 > = {
   PENDING_APPROVAL: { label: "결재 대기", bg: "#FEF3C7", fg: "#B45309" },
+  COMPLETED: { label: "검사 완료", bg: "#ECFEFF", fg: "#0E7490" },
   APPROVED: { label: "승인", bg: "#ECFDF5", fg: "#15803D" },
   REJECTED: { label: "반려", bg: "#FEF2F2", fg: "#B91C1C" },
   DRAFT: { label: "진행 중", bg: "#F3F4F6", fg: "#6B7280" },
 };
+
+// 모르는 상태를 특정 배지로 폴백하면(예전엔 DRAFT="진행 중") 틀린 값이 그럴듯하게 보여
+// 알아채기 어렵다. 상태 코드를 그대로 드러내 눈에 띄게 한다.
+function statusBadge(status: string) {
+  return (
+    STATUS_BADGE[status] ?? { label: status, bg: "#F3F4F6", fg: "#6B7280" }
+  );
+}
 
 const CrossCheckPendingPage = () => {
   const navigate = useNavigate();
@@ -194,18 +205,22 @@ const CrossCheckPendingPage = () => {
     [myCrossChecks],
   );
 
-  // 상단 요약(구 품질 시스템 현황) — 미처리(배정 대기)/완료(승인)/진행중(DRAFT) 누적 집계.
+  // 상단 요약(구 품질 시스템 현황) — 미처리(배정 대기)/완료/진행중(DRAFT) 누적 집계.
   // 미처리는 아래 목록과 같은 대상을 세야 하므로 filteredAssigned(날짜 필터·본인 진행건
   // 제외 반영) 기준. 여기서 다시 남이 잡고 있는 IN_PROGRESS 를 걷어내 "지금 시작(또는
   // 이어받기) 가능한 건"만 남긴다.
+  //
+  // "완료" 는 APPROVED 만 세면 안 된다 — 승인 모델 변경으로 초·중 차수는 개별 결재 없이
+  // COMPLETED 로 끝나므로 영영 APPROVED 가 되지 않는다. 종 차수만 잡혀 실제로 끝낸
+  // 검사의 일부만 집계됐다.
   const statCounts = useMemo(() => {
-    let approved = 0;
+    let done = 0;
     let draft = 0;
     for (const c of myCrossChecks) {
-      if (c.status === "APPROVED") approved++;
+      if (c.status === "APPROVED" || c.status === "COMPLETED") done++;
       else if (c.status === "DRAFT") draft++;
     }
-    return { pending: countUnprocessed(filteredAssigned), approved, draft };
+    return { pending: countUnprocessed(filteredAssigned), done, draft };
   }, [myCrossChecks, filteredAssigned]);
 
   const handleResumeClick = (cc: CrossCheckSummary) => {
@@ -279,7 +294,7 @@ const CrossCheckPendingPage = () => {
         />
         <SummaryStat
           label="완료"
-          value={statCounts.approved}
+          value={statCounts.done}
           icon="solar:check-circle-bold"
           accent="#22C55E"
           iconBg="#DCFCE7"
@@ -676,7 +691,7 @@ function HistoryCard({
   cc: CrossCheckSummary;
   onClick: () => void;
 }) {
-  const badge = STATUS_BADGE[cc.status] ?? STATUS_BADGE.DRAFT;
+  const badge = statusBadge(cc.status);
   const stage = getStage(cc.type, cc.product.process);
   return (
     <button
