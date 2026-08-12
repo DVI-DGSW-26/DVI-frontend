@@ -121,21 +121,32 @@ export default function MonitorPage() {
     return { ongoing, finished, todayCrossChecks };
   }, [rows]);
 
+  // 앞 네 칸은 자주검사 시점을 빠짐없이 한 번씩만 나눠 갖는다 — 네 수를 더하면 전체
+  // 시점 수가 되어야 "어디로 샜지?"가 생기지 않는다. 미완료 승인은 종결된 시점이므로
+  // 완료 쪽에(줄 오른쪽 자주 비율과 같은 기준), 아직 결재가 안 난 미완료는 남은 쪽에 센다.
   const totals = useMemo(() => {
     const cells = rows.flatMap((r) => r.cells);
     return {
-      done: cells.filter((c) => c.status === "COMPLETED").length,
+      done: cells.filter(
+        (c) => c.status === "COMPLETED" || c.status === "INCOMPLETE_APPROVED",
+      ).length,
       active: cells.filter((c) => c.status === "DRAFT").length,
       skipped: cells.filter((c) => c.status === "SKIPPED").length,
-      remaining: cells.filter((c) => c.status === "NONE").length,
+      remaining: cells.filter(
+        (c) => c.status === "NONE" || c.status === "INCOMPLETE",
+      ).length,
       crossWaiting: cells.filter((c) => c.cross === "WAITING").length,
     };
   }, [rows]);
 
   // 오늘 검사에 걸린 순회검사만 센다 — 화면에 안 그리는 건 숫자에도 넣지 않는다.
+  //
+  // 세 상태는 서로 겹치지 않는다. 예전엔 '진행중'이 진행중 순회검사 전체(작성중 +
+  // 승인대기 + 반려)여서 옆의 두 수를 자기 안에 또 품고 있었다 — 셋을 나란히 놓으면
+  // 더해 읽히므로 작성중만 센다. 이름도 순회 막대·범례와 같은 "작성중"으로 맞춘다.
   const crossTotals = useMemo(
     () => ({
-      live: todayCrossChecks.length,
+      draft: todayCrossChecks.filter((c) => c.status === "DRAFT").length,
       pending: todayCrossChecks.filter((c) => c.status === "PENDING_APPROVAL")
         .length,
       rejected: todayCrossChecks.filter((c) => c.status === "REJECTED").length,
@@ -177,25 +188,50 @@ export default function MonitorPage() {
       </header>
 
       <div className="grid shrink-0 grid-cols-5 gap-4 px-6 pt-5 pb-4">
-        <StatCard label="완료" value={totals.done} color={T.success[700]} />
-        <StatCard label="진행중" value={totals.active} color={T.primary[500]} />
-        <StatCard label="건너뜀" value={totals.skipped} color={T.inkSub} />
+        <StatCard
+          label="완료"
+          track="자주"
+          value={totals.done}
+          color={T.success[700]}
+        />
+        <StatCard
+          label="진행중"
+          track="자주"
+          value={totals.active}
+          color={T.primary[500]}
+        />
+        <StatCard
+          label="건너뜀"
+          track="자주"
+          value={totals.skipped}
+          color={T.inkSub}
+        />
         <StatCard
           label="남은 시점"
+          track="자주"
           value={totals.remaining}
           color={T.neutral.ink}
         />
+        {/*
+          앞 네 칸과 세는 대상이 다르다 — 자주검사가 끝나 순회검사자를 기다리는 시점 수다.
+          아래 세 수는 이 수를 쪼갠 게 아니라 "이미 순회검사가 붙은" 별개의 시점들이라,
+          더해 읽히지 않도록 제목을 달아 끊어 놓는다.
+        */}
         <StatCard
           label="순회 대기"
+          track="순회"
           value={totals.crossWaiting}
-          // 순회 막대의 '대기' 칸과 같은 색.
-          color={T.warning[700]}
+          // 수의 색은 그 수가 세는 칸의 색과 같아야 한다 — 앰버로 두면 '승인대기' 칸을
+          // 찾게 되고, 대기 칸은 파랑이라 영영 못 찾는다. 칸 모양 그대로도 이름 옆에 붙인다.
+          color={CROSS_STYLE.WAITING.fg}
+          swatch={CROSS_STYLE.WAITING}
+          footLabel="붙은 순회검사"
           foot={
             <>
               <FootStat
-                label="진행중"
-                value={crossTotals.live}
-                color={T.inkSub}
+                label="작성중"
+                value={crossTotals.draft}
+                color={T.primary[500]}
               />
               <FootStat
                 label="승인대기"
@@ -318,7 +354,12 @@ function Pager({
         label={`${label} 다음 페이지`}
         onClick={pager.next}
       />
-      {/* 멈춤 여부는 색이 아니라 기호와 글자로 알린다 — 벽에서 색만으론 안 읽힌다. */}
+      {/*
+        멈춤 여부는 색이 아니라 기호와 글자로 알린다 — 벽에서 색만으론 안 읽힌다.
+        검사 상태 색(앰버 등)은 쓰지 않는다. 이건 화면 조작 상태지 검사 상태가 아니라,
+        상태 색을 빌려 쓰면 막대의 그 색이 무슨 뜻인지가 흐려진다. 눌린 버튼답게
+        먹색으로 채워 구분한다.
+      */}
       <button
         type="button"
         onClick={pager.togglePause}
@@ -330,9 +371,9 @@ function Pager({
         }
         className="ml-1 flex h-9 items-center gap-1.5 rounded-lg px-3 text-base font-bold"
         style={{
-          backgroundColor: pager.paused ? T.warning[100] : T.neutral.sub,
-          color: pager.paused ? T.warning[700] : T.inkSub,
-          border: `1px solid ${pager.paused ? "#F5E3B4" : T.neutral.border}`,
+          backgroundColor: pager.paused ? T.neutral.ink : T.neutral.sub,
+          color: pager.paused ? T.neutral.white : T.inkSub,
+          border: `1px solid ${pager.paused ? T.neutral.ink : T.neutral.border}`,
         }}
       >
         <Icon
@@ -373,15 +414,29 @@ function PagerButton({
   );
 }
 
+/**
+ * 큰 수 하나짜리 요약 칸.
+ *
+ * 어느 트랙(자주/순회)의 시점을 센 수인지 이름표를 함께 단다 — 같은 시점이 자주에서
+ * "완료"이면서 순회에서 "대기"일 수 있어, 트랙을 안 밝히면 두 번 센 것처럼 읽힌다.
+ * 아래 보조 수치(foot)는 이 수를 쪼갠 게 아닐 수 있으므로 제목(footLabel)으로 끊는다.
+ */
 function StatCard({
   label,
+  track,
   value,
   color,
+  swatch,
+  footLabel,
   foot,
 }: {
   label: string;
+  track: "자주" | "순회";
   value: number;
   color: string;
+  /** 이 수가 세는 칸의 실제 모양 — 막대에서 무엇을 찾아야 하는지 알려준다. */
+  swatch?: { bg: string; fg: string; border?: string; mark: string };
+  footLabel?: string;
   foot?: React.ReactNode;
 }) {
   return (
@@ -393,8 +448,24 @@ function StatCard({
         boxShadow: CARD_SHADOW,
       }}
     >
-      <div className="text-lg" style={{ color: T.inkSub }}>
-        {label}
+      <div className="flex items-center gap-2">
+        <TrackTag text={track} />
+        {swatch && (
+          <span
+            aria-hidden
+            className="flex size-6 shrink-0 items-center justify-center rounded text-base font-bold"
+            style={{
+              backgroundColor: swatch.bg,
+              color: swatch.fg,
+              border: swatch.border ? `1px solid ${swatch.border}` : undefined,
+            }}
+          >
+            {swatch.mark}
+          </span>
+        )}
+        <span className="text-lg" style={{ color: T.inkSub }}>
+          {label}
+        </span>
       </div>
       <div
         className="mt-1.5 text-5xl leading-none font-bold tabular-nums"
@@ -402,8 +473,33 @@ function StatCard({
       >
         {value}
       </div>
-      {foot && <div className="mt-2 flex flex-wrap gap-x-3">{foot}</div>}
+      {foot && (
+        <div
+          className="mt-2.5 pt-2"
+          style={{ borderTop: `1px solid ${T.neutral.border}` }}
+        >
+          {footLabel && (
+            <div className="text-sm" style={{ color: T.neutral.muted }}>
+              {footLabel}
+            </div>
+          )}
+          <div className="mt-0.5 flex flex-wrap gap-x-3">{foot}</div>
+        </div>
+      )}
     </div>
+  );
+}
+
+/** 막대 왼쪽 이름표와 같은 색을 쓰는 작은 트랙 표식. */
+function TrackTag({ text }: { text: "자주" | "순회" }) {
+  const color = text === "자주" ? TRACK_COLOR.self : TRACK_COLOR.cross;
+  return (
+    <span
+      className="rounded px-1.5 py-0.5 text-sm font-bold"
+      style={{ border: `1px solid ${color}`, color }}
+    >
+      {text}
+    </span>
   );
 }
 
@@ -651,6 +747,19 @@ function capStyle(i: number, len: number) {
 
 // 색 + 기호 + 라벨 3중 표기 — 색약·원거리에서도 상태가 구분되도록.
 // 채운 세그먼트는 흰 글자 대비를 통과하는 단계만 쓴다(success 500 은 2.28 로 탈락).
+//
+// 한 색은 한 뜻만 진다. 두 트랙에 걸쳐 이렇게 나눈다:
+//
+//   초록   종결됐고 정상       완료 · 미완료 승인
+//   마젠타 지금 사람이 하는 중  진행중 · 작성중
+//   앰버   결재를 기다리는 중   미완료 · 승인대기
+//   빨강   되돌아감            반려
+//   파랑   순회검사자를 기다림  대기
+//   회색   할 일이 없는 칸      건너뜀 · 미시작 · 대상 아님
+//
+// 진하기는 급한 정도다 — 채운 칸이 사람 손을 부르는 칸, 연한 칸이 기다림·종결이다.
+// 앰버를 연·진 두 단계로 쓰면 벽에서 노랑과 갈색이 섞여 보여 뜻이 흐려지므로,
+// 앰버는 "결재 대기" 하나에만 진한 채움으로 쓴다.
 const CELL_STYLE: Record<
   CellStatus,
   { bg: string; fg: string; border?: string; mark: string; name: string }
@@ -673,16 +782,19 @@ const CELL_STYLE: Record<
     mark: "⊘",
     name: "건너뜀",
   },
+  // 건너뛴 항목이 있어 결재로 올라간 칸 — 순회검사 쪽 '승인대기'와 같은 뜻이라 같은 색.
   INCOMPLETE: {
     bg: T.warning[700],
     fg: T.neutral.white,
     mark: "!",
     name: "미완료",
   },
+  // 결재가 끝나 종결된 칸이므로 완료와 같은 초록 계열로 둔다. 앰버로 두면 아직 결재를
+  // 기다리는 '미완료'와 한 덩어리로 보인다. 앱의 다른 화면도 이 상태를 초록으로 쓴다.
   INCOMPLETE_APPROVED: {
-    bg: T.warning[100],
-    fg: T.warning[700],
-    border: "#F5E3B4",
+    bg: T.success[100],
+    fg: T.success[700],
+    border: "#A7E9C0",
     mark: "✓",
     name: "미완료 승인",
   },
@@ -726,10 +838,16 @@ const CROSS_STYLE: Record<
     mark: "✕",
     name: "반려",
   },
+  // 순회검사자를 기다리는 칸 — 결재 대기(앰버)와는 기다리는 사람도 할 일도 다르므로
+  // 색을 나눈다. 순회 트랙 이름표와 같은 파랑 계열이라 "순회 쪽 할 일"로 읽힌다.
+  //
+  // 채우지는 않는다 — 검사 기록이 아직 없어 승인대기·반려보다 한 단계 뒤다. 대신
+  // 테두리를 또렷하게 세운다. 연한 테두리로 두면 28px 짜리 순회 막대에서 대상 아님 칸과
+  // 구별이 안 돼 "대기 1건인데 화면엔 아무것도 없다"가 된다.
   WAITING: {
-    bg: T.warning[100],
-    fg: T.warning[700],
-    border: "#F5E3B4",
+    bg: T.info[100],
+    fg: T.info[700],
+    border: T.info[500],
     mark: "◷",
     name: "대기",
   },
@@ -751,7 +869,16 @@ const CROSS_STYLE: Record<
 };
 
 function Legend() {
-  const self: CellStatus[] = ["COMPLETED", "DRAFT", "SKIPPED", "NONE"];
+  // 두 트랙 모두 나오는 상태를 빠짐없이 싣는다 — 자주 막대의 앰버 칸(미완료)이 범례에서
+  // 빠져 있으면 순회 줄의 앰버(승인대기)와 같은 것인지 다른 것인지 알 길이 없다.
+  const self: CellStatus[] = [
+    "COMPLETED",
+    "DRAFT",
+    "SKIPPED",
+    "INCOMPLETE",
+    "INCOMPLETE_APPROVED",
+    "NONE",
+  ];
   const cross: CrossCellStatus[] = [
     "CHECKED",
     "DRAFT",
