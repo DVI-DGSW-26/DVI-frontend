@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
+import { API_BASE } from "../../../lib/http";
 import { tokenStorage, refreshAccessToken } from "../../auth/api";
 import { getMonitorSnapshot } from "./monitorApi";
 import type { MonitorConnection, MonitorSnapshot } from "../type/types";
@@ -77,7 +78,7 @@ export function useMonitorStream() {
     async function stream() {
       while (!signal.aborted) {
         try {
-          await fetchEventSource("/api/monitor/stream", {
+          await fetchEventSource(`${API_BASE}/monitor/stream`, {
             signal,
             headers: {
               Authorization: `Bearer ${tokenStorage.getAccess() ?? ""}`,
