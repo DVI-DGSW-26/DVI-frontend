@@ -735,7 +735,7 @@ function TerminateButton({
       disabled={disabled}
       className="mt-2 h-10 w-full rounded-md border border-[#B45309] bg-white text-sm font-medium text-[#B45309] transition-colors hover:bg-[#FFFBEB] disabled:opacity-50"
     >
-      품질 문제로 마감
+      품질 문제로 마감 하기(보고서 발행)
     </button>
   );
 }
