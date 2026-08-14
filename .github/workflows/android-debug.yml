@@ -20,11 +20,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # sharp(@capacitor/assets 의존) 가 Node 20 에서 미리 빌드된 바이너리를
-      # 쓴다. 더 높은 버전에서는 소스 빌드로 떨어져 실패할 수 있다.
+      # Capacitor CLI 가 Node >=22 를 요구한다.
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - run: npm ci
