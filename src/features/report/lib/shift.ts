@@ -1,4 +1,4 @@
-import { kstHour } from "../../../lib/datetime";
+import { kstHour, WORK_DAY_START_HOUR } from "../../../lib/datetime";
 import { SLOT_SEQUENCE } from "../../inspection/lib/slotSequence";
 import type { InspectionProcess } from "../../inspection/type/types";
 import type { ReportDetail, ReportStageInfo } from "../api/types";
@@ -8,6 +8,19 @@ export type WorkShift = "DAY" | "NIGHT";
 
 /** 야간 시작 시각. 17시 정각부터 야간이다 (현장 규칙, 백엔드 판별 로직과 동일). */
 export const NIGHT_SHIFT_START_HOUR = 17;
+
+/**
+ * 이 시각에 시작한 작업이 야간인지.
+ *
+ * 17시~다음날 06시가 야간이다. 상한(06시)이 필요한 건 야간 작업이 자정을
+ * 넘겨서도 이어지기 때문 — 실서버에 초·중·종을 01:17 / 04:13 / 05:42 에 기록한
+ * 건이 있는데, "17시 이후" 만 보면 이게 주간으로 뒤집힌다. 경계는 작업일 경계와
+ * 같은 06시를 쓴다(`WORK_DAY_START_HOUR`) — 06시 이전 기록을 전날 작업분으로
+ * 보는 기존 규칙과 어긋나면 같은 검사가 화면마다 다른 날짜/근무조로 보인다.
+ */
+function isNightHour(hour: number): boolean {
+  return hour >= NIGHT_SHIFT_START_HOUR || hour < WORK_DAY_START_HOUR;
+}
 
 export const SHIFT_LABEL: Record<WorkShift, string> = {
   DAY: "주간",
@@ -47,7 +60,7 @@ export function resolveShift(detail: ReportDetail): WorkShift | null {
   const first = firstStage(detail.stages);
 
   const hour = kstHour(first?.inspectedAt);
-  if (hour != null) return hour >= NIGHT_SHIFT_START_HOUR ? "NIGHT" : "DAY";
+  if (hour != null) return isNightHour(hour) ? "NIGHT" : "DAY";
 
   const type = first?.type ?? detail.inspectionType;
   if (type?.startsWith("NIGHT_")) return "NIGHT";
