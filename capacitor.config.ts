@@ -2,7 +2,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
   // ⚠️ appId 는 플레이스토어에 한 번 올리면 영구 고정이다. 첫 업로드 전에 확정할 것.
-  appId: "com.dviind.kwakflow",
+  appId: "com.dviind.qacflow",
   appName: "콱 플로우",
   webDir: "dist",
   server: {

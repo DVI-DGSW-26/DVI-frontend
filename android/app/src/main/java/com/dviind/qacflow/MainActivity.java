@@ -1,4 +1,4 @@
-package com.dviind.kwakflow;
+package com.dviind.qacflow;
 
 import com.getcapacitor.BridgeActivity;
 

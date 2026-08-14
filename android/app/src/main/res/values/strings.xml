@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">콱 플로우</string>
     <string name="title_activity_main">콱 플로우</string>
-    <string name="package_name">com.dviind.kwakflow</string>
-    <string name="custom_url_scheme">com.dviind.kwakflow</string>
+    <string name="package_name">com.dviind.qacflow</string>
+    <string name="custom_url_scheme">com.dviind.qacflow</string>
 </resources>
