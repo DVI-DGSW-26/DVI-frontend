@@ -1,0 +1,60 @@
+# 안드로이드 디버그 APK 빌드.
+#
+# 목적: 로컬에 Android Studio(10GB+) 를 깔지 않고도 실기기에 설치해볼 수 있는
+# APK 를 얻는다. 빌드가 끝나면 Actions 실행 화면 하단 Artifacts 에서 받는다.
+#
+# 서명은 안드로이드 기본 디버그 키로 되므로 테스트 전용이다.
+# 플레이스토어 업로드용 서명 빌드는 별도 워크플로가 필요하다.
+name: 안드로이드 디버그 빌드
+
+on:
+  # Actions 탭에서 수동 실행
+  workflow_dispatch:
+  push:
+    branches: [main, feat/capacitor-app]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # sharp(@capacitor/assets 의존) 가 Node 20 에서 미리 빌드된 바이너리를
+      # 쓴다. 더 높은 버전에서는 소스 빌드로 떨어져 실패할 수 있다.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # 백엔드 절대 주소. 저장소 Settings > Secrets and variables > Actions >
+      # Variables 에 VITE_API_BASE_URL 을 등록하면 여기로 들어온다.
+      # 비어 있으면 "/api" 상대경로가 되어 앱에서 API 호출이 실패한다.
+      # (앱 실행·화면 확인은 되지만 로그인은 안 된다)
+      - name: 웹 빌드
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+
+      - name: 웹 결과물을 안드로이드 프로젝트로 복사
+        run: npx cap sync android
+
+      # AGP 8.x 는 JDK 17 이 필요하다.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - name: APK 빌드
+        run: ./gradlew assembleDebug --no-daemon
+        working-directory: android
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qacflow-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
