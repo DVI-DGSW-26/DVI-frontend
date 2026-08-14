@@ -52,10 +52,12 @@ await sharp({
   .png()
   .toFile(`${OUT}/icon-background.png`);
 
-// 레거시(마스크 없는) 아이콘 — 원본 라운드 사각 디자인을 그대로 쓴다.
-await sharp(SRC)
-  .resize(1024, 1024, { kernel: sharp.kernel.lanczos3 })
-  .png()
+// 마스크 없는 아이콘 — iOS 앱 아이콘과 안드로이드 레거시 아이콘에 쓰인다.
+// ⚠️ iOS 앱 아이콘은 투명 픽셀이 있으면 앱스토어 심사에서 거부되므로 흰색으로
+// 완전히 채운다. 원본은 라운드 모서리가 투명이라 그대로 쓸 수 없다.
+// iOS 는 자체 슈퍼타원 마스크로 모서리만 깎으므로 로고를 65% 로 조금 크게 둔다.
+await sharp(await centeredLogo(1024, 0.65, WHITE))
+  .flatten({ background: WHITE })
   .toFile(`${OUT}/icon-only.png`);
 
 // 스플래시 — 흰 바탕에 로고. 다크 모드도 같은 흰 바탕을 쓴다. 원본 육각형의
@@ -73,7 +75,7 @@ await sharp(await centeredLogo(512, 0.62, WHITE)).toFile(
 
 // --- 2. 안드로이드 리소스 생성 ---
 
-execSync("npx capacitor-assets generate --android", { stdio: "inherit" });
+execSync("npx capacitor-assets generate --android --ios", { stdio: "inherit" });
 
 // --- 3. 적응형 아이콘 XML 교정 ---
 //

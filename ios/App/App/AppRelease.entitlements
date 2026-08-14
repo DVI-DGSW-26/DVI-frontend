@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  배포(Release/TestFlight/앱스토어) 빌드용 푸시 환경.
+	  이 값이 development 로 남아 있으면 TestFlight·앱스토어 배포판에서
+	  푸시가 오지 않는다. APNs 서버가 갈리기 때문이다.
+	-->
+	<key>aps-environment</key>
+	<string>production</string>
+</dict>
+</plist>
