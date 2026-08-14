@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "assets": "node scripts/generate-app-assets.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -27,6 +28,7 @@
     "vite-plugin-svgr": "^5.2.0"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8.5.0",
     "@eslint/js": "^9.39.4",
     "@types/node": "^24.12.0",
