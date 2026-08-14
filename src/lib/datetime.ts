@@ -47,6 +47,15 @@ export function formatTime(iso: string | undefined | null): string | null {
   return `${hh}:${mi}`;
 }
 
+// KST 기준 시(0~23). 파싱 실패하거나 값이 없으면 null.
+// 근무조(주간/야간) 판정처럼 "몇 시냐"만 필요할 때 쓴다.
+export function kstHour(iso: string | undefined | null): number | null {
+  if (!iso) return null;
+  const d = parseServerDate(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return Number(kstParts(d).hh);
+}
+
 // "08-14 16:15" (KST). 연도를 뺀 짧은 표기 — 열 폭이 좁은 표에서 쓴다.
 // 파싱 실패하거나 값이 없으면 null.
 export function formatShortDateTime(iso: string | undefined | null): string | null {

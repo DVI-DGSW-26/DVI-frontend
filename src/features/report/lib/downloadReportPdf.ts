@@ -19,6 +19,7 @@ import {
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import { formatDateTime, parseServerDate } from "../../../lib/datetime";
 import { formatSlotTime } from "./inspectedTime";
+import { resolveShift, SHIFT_LABEL } from "./shift";
 
 function stageTitle(s: { stage: ReportStage; typeLabel: string }): string {
   return `${STAGE_LABEL[s.stage] ?? ""} ${s.typeLabel ?? ""}`.trim();
@@ -348,6 +349,13 @@ function inspectionLabelText(detail: ReportDetail): string {
   return detail.inspectionLabel;
 }
 
+// 근무조(주간/야간). 판정할 수 없으면 칸 자체를 빼서 빈 항목이 남지 않게 한다.
+function shiftRow(detail: ReportDetail): string {
+  const shift = resolveShift(detail);
+  if (!shift) return "";
+  return `<div><span class="label">근무조</span> ${escapeHtml(SHIFT_LABEL[shift])}</div>`;
+}
+
 function buildHtml(detail: ReportDetail): string {
   // 차수 열이 붙은 통합 보고서는 표가 넓어 A4 세로로는 잘린다.
   const wide =
@@ -415,6 +423,7 @@ function buildHtml(detail: ReportDetail): string {
     <div><span class="label">공정</span> ${escapeHtml(detail.process)}</div>
     <div><span class="label">설비</span> ${escapeHtml(detail.equipmentName)}</div>
     <div><span class="label">검사 차수</span> ${escapeHtml(inspectionLabelText(detail))}</div>
+    ${shiftRow(detail)}
     <div><span class="label">자주검사</span> ${escapeHtml(detail.productionName)}</div>
     <div><span class="label">순회검사</span> ${escapeHtml(detail.qualityName)}</div>
     <div><span class="label">승인자</span> ${escapeHtml(detail.approvedByName)}</div>
