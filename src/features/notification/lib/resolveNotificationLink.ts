@@ -5,7 +5,11 @@ import type { NotificationResponse } from "../api/types";
 // id 로 라우팅돼 "정보 없음" 화면이 뜨거나 (2) 사용자 role 이 해당 경로에 접근 권한이
 // 없어 RouteGuard 가 "/" 로 리다이렉트하거나 빈 화면이 뜨는 케이스가 있다.
 // type 별로 안전한 기본값을 먼저 잡고, 필요할 때만 linkUrl 을 따른다.
-export function resolveNotificationLink(n: NotificationResponse): string {
+// type/linkUrl 만 있으면 되므로 Pick 으로 받는다. 푸시 payload 의 data 처럼
+// 알림 객체 전체가 없는 경우에도 같은 규칙을 쓰기 위함이다.
+export function resolveNotificationLink(
+  n: Pick<NotificationResponse, "type" | "linkUrl">,
+): string {
   switch (n.type) {
     case "INSPECTION_COMPLETED":
       // 자주검사 완료 → 순회검사자 알림. 이 시점에는 cross-check 가 아직 생성되지

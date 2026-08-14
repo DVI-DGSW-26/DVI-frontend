@@ -37,6 +37,14 @@ import CrossCheckApprovalDetailPage from "./features/cross-check/ui/CrossCheckAp
 import MonitorPage from "./features/monitor/ui/MonitorPage";
 
 import { useAuth } from "./features/auth/AuthContext";
+import { useNotificationAlerts } from "./features/notification/model/useNotificationAlerts";
+
+// 알림을 앱 밖(OS 알림창)으로 내보내는 배선. 그리는 것은 없다.
+// useNavigate 를 쓰므로 BrowserRouter 안에 있어야 한다.
+function NotificationAlerts() {
+  useNotificationAlerts();
+  return null;
+}
 
 function HomePage() {
   const { user } = useAuth();
@@ -52,6 +60,7 @@ function HomePage() {
 function App() {
   return (
     <BrowserRouter>
+      <NotificationAlerts />
       <Routes>
         <Route path="/signup" element={<SignupForm />} />
         <Route path="/login" element={<LoginForm />} />

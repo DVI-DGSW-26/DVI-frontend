@@ -4,6 +4,8 @@ export {
   markAsRead,
   markAllAsRead,
 } from "./notificationApi";
+export { registerDeviceToken, deleteDeviceToken } from "./deviceTokenApi";
+export type { DevicePlatform } from "./deviceTokenApi";
 export {
   useNotifications,
   useUnreadCount,
