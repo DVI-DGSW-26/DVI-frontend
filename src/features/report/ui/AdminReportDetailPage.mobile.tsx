@@ -11,6 +11,7 @@ import type {
   ReportResultItem,
 } from "../api/types";
 import { downloadReportPdf } from "../lib/downloadReportPdf";
+import { resolveShift, SHIFT_LABEL } from "../lib/shift";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import PhotoCompareModal from "../../../components/shared/PhotoCompareModal";
 import ReportStagesSection from "./ReportStagesSection";
@@ -266,6 +267,7 @@ const AdminReportDetailPageMobile = () => {
   const isPass = data.result === "PASS";
   const processLabel =
     PROCESS_LABEL[data.process] ?? String(data.process ?? "");
+  const shift = resolveShift(data);
 
   return (
     <div className="flex min-h-full flex-col gap-3 bg-[#F5F5F5] px-4 pb-21 pt-5">
@@ -336,6 +338,8 @@ const AdminReportDetailPageMobile = () => {
             value={data.targetDate ? data.targetDate.slice(0, 10) : "—"}
           />
           <InfoCell label="검사 차수" value={data.inspectionLabel || "—"} />
+          {/* 판정 불가하면(초품 검사 시각·슬롯 타입 모두 불충분) 아예 숨긴다. */}
+          {shift && <InfoCell label="근무조" value={SHIFT_LABEL[shift]} />}
           <InfoCell label="작업자" value={data.productionName} />
           <InfoCell label="검사자" value={data.qualityName} />
         </dl>
