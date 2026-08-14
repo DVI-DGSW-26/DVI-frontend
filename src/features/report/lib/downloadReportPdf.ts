@@ -17,6 +17,9 @@ import {
   type StageColumn,
 } from "./stageMeasurements";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
+import { formatDateTime, parseServerDate } from "../../../lib/datetime";
+import { formatSlotTime } from "./inspectedTime";
+import { resolveShift, SHIFT_LABEL } from "./shift";
 
 function stageTitle(s: { stage: ReportStage; typeLabel: string }): string {
   return `${STAGE_LABEL[s.stage] ?? ""} ${s.typeLabel ?? ""}`.trim();
@@ -215,11 +218,13 @@ function stagesSection(detail: ReportDetail): string {
 // 실제 검사 시각 우선. 없으면 예정 슬롯을 괄호로 구분해 폴백 — 슬롯값은 실제로
 // 언제 측정했는지가 아니다.
 function fmtInspected(s: ReportStageInfo): string {
-  if (s.inspectedAt) {
-    const d = new Date(s.inspectedAt);
-    if (!Number.isNaN(d.getTime())) return d.toLocaleString("ko-KR");
+  // 서버 시각은 오프셋 없는 KST. new Date().toLocaleString() 은 인쇄하는 기기의
+  // 시간대를 타므로, 출력물이 흔들리지 않게 공용 파서로 KST 고정해서 찍는다.
+  if (s.inspectedAt && !Number.isNaN(parseServerDate(s.inspectedAt).getTime())) {
+    return formatDateTime(s.inspectedAt);
   }
-  if (s.inspectionTime) return `(${s.inspectionTime.slice(0, 5)} 예정)`;
+  const slot = formatSlotTime(s.inspectionTime);
+  if (slot) return `(${slot} 예정)`;
   return "-";
 }
 
@@ -344,6 +349,13 @@ function inspectionLabelText(detail: ReportDetail): string {
   return detail.inspectionLabel;
 }
 
+// 근무조(주간/야간). 판정할 수 없으면 칸 자체를 빼서 빈 항목이 남지 않게 한다.
+function shiftRow(detail: ReportDetail): string {
+  const shift = resolveShift(detail);
+  if (!shift) return "";
+  return `<div><span class="label">근무조</span> ${escapeHtml(SHIFT_LABEL[shift])}</div>`;
+}
+
 function buildHtml(detail: ReportDetail): string {
   // 차수 열이 붙은 통합 보고서는 표가 넓어 A4 세로로는 잘린다.
   const wide =
@@ -403,7 +415,7 @@ function buildHtml(detail: ReportDetail): string {
     <h1>${escapeHtml(detail.reportNumber)}</h1>
     ${judgeBadge(detail.result)}
   </div>
-  <div class="muted">발행일 ${escapeHtml(new Date(detail.createdAt).toLocaleString("ko-KR"))}</div>
+  <div class="muted">발행일 ${escapeHtml(formatDateTime(detail.createdAt))}</div>
 
   <div class="grid">
     <div><span class="label">고객사</span> ${escapeHtml(detail.customerName)}</div>
@@ -411,6 +423,7 @@ function buildHtml(detail: ReportDetail): string {
     <div><span class="label">공정</span> ${escapeHtml(detail.process)}</div>
     <div><span class="label">설비</span> ${escapeHtml(detail.equipmentName)}</div>
     <div><span class="label">검사 차수</span> ${escapeHtml(inspectionLabelText(detail))}</div>
+    ${shiftRow(detail)}
     <div><span class="label">자주검사</span> ${escapeHtml(detail.productionName)}</div>
     <div><span class="label">순회검사</span> ${escapeHtml(detail.qualityName)}</div>
     <div><span class="label">승인자</span> ${escapeHtml(detail.approvedByName)}</div>

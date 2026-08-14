@@ -5,6 +5,8 @@ import type {
 } from "../api/types";
 // 초 → 중 → 종 고정 순서. 백엔드가 stages 를 어떤 순서로 주든 성적서 읽는 순서로 맞춘다.
 import { STAGE_LABEL, STAGE_ORDER } from "../lib/stageMeasurements";
+import { formatSlotTime } from "../lib/inspectedTime";
+import { formatShortDateTime } from "../../../lib/datetime";
 
 const STAGE_BADGE: Record<ReportStage, string> = {
   INITIAL: "border-[#DBEAFE] bg-[#EFF6FF] text-[#1D4ED8]",
@@ -15,17 +17,11 @@ const STAGE_BADGE: Record<ReportStage, string> = {
 // 실제 검사 시각(inspectedAt) 우선. 없으면 예정 슬롯(inspectionTime)으로 폴백하되
 // 슬롯값은 "실제로 언제 쟀는지"가 아니므로 괄호로 구분해 표시한다.
 function formatInspected(stage: ReportStageInfo): string {
-  if (stage.inspectedAt) {
-    const d = new Date(stage.inspectedAt);
-    if (!Number.isNaN(d.getTime())) {
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const dd = String(d.getDate()).padStart(2, "0");
-      const hh = String(d.getHours()).padStart(2, "0");
-      const mi = String(d.getMinutes()).padStart(2, "0");
-      return `${mm}-${dd} ${hh}:${mi}`;
-    }
-  }
-  if (stage.inspectionTime) return `(${stage.inspectionTime.slice(0, 5)} 예정)`;
+  // 서버 시각은 오프셋 없는 KST 라 new Date() 로 바로 파싱하면 기기 시간대에 끌려간다.
+  const inspected = formatShortDateTime(stage.inspectedAt);
+  if (inspected) return inspected;
+  const slot = formatSlotTime(stage.inspectionTime);
+  if (slot) return `(${slot} 예정)`;
   return "—";
 }
 

@@ -38,6 +38,34 @@ export function formatDateTime(iso: string | undefined | null): string {
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
 }
 
+// "16:15" (KST). 파싱 실패하거나 값이 없으면 null — 호출부에서 폴백을 고르게 한다.
+export function formatTime(iso: string | undefined | null): string | null {
+  if (!iso) return null;
+  const d = parseServerDate(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const { hh, mi } = kstParts(d);
+  return `${hh}:${mi}`;
+}
+
+// KST 기준 시(0~23). 파싱 실패하거나 값이 없으면 null.
+// 근무조(주간/야간) 판정처럼 "몇 시냐"만 필요할 때 쓴다.
+export function kstHour(iso: string | undefined | null): number | null {
+  if (!iso) return null;
+  const d = parseServerDate(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return Number(kstParts(d).hh);
+}
+
+// "08-14 16:15" (KST). 연도를 뺀 짧은 표기 — 열 폭이 좁은 표에서 쓴다.
+// 파싱 실패하거나 값이 없으면 null.
+export function formatShortDateTime(iso: string | undefined | null): string | null {
+  if (!iso) return null;
+  const d = parseServerDate(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const { mm, dd, hh, mi } = kstParts(d);
+  return `${mm}-${dd} ${hh}:${mi}`;
+}
+
 // KST(Asia/Seoul) 기준 달력 날짜 키 "YYYY-MM-DD".
 // 브라우저 타임존과 무관하게 UTC+9 로 환산해서 계산 — 현장 기기가 KST 가 아니어도 안전.
 export function kstDateKey(d: Date): string {
