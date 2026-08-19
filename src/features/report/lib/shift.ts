@@ -1,7 +1,11 @@
 import { kstHour, WORK_DAY_START_HOUR } from "../../../lib/datetime";
 import { SLOT_SEQUENCE } from "../../inspection/lib/slotSequence";
 import type { InspectionProcess } from "../../inspection/type/types";
-import type { ReportDetail, ReportStageInfo } from "../api/types";
+import type {
+  ReportDetail,
+  ReportStageInfo,
+  ReportSummary,
+} from "../api/types";
 import { STAGE_ORDER } from "./stageMeasurements";
 
 export type WorkShift = "DAY" | "NIGHT";
@@ -59,11 +63,32 @@ function hasNightSlots(process: string): boolean {
 export function resolveShift(detail: ReportDetail): WorkShift | null {
   const first = firstStage(detail.stages);
 
-  const hour = kstHour(first?.inspectedAt);
-  if (hour != null) return isNightHour(hour) ? "NIGHT" : "DAY";
+  const byTime = shiftAt(first?.inspectedAt);
+  if (byTime) return byTime;
 
   const type = first?.type ?? detail.inspectionType;
   if (type?.startsWith("NIGHT_")) return "NIGHT";
   if (type?.startsWith("DAY_") && hasNightSlots(detail.process)) return "DAY";
   return null;
+}
+
+// 검사 시각 하나로 판정. 값이 없거나 파싱 못 하면 null.
+function shiftAt(inspectedAt: string | null | undefined): WorkShift | null {
+  const hour = kstHour(inspectedAt);
+  if (hour == null) return null;
+  return isNightHour(hour) ? "NIGHT" : "DAY";
+}
+
+/**
+ * 목록 카드(요약)의 근무조. 판정할 수 없으면 null → 카드에서 숨긴다.
+ *
+ * 요약에는 차수(stages)가 없어 백엔드가 주는 초품 실제 검사시각만 근거로 쓴다.
+ * 상세와 달리 슬롯 타입 폴백을 쓰지 않는 건, 실서버가 야간 작업도 `DAY_*` 로
+ * 기록해 폴백이 야간을 "주간" 으로 단정해버리기 때문이다(2026-08-19 실측: 최근
+ * 80건 중 야간 5건이 전부 `DAY_5`, 같은 `DAY_5` 주간이 24건). 상세는 초품
+ * inspectedAt 이 채워져 있어 폴백까지 갈 일이 거의 없지만, 목록은 이 값이 없으면
+ * 폴백이 곧 오표시라 아예 표시하지 않는 쪽을 택한다.
+ */
+export function resolveSummaryShift(summary: ReportSummary): WorkShift | null {
+  return shiftAt(summary.initialInspectedAt);
 }

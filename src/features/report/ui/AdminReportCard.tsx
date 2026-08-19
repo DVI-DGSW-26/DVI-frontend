@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { ReportProcess, ReportSummary } from "../api/types";
 import { downloadReportPdf } from "../lib/downloadReportPdf";
+import { resolveSummaryShift, SHIFT_LABEL } from "../lib/shift";
 import { formatDate } from "../../../lib/datetime";
 
 const PROCESS_LABEL: Record<ReportProcess, string> = {
@@ -30,6 +31,8 @@ const AdminReportCard = ({ report, onClick }: Props) => {
   const [downloading, setDownloading] = useState(false);
 
   const isPass = report.result === "PASS";
+  // 판정 근거(초품 실제 검사시각)가 목록 응답에 없으면 null → 항목 자체를 숨긴다.
+  const shift = resolveSummaryShift(report);
   const processLabel =
     PROCESS_LABEL[report.process] ?? String(report.process ?? "");
 
@@ -120,6 +123,19 @@ const AdminReportCard = ({ report, onClick }: Props) => {
         {report.customerName ? `${report.customerName} · ` : ""}
         {inspectionDateText(report)}
         {report.inspectionLabel ? ` · ${report.inspectionLabel}` : ""}
+        {shift && (
+          <>
+            {" · "}
+            {/* 야간은 드물어(실측 80건 중 5건) 한눈에 띄어야 한다. */}
+            <span
+              className={
+                shift === "NIGHT" ? "font-medium text-[#4F46E5]" : undefined
+              }
+            >
+              {SHIFT_LABEL[shift]}
+            </span>
+          </>
+        )}
       </p>
     </div>
   );
