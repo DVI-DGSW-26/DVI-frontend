@@ -37,6 +37,12 @@ export interface ReportSummary {
   qualityName: string;
   approvedByName: string;
   createdAt: string;
+  // 초품(INITIAL) 차수의 실제 검사 시각. 목록 카드의 근무조(주간/야간) 판정 근거다.
+  // 요약에는 stages 가 없어 이 값 없이는 판정할 수 없다 — 슬롯 타입(inspectionType)은
+  // 실서버에서 야간 작업도 전부 DAY_* 로 기록돼 근거가 못 된다(2026-08-19 실측: 최근
+  // 80건 중 야간 5건이 모두 DAY_5, 같은 DAY_5 인 주간이 24건).
+  // (백엔드 TODO: GET /report 목록 응답에 추가 필요. 현재 미제공이라 undefined.)
+  initialInspectedAt?: string | null;
 }
 
 // 통합 보고서에서 dim 1개의 차수별 측정값 한 칸. 성적서 양식이 "dim = 행,
