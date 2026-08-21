@@ -4,6 +4,8 @@ import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import { useProcessList, useUpdateProcess } from "../api";
 import type { ProcessInfo } from "../api";
 import ProcessFormDrawer from "./ProcessFormDrawer";
+import ProcessScheduleDrawer from "./ProcessScheduleDrawer";
+import { useAllProcessSchedules } from "../../inspection-schedule/api";
 
 // 공정 설정 3개를 목록에서 한눈에 보기 위한 칩.
 const FLAG_CHIPS: { key: keyof ProcessInfo; label: string; style: string }[] = [
@@ -43,6 +45,26 @@ function FlagChips({ process }: { process: ProcessInfo }) {
   );
 }
 
+interface ScheduleSummary {
+  type: "CHO_JUNG_JONG" | "TIME_BASED";
+  count: number;
+  night: number;
+}
+
+function ScheduleCell({ summary }: { summary: ScheduleSummary | undefined }) {
+  if (!summary) return <span className="text-xs text-[#A8A8A8]">—</span>;
+  return (
+    <span className="whitespace-nowrap text-xs text-[#6B7280]">
+      {summary.type === "TIME_BASED" ? "시간대별" : "초/중/종"} {summary.count}시점
+      {summary.night > 0 && (
+        <span className="ml-1 rounded-full bg-[#E0E7FF] px-1.5 py-0.5 text-[10px] font-medium text-[#3730A3]">
+          야간 {summary.night}
+        </span>
+      )}
+    </span>
+  );
+}
+
 function ActiveBadge({ isActive }: { isActive: boolean }) {
   return (
     <span
@@ -61,12 +83,27 @@ export default function ProcessesPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ProcessInfo | null>(null);
   const [showInactive, setShowInactive] = useState(false);
+  const [scheduleTarget, setScheduleTarget] = useState<ProcessInfo | null>(null);
   const [keyword, setKeyword] = useState("");
 
   const isMobile = useMediaQuery("(max-width: 767px)");
   // 비활성 포함으로 한 번만 받아두고 화면에서 거른다 — 토글할 때마다 다시 받지 않는다.
   const { data: processes = [], isLoading, isError } = useProcessList(true);
   const { mutate: update, isPending: isUpdating } = useUpdateProcess();
+  // 목록에 "초/중/종 3시점 · 야간 3" 같은 요약을 띄우려고 전 공정 스케줄을 한 번에 받는다.
+  const { data: schedules = [] } = useAllProcessSchedules();
+  const scheduleByProcess = useMemo(() => {
+    const map = new Map<string, ScheduleSummary>();
+    for (const s of schedules) {
+      const night = (s.slots ?? []).filter((x) => x.shift === "NIGHT").length;
+      map.set(s.process, {
+        type: s.scheduleType,
+        count: s.slots?.length ?? 0,
+        night,
+      });
+    }
+    return map;
+  }, [schedules]);
 
   const filtered = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
@@ -179,7 +216,9 @@ export default function ProcessesPage() {
           isLoading={isLoading}
           isError={isError}
           isUpdating={isUpdating}
+          schedules={scheduleByProcess}
           onEdit={openEdit}
+          onEditSchedule={setScheduleTarget}
           onToggleActive={toggleActive}
         />
       ) : (
@@ -188,12 +227,19 @@ export default function ProcessesPage() {
           isLoading={isLoading}
           isError={isError}
           isUpdating={isUpdating}
+          schedules={scheduleByProcess}
           onEdit={openEdit}
+          onEditSchedule={setScheduleTarget}
           onToggleActive={toggleActive}
         />
       )}
 
       <ProcessFormDrawer open={open} onClose={close} process={editing} />
+      <ProcessScheduleDrawer
+        open={scheduleTarget !== null}
+        onClose={() => setScheduleTarget(null)}
+        process={scheduleTarget}
+      />
     </div>
   );
 }
@@ -203,7 +249,9 @@ interface ListProps {
   isLoading: boolean;
   isError: boolean;
   isUpdating: boolean;
+  schedules: Map<string, ScheduleSummary>;
   onEdit: (item: ProcessInfo) => void;
+  onEditSchedule: (item: ProcessInfo) => void;
   onToggleActive: (item: ProcessInfo) => void;
 }
 
@@ -212,7 +260,9 @@ function DesktopTable({
   isLoading,
   isError,
   isUpdating,
+  schedules,
   onEdit,
+  onEditSchedule,
   onToggleActive,
 }: ListProps) {
   return (
@@ -226,6 +276,7 @@ function DesktopTable({
             <th className="px-4 py-3 text-left font-medium">코드</th>
             <th className="px-4 py-3 text-left font-medium">약칭</th>
             <th className="px-4 py-3 text-left font-medium">설정</th>
+            <th className="px-4 py-3 text-left font-medium">검사 스케줄</th>
             <th className="px-4 py-3 text-left font-medium">상태</th>
             <th className="px-4 py-3 text-right font-medium">관리</th>
           </tr>
@@ -233,21 +284,21 @@ function DesktopTable({
         <tbody className="divide-y divide-gray-100 text-[#212121]">
           {isLoading && (
             <tr>
-              <td colSpan={6} className="px-4 py-10 text-center text-[#A8A8A8]">
+              <td colSpan={7} className="px-4 py-10 text-center text-[#A8A8A8]">
                 불러오는 중...
               </td>
             </tr>
           )}
           {isError && (
             <tr>
-              <td colSpan={6} className="px-4 py-10 text-center text-[#EF4444]">
+              <td colSpan={7} className="px-4 py-10 text-center text-[#EF4444]">
                 목록을 불러오지 못했습니다.
               </td>
             </tr>
           )}
           {!isLoading && !isError && items.length === 0 && (
             <tr>
-              <td colSpan={6} className="px-4 py-10 text-center text-[#A8A8A8]">
+              <td colSpan={7} className="px-4 py-10 text-center text-[#A8A8A8]">
                 해당 조건의 공정이 없습니다.
               </td>
             </tr>
@@ -265,6 +316,21 @@ function DesktopTable({
               </td>
               <td className="px-4 py-3">
                 <FlagChips process={item} />
+              </td>
+              <td className="px-4 py-3">
+                <button
+                  type="button"
+                  onClick={() => onEditSchedule(item)}
+                  className="flex items-center gap-1 rounded-md px-1.5 py-1 transition-colors hover:bg-[#F3E8F7]"
+                >
+                  <ScheduleCell summary={schedules.get(item.code)} />
+                  <Icon
+                    icon="mdi:pencil-outline"
+                    width={13}
+                    height={13}
+                    className="text-[#931B82]"
+                  />
+                </button>
               </td>
               <td className="whitespace-nowrap px-4 py-3">
                 <ActiveBadge isActive={item.isActive} />
@@ -311,7 +377,9 @@ function MobileList({
   isLoading,
   isError,
   isUpdating,
+  schedules,
   onEdit,
+  onEditSchedule,
   onToggleActive,
 }: ListProps) {
   if (isLoading) {
@@ -358,6 +426,18 @@ function MobileList({
           <div className="mt-2">
             <FlagChips process={item} />
           </div>
+
+          <button
+            type="button"
+            onClick={() => onEditSchedule(item)}
+            className="mt-2 flex w-full items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-left transition-colors hover:border-[#931B82]"
+          >
+            <span className="flex items-center gap-1.5">
+              <Icon icon="mdi:calendar-clock" width={15} height={15} className="text-[#6B7280]" />
+              <ScheduleCell summary={schedules.get(item.code)} />
+            </span>
+            <Icon icon="mdi:chevron-right" width={16} height={16} className="text-[#A8A8A8]" />
+          </button>
 
           <div className="mt-3 flex items-center justify-end gap-1 border-t border-gray-100 pt-2">
             <button

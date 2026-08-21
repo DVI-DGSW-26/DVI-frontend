@@ -28,3 +28,24 @@ export interface InspectionSchedule {
 
 export type InspectionScheduleResponse = ApiResponse<InspectionSchedule>;
 export type InspectionScheduleListResponse = ApiResponse<InspectionSchedule[]>;
+
+/** PUT 으로 보내는 슬롯 한 줄. 리스트 순서가 그대로 slotOrder 가 된다. */
+export interface ScheduleSlotInput {
+  label: string;
+  shift: Shift;
+  // "HH:mm". 고정 시각이 없으면 생략한다.
+  slotTime?: string;
+  // 자정을 넘기는 슬롯은 1. 생략하면 0.
+  dayOffset?: number;
+}
+
+// 부분 수정이 아니라 통째 교체다 — 화면에 있는 슬롯 전부를 보내야 한다.
+// autoCopyCrossCheck/hardnessRequired 는 공정 설정에서 서버가 계산하므로 보내지 않는다.
+export interface UpdateInspectionScheduleRequest {
+  scheduleType: ScheduleType;
+  slots: ScheduleSlotInput[];
+}
+
+/** 슬롯 개수 제한 — 서버와 같은 값. */
+export const MIN_SLOTS = 1;
+export const MAX_SLOTS = 24;

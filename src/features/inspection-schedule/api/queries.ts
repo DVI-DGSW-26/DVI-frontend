@@ -1,5 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
-import { getAllProcessSchedules, getProcessSchedule } from "./scheduleApi";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  getAllProcessSchedules,
+  getProcessSchedule,
+  updateProcessSchedule,
+} from "./scheduleApi";
+import type { UpdateInspectionScheduleRequest } from "./types";
 
 export const scheduleKeys = {
   all: ["inspection-schedule"] as const,
@@ -24,5 +29,28 @@ export function useAllProcessSchedules() {
     queryKey: scheduleKeys.list(),
     queryFn: getAllProcessSchedules,
     staleTime: SCHEDULE_STALE_TIME,
+  });
+}
+
+/**
+ * 공정 스케줄 저장.
+ *
+ * 슬롯이 바뀌면 검사 시점 목록(GET /inspection/slots)도 같이 바뀌므로 그쪽 캐시까지
+ * 비운다 — 안 그러면 스케줄을 고쳐도 시점 선택 화면이 옛 슬롯을 계속 보여준다.
+ */
+export function useUpdateProcessSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      process,
+      body,
+    }: {
+      process: string;
+      body: UpdateInspectionScheduleRequest;
+    }) => updateProcessSchedule(process, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: scheduleKeys.all });
+      qc.invalidateQueries({ queryKey: ["inspection", "slots"] });
+    },
   });
 }
