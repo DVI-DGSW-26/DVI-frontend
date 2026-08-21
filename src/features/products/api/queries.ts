@@ -5,6 +5,7 @@ import {
   getProductDetail,
   getProducts,
   updateProduct,
+  uploadProductSketch,
 } from "./productApi";
 import type {
   CreateProductRequest,
@@ -66,5 +67,11 @@ export function useDeleteProduct() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: productKeys.list() });
     },
+  });
+}
+
+export function useUploadProductSketch() {
+  return useMutation({
+    mutationFn: (file: Blob) => uploadProductSketch(file),
   });
 }
