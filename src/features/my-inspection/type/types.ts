@@ -40,8 +40,11 @@ export interface MyInspectionDim {
   // dimName 응답 누락 가능성 대비 optional.
   dimName?: string;
   standardValue: number;
-  tolerancePlus: number;
-  toleranceMinus: number;
+  // 부호 포함 편차. 최대 허용값 = standardValue + toleranceUpper,
+  // 최소 허용값 = standardValue + toleranceLower (보통 upper >= 0, lower <= 0).
+  // 도면 표기를 그대로 옮긴다 — "86 -0.25/-0.4" 면 upper=-0.25, lower=-0.4.
+  toleranceUpper: number;
+  toleranceLower: number;
   // 검사 항목 종류. PASS_FAIL 이면 측정값 없이 OK/NG 만 입력. 누락 시 NUMBER 로 간주.
   valueType?: InspectionValueType;
 }

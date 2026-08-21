@@ -67,8 +67,8 @@ export interface ReportResultItem {
   dimNo: number;
   dimName: string;
   standardValue: number;
-  tolerancePlus: number;
-  toleranceMinus: number;
+  toleranceUpper: number;
+  toleranceLower: number;
   // 측정값/이미지는 skip 케이스 등에서 누락 가능.
   productionValue: number | null;
   qualityValue: number | null;

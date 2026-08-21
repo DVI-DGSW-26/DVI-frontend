@@ -87,8 +87,8 @@ export default function InspectionResultPage() {
           dimNo: r.dimNo,
           dimName: r.dimName ?? dimNameByNo.get(r.dimNo),
           standardValue: r.standardValue,
-          tolerancePlus: r.tolerancePlus,
-          toleranceMinus: r.toleranceMinus,
+          toleranceUpper: r.toleranceUpper,
+          toleranceLower: r.toleranceLower,
           valueType,
           status: done ? "completed" : "skipped",
           measuredValue: measured,
@@ -513,8 +513,8 @@ function StepResultCard({
     ? "OK/NG 판정 항목"
     : formatStandardWithTolerance(
         result.standardValue,
-        result.tolerancePlus,
-        result.toleranceMinus,
+        result.toleranceUpper,
+        result.toleranceLower,
       );
   // PASS_FAIL 항목 또는 가공 공정이면 작업자 판정값(OK/NG), 그 외는 측정값 자동 계산.
   const usePassFail = isPassFail || isMachining;
@@ -527,8 +527,8 @@ function StepResultCard({
     : judgeMeasurement(
         result.measuredValue,
         result.standardValue,
-        result.tolerancePlus,
-        result.toleranceMinus,
+        result.toleranceUpper,
+        result.toleranceLower,
       );
 
   return (

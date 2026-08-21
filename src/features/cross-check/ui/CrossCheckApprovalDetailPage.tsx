@@ -9,6 +9,8 @@ import {
 } from "../api";
 import type { CrossCheckResultInfo } from "../api";
 import { useProcessFlag, useProcessLabel } from "../../process";
+import { formatStandardWithTolerance } from "../../inspection/lib/format";
+import { judgeMeasurement } from "../../inspection/lib/judgment";
 import { useAuth } from "../../auth/AuthContext";
 import { getStage, STAGE_LABEL, STAGE_BADGE } from "../lib/stage";
 import PhotoCompareModal from "../../../components/shared/PhotoCompareModal";
@@ -17,18 +19,10 @@ import { formatDateTime } from "../../../lib/datetime";
 function isWithinTolerance(
   value: number,
   standard: number,
-  plus: number,
-  minus: number,
+  upper: number,
+  lower: number,
 ): boolean {
-  return value >= standard - minus && value <= standard + plus;
-}
-
-function formatStandardWithTolerance(
-  standard: number,
-  plus: number,
-  minus: number,
-): string {
-  return `${standard} (+${plus} / -${minus})`;
+  return judgeMeasurement(value, standard, upper, lower) === "pass";
 }
 
 interface ApiErrorData {
@@ -286,7 +280,7 @@ export default function CrossCheckApprovalDetailPage() {
               <tr>
                 <th className="px-3 py-2 text-left font-medium">DIM</th>
                 <th className="px-3 py-2 text-left font-medium">
-                  기준 (±공차)
+                  기준 (공차)
                 </th>
                 <th className="px-3 py-2 text-right font-medium">자주검사</th>
                 <th className="px-3 py-2 text-right font-medium">순회검사</th>
@@ -433,8 +427,8 @@ function DimRow({
       ? isWithinTolerance(
           row.productionValue,
           row.standardValue,
-          row.tolerancePlus,
-          row.toleranceMinus,
+          row.toleranceUpper,
+          row.toleranceLower,
         )
       : null;
   const crossWithin =
@@ -442,8 +436,8 @@ function DimRow({
       ? isWithinTolerance(
           row.measuredValue,
           row.standardValue,
-          row.tolerancePlus,
-          row.toleranceMinus,
+          row.toleranceUpper,
+          row.toleranceLower,
         )
       : null;
 
@@ -458,8 +452,8 @@ function DimRow({
       <td className="px-3 py-2 text-xs text-[#6B7280]">
         {formatStandardWithTolerance(
           row.standardValue,
-          row.tolerancePlus,
-          row.toleranceMinus,
+          row.toleranceUpper,
+          row.toleranceLower,
         )}
       </td>
       <td className="px-3 py-2 text-right">
@@ -511,8 +505,8 @@ function DimCard({
       ? isWithinTolerance(
           row.productionValue,
           row.standardValue,
-          row.tolerancePlus,
-          row.toleranceMinus,
+          row.toleranceUpper,
+          row.toleranceLower,
         )
       : null;
   const crossWithin =
@@ -520,8 +514,8 @@ function DimCard({
       ? isWithinTolerance(
           row.measuredValue,
           row.standardValue,
-          row.tolerancePlus,
-          row.toleranceMinus,
+          row.toleranceUpper,
+          row.toleranceLower,
         )
       : null;
   const hasPhoto = !!(row.productionImageUrl || row.imageUrl);
@@ -550,8 +544,8 @@ function DimCard({
         기준{" "}
         {formatStandardWithTolerance(
           row.standardValue,
-          row.tolerancePlus,
-          row.toleranceMinus,
+          row.toleranceUpper,
+          row.toleranceLower,
         )}
       </div>
       <div className="mt-2 grid grid-cols-2 gap-2">

@@ -17,8 +17,8 @@ export interface InspectionDetailResult {
   dimNo: number;
   dimName?: string;
   standardValue: number;
-  tolerancePlus: number;
-  toleranceMinus: number;
+  toleranceUpper: number;
+  toleranceLower: number;
   // 검사 항목 종류. PASS_FAIL 항목은 기준값/공차/측정값 없이 OK/NG 만 입력.
   // 누락 응답(구형) 대비 optional — 없으면 NUMBER 로 간주.
   valueType?: InspectionValueType;
@@ -191,8 +191,8 @@ export interface StepResult {
   // dimName 누락 응답 대비 — optional.
   dimName?: string;
   standardValue: number;
-  tolerancePlus: number;
-  toleranceMinus: number;
+  toleranceUpper: number;
+  toleranceLower: number;
   status: StepStatus;
   // 항목 종류 — 결과 표시 분기에 사용. 없으면 NUMBER 로 간주.
   valueType?: InspectionValueType;

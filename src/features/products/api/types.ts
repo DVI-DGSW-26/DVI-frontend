@@ -30,8 +30,11 @@ export interface ProductDim {
   dimName?: string;
   // PASS_FAIL 항목엔 의미 없지만 백엔드가 어떤 값으로 내려보낼지 모르므로 그대로 받음.
   standardValue: number;
-  tolerancePlus: number;
-  toleranceMinus: number;
+  // 부호 포함 편차. 최대 허용값 = standardValue + toleranceUpper,
+  // 최소 허용값 = standardValue + toleranceLower (보통 upper >= 0, lower <= 0).
+  // 도면 표기를 그대로 옮긴다 — "86 -0.25/-0.4" 면 upper=-0.25, lower=-0.4.
+  toleranceUpper: number;
+  toleranceLower: number;
   valueType?: ProductValueType;
 }
 
@@ -56,8 +59,8 @@ export interface ProductDimInput {
   dimName: string;
   // PASS_FAIL 항목은 standardValue/공차 불필요 — payload 생성 시 omit.
   standardValue?: number;
-  tolerancePlus?: number;
-  toleranceMinus?: number;
+  toleranceUpper?: number;
+  toleranceLower?: number;
   valueType?: ProductValueType;
 }
 

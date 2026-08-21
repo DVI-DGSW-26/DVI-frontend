@@ -118,8 +118,8 @@ function makeMyInspection(
         dimNo: 1,
         dimName: "외경",
         standardValue: 100,
-        tolerancePlus: 0.5,
-        toleranceMinus: 0.5,
+        toleranceUpper: 0.5,
+        toleranceLower: -0.5,
       },
       {
         id: 2,
@@ -127,8 +127,8 @@ function makeMyInspection(
         dimNo: 2,
         dimName: "내경",
         standardValue: 80,
-        tolerancePlus: 0.25,
-        toleranceMinus: 0.25,
+        toleranceUpper: 0.25,
+        toleranceLower: -0.25,
       },
       {
         id: 3,
@@ -136,8 +136,8 @@ function makeMyInspection(
         dimNo: 3,
         dimName: "길이",
         standardValue: 30,
-        tolerancePlus: 0.2,
-        toleranceMinus: 0.1,
+        toleranceUpper: 0.2,
+        toleranceLower: -0.1,
       },
     ],
     status,
@@ -158,8 +158,8 @@ function buildMockResults(
       dimNo: d.dimNo,
       dimName: d.dimName,
       standardValue: d.standardValue,
-      tolerancePlus: d.tolerancePlus,
-      toleranceMinus: d.toleranceMinus,
+      toleranceUpper: d.toleranceUpper,
+      toleranceLower: d.toleranceLower,
       measuredValue: idx < filledCount ? d.standardValue : null,
       imageUrl:
         idx < filledCount

@@ -35,8 +35,12 @@ interface DimDraft {
   dimName: string;
   // PASS_FAIL 항목은 숫자값이 의미 없지만 폼 상태는 동일하게 string 유지 (입력 안 함).
   standardValue: string;
-  tolerancePlus: string;
-  toleranceMinus: string;
+  // 부호 포함 편차(도면 표기 그대로). 상한이 음수인 단측 공차도 있다.
+  toleranceUpper: string;
+  toleranceLower: string;
+  // 하한을 사용자가 직접 입력했는지. false 인 동안에는 상한을 넣을 때
+  // 하한을 -상한으로 자동으로 채운다(대칭 공차가 대부분이라).
+  lowerEdited?: boolean;
   valueType: ProductValueType;
 }
 
@@ -46,8 +50,8 @@ function emptyDim(): DimDraft {
   return {
     dimName: "",
     standardValue: "",
-    tolerancePlus: "",
-    toleranceMinus: "",
+    toleranceUpper: "",
+    toleranceLower: "",
     valueType: "NUMBER",
   };
 }
@@ -56,10 +60,27 @@ function emptyPassFail(): DimDraft {
   return {
     dimName: "",
     standardValue: "",
-    tolerancePlus: "",
-    toleranceMinus: "",
+    toleranceUpper: "",
+    toleranceLower: "",
     valueType: "PASS_FAIL",
   };
+}
+
+/**
+ * 상한 공차 입력에 따른 갱신 내용.
+ *
+ * 현장 공차는 대부분 대칭(±)이라, 하한을 아직 직접 입력하지 않았으면 -상한으로
+ * 채워준다. 단측 공차(예: 상한 -0.25 / 하한 -0.4)는 사용자가 하한을 고치는 순간
+ * lowerEdited 가 서서 더 이상 자동으로 덮어쓰지 않는다.
+ */
+function upperPatch(dim: DimDraft, value: string): Partial<DimDraft> {
+  if (dim.lowerEdited) return { toleranceUpper: value };
+  const n = Number(value);
+  if (value.trim() === "" || !Number.isFinite(n)) {
+    return { toleranceUpper: value, toleranceLower: "" };
+  }
+  // -0 이 문자열로 새어나가지 않도록 0 은 그대로 둔다.
+  return { toleranceUpper: value, toleranceLower: n === 0 ? "0" : String(-n) };
 }
 
 function toNumber(value: string): number | null {
@@ -180,8 +201,10 @@ export default function ProductFormDrawer({
                 id: d.id,
                 dimName: d.dimName ?? "",
                 standardValue: String(d.standardValue ?? ""),
-                tolerancePlus: String(d.tolerancePlus ?? ""),
-                toleranceMinus: String(d.toleranceMinus ?? ""),
+                toleranceUpper: String(d.toleranceUpper ?? ""),
+                toleranceLower: String(d.toleranceLower ?? ""),
+                // 저장된 값이 있으므로 상한을 고쳐도 하한을 덮어쓰지 않는다.
+                lowerEdited: true,
                 valueType: d.valueType ?? "NUMBER",
               }))
           : [emptyDim()];
@@ -259,8 +282,8 @@ export default function ProductFormDrawer({
       const isEmpty =
         d.dimName.trim() === "" &&
         d.standardValue === "" &&
-        d.tolerancePlus === "" &&
-        d.toleranceMinus === "";
+        d.toleranceUpper === "" &&
+        d.toleranceLower === "";
       if (isEmpty) continue;
 
       // PASS_FAIL 항목은 측정 시 작업자가 OK/NG 직접 선택 — 기준값/공차 불필요.
@@ -277,22 +300,27 @@ export default function ProductFormDrawer({
       // NUMBER 항목: 항목명은 기존 데이터에 비어있는 경우가 있어 필수 처리하지 않음.
       // 수치값(기준/공차) 만 필수.
       const std = toNumber(d.standardValue);
-      const plus = toNumber(d.tolerancePlus);
-      const minus = toNumber(d.toleranceMinus);
+      const plus = toNumber(d.toleranceUpper);
+      const minus = toNumber(d.toleranceLower);
       if (std === null)
         return setError(`치수 ${i + 1}: 기준값을 입력하세요.`);
       if (plus === null)
-        return setError(`치수 ${i + 1}: 공차(+)를 입력하세요.`);
+        return setError(`치수 ${i + 1}: 상한 공차를 입력하세요.`);
       if (minus === null)
-        return setError(`치수 ${i + 1}: 공차(-)를 입력하세요.`);
+        return setError(`치수 ${i + 1}: 하한 공차를 입력하세요.`);
+      // 서버도 TOLERANCE_BOUNDS_INVALID 로 막지만, 저장을 눌러보기 전에 알려준다.
+      if (minus > plus)
+        return setError(
+          `치수 ${i + 1}: 하한 공차가 상한보다 큽니다. 부호를 확인해주세요(예: 상한 0.2 / 하한 -0.1).`,
+        );
 
       dimsInput.push({
         ...(d.id != null ? { id: d.id } : {}),
         dimNo: i + 1,
         dimName: d.dimName.trim(),
         standardValue: std,
-        tolerancePlus: plus,
-        toleranceMinus: minus,
+        toleranceUpper: plus,
+        toleranceLower: minus,
         valueType: "NUMBER",
       });
     }
@@ -336,6 +364,12 @@ export default function ProductFormDrawer({
           if (code === "RESOURCE_IN_USE") {
             setError(
               "이미 검사·보고서가 참조 중인 치수는 삭제하거나 종류를 바꿀 수 없습니다. 값(기준·공차·이름) 수정만 가능합니다.",
+            );
+            return;
+          }
+          if (code === "TOLERANCE_BOUNDS_INVALID") {
+            setError(
+              "하한 공차가 상한보다 큽니다. 부호를 포함해 입력했는지 확인해주세요.",
             );
             return;
           }
@@ -657,17 +691,20 @@ export default function ProductFormDrawer({
                             }
                           />
                           <DimNumberInput
-                            label="공차 +"
-                            value={d.tolerancePlus}
-                            onChange={(v) =>
-                              updateDim(idx, { tolerancePlus: v })
-                            }
+                            label="상한 공차"
+                            placeholder="0.2"
+                            value={d.toleranceUpper}
+                            onChange={(v) => updateDim(idx, upperPatch(d, v))}
                           />
                           <DimNumberInput
-                            label="공차 -"
-                            value={d.toleranceMinus}
+                            label="하한 공차"
+                            placeholder="-0.2"
+                            value={d.toleranceLower}
                             onChange={(v) =>
-                              updateDim(idx, { toleranceMinus: v })
+                              updateDim(idx, {
+                                toleranceLower: v,
+                                lowerEdited: true,
+                              })
                             }
                           />
                         </div>
@@ -711,9 +748,15 @@ interface DimNumberInputProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  placeholder?: string;
 }
 
-function DimNumberInput({ label, value, onChange }: DimNumberInputProps) {
+function DimNumberInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: DimNumberInputProps) {
   return (
     <label className="flex flex-col gap-1">
       <span className="text-[11px] text-[#6B7280]">{label}</span>
@@ -721,6 +764,7 @@ function DimNumberInput({ label, value, onChange }: DimNumberInputProps) {
         type="number"
         step="any"
         value={value}
+        placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="h-10 rounded-md border border-gray-300 bg-white px-2 text-sm focus:border-[#931B82] focus:outline-none"
       />

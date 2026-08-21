@@ -153,8 +153,8 @@ function ResultCard({
 }) {
   const dimText = formatStandardWithTolerance(
     result.standardValue,
-    result.tolerancePlus,
-    result.toleranceMinus,
+    result.toleranceUpper,
+    result.toleranceLower,
   );
   // 가공 공정이면 작업자 판정값 우선, 다른 공정은 측정값 기준 자동 판정.
   const judgment = isMachining
@@ -166,8 +166,8 @@ function ResultCard({
     : judgeMeasurement(
         result.measuredValue,
         result.standardValue,
-        result.tolerancePlus,
-        result.toleranceMinus,
+        result.toleranceUpper,
+        result.toleranceLower,
       );
 
   return (

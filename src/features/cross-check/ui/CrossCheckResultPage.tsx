@@ -68,8 +68,8 @@ export default function CrossCheckResultPage() {
           dimNo: r.dimNo,
           dimName: r.dimName,
           standardValue: r.standardValue,
-          tolerancePlus: r.tolerancePlus,
-          toleranceMinus: r.toleranceMinus,
+          toleranceUpper: r.toleranceUpper,
+          toleranceLower: r.toleranceLower,
           status,
           measuredValue: measured,
           imageUrl,
@@ -395,8 +395,8 @@ function StepResultCard({
 }) {
   const dimText = formatStandardWithTolerance(
     result.standardValue,
-    result.tolerancePlus,
-    result.toleranceMinus,
+    result.toleranceUpper,
+    result.toleranceLower,
   );
 
   const [isEditing, setIsEditing] = useState(false);
