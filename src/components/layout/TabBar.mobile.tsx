@@ -37,10 +37,10 @@ const TABS: TabItem[] = [
   { label: "순회검사 결재", to: "/cross-check-approval", icon: "mdi:shield-check-outline", roles: ["QUALITY_ADMIN", "ADMIN"] },
 
   { label: "자주검사 관리", to: "/admin-inspections", icon: "mdi:clipboard-remove-outline", roles: ["ADMIN"] },
-  { label: "제품관리", to: "/products", icon: "mdi:cube", roles: ["ADMIN"] },
-  { label: "설비관리", to: "/equipment", icon: "mdi:factory", roles: ["ADMIN"] },
-  { label: "고객사 관리", to: "/customers", icon: "mdi:office-building", roles: ["ADMIN"] },
-  { label: "공정관리", to: "/processes", icon: "mdi:cog-transfer-outline", roles: ["ADMIN"] },
+  { label: "제품관리", to: "/products", icon: "mdi:cube", roles: ["ADMIN", "QUALITY_ADMIN"] },
+  { label: "설비관리", to: "/equipment", icon: "mdi:factory", roles: ["ADMIN", "QUALITY_ADMIN"] },
+  { label: "고객사 관리", to: "/customers", icon: "mdi:office-building", roles: ["ADMIN", "QUALITY_ADMIN"] },
+  { label: "공정관리", to: "/processes", icon: "mdi:cog-transfer-outline", roles: ["ADMIN", "QUALITY_ADMIN"] },
 
   { label: "검사지시", to: "/inspection-orders", icon: "mdi:clipboard-text-outline", roles: ["PRODUCTION_MANAGER"], iconSize: 34 },
   { label: "내 검사지시", to: "/my-orders", icon: "mdi:clipboard-list-outline", roles: ["PRODUCTION"] },
