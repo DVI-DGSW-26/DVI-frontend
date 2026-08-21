@@ -170,7 +170,7 @@ export default function CrossCheckApprovalDetailPage() {
   // 경도값은 순회검사자가 종품 측정 단계에서 입력한다. 결재자는 읽기 전용으로 확인만.
   // 노출 조건은 공정의 hardnessTracked 플래그 — 예전엔 "압출이고 type 이 _3" 이었는데,
   // 슬롯이 공정 스케줄로 옮겨가며 종품이 항상 _3 이 아니게 됐다.
-  const isExtrusionFinal =
+  const needsHardness =
     hardnessTracked(detail.product.process) &&
     getStage(detail.type, detail.product.process) === "FINAL";
   // 관리자만 삭제 가능. APPROVED(보고서 발행)는 백엔드가 거부하므로 버튼도 숨김.
@@ -327,9 +327,9 @@ export default function CrossCheckApprovalDetailPage() {
             label="순회검사 외관"
             value={detail.appearanceResult ?? "-"}
           />
-          {isExtrusionFinal && (
+          {needsHardness && (
             <InfoLine
-              label="경도 (압출 종품)"
+              label="경도 (종품)"
               value={detail.hardnessResult?.trim() ? detail.hardnessResult : "미입력"}
             />
           )}
