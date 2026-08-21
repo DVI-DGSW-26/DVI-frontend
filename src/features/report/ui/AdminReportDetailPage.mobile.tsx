@@ -12,6 +12,8 @@ import type {
 import { downloadReportPdf } from "../lib/downloadReportPdf";
 import { resolveShift, SHIFT_LABEL } from "../lib/shift";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
+import { formatTolerance } from "../../inspection/lib/format";
+import { judgeMeasurement } from "../../inspection/lib/judgment";
 import PhotoCompareModal from "../../../components/shared/PhotoCompareModal";
 import ReportStagesSection from "./ReportStagesSection";
 import ReportMeasurementsSection from "./ReportMeasurementsSection";
@@ -35,20 +37,22 @@ function formatDateTime(iso: string) {
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
 }
 
-function formatTolerance(plus: number, minus: number) {
-  return `+${plus} / -${minus}`;
-}
-
 function formatMeasured(value: number | null | undefined) {
   if (value == null || Number.isNaN(value)) return "—";
   return String(value);
 }
 
-function isWithinTolerance(item: ReportResultItem, value: number | null | undefined) {
-  if (value == null) return null;
-  const min = item.standardValue - item.toleranceMinus;
-  const max = item.standardValue + item.tolerancePlus;
-  return value >= min && value <= max;
+function isWithinTolerance(
+  item: ReportResultItem,
+  value: number | null | undefined,
+): boolean | null {
+  const judgment = judgeMeasurement(
+    value,
+    item.standardValue,
+    item.toleranceUpper,
+    item.toleranceLower,
+  );
+  return judgment == null ? null : judgment === "pass";
 }
 
 const Section = ({
@@ -166,7 +170,7 @@ const MeasureCard = ({
           <JudgeBadge value={item.result} />
         </div>
         <div className="text-xs text-[#A8A8A8]">
-          기준 {item.standardValue} ({formatTolerance(item.tolerancePlus, item.toleranceMinus)})
+          기준 {item.standardValue} ({formatTolerance(item.toleranceUpper, item.toleranceLower)})
         </div>
         <div className={`text-base font-semibold ${valueColor}`}>
           {formatMeasured(measuredValue)}

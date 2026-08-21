@@ -151,7 +151,7 @@ export default function InspectionDetailPage() {
                   <div className="rounded-md bg-[#F9FAFB] px-3 py-2">
                     <div className="text-[#6B7280]">허용 오차</div>
                     <div className="mt-0.5 text-sm font-semibold text-[#212121]">
-                      {formatTolerance(dim.tolerancePlus, dim.toleranceMinus)}
+                      {formatTolerance(dim.toleranceUpper, dim.toleranceLower)}
                     </div>
                   </div>
                 </div>

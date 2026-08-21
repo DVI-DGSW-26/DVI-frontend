@@ -17,6 +17,7 @@ import {
   type StageColumn,
 } from "./stageMeasurements";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
+import { formatTolerance } from "../../inspection/lib/format";
 import { formatDateTime, parseServerDate } from "../../../lib/datetime";
 import { formatSlotTime } from "./inspectedTime";
 import { resolveShift, SHIFT_LABEL } from "./shift";
@@ -38,10 +39,6 @@ function escapeHtml(s: string | number): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
-}
-
-function fmtTolerance(plus: number, minus: number) {
-  return `+${plus} / -${minus}`;
 }
 
 function fmtValue(v: number | null | undefined): string {
@@ -104,7 +101,7 @@ function stageMeasureTable(detail: ReportDetail): string {
         <tr>
           <td>${r.dimNo}</td>
           <td>${r.standardValue}</td>
-          <td>${fmtTolerance(r.tolerancePlus, r.toleranceMinus)}</td>
+          <td>${formatTolerance(r.toleranceUpper, r.toleranceLower)}</td>
           ${cells}
           <td>${judgeBadge(r.result)}</td>
         </tr>`;
@@ -143,7 +140,7 @@ function measureTable(detail: ReportDetail): string {
         <tr>
           <td>${r.dimNo}</td>
           <td>${r.standardValue}</td>
-          <td>${fmtTolerance(r.tolerancePlus, r.toleranceMinus)}</td>
+          <td>${formatTolerance(r.toleranceUpper, r.toleranceLower)}</td>
           <td>${fmtValue(r.productionValue)}</td>
           <td>${appearanceBadge(r.productionPassFailResult)}</td>
           <td>${fmtValue(r.qualityValue)}</td>
@@ -155,7 +152,7 @@ function measureTable(detail: ReportDetail): string {
         <tr>
           <td>${r.dimNo}</td>
           <td>${r.standardValue}</td>
-          <td>${fmtTolerance(r.tolerancePlus, r.toleranceMinus)}</td>
+          <td>${formatTolerance(r.toleranceUpper, r.toleranceLower)}</td>
           <td>${fmtValue(r.productionValue)}</td>
           <td>${fmtValue(r.qualityValue)}</td>
           <td>${judgeBadge(r.result)}</td>

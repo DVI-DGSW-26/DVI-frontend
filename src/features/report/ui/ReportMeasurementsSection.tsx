@@ -1,4 +1,6 @@
 import { toBackendImageUrl } from "../../../lib/imageUrl";
+import { formatTolerance } from "../../inspection/lib/format";
+import { judgeMeasurement } from "../../inspection/lib/judgment";
 import type {
   AppearanceResult,
   ReportMeasurement,
@@ -22,10 +24,13 @@ function isWithinTolerance(
   item: ReportResultItem,
   value: number | null | undefined,
 ): boolean | null {
-  if (value == null) return null;
-  const min = item.standardValue - item.toleranceMinus;
-  const max = item.standardValue + item.tolerancePlus;
-  return value >= min && value <= max;
+  const judgment = judgeMeasurement(
+    value,
+    item.standardValue,
+    item.toleranceUpper,
+    item.toleranceLower,
+  );
+  return judgment == null ? null : judgment === "pass";
 }
 
 function valueColor(within: boolean | null): string {
@@ -167,8 +172,8 @@ export default function ReportMeasurementsSection({
                 DIM {item.dimNo}
               </span>
               <span className="text-xs text-[#A8A8A8]">
-                기준 {item.standardValue} (+{item.tolerancePlus} / -
-                {item.toleranceMinus})
+                기준 {item.standardValue} (
+                {formatTolerance(item.toleranceUpper, item.toleranceLower)})
               </span>
             </div>
             <ul className="flex flex-col divide-y divide-[#F0F0F0]">
@@ -216,7 +221,7 @@ export default function ReportMeasurementsSection({
               </td>
               <td className="py-3 pr-3 text-xs text-[#6B7280]">
                 {item.standardValue}
-                <br />+{item.tolerancePlus} / -{item.toleranceMinus}
+                <br />+{item.toleranceUpper} / -{item.toleranceLower}
               </td>
               {columns.map((c) => (
                 <td key={c.key} className="py-3 pr-3">
