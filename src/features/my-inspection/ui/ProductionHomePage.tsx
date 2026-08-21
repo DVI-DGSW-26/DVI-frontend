@@ -31,6 +31,7 @@ import {
   SKIP_DELETE_DRAFT_ERROR,
 } from "../../inspection/lib/skipError";
 import { formatDate } from "../../../lib/datetime";
+import ShiftBadge from "../../../components/shared/ShiftBadge";
 import LatestCompletedCard from "./LatestCompletedCard";
 import SkipModal from "../../inspection/ui/SkipModal";
 import TerminateInspectionModal from "../../inspection/ui/TerminateInspectionModal";
@@ -40,8 +41,8 @@ import Toast from "../../inspection/ui/Toast";
 // nextEligible(다음 시점을 건너뛰기) 둘 다 같은 모양으로 처리.
 interface SkipTarget {
   label: string;
-  productId: number;
-  equipmentId: number;
+  // 건너뛰기도 작업지시 기준이다 (POST /inspection/skip 이 orderId 를 받는다).
+  orderId: number;
   type: string;
   // DRAFT 검사를 먼저 삭제해야 하는 경우 inspectionId 동봉.
   draftInspectionIdToDelete?: number;
@@ -87,15 +88,28 @@ export default function ProductionHomePage() {
     [myOrders, todayStr],
   );
 
-  // 검사 지시를 탭하면 해당 제품·설비·공정으로 시점 선택 화면(ScanPage)으로 이동.
+  // 검사 지시를 탭하면 시점 선택 화면(ScanPage)으로 이동. 검사 시작은 이 지시(orderId)
+  // 안에서만 가능하고, 제품·설비는 화면 표시와 슬롯 조회에 쓴다.
   const handleStartOrder = (order: InspectionOrder) => {
     navigate("/scan", {
       state: {
+        orderId: order.id,
         productId: order.product.id,
         equipmentId: order.equipment.id,
         process: order.product.process as InspectionProcess,
       },
     });
+  };
+
+  // 검사에 달린 작업지시 id. 서버 응답에 없으면(구 응답) 같은 제품·설비의 배정 지시로
+  // 폴백하고, 그것도 없으면 null — 호출부에서 안내 문구를 띄운다.
+  const resolveOrderId = (ins: MyInspection): number | null => {
+    if (ins.orderId != null) return ins.orderId;
+    const match = myOrders.find(
+      (o) =>
+        o.product.id === ins.product.id && o.equipment.id === ins.equipment.id,
+    );
+    return match?.id ?? null;
   };
 
   // 진행중(DRAFT) 검사 — 상단 카드는 그중 1건을 바로 잇기 위한 지름길이고,
@@ -183,20 +197,28 @@ export default function ProductionHomePage() {
   };
 
   const handleAskSkipDraft = (inspection: MyInspection) => {
+    const orderId = resolveOrderId(inspection);
+    if (orderId == null) {
+      setToast("작업지시를 찾을 수 없어 건너뛸 수 없습니다.");
+      return;
+    }
     setSkipTarget({
       label: `${inspection.product.name} (${inspection.typeLabel})`,
-      productId: inspection.product.id,
-      equipmentId: inspection.equipment.id,
+      orderId,
       type: inspection.type,
       draftInspectionIdToDelete: inspection.inspectionId,
     });
   };
 
   const handleAskSkipNext = (previous: MyInspection, nextType: string) => {
+    const orderId = resolveOrderId(previous);
+    if (orderId == null) {
+      setToast("작업지시를 찾을 수 없어 건너뛸 수 없습니다.");
+      return;
+    }
     setSkipTarget({
       label: `${previous.product.name} (${nextType})`,
-      productId: previous.product.id,
-      equipmentId: previous.equipment.id,
+      orderId,
       type: nextType,
     });
   };
@@ -217,8 +239,7 @@ export default function ProductionHomePage() {
         }
       }
       await skipMutation.mutateAsync({
-        productId: target.productId,
-        equipmentId: target.equipmentId,
+        orderId: target.orderId,
         type: target.type,
         ...(reason ? { reason } : {}),
       });
@@ -420,6 +441,30 @@ export default function ProductionHomePage() {
         </section>
       )}
 
+      {/* 배정된 지시가 없으면 검사를 시작할 수 없다 — 서버가 더 이상 지시를
+          자동 생성하지 않으므로, 관리자에게 배정을 요청하도록 안내한다. */}
+      {todaysOrders.length === 0 && (
+        <section className="px-4 pt-6">
+          <div className="flex items-start gap-2.5 rounded-xl border border-[#FDE68A] bg-[#FFFBEB] px-3.5 py-3">
+            <Icon
+              icon="solar:info-circle-bold"
+              width={18}
+              height={18}
+              className="mt-0.5 shrink-0 text-[#B45309]"
+            />
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-[#92400E]">
+                오늘 배정된 검사지시가 없습니다
+              </div>
+              <p className="mt-0.5 text-xs text-[#B45309]">
+                검사는 배정된 작업지시에서만 시작할 수 있습니다. 생산 관리자에게
+                작업지시 배정을 요청해주세요.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* 오늘 배정된 검사 지시 — 탭하면 시점 선택 후 검사 시작. */}
       {todaysOrders.length > 0 && (
         <section className="px-4 pt-6">
@@ -441,8 +486,11 @@ export default function ProductionHomePage() {
                   className="flex w-full items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-3 text-left shadow-sm transition-colors hover:bg-gray-50"
                 >
                   <div className="min-w-0">
-                    <div className="wrap-break-word text-sm font-semibold text-[#212121]">
-                      {order.product?.name ?? "-"}
+                    <div className="flex items-center gap-1.5">
+                      <span className="wrap-break-word text-sm font-semibold text-[#212121]">
+                        {order.product?.name ?? "-"}
+                      </span>
+                      <ShiftBadge shift={order.shift} compact />
                     </div>
                     <div className="mt-0.5 truncate text-xs text-[#6B7280]">
                       {order.customer?.name ?? "-"} ·{" "}

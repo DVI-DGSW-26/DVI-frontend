@@ -89,6 +89,9 @@ export async function copyInspectionOrders(
         equipmentId: order.equipment.id,
         workerIds: orderWorkers(order).map((w) => w.id),
         targetDate,
+        // 원본과 같은 교대로 복제한다. 주·야 슬롯이 다 있는 제품이면 이 값이 없을 때
+        // 서버가 400 SHIFT_SELECTION_REQUIRED 로 막는다.
+        ...(order.shift ? { shift: order.shift } : {}),
       });
       result.created += 1;
     } catch (err) {

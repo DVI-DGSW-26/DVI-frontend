@@ -69,11 +69,11 @@ export interface InspectionSlot {
   shift?: Shift;
 }
 
-// POST /inspection — 작업자가 직접 제품/설비를 선택해서 시작.
-// 검사 지시 사전 등록은 더 이상 필수가 아니다 (orderId 제거됨).
+// POST /inspection — 배정받은 작업지시(orderId) 안에서 시점(type)을 골라 시작한다.
+// 제품·설비는 오더에 이미 들어 있어 보내지 않는다. 배정된 오더가 없으면 검사를
+// 시작할 수 없다 — 서버가 더 이상 오더를 자동 생성하지 않는다.
 export interface StartInspectionRequest {
-  productId: number;
-  equipmentId: number;
+  orderId: number;
   type: string;
 }
 
@@ -85,12 +85,13 @@ export type InspectionSlotsResponse = ApiResponse<InspectionSlot[]>;
 export type StartInspectionApiResponse = ApiResponse<StartInspectionResponse>;
 
 export type StartInspectionErrorCode =
+  | "INSPECTION_ORDER_NOT_FOUND"
   | "NOT_ASSIGNED_PRODUCTION"
+  | "INSPECTION_ORDER_ALREADY_FINISHED"
   | "INVALID_INSPECTION_TYPE"
+  | "DIMS_NOT_REGISTERED"
   | "INSPECTION_ALREADY_EXISTS"
-  | "PREVIOUS_INSPECTION_NOT_COMPLETED"
-  | "PRODUCT_NOT_FOUND"
-  | "EQUIPMENT_NOT_FOUND";
+  | "PREVIOUS_INSPECTION_NOT_COMPLETED";
 
 // POST /inspection/{previousId}/next — 직전 검사의 같은 제품/설비로 다음 시점 검사 생성.
 export type StartNextInspectionResponse = MyInspection;
@@ -108,9 +109,9 @@ export interface StartNextInspectionErrorData {
 }
 
 // POST /inspection/skip — 해당 시점을 건너뛰어 SKIPPED 상태 Inspection 생성.
+// 시작(POST /inspection)과 같이 작업지시 기준이다.
 export interface SkipInspectionRequest {
-  productId: number;
-  equipmentId: number;
+  orderId: number;
   type: string;
   reason?: string;
 }
@@ -119,11 +120,11 @@ export type SkipInspectionResponse = MyInspection;
 export type SkipInspectionApiResponse = ApiResponse<SkipInspectionResponse>;
 
 export type SkipInspectionErrorCode =
+  | "INSPECTION_ORDER_NOT_FOUND"
+  | "INSPECTION_ORDER_ALREADY_FINISHED"
   | "INSPECTION_ALREADY_EXISTS"
   | "NOT_ASSIGNED_PRODUCTION"
-  | "INVALID_INSPECTION_TYPE"
-  | "PRODUCT_NOT_FOUND"
-  | "EQUIPMENT_NOT_FOUND";
+  | "INVALID_INSPECTION_TYPE";
 
 export interface SkipInspectionErrorData {
   code?: SkipInspectionErrorCode;

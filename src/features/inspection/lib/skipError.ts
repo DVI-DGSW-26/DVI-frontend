@@ -20,10 +20,10 @@ export function skipErrorMessage(err: unknown): string {
       return "배정되지 않은 검사라 건너뛸 수 없습니다.";
     case "INVALID_INSPECTION_TYPE":
       return "존재하지 않는 시점입니다. 새로고침 후 다시 시도해주세요.";
-    case "PRODUCT_NOT_FOUND":
-      return "제품 정보를 찾을 수 없습니다.";
-    case "EQUIPMENT_NOT_FOUND":
-      return "설비 정보를 찾을 수 없습니다.";
+    case "INSPECTION_ORDER_NOT_FOUND":
+      return "작업지시를 찾을 수 없습니다. 목록을 새로고침해주세요.";
+    case "INSPECTION_ORDER_ALREADY_FINISHED":
+      return "이미 마감된 작업지시입니다.";
   }
 
   // 코드가 없거나 목록에 없는 값이면 서버 문구를 그대로 노출 — 원인 파악용.
