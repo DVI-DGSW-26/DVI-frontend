@@ -10,7 +10,12 @@ import {
 } from "../api";
 import type { AssignedInspection, CrossCheckSummary } from "../api";
 import { elapsedFrom } from "../lib/elapsed";
-import { useProcessFlag, useProcessLabel, useProcessList } from "../../process";
+import {
+  useProcessFlag,
+  useProcessLabel,
+  useProcessList,
+  useProcessOptions,
+} from "../../process";
 import { countUnprocessed, isTakeoverable } from "../lib/assigned";
 import { toCancelErrorMessage } from "../lib/cancelError";
 import {
@@ -28,6 +33,8 @@ import {
 } from "../lib/dateFilter";
 import CrossCheckCard from "./CrossCheckCard";
 import DateRangeFilter from "./DateRangeFilter";
+import CheckboxMultiSelect from "../../report/ui/CheckboxMultiSelect";
+import { useProcessFilter } from "../lib/processFilter";
 import CrossCheckHistoryFilter from "./CrossCheckHistoryFilter";
 import {
   EMPTY_HISTORY_FILTER,
@@ -89,17 +96,28 @@ const CrossCheckPendingPage = () => {
   const [historyFilter, setHistoryFilter] =
     useState<HistoryFilter>(EMPTY_HISTORY_FILTER);
 
+  // 공정 필터는 서버에 보내 목록 자체를 좁힌다(빈 배열이면 전체).
+  // 선택 상태는 이 기기의 localStorage 에만 남아 새로고침해도 유지된다.
+  const [processFilter, setProcessFilter] = useProcessFilter();
+  const processOptions = useProcessOptions();
+  const processFilterLabel =
+    processFilter.length === 0
+      ? "전체 공정"
+      : processFilter.length === 1
+        ? processLabel(processFilter[0])
+        : `공정 ${processFilter.length}개`;
+
   const {
     data: assigned = [],
     isLoading,
     isError,
     refetch: refetchAssigned,
-  } = useAssignedCrossChecks();
+  } = useAssignedCrossChecks(processFilter);
   const {
     data: myCrossChecks = [],
     isLoading: historyLoading,
     isError: historyError,
-  } = useMyCrossChecks(true);
+  } = useMyCrossChecks(true, processFilter);
 
   const createMut = useCreateCrossCheck();
   const cancelMut = useCancelCrossCheck();
@@ -346,12 +364,21 @@ const CrossCheckPendingPage = () => {
             </span>
           </div>
 
-          {!isLoading && !isError && sortedAssigned.length > 0 && (
-            <DateRangeFilter
-              value={assignedFilter}
-              onChange={setAssignedFilter}
+          <div className="flex flex-wrap items-center gap-2">
+            <CheckboxMultiSelect
+              label={processFilterLabel}
+              options={processOptions}
+              value={processFilter}
+              onChange={setProcessFilter}
+              width="w-36"
             />
-          )}
+            {!isLoading && !isError && sortedAssigned.length > 0 && (
+              <DateRangeFilter
+                value={assignedFilter}
+                onChange={setAssignedFilter}
+              />
+            )}
+          </div>
 
           {isLoading && (
             <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
@@ -367,7 +394,9 @@ const CrossCheckPendingPage = () => {
 
           {!isLoading && !isError && sortedAssigned.length === 0 && (
             <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-              새 배정이 없습니다.
+              {processFilter.length > 0
+                ? "선택한 공정에 새 배정이 없습니다."
+                : "새 배정이 없습니다."}
             </p>
           )}
 

@@ -23,28 +23,35 @@ import { reportKeys } from "../../report/api";
 
 export const crossCheckKeys = {
   all: ["cross-check"] as const,
-  my: (includeFinished = false) =>
-    [...crossCheckKeys.all, "my", { includeFinished }] as const,
-  assigned: () => [...crossCheckKeys.all, "assigned"] as const,
+  // 필터 조합마다 캐시가 갈리므로, 무효화는 조합 전체를 덮는 prefix(myAll) 로 한다.
+  myAll: () => [...crossCheckKeys.all, "my"] as const,
+  my: (includeFinished = false, processes: string[] = []) =>
+    [...crossCheckKeys.all, "my", { includeFinished, processes }] as const,
+  assigned: (processes: string[] = []) =>
+    [...crossCheckKeys.all, "assigned", { processes }] as const,
   pending: () => [...crossCheckKeys.all, "pending"] as const,
   detail: (crossCheckId: number) =>
     [...crossCheckKeys.all, "detail", crossCheckId] as const,
   delegationMe: () => ["delegation", "me"] as const,
 };
 
-export function useMyCrossChecks(includeFinished = false) {
+// processes 가 비어 있으면 전체 공정. 쿼리키에 넣어 공정을 바꾸면 따로 캐시된다.
+export function useMyCrossChecks(
+  includeFinished = false,
+  processes: string[] = [],
+) {
   return useQuery({
-    queryKey: crossCheckKeys.my(includeFinished),
-    queryFn: () => getMyCrossChecks(includeFinished),
+    queryKey: crossCheckKeys.my(includeFinished, processes),
+    queryFn: () => getMyCrossChecks(includeFinished, processes),
     staleTime: 0,
     refetchOnMount: "always",
   });
 }
 
-export function useAssignedCrossChecks() {
+export function useAssignedCrossChecks(processes: string[] = []) {
   return useQuery({
-    queryKey: crossCheckKeys.assigned(),
-    queryFn: getAssignedCrossChecks,
+    queryKey: crossCheckKeys.assigned(processes),
+    queryFn: () => getAssignedCrossChecks(processes),
     staleTime: 0,
     refetchOnMount: "always",
   });
@@ -100,7 +107,7 @@ export function useSaveCrossCheckResults(crossCheckId: number) {
       // 가 발생하면 로컬 sessionResults 와 refetch 된 startIdx 가 동시에 진행도를
       // 카운트해 stepIndex 가 두 칸 점프하는 버그가 발생한다. detail 은 staleTime:0
       // 이라 다음 마운트(새로고침/재진입) 때 자연스럽게 갱신됨.
-      qc.invalidateQueries({ queryKey: crossCheckKeys.my() });
+      qc.invalidateQueries({ queryKey: crossCheckKeys.myAll() });
     },
   });
 }
