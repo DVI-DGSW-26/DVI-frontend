@@ -1,6 +1,7 @@
 export {
   getInspectionDetail,
   getInspectionSlots,
+  getProductSlots,
   startInspection,
   startNextInspection,
   skipInspection,
@@ -15,6 +16,7 @@ export {
 export {
   useInspectionDetail,
   useInspectionSlots,
+  useProductSlots,
   useSlotSequences,
   useStartInspection,
   useStartNextInspection,

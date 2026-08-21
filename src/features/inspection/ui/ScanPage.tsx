@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AxiosError } from "axios";
 import {
-  useInspectionSlots,
+  useProductSlots,
   useSkipInspection,
   useStartInspection,
 } from "../api";
@@ -24,7 +24,9 @@ import SkipModal from "./SkipModal";
 import Toast from "./Toast";
 
 interface ScanLocationState {
-  // POST /inspection 에 필요한 필수 컨텍스트.
+  // POST /inspection 에 필요한 필수 컨텍스트. 검사는 배정받은 작업지시 안에서만
+  // 시작할 수 있어 orderId 가 핵심이고, 제품/설비는 표시·슬롯 조회용이다.
+  orderId?: number;
   productId?: number;
   equipmentId?: number;
   process?: InspectionProcess;
@@ -40,9 +42,9 @@ export default function ScanPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state ?? {}) as ScanLocationState;
-  const { productId, equipmentId, process, qualityName } = state;
-  // POST /inspection 명세상 productId/equipmentId/type 이 필수.
-  const hasContext = !!productId && !!equipmentId && !!process;
+  const { orderId, productId, equipmentId, qualityName } = state;
+  // POST /inspection 은 orderId + type 만 받는다. 제품은 슬롯 조회에 필요.
+  const hasContext = !!orderId && !!productId;
 
   const [toast, setToast] = useState<ToastInfo | null>(null);
   const [pendingType, setPendingType] = useState<string | null>(null);
@@ -53,7 +55,8 @@ export default function ScanPage() {
   // skip 은 되돌릴 수 없는 종결 상태라 로컬 기록이 서버와 어긋날 일이 없다.
   const [skippedTypes, setSkippedTypes] = useState<Set<string>>(new Set());
 
-  const slotsQuery = useInspectionSlots(process);
+  // 슬롯은 제품 기준으로 받는다 — 제품이 속한 공정의 스케줄이 그대로 온다.
+  const slotsQuery = useProductSlots(productId);
   // 슬롯 상태(잠금/이어하기 등) 정확히 계산하려면 COMPLETED/INCOMPLETE_APPROVED 등
   // 종결된 검사 정보도 필요 — 홈에서 안 받는 케이스가 있어 ScanPage 가 자체 조회.
   const myInspectionsQuery = useMyInspectionList({ includeFinished: true });
@@ -176,14 +179,10 @@ export default function ScanPage() {
   };
 
   const startNewInspection = async (type: string) => {
-    if (!productId || !equipmentId) return;
+    if (!orderId) return;
     setPendingType(type);
     try {
-      const inspection = await startMutation.mutateAsync({
-        productId,
-        equipmentId,
-        type,
-      });
+      const inspection = await startMutation.mutateAsync({ orderId, type });
       // POST 성공 — 상세 화면으로 보내서 측정 시작 전 미리보기 단계 거치게 한다.
       // /scan 을 history 에 남겨, 검사 상세에서 뒤로가기 시 시점 선택으로 돌아갈 수 있도록 함.
       navigate(`/inspection/${inspection.inspectionId}`, {
@@ -226,28 +225,35 @@ export default function ScanPage() {
       if (status === 403 || code === "NOT_ASSIGNED_PRODUCTION") {
         setToast({
           code: "NOT_ASSIGNED_PRODUCTION",
-          message: "배정된 작업자가 아닙니다.",
+          message: "이 작업지시에 배정된 작업자가 아닙니다.",
+        });
+        return;
+      }
+      if (code === "INSPECTION_ORDER_NOT_FOUND") {
+        setToast({
+          code: "INSPECTION_ORDER_NOT_FOUND",
+          message: "작업지시를 찾을 수 없습니다. 목록을 새로고침해주세요.",
+        });
+        return;
+      }
+      if (code === "INSPECTION_ORDER_ALREADY_FINISHED") {
+        setToast({
+          code: "INSPECTION_ORDER_ALREADY_FINISHED",
+          message: "이미 마감된 작업지시입니다.",
+        });
+        return;
+      }
+      if (code === "DIMS_NOT_REGISTERED") {
+        setToast({
+          code: "DIMS_NOT_REGISTERED",
+          message: "제품에 치수항목이 등록되어 있지 않습니다.",
         });
         return;
       }
       if (status === 400 || code === "INVALID_INSPECTION_TYPE") {
         setToast({
           code: "INVALID_INSPECTION_TYPE",
-          message: "이 공정에 없는 시간대입니다.",
-        });
-        return;
-      }
-      if (code === "PRODUCT_NOT_FOUND") {
-        setToast({
-          code: "PRODUCT_NOT_FOUND",
-          message: "선택한 제품을 찾을 수 없습니다.",
-        });
-        return;
-      }
-      if (code === "EQUIPMENT_NOT_FOUND") {
-        setToast({
-          code: "EQUIPMENT_NOT_FOUND",
-          message: "선택한 설비를 찾을 수 없습니다.",
+          message: "이 제품의 스케줄에 없는 시간대입니다.",
         });
         return;
       }
@@ -260,7 +266,7 @@ export default function ScanPage() {
   };
 
   const handleSkipConfirm = async (reason: string) => {
-    if (!productId || !equipmentId || !skipTargetType) return;
+    if (!orderId || !skipTargetType) return;
     const type = skipTargetType;
     try {
       // 작성 중(DRAFT) 인 검사가 이미 존재하면 백엔드가 INSPECTION_ALREADY_EXISTS 를
@@ -276,8 +282,7 @@ export default function ScanPage() {
         }
       }
       await skipMutation.mutateAsync({
-        productId,
-        equipmentId,
+        orderId,
         type,
         ...(reason ? { reason } : {}),
       });
@@ -297,7 +302,7 @@ export default function ScanPage() {
   };
 
   const handleSlotTap = (type: string) => {
-    if (!productId || !equipmentId) return;
+    if (!orderId) return;
     const status = getSlotStatus(type);
     const ins = inspectionByType.get(type);
 

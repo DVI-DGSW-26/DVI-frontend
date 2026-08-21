@@ -33,17 +33,22 @@ export const STAGE_BADGE: Record<Stage, string> = {
   FINAL: "border-[#FBCFE8] bg-[#FDF2F8] text-[#9D174D]",
 };
 
-// 압출 종품(FINAL)인데 경도값이 아직 없는 DRAFT — 순회검사자가 열처리 후 경도를
-// 입력해야 결재요청 가능. 목록 카드에서 "경도 입력 필요" 배지 노출용.
-export function needsHardnessInput(cc: {
-  status: string;
-  type: string;
-  product: { process: ProcessType };
-  hardnessResult?: string | null;
-}): boolean {
+// 경도를 추적하는 공정(hardnessTracked)의 종품(FINAL)인데 경도값이 아직 없는 DRAFT —
+// 순회검사자가 열처리 후 경도를 입력해야 결재요청 가능. 카드의 "경도 입력 필요" 배지용.
+// hardnessTracked 는 호출부에서 useProcessFlag("hardnessTracked") 로 구해 넘긴다
+// (공정이 DB 로 옮겨가 "압출이면" 같은 코드 비교를 더 이상 쓰지 않는다).
+export function needsHardnessInput(
+  cc: {
+    status: string;
+    type: string;
+    product: { process: ProcessType };
+    hardnessResult?: string | null;
+  },
+  hardnessTracked: boolean,
+): boolean {
   return (
     cc.status === "DRAFT" &&
-    cc.product.process === "EXTRUSION" &&
+    hardnessTracked &&
     getStage(cc.type, cc.product.process) === "FINAL" &&
     !cc.hardnessResult?.trim()
   );

@@ -7,12 +7,13 @@ import type { DeleteReportErrorData } from "../api";
 import type {
   AppearanceResult,
   JudgeResult,
-  ReportProcess,
   ReportResultItem,
 } from "../api/types";
 import { downloadReportPdf } from "../lib/downloadReportPdf";
 import { resolveShift, SHIFT_LABEL } from "../lib/shift";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
+import { formatTolerance } from "../../inspection/lib/format";
+import { judgeMeasurement } from "../../inspection/lib/judgment";
 import PhotoCompareModal from "../../../components/shared/PhotoCompareModal";
 import ReportStagesSection from "./ReportStagesSection";
 import ReportMeasurementsSection from "./ReportMeasurementsSection";
@@ -23,14 +24,7 @@ import {
 import DeleteReportModal from "./DeleteReportModal";
 import Toast from "../../inspection/ui/Toast";
 import { useAuth } from "../../auth/AuthContext";
-
-const PROCESS_LABEL: Record<ReportProcess, string> = {
-  EXTRUSION: "압출",
-  AL_CUTTING: "AL절단",
-  ST_CUTTING: "ST절단",
-  MACHINING: "가공",
-  PRESS: "프레스",
-};
+import { useProcessLabel } from "../../process";
 
 function formatDateTime(iso: string) {
   const d = new Date(iso);
@@ -43,20 +37,22 @@ function formatDateTime(iso: string) {
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
 }
 
-function formatTolerance(plus: number, minus: number) {
-  return `+${plus} / -${minus}`;
-}
-
 function formatMeasured(value: number | null | undefined) {
   if (value == null || Number.isNaN(value)) return "—";
   return String(value);
 }
 
-function isWithinTolerance(item: ReportResultItem, value: number | null | undefined) {
-  if (value == null) return null;
-  const min = item.standardValue - item.toleranceMinus;
-  const max = item.standardValue + item.tolerancePlus;
-  return value >= min && value <= max;
+function isWithinTolerance(
+  item: ReportResultItem,
+  value: number | null | undefined,
+): boolean | null {
+  const judgment = judgeMeasurement(
+    value,
+    item.standardValue,
+    item.toleranceUpper,
+    item.toleranceLower,
+  );
+  return judgment == null ? null : judgment === "pass";
 }
 
 const Section = ({
@@ -176,7 +172,7 @@ const MeasureCard = ({
           <JudgeBadge value={item.result} />
         </div>
         <div className="text-xs text-[#A8A8A8]">
-          기준 {item.standardValue} ({formatTolerance(item.tolerancePlus, item.toleranceMinus)})
+          기준 {item.standardValue} ({formatTolerance(item.toleranceUpper, item.toleranceLower)})
         </div>
         <div className={`text-base font-semibold ${valueColor}`}>
           {formatMeasured(measuredValue)}
@@ -188,6 +184,7 @@ const MeasureCard = ({
 
 const AdminReportDetailPageWeb = () => {
   const { reportId } = useParams<{ reportId: string }>();
+  const processLabelOf = useProcessLabel();
   const navigate = useNavigate();
   const id = Number(reportId);
   const validId = Number.isFinite(id) && id > 0;
@@ -268,7 +265,7 @@ const AdminReportDetailPageWeb = () => {
   }
 
   const isPass = data.result === "PASS";
-  const processLabel = PROCESS_LABEL[data.process] ?? String(data.process ?? "");
+  const processLabel = processLabelOf(data.process);
   const shift = resolveShift(data);
   const inspectionBadge = (
     <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
@@ -366,7 +363,7 @@ const AdminReportDetailPageWeb = () => {
 
       {data.stages && data.stages.length > 0 && (
         <Section title="차수별 검사 정보">
-          <ReportStagesSection stages={data.stages} variant="web" />
+          <ReportStagesSection stages={data.stages} shift={shift} variant="web" />
         </Section>
       )}
 

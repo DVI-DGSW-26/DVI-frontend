@@ -3,15 +3,13 @@ import { Icon } from "@iconify/react";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import { useDeleteEquipment, useEquipmentList } from "../api";
 import type { Equipment } from "../api";
-import { PROCESS_OPTIONS, processLabel } from "../../products/lib/processLabels";
+import { useProcessLabel, useProcessOptions } from "../../process";
 import EquipmentFormDrawer from "./EquipmentFormDrawer";
 
-type ProcessFilter = "ALL" | "EXTRUSION" | "AL_CUTTING" | "ST_CUTTING" | "MACHINING" | "PRESS";
+// 공정 코드 또는 "ALL"(전체). 공정은 DB 데이터라 값을 고정하지 않는다.
+type ProcessFilter = string;
 
-const FILTERS: { value: ProcessFilter; label: string }[] = [
-  { value: "ALL", label: "전체" },
-  ...PROCESS_OPTIONS.map((o) => ({ value: o.value as ProcessFilter, label: o.label })),
-];
+const ALL_FILTER: ProcessFilter = "ALL";
 
 const PROCESS_BADGE_STYLE: Record<string, string> = {
   EXTRUSION: "bg-[#DBEAFE] text-[#1D4ED8]",
@@ -21,7 +19,9 @@ const PROCESS_BADGE_STYLE: Record<string, string> = {
   PRESS: "bg-[#FFE4E6] text-[#BE123C]",
 };
 
-function processBadge(process: string) {
+// 공정 배지. 색은 알려진 공정에만 지정하고, 관리자가 새로 만든 공정은 회색으로 뜬다.
+function ProcessBadge({ process }: { process: string }) {
+  const processLabel = useProcessLabel();
   const style = PROCESS_BADGE_STYLE[process] ?? "bg-[#F3F4F6] text-[#6B7280]";
   return (
     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${style}`}>
@@ -42,6 +42,11 @@ export default function EquipmentPage() {
   const [keyword, setKeyword] = useState("");
 
   const isMobile = useMediaQuery("(max-width: 767px)");
+  const processOptions = useProcessOptions();
+  const filters = useMemo(
+    () => [{ value: ALL_FILTER, label: "전체" }, ...processOptions],
+    [processOptions],
+  );
   const { data: equipment = [], isLoading, isError } = useEquipmentList();
   const { mutate: remove, isPending: isDeleting } = useDeleteEquipment();
 
@@ -54,19 +59,15 @@ export default function EquipmentPage() {
     });
   }, [equipment, filter, keyword]);
 
+  // 요약 카드는 서버 공정 목록 순서대로 — 새로 등록한 공정도 자동으로 한 칸 생긴다.
   const counts = useMemo(() => {
-    const c: Record<string, number> = {
-      EXTRUSION: 0,
-      AL_CUTTING: 0,
-      ST_CUTTING: 0,
-      MACHINING: 0,
-      PRESS: 0,
-    };
+    const c: Record<string, number> = {};
+    for (const opt of processOptions) c[opt.value] = 0;
     for (const e of equipment) {
       if (e.process in c) c[e.process] += 1;
     }
     return c;
-  }, [equipment]);
+  }, [equipment, processOptions]);
 
   const openCreate = () => {
     setEditing(null);
@@ -107,7 +108,7 @@ export default function EquipmentPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-4">
-        {PROCESS_OPTIONS.map((opt) => (
+        {processOptions.map((opt) => (
           <div
             key={opt.value}
             className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 md:p-4"
@@ -132,7 +133,7 @@ export default function EquipmentPage() {
 
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap gap-1.5">
-          {FILTERS.map((f) => {
+          {filters.map((f) => {
             const active = filter === f.value;
             return (
               <button
@@ -240,7 +241,9 @@ function DesktopTable({ items, isLoading, isError, isDeleting, onEdit, onDelete 
           {items.map((item) => (
             <tr key={item.id} className="hover:bg-gray-50">
               <td className="px-4 py-3 font-medium">{item.name}</td>
-              <td className="px-4 py-3">{processBadge(item.process)}</td>
+              <td className="px-4 py-3">
+                <ProcessBadge process={item.process} />
+              </td>
               <td className="px-4 py-3 whitespace-nowrap text-[#6B7280]">
                 {formatDate(item.createdAt)}
               </td>
@@ -315,7 +318,7 @@ function MobileList({ items, isLoading, isError, isDeleting, onEdit, onDelete }:
                 등록 {formatDate(item.createdAt)}
               </div>
             </div>
-            {processBadge(item.process)}
+            <ProcessBadge process={item.process} />
           </div>
 
           <div className="mt-3 flex items-center justify-end gap-1 border-t border-gray-100 pt-2">

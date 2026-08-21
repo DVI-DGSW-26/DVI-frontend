@@ -3,7 +3,7 @@
  * /inspection-order, /inspection/slots, POST /inspection, /inspection/my
  * 4개 엔드포인트를 가짜 응답으로 처리한다.
  *
- * POST /inspection 트리거 (productId 별 동작):
+ * POST /inspection 트리거 (orderId 별 동작):
  *  - 9001  → POST 성공
  *  - 9403  → 403 NOT_ASSIGNED_PRODUCTION
  *  - 9400  → 400 INVALID_INSPECTION_TYPE
@@ -91,7 +91,8 @@ function makeMyInspection(
   orderId: number,
   type: string,
   label: string,
-  time: string,
+  // 초·중·종 슬롯은 고정 시각이 없어 null 이 온다.
+  time: string | null,
   process: InspectionProcess,
   status: MyInspection["status"] = "DRAFT",
 ): MyInspection {
@@ -117,8 +118,8 @@ function makeMyInspection(
         dimNo: 1,
         dimName: "외경",
         standardValue: 100,
-        tolerancePlus: 0.5,
-        toleranceMinus: 0.5,
+        toleranceUpper: 0.5,
+        toleranceLower: -0.5,
       },
       {
         id: 2,
@@ -126,8 +127,8 @@ function makeMyInspection(
         dimNo: 2,
         dimName: "내경",
         standardValue: 80,
-        tolerancePlus: 0.25,
-        toleranceMinus: 0.25,
+        toleranceUpper: 0.25,
+        toleranceLower: -0.25,
       },
       {
         id: 3,
@@ -135,8 +136,8 @@ function makeMyInspection(
         dimNo: 3,
         dimName: "길이",
         standardValue: 30,
-        tolerancePlus: 0.2,
-        toleranceMinus: 0.1,
+        toleranceUpper: 0.2,
+        toleranceLower: -0.1,
       },
     ],
     status,
@@ -157,8 +158,8 @@ function buildMockResults(
       dimNo: d.dimNo,
       dimName: d.dimName,
       standardValue: d.standardValue,
-      tolerancePlus: d.tolerancePlus,
-      toleranceMinus: d.toleranceMinus,
+      toleranceUpper: d.toleranceUpper,
+      toleranceLower: d.toleranceLower,
       measuredValue: idx < filledCount ? d.standardValue : null,
       imageUrl:
         idx < filledCount
@@ -337,8 +338,8 @@ function tryMock(
     const body = parseBody<StartInspectionRequest>(config.data);
     const slot = baseSlots.find((s) => s.type === body.type) ?? baseSlots[0];
 
-    // mock 트리거: productId 로 에러 케이스 시뮬레이션. 9001 / 9400 / 9403 / 9409 동일.
-    switch (body.productId) {
+    // mock 트리거: orderId 로 에러 케이스 시뮬레이션. 9001 / 9400 / 9403 / 9409 동일.
+    switch (body.orderId) {
       case 9403:
         return Promise.reject(
           (() =>
@@ -391,12 +392,12 @@ function tryMock(
             ))(),
         );
       default: {
-        const order = mockOrders.find((o) => o.id === body.productId);
+        const order = mockOrders.find((o) => o.id === body.orderId);
         const process =
           (order?.product.process as InspectionProcess) ?? "EXTRUSION";
         const inspection = makeMyInspection(
           Math.floor(Math.random() * 9000) + 1000,
-          body.productId,
+          body.orderId,
           body.type,
           slot.label,
           slot.time,

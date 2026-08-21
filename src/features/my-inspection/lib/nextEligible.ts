@@ -1,5 +1,4 @@
 import type { MyInspection } from "../type/types";
-import { getNextSlot as getNextSlotStatic } from "../../inspection/lib/slotSequence";
 import { isSameKstDay } from "../../../lib/datetime";
 
 export interface NextEligibleItem {
@@ -9,8 +8,8 @@ export interface NextEligibleItem {
   nextType: string;
 }
 
-// 다음 시점 계산 함수 시그니처. 기본은 하드코딩 시퀀스지만, 호출부에서 백엔드 슬롯 기반
-// 함수(useSlotSequences)를 주입하면 실제 슬롯 순서로 계산한다.
+// 다음 시점 계산 함수 시그니처. 호출부가 useSlotSequences() 의 getNextSlot 을 넘긴다 —
+// 슬롯은 공정 스케줄(DB)에서 오므로 클라이언트에 기본값을 둘 수 없다.
 type GetNextSlot = (process: string, currentType: string) => string | null;
 
 /**
@@ -42,7 +41,7 @@ function isTodayInspection(ins: MyInspection, now: Date): boolean {
  */
 export function extractNextEligible(
   inspections: MyInspection[],
-  getNextSlot: GetNextSlot = getNextSlotStatic,
+  getNextSlot: GetNextSlot,
   now: Date = new Date(),
 ): NextEligibleItem[] {
   // 인덱스와 후보 스캔이 같은 모집단을 봐야 판정이 어긋나지 않으므로 먼저 거른다.
@@ -86,7 +85,7 @@ export function extractNextEligible(
  */
 export function extractLatestCompletedNext(
   inspections: MyInspection[],
-  getNextSlot: GetNextSlot = getNextSlotStatic,
+  getNextSlot: GetNextSlot,
   now: Date = new Date(),
 ): NextEligibleItem | null {
   const todays = inspections.filter((i) => isTodayInspection(i, now));

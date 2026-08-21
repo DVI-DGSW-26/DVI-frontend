@@ -1,4 +1,5 @@
 import type { ApiResponse } from "../../auth/type/types";
+import type { Shift } from "../../inspection-schedule/api";
 
 export interface Equipment {
   id: number;
@@ -32,6 +33,9 @@ export interface CreateInspectionOrderRequest {
   equipmentId: number;
   workerIds: number[];
   targetDate: string;
+  // 제품 스케줄에 주간·야간 슬롯이 둘 다 있으면 필수 (없으면 400 SHIFT_SELECTION_REQUIRED).
+  // 한쪽만 있는 제품은 생략 — 서버가 알아서 정한다.
+  shift?: Shift;
 }
 
 export type InspectionOrderStatus =
@@ -80,6 +84,9 @@ export interface InspectionOrder {
    */
   production?: InspectionOrderUserRef | null;
   targetDate: string;
+  // 이 지시가 만들어질 때의 교대. 제품 스케줄에 주·야가 둘 다 있으면 지시 하나에
+  // 양쪽 슬롯이 다 들어있을 수 있어 참고용으로만 쓴다(슬롯별 주/야는 슬롯의 shift).
+  shift?: Shift;
   status: InspectionOrderStatus;
   createdAt: string;
   updatedAt: string;

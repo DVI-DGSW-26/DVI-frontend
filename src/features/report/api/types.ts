@@ -1,9 +1,7 @@
-export type ReportProcess =
-  | "EXTRUSION"
-  | "AL_CUTTING"
-  | "ST_CUTTING"
-  | "MACHINING"
-  | "PRESS";
+import type { Shift } from "../../inspection-schedule/api";
+
+// 공정은 DB 데이터(GET /process)라 값을 고정하지 않는다.
+export type ReportProcess = string;
 
 export type ReportInspectionType =
   | "DAY_1"
@@ -37,6 +35,9 @@ export interface ReportSummary {
   qualityName: string;
   approvedByName: string;
   createdAt: string;
+  // 이 보고서의 근무조. 서버가 판정해 내려준다 — 아래 initialInspectedAt 기반
+  // 추정(resolveShift)은 이 값이 없는 구 응답용 폴백으로만 남아 있다.
+  shift?: Shift | null;
   // 초품(INITIAL) 차수의 실제 검사 시각. 목록 카드의 근무조(주간/야간) 판정 근거다.
   // 요약에는 stages 가 없어 이 값 없이는 판정할 수 없다 — 슬롯 타입(inspectionType)은
   // 실서버에서 야간 작업도 전부 DAY_* 로 기록돼 근거가 못 된다(2026-08-19 실측: 최근
@@ -50,6 +51,8 @@ export interface ReportSummary {
 export interface ReportMeasurement {
   type: ReportInspectionType;
   typeLabel: string;
+  // 묶음 보고서 하나가 주간·야간 차수를 같이 담을 수 있어 행 단위로도 필요하다.
+  shift?: Shift | null;
   stage: ReportStage;
   productionValue: number | null;
   qualityValue: number | null;
@@ -64,8 +67,8 @@ export interface ReportResultItem {
   dimNo: number;
   dimName: string;
   standardValue: number;
-  tolerancePlus: number;
-  toleranceMinus: number;
+  toleranceUpper: number;
+  toleranceLower: number;
   // 측정값/이미지는 skip 케이스 등에서 누락 가능.
   productionValue: number | null;
   qualityValue: number | null;
@@ -88,6 +91,7 @@ export type ReportStage = "INITIAL" | "MIDDLE" | "FINAL";
 export interface ReportStageInfo {
   type: ReportInspectionType;
   typeLabel: string;
+  shift?: Shift | null;
   stage: ReportStage;
   crossCheckId: number;
   inspectionTime: string;

@@ -1,11 +1,7 @@
 import type { ApiResponse } from "../../auth/type/types";
 
-export type ProcessType =
-  | "EXTRUSION"
-  | "AL_CUTTING"
-  | "ST_CUTTING"
-  | "MACHINING"
-  | "PRESS";
+// 공정은 관리자가 등록하는 DB 데이터(GET /process) — 값을 고정하지 않는다.
+export type ProcessType = string;
 
 export interface Equipment {
   id: number;

@@ -1,28 +1,13 @@
-import type { InspectionProcess } from "../type/types";
-
-const PROCESS_LABELS: Record<InspectionProcess, string> = {
-  EXTRUSION: "압출",
-  AL_CUTTING: "AL 절단",
-  ST_CUTTING: "스틸 절단",
-  MACHINING: "기계가공",
-  PRESS: "프레스",
-};
-
-export function getProcessLabel(process: string): string {
-  return PROCESS_LABELS[process as InspectionProcess] ?? process;
-}
-
-// EXTRUSION 과 PRESS 는 DAY_1~3 만 사용하는 단축 공정.
-// 나머지 (AL_CUTTING / ST_CUTTING / MACHINING) 는 백엔드 기본 슬롯 정책을 따른다.
-const SHORT_PROCESSES: readonly InspectionProcess[] = ["EXTRUSION", "PRESS"];
-
-export function isShortProcess(process: string): boolean {
-  return (SHORT_PROCESSES as readonly string[]).includes(process);
-}
+// 공정 표시명은 서버 목록에서 온다 — features/process 의 useProcessLabel 을 쓸 것.
+// 슬롯 구성(초·중·종만 쓰는지 등)도 공정 스케줄이 진실의 원천이라 여기서 판단하지 않는다.
 
 // 금형 교체 등으로 차수를 중간에 끊는 조기 마감은 ST 담당 공정에서만 쓴다.
 // 다른 공정에서는 아예 버튼을 내보내지 않는다.
-const TERMINABLE_PROCESSES: readonly InspectionProcess[] = [
+//
+// 공정이 DB 로 옮겨간 뒤에도 이 목록만 코드에 남는다 — 대응하는 공정 플래그가
+// 백엔드에 없어서다(hardnessTracked/bundledReport/autoCopyNightCrossCheck 뿐).
+// 조기 마감 대상 공정이 늘면 여기를 고쳐야 하고, 플래그가 생기면 그걸로 교체한다.
+const TERMINABLE_PROCESSES: readonly string[] = [
   "ST_CUTTING",
   "AL_CUTTING",
   "PRESS",
@@ -30,7 +15,7 @@ const TERMINABLE_PROCESSES: readonly InspectionProcess[] = [
 
 export function isTerminableProcess(process: string | undefined | null): boolean {
   if (!process) return false;
-  return (TERMINABLE_PROCESSES as readonly string[]).includes(process);
+  return TERMINABLE_PROCESSES.includes(process);
 }
 
 /**

@@ -17,8 +17,8 @@ interface Props {
   suggestedValue: string | null;
   /** 기준값/공차 — 입력값이 합격 범위 안인지 실시간 표시 용도. */
   standardValue: number;
-  tolerancePlus: number;
-  toleranceMinus: number;
+  toleranceUpper: number;
+  toleranceLower: number;
   /** 공정 — MACHINING 일 때 OK/NG 드롭다운 노출. */
   process: InspectionProcess;
   /** 가공 공정에서 기존 판정값 복원용. 사용자가 수정 안 하면 그대로 제출. */
@@ -41,8 +41,8 @@ export default function InputPhase({
   isPreparing,
   suggestedValue,
   standardValue,
-  tolerancePlus,
-  toleranceMinus,
+  toleranceUpper,
+  toleranceLower,
   process,
   initialPassFailValue,
   onRetake,
@@ -97,7 +97,7 @@ export default function InputPhase({
 
   // 실시간 합격/불합격 — 입력값이 비어있거나 유효하지 않으면 null (뱃지 숨김).
   const judgment = isValid
-    ? judgeMeasurement(numeric, standardValue, tolerancePlus, toleranceMinus)
+    ? judgeMeasurement(numeric, standardValue, toleranceUpper, toleranceLower)
     : null;
 
   // 가공 공정에서 측정값이 유효하면 자동으로 판정값 시드. 사용자가 한 번이라도 직접 바꿨다면 안 건드린다.

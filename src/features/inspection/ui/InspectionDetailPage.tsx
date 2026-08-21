@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { useMyInspectionList } from "../../my-inspection/api";
@@ -8,8 +8,9 @@ import {
   dimDisplayName,
   formatTolerance,
 } from "../lib/format";
-import { getProcessLabel } from "../lib/process";
+import { useProcessLabel } from "../../process";
 import SketchImage from "./SketchImage";
+import ShiftBadge from "../../../components/shared/ShiftBadge";
 
 interface DetailLocationState {
   inspection?: MyInspection;
@@ -17,6 +18,7 @@ interface DetailLocationState {
 }
 
 export default function InspectionDetailPage() {
+  const processLabel = useProcessLabel();
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams<{ inspectionId: string }>();
@@ -90,12 +92,13 @@ export default function InspectionDetailPage() {
           <InfoRow label="설비" value={inspection.equipment.name} />
           <InfoRow
             label="공정"
-            value={`${getProcessLabel(inspection.product.process)} (${inspection.product.process})`}
+            value={`${processLabel(inspection.product.process)} (${inspection.product.process})`}
           />
           <InfoRow label="고객사" value={inspection.customer.name} />
           <InfoRow
             label="검사 차수"
             value={`${inspection.typeLabel} (${inspection.type})`}
+            suffix={<ShiftBadge shift={inspection.shift} compact />}
           />
           <InfoRow label="작업자" value={user?.name ?? "-"} />
           {state.qualityName && (
@@ -148,7 +151,7 @@ export default function InspectionDetailPage() {
                   <div className="rounded-md bg-[#F9FAFB] px-3 py-2">
                     <div className="text-[#6B7280]">허용 오차</div>
                     <div className="mt-0.5 text-sm font-semibold text-[#212121]">
-                      {formatTolerance(dim.tolerancePlus, dim.toleranceMinus)}
+                      {formatTolerance(dim.toleranceUpper, dim.toleranceLower)}
                     </div>
                   </div>
                 </div>
@@ -171,13 +174,23 @@ export default function InspectionDetailPage() {
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({
+  label,
+  value,
+  suffix,
+}: {
+  label: string;
+  value: string;
+  /** 값 뒤에 붙일 배지 등. */
+  suffix?: ReactNode;
+}) {
   return (
     <div className="flex items-center gap-1.5 text-[#6B7280]">
       <span className="shrink-0">{label}</span>
       <span className="ml-auto min-w-0 truncate text-right text-[#212121]">
         {value}
       </span>
+      {suffix}
     </div>
   );
 }

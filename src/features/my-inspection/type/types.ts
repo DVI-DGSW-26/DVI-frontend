@@ -1,4 +1,5 @@
 import type { ApiResponse } from "../../auth/type/types";
+import type { Shift } from "../../inspection-schedule/api";
 
 // 검사 항목 종류 — 제품 등록 시 항목별로 지정.
 // NUMBER = 치수(측정값 입력), PASS_FAIL = 사진·측정값 없이 OK/NG 만 선택.
@@ -39,8 +40,11 @@ export interface MyInspectionDim {
   // dimName 응답 누락 가능성 대비 optional.
   dimName?: string;
   standardValue: number;
-  tolerancePlus: number;
-  toleranceMinus: number;
+  // 부호 포함 편차. 최대 허용값 = standardValue + toleranceUpper,
+  // 최소 허용값 = standardValue + toleranceLower (보통 upper >= 0, lower <= 0).
+  // 도면 표기를 그대로 옮긴다 — "86 -0.25/-0.4" 면 upper=-0.25, lower=-0.4.
+  toleranceUpper: number;
+  toleranceLower: number;
   // 검사 항목 종류. PASS_FAIL 이면 측정값 없이 OK/NG 만 입력. 누락 시 NUMBER 로 간주.
   valueType?: InspectionValueType;
 }
@@ -51,6 +55,8 @@ export interface MyInspection {
   orderId?: number;
   type: string;
   typeLabel: string;
+  // 주/야 표시는 이 값으로만 한다 (type 은 슬롯 순서용 내부 식별자).
+  shift?: Shift;
   inspectionTime: string;
   product: MyInspectionProduct;
   equipment: MyInspectionEquipment;
