@@ -14,7 +14,10 @@ import type {
   ProductListItem,
   ProductValueType,
 } from "../api";
-import { useProcessOptions } from "../../process";
+import { useProcessLabel, useProcessOptions } from "../../process";
+import { useProcessInfo } from "../../process";
+import ProcessScheduleDrawer from "../../process/ui/ProcessScheduleDrawer";
+import { useProcessSchedule } from "../../inspection-schedule/api";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import {
   isAllowedImageFile,
@@ -155,6 +158,19 @@ export default function ProductFormDrawer({
 
   // 수정 중인 값이 비활성 공정이어도 선택이 풀리지 않도록 옵션에 포함시킨다.
   const processOptions = useProcessOptions(process ? [process] : []);
+  const processLabel = useProcessLabel();
+  // 이 제품이 속한 공정의 검사 주기 — 폼 안에서 바로 보고 고칠 수 있게 한다.
+  const processInfo = useProcessInfo(process || null);
+  const { data: schedule } = useProcessSchedule(process || null);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const scheduleSummary = useMemo(() => {
+    if (!schedule) return null;
+    const slots = schedule.slots ?? [];
+    if (slots.length === 0) return null;
+    const night = slots.filter((s) => s.shift === "NIGHT").length;
+    const kind = schedule.scheduleType === "TIME_BASED" ? "시간대별" : "초/중/종";
+    return `${kind} ${slots.length}시점${night > 0 ? ` (야간 ${night})` : ""}`;
+  }, [schedule]);
 
   const { mutate: create, isPending: isCreating } = useCreateProduct();
   const { mutate: update, isPending: isUpdating } = useUpdateProduct();
@@ -527,6 +543,37 @@ export default function ProductFormDrawer({
               </select>
             </label>
 
+
+            {/* 검사 주기 — 서버가 스케줄을 공정 단위로만 관리해서 제품마다 따로 둘 수는
+                없다. 대신 이 제품이 속한 공정의 주기를 여기서 바로 보고 고칠 수 있게 한다. */}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium text-[#212121]">검사 주기</span>
+              {process === "" ? (
+                <p className="rounded-lg border border-dashed border-gray-300 bg-[#FAFAFA] px-3 py-3 text-xs text-[#6B7280]">
+                  공정을 먼저 선택하면 그 공정의 검사 주기가 표시됩니다.
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setScheduleOpen(true)}
+                  className="flex items-center justify-between gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-left transition-colors hover:border-[#931B82]"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-sm text-[#212121]">
+                      {scheduleSummary ?? "설정된 주기가 없습니다"}
+                    </span>
+                    <span className="mt-0.5 block text-[11px] text-[#6B7280]">
+                      {processLabel(process)} 공정의 모든 제품에 함께 적용됩니다
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-[#931B82]">
+                    설정
+                    <Icon icon="mdi:chevron-right" width={14} height={14} />
+                  </span>
+                </button>
+              )}
+            </div>
+
             <div className="flex flex-col gap-1.5">
               <span className="text-sm font-medium text-[#212121]">
                 스케치 이미지 <span className="text-xs text-[#A8A8A8]">(선택)</span>
@@ -740,6 +787,12 @@ export default function ProductFormDrawer({
           </form>
         )}
       </aside>
+
+      <ProcessScheduleDrawer
+        open={scheduleOpen}
+        onClose={() => setScheduleOpen(false)}
+        process={processInfo ?? null}
+      />
     </>
   );
 }
