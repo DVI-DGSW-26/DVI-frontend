@@ -96,7 +96,8 @@ export function getStatusBadge(status: string): StatusBadge {
 }
 
 export function isDoneStep(inspection: MyInspection): boolean {
-  // 압출/프레스 묶음 보고서는 SKIPPED 도 "끝남"으로 인정.
+  // 공정과 무관하게 SKIPPED 도 "끝남"으로 인정한다 — 묶음 보고서 여부는 서버가
+  // 공정의 bundledReport 로 판단하고, 화면은 그 결과(보고서)만 받는다.
   return (
     inspection.status === "COMPLETED" ||
     inspection.status === "INCOMPLETE_APPROVED" ||
