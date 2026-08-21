@@ -3,6 +3,7 @@ import type {
   InspectionSchedule,
   InspectionScheduleListResponse,
   InspectionScheduleResponse,
+  UpdateInspectionScheduleRequest,
 } from "./types";
 
 export async function getProcessSchedule(
@@ -20,4 +21,15 @@ export async function getAllProcessSchedules(): Promise<InspectionSchedule[]> {
     "/inspection-schedule/process",
   );
   return data.data ?? [];
+}
+
+export async function updateProcessSchedule(
+  process: string,
+  body: UpdateInspectionScheduleRequest,
+): Promise<InspectionSchedule> {
+  const { data } = await http.put<InspectionScheduleResponse>(
+    `/inspection-schedule/process/${process}`,
+    body,
+  );
+  return data.data;
 }
