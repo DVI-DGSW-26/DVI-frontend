@@ -12,10 +12,9 @@ import type {
   ProcessType,
   ProductDimInput,
   ProductListItem,
-  ProductScheduleType,
   ProductValueType,
 } from "../api";
-import { useProcessLabel, useProcessOptions } from "../../process";
+import { useProcessOptions } from "../../process";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import {
   isAllowedImageFile,
@@ -67,31 +66,6 @@ function toNumber(value: string): number | null {
   if (value.trim() === "") return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
-}
-
-// 폼에서 고르는 스케줄 선택지. DEFAULT 는 요청 시 scheduleType: null (공정 기본 복귀).
-type ScheduleChoice = "DEFAULT" | ProductScheduleType;
-
-const SCHEDULE_OPTIONS: { value: ScheduleChoice; label: string }[] = [
-  { value: "DEFAULT", label: "공정 기본" },
-  { value: "CHO_JUNG_JONG", label: "초/중/종" },
-  { value: "TIME_BASED", label: "시간대별" },
-];
-
-const DEFAULT_INTERVAL_HOURS = 2;
-const DEFAULT_START_TIME = "08:00";
-
-// 공정별 기본 스케줄 설명 (백엔드 기본값과 일치) — "공정 기본" 선택 시 안내용.
-function processDefaultScheduleLabel(process: string): string {
-  return process === "AL_CUTTING"
-    ? "08:00~익일 02:00, 2시간 간격"
-    : "초/중/종 3회";
-}
-
-// TIME_BASED 하루 검사 횟수 = min(10, floor(24 / intervalHours)).
-function timeBasedCount(intervalHours: number): number {
-  if (intervalHours <= 0) return 0;
-  return Math.min(10, Math.floor(24 / intervalHours));
 }
 
 // 스케치 미리보기 — 주소가 살아있지 않을 때(백엔드 주소 문제 등) 빈 사각형만
@@ -146,13 +120,6 @@ export default function ProductFormDrawer({
   const [sketchError, setSketchError] = useState<string | null>(null);
   const sketchInputRef = useRef<HTMLInputElement | null>(null);
   const [dims, setDims] = useState<DimDraft[]>([emptyDim()]);
-  // 검사 스케줄. scheduleDirty 는 수정 모드에서 "사용자가 스케줄을 건드렸는지" 판단용 —
-  // 안 건드렸으면 payload 에서 빼서 기존 설정을 그대로 둔다(백엔드 GET 이 현재 스케줄을
-  // 안 내려줄 수 있어, 미조작 시 덮어쓰기로 인한 데이터 손실을 막기 위함).
-  const [scheduleChoice, setScheduleChoice] = useState<ScheduleChoice>("DEFAULT");
-  const [intervalHours, setIntervalHours] = useState(String(DEFAULT_INTERVAL_HOURS));
-  const [startTime, setStartTime] = useState(DEFAULT_START_TIME);
-  const [scheduleDirty, setScheduleDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // 수정 모드에서 dims 가 변경됐는지 판단용. 백엔드가 PATCH 시 dims 를 통째로 교체하면서
   // 기존 dim 이 검사 결과에서 참조될 경우 409 RESOURCE_IN_USE 가 떨어지므로,
@@ -167,7 +134,6 @@ export default function ProductFormDrawer({
 
   // 수정 중인 값이 비활성 공정이어도 선택이 풀리지 않도록 옵션에 포함시킨다.
   const processOptions = useProcessOptions(process ? [process] : []);
-  const processLabel = useProcessLabel();
 
   const { mutate: create, isPending: isCreating } = useCreateProduct();
   const { mutate: update, isPending: isUpdating } = useUpdateProduct();
@@ -193,10 +159,6 @@ export default function ProductFormDrawer({
       setSketchUrl("");
       setSketchError(null);
       setDims([emptyDim()]);
-      setScheduleChoice("DEFAULT");
-      setIntervalHours(String(DEFAULT_INTERVAL_HOURS));
-      setStartTime(DEFAULT_START_TIME);
-      setScheduleDirty(false);
       setError(null);
       originalDimsKeyRef.current = "";
       return;
@@ -225,24 +187,6 @@ export default function ProductFormDrawer({
           : [emptyDim()];
       setDims(loadedDims);
       originalDimsKeyRef.current = JSON.stringify(loadedDims);
-      // 스케줄 복원 — 백엔드가 내려주면 사용, 없으면 "공정 기본"으로 표시.
-      // (표시만 기본값일 뿐, 아래 handleSubmit 에서 사용자가 건드리지 않으면 전송하지 않음.)
-      if (detail.scheduleType === "TIME_BASED") {
-        setScheduleChoice("TIME_BASED");
-        setIntervalHours(
-          String(detail.intervalHours ?? DEFAULT_INTERVAL_HOURS),
-        );
-        setStartTime(detail.startTime ?? DEFAULT_START_TIME);
-      } else if (detail.scheduleType === "CHO_JUNG_JONG") {
-        setScheduleChoice("CHO_JUNG_JONG");
-        setIntervalHours(String(DEFAULT_INTERVAL_HOURS));
-        setStartTime(DEFAULT_START_TIME);
-      } else {
-        setScheduleChoice("DEFAULT");
-        setIntervalHours(String(DEFAULT_INTERVAL_HOURS));
-        setStartTime(DEFAULT_START_TIME);
-      }
-      setScheduleDirty(false);
       setError(null);
     }
   }, [open, isEdit, detail]);
@@ -370,26 +314,6 @@ export default function ProductFormDrawer({
     const dimsUnchanged =
       isEdit && dimsKey === originalDimsKeyRef.current;
 
-    // 스케줄 payload — 선택에 따라 필요한 필드만 보낸다.
-    // 수정 모드에서 사용자가 스케줄을 안 건드렸으면(scheduleDirty=false) 아예 제외 →
-    // 백엔드가 기존 설정을 그대로 유지한다.
-    let scheduleFields: Partial<CreateProductRequest> = {};
-    if (!isEdit || scheduleDirty) {
-      if (scheduleChoice === "CHO_JUNG_JONG") {
-        scheduleFields = { scheduleType: "CHO_JUNG_JONG" };
-      } else if (scheduleChoice === "TIME_BASED") {
-        const iv = toNumber(intervalHours);
-        scheduleFields = {
-          scheduleType: "TIME_BASED",
-          intervalHours: iv !== null && iv > 0 ? iv : DEFAULT_INTERVAL_HOURS,
-          startTime: startTime.trim() || DEFAULT_START_TIME,
-        };
-      } else {
-        // "공정 기본" — 제품별 설정을 지우고 공정 기본 스케줄로 복귀.
-        scheduleFields = { scheduleType: null };
-      }
-    }
-
     const body: CreateProductRequest = {
       customerId: resolvedCustomerId,
       name: name.trim(),
@@ -397,7 +321,6 @@ export default function ProductFormDrawer({
       process: process as ProcessType,
       sketchUrl: sketchUrl.trim() === "" ? null : sketchUrl.trim(),
       ...(dimsUnchanged ? {} : { dims: dimsInput }),
-      ...scheduleFields,
     } as CreateProductRequest;
 
     const handlers = {
@@ -448,21 +371,6 @@ export default function ProductFormDrawer({
     : isPending
       ? "등록 중..."
       : "등록";
-
-  const scheduleHint = (() => {
-    if (scheduleChoice === "DEFAULT") {
-      return process
-        ? `공정 기본 스케줄을 사용합니다 (${processDefaultScheduleLabel(process)}).`
-        : "공정 기본 스케줄을 사용합니다.";
-    }
-    if (scheduleChoice === "CHO_JUNG_JONG") {
-      return "초물·중물·종물 3회 검사합니다.";
-    }
-    const iv = toNumber(intervalHours);
-    const shownIv = iv !== null && iv > 0 ? iv : DEFAULT_INTERVAL_HOURS;
-    const shownStart = startTime.trim() || DEFAULT_START_TIME;
-    return `${shownStart}부터 ${shownIv}시간 간격으로 하루 ${timeBasedCount(shownIv)}회 검사합니다.`;
-  })();
 
   return (
     <>
@@ -649,84 +557,6 @@ export default function ProductFormDrawer({
               />
               {sketchError && (
                 <span className="text-xs text-[#EF4444]">{sketchError}</span>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-[#212121]">검사 스케줄</span>
-              <div className="grid grid-cols-3 gap-2">
-                {SCHEDULE_OPTIONS.map((opt) => {
-                  const selected = scheduleChoice === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => {
-                        setScheduleChoice(opt.value);
-                        setScheduleDirty(true);
-                      }}
-                      className={`h-10 rounded-lg border text-sm font-medium transition-colors ${
-                        selected
-                          ? "border-[#931B82] bg-[#931B82] text-white"
-                          : "border-gray-300 bg-white text-[#6B7280] hover:bg-gray-50"
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {scheduleChoice === "TIME_BASED" && (
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[11px] text-[#6B7280]">간격(시간)</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={24}
-                      step={1}
-                      value={intervalHours}
-                      onChange={(e) => {
-                        setIntervalHours(e.target.value);
-                        setScheduleDirty(true);
-                      }}
-                      className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none"
-                    />
-                  </label>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[11px] text-[#6B7280]">시작 시각</span>
-                    <input
-                      type="time"
-                      value={startTime}
-                      onChange={(e) => {
-                        setStartTime(e.target.value);
-                        setScheduleDirty(true);
-                      }}
-                      className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none"
-                    />
-                  </label>
-                </div>
-              )}
-
-              {scheduleChoice === "DEFAULT" ? (
-                <div className="rounded-md border border-gray-200 bg-[#FAFAFA] px-3 py-2 text-[11px] leading-relaxed text-[#6B7280]">
-                  <p className="font-medium text-[#4B5563]">
-                    제품별 설정을 지우고 공정 기본 스케줄로 되돌립니다.
-                  </p>
-                  <ul className="mt-1 space-y-0.5">
-                    <li>· 압출 · ST 절단 · 가공 · 프레스 → 초/중/종 3회</li>
-                    <li>· AL 절단 → 08:00~익일 02:00, 2시간 간격</li>
-                  </ul>
-                  {process && (
-                    <p className="mt-1.5 font-medium text-[#931B82]">
-                      현재 공정({processLabel(process)}) →{" "}
-                      {processDefaultScheduleLabel(process)}
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <p className="text-[11px] text-[#6B7280]">{scheduleHint}</p>
               )}
             </div>
 

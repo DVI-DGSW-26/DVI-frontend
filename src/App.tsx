@@ -19,6 +19,7 @@ import InspectionNgViewPage from "./features/inspection/ui/InspectionNgViewPage"
 import ProductsPage from "./features/products/ui/ProductsPage";
 import EquipmentPage from "./features/equipment/ui/EquipmentPage";
 import CustomersPage from "./features/customers/ui/CustomersPage";
+import ProcessesPage from "./features/process/ui/ProcessesPage";
 import InspectionOrdersPage from "./features/inspection-orders/ui/InspectionOrdersPage";
 import MyInspectionOrdersPage from "./features/inspection-orders/ui/MyInspectionOrdersPage";
 
@@ -96,6 +97,7 @@ function App() {
               <Route path="/products" element={<ProductsPage />} />
               <Route path="/equipment" element={<EquipmentPage />} />
               <Route path="/customers" element={<CustomersPage />} />
+              <Route path="/processes" element={<ProcessesPage />} />
             </Route>
 
             <Route element={<RouteGuard roles={["QUALITY_ADMIN"]} />}>
