@@ -1,9 +1,10 @@
+import { useMemo } from "react";
 import { Icon } from "@iconify/react";
 import { useNavigate } from "react-router-dom";
 import {
   useMarkAllAsRead,
   useMarkAsRead,
-  useNotifications,
+  useNotificationsInfinite,
   type NotificationResponse,
 } from "../api";
 import { resolveNotificationLink } from "../lib/resolveNotificationLink";
@@ -81,7 +82,19 @@ function groupByDay(items: NotificationResponse[]) {
 
 const NotificationPage = () => {
   const navigate = useNavigate();
-  const { data: items = [], isLoading, isError } = useNotifications();
+  const {
+    data,
+    isLoading,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useNotificationsInfinite();
+  // 서버가 page/size 로 나눠 주므로 받은 페이지를 이어 붙여 한 목록으로 그린다.
+  const items = useMemo(
+    () => data?.pages.flatMap((p) => p.items) ?? [],
+    [data],
+  );
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
 
@@ -174,6 +187,17 @@ const NotificationPage = () => {
             </ul>
           </section>
         ))}
+
+        {hasNextPage && (
+          <button
+            type="button"
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            className="rounded-xl border border-gray-200 bg-white py-3 text-sm font-medium text-[#6B7280] transition-colors hover:border-[#931B82] hover:text-[#931B82] disabled:opacity-50"
+          >
+            {isFetchingNextPage ? "불러오는 중..." : "이전 알림 더 보기"}
+          </button>
+        )}
       </div>
     </div>
   );

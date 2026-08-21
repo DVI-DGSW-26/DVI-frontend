@@ -10,19 +10,38 @@ import type {
   SaveCrossCheckResultRequest,
 } from "./types";
 
+// 공정 필터는 반복 파라미터(?process=A&process=B)로 보낸다. axios 기본 직렬화는
+// process[]=A 형태라 백엔드가 못 알아듣는다 — indexes: null 이 반복 형식이다.
+// 빈 배열이면 파라미터 자체를 빼서 "전체 공정"으로 요청한다.
+const REPEAT_PARAMS = { indexes: null } as const;
+
+function processParam(processes?: string[]) {
+  return processes && processes.length > 0 ? { process: processes } : {};
+}
+
 export async function getMyCrossChecks(
   includeFinished = false,
+  processes?: string[],
 ): Promise<CrossCheckSummary[]> {
   const { data } = await http.get<ApiResponse<CrossCheckSummary[]>>(
     "/cross-check/my",
-    { params: { includeFinished } },
+    {
+      params: { includeFinished, ...processParam(processes) },
+      paramsSerializer: REPEAT_PARAMS,
+    },
   );
   return data.data ?? [];
 }
 
-export async function getAssignedCrossChecks(): Promise<AssignedInspection[]> {
+export async function getAssignedCrossChecks(
+  processes?: string[],
+): Promise<AssignedInspection[]> {
   const { data } = await http.get<ApiResponse<AssignedInspection[]>>(
     "/cross-check/assigned",
+    {
+      params: processParam(processes),
+      paramsSerializer: REPEAT_PARAMS,
+    },
   );
   return data.data ?? [];
 }
