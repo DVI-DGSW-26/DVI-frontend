@@ -1,4 +1,5 @@
 import type { ApiResponse } from "../../auth/type/types";
+import type { Shift } from "../../inspection-schedule/api";
 
 export interface Equipment {
   id: number;
@@ -80,6 +81,9 @@ export interface InspectionOrder {
    */
   production?: InspectionOrderUserRef | null;
   targetDate: string;
+  // 이 지시가 만들어질 때의 교대. 제품 스케줄에 주·야가 둘 다 있으면 지시 하나에
+  // 양쪽 슬롯이 다 들어있을 수 있어 참고용으로만 쓴다(슬롯별 주/야는 슬롯의 shift).
+  shift?: Shift;
   status: InspectionOrderStatus;
   createdAt: string;
   updatedAt: string;

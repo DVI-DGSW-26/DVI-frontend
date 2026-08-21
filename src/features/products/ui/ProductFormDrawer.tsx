@@ -15,7 +15,7 @@ import type {
   ProductScheduleType,
   ProductValueType,
 } from "../api";
-import { PROCESS_OPTIONS, processLabel } from "../lib/processLabels";
+import { useProcessLabel, useProcessOptions } from "../../process";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import {
   isAllowedImageFile,
@@ -164,6 +164,10 @@ export default function ProductFormDrawer({
     isLoading: loadingDetail,
     isError: detailError,
   } = useProductDetail(open && isEdit ? productId : null);
+
+  // 수정 중인 값이 비활성 공정이어도 선택이 풀리지 않도록 옵션에 포함시킨다.
+  const processOptions = useProcessOptions(process ? [process] : []);
+  const processLabel = useProcessLabel();
 
   const { mutate: create, isPending: isCreating } = useCreateProduct();
   const { mutate: update, isPending: isUpdating } = useUpdateProduct();
@@ -573,7 +577,7 @@ export default function ProductFormDrawer({
                 className="h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none"
               >
                 <option value="">공정을 선택하세요</option>
-                {PROCESS_OPTIONS.map((opt) => (
+                {processOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>

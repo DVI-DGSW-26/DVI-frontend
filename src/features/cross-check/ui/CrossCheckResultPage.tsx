@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
 import { useAuth } from "../../auth/AuthContext";
+import { useProcessFlag } from "../../process";
 import type { ApiErrorData, StepResult } from "../../inspection/type/types";
 import {
   dimDisplayName,
@@ -40,6 +41,7 @@ export default function CrossCheckResultPage() {
   const params = useParams<{ crossCheckId: string }>();
   const crossCheckId = Number(params.crossCheckId);
   const { user } = useAuth();
+  const hardnessTracked = useProcessFlag("hardnessTracked");
 
   const state = (location.state ?? {}) as ResultLocationState;
   const stateResults = useMemo(() => state.results ?? [], [state.results]);
@@ -94,12 +96,12 @@ export default function CrossCheckResultPage() {
   const inspectorName = state.inspectorName ?? user?.name ?? "-";
   const productionInspectorName =
     state.productionInspectorName ?? detail?.production.name ?? "-";
-  // 압출 종품(EXTRUSION FINAL)은 순회검사자가 이 화면에서 경도값을 입력한다.
-  // 경도는 열처리 완료(8~12시간) 후에야 나오므로, 측정값만 저장한 채 DRAFT 로 두고
-  // 다음날 '작업 이어하기' 로 다시 들어와 경도 입력 후 결재 요청하는 흐름.
+  // 경도를 추적하는 공정(hardnessTracked)의 종품은 순회검사자가 이 화면에서 경도값을
+  // 입력한다. 경도는 열처리 완료(8~12시간) 후에야 나오므로, 측정값만 저장한 채 DRAFT 로
+  // 두고 다음날 '작업 이어하기' 로 다시 들어와 경도 입력 후 결재 요청하는 흐름.
   const isExtrusionFinal =
     !!detail &&
-    detail.product.process === "EXTRUSION" &&
+    hardnessTracked(detail.product.process) &&
     getStage(detail.type, detail.product.process) === "FINAL";
 
   const saveMut = useSaveCrossCheckResults(crossCheckId);

@@ -10,6 +10,7 @@ import {
 } from "../api";
 import type { AssignedInspection, CrossCheckSummary } from "../api";
 import { elapsedFrom } from "../lib/elapsed";
+import { useProcessFlag, useProcessLabel, useProcessList } from "../../process";
 import { countUnprocessed, isTakeoverable } from "../lib/assigned";
 import { toCancelErrorMessage } from "../lib/cancelError";
 import {
@@ -37,23 +38,6 @@ import {
 import Toast from "../../inspection/ui/Toast";
 
 type Tab = "assigned" | "history";
-
-const PROCESS_LABEL: Record<string, string> = {
-  EXTRUSION: "압출",
-  AL_CUTTING: "AL절단",
-  ST_CUTTING: "ST절단",
-  MACHINING: "가공",
-  PRESS: "프레스",
-};
-
-// 할당 대기 목록을 공정별로 묶어 보여줄 때의 섹션 순서.
-const PROCESS_ORDER = [
-  "EXTRUSION",
-  "MACHINING",
-  "ST_CUTTING",
-  "AL_CUTTING",
-  "PRESS",
-] as const;
 
 // 승인 모델 변경으로 초·중 차수는 개별 결재 없이 COMPLETED 로 끝난다 — 이 표에서
 // 빠뜨리면 끝난 초·중이 폴백에 걸려 "진행 중"으로 계속 남는다(결재 승인해도 안 없어짐).
@@ -84,6 +68,13 @@ const CrossCheckPendingPage = () => {
   const [tab, setTab] = useState<Tab>(initialTab);
   const [toast, setToast] = useState<string | null>(null);
   const [startingId, setStartingId] = useState<number | null>(null);
+  const processLabel = useProcessLabel();
+  // 섹션 노출 순서 — 서버 공정 목록 순서를 그대로 쓴다.
+  const { data: processes } = useProcessList(true);
+  const processOrder = useMemo(
+    () => (processes ?? []).map((p) => p.code),
+    [processes],
+  );
   // 진행중(이어하기) 카드에서 "잘못 선택했음" 취소를 누른 대상. 확인 모달용.
   const [cancelTarget, setCancelTarget] = useState<CrossCheckSummary | null>(
     null,
@@ -123,8 +114,8 @@ const CrossCheckPendingPage = () => {
     [assigned],
   );
 
-  // 공정(압출/가공/ST절단 등)별로 묶는다 — 각 그룹 안에서는 위 대기시간순 정렬 유지.
-  // PROCESS_ORDER 에 정의된 순서를 먼저, 그 외 공정은 뒤에 노출.
+  // 공정별로 묶는다 — 각 그룹 안에서는 위 대기시간순 정렬 유지.
+  // 섹션 순서는 서버 공정 목록 순서를 따르고, 목록에 없는 공정은 뒤에 붙인다.
   // 내 순회검사 id 전체 — 새 배정 목록에서 중복/잔상 노출 제외용.
   // (내 진행 건은 "진행 중(이어하기)", 완료 건은 "내 결재 이력"에서 보임)
   // ※ 백엔드 assigned 가 완료(PENDING_APPROVAL 등)된 건도 IN_PROGRESS 로 계속 반환하는
@@ -162,16 +153,14 @@ const CrossCheckPendingPage = () => {
       map.set(item.process, list);
     }
     const ordered = [
-      ...PROCESS_ORDER.filter((p) => map.has(p)),
-      ...[...map.keys()].filter(
-        (p) => !PROCESS_ORDER.includes(p as (typeof PROCESS_ORDER)[number]),
-      ),
+      ...processOrder.filter((p) => map.has(p)),
+      ...[...map.keys()].filter((p) => !processOrder.includes(p)),
     ];
     return ordered.map((process) => ({
       process,
       items: map.get(process) ?? [],
     }));
-  }, [filteredAssigned]);
+  }, [filteredAssigned, processOrder]);
 
   // 결재 요청 이력: DRAFT 제외 (DRAFT 는 측정 중 — 할당 대기 탭에서 이어하기로 노출)
   const history = useMemo(
@@ -399,7 +388,7 @@ const CrossCheckPendingPage = () => {
                 <section key={group.process} className="flex flex-col gap-2">
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-semibold text-[#212121]">
-                      {PROCESS_LABEL[group.process] ?? group.process}
+                      {processLabel(group.process)}
                     </h3>
                     <span className="inline-block rounded-full bg-[#F3E8F7] px-2 py-0.5 text-xs font-medium text-[#931B82]">
                       {group.items.length}
@@ -613,6 +602,7 @@ function DraftResumeCard({
   onClick: () => void;
   onCancel: () => void;
 }) {
+  const hardnessTracked = useProcessFlag("hardnessTracked");
   // 카드 전체가 "이어하기" 버튼이므로, 취소 버튼은 중첩(button 안 button)이 되지
   // 않도록 형제 요소로 분리하고 relative 컨테이너 위에 얹는다.
   const stage = getStage(cc.type, cc.product.process);
@@ -638,7 +628,7 @@ function DraftResumeCard({
             <span className="rounded-md bg-[#931B82] px-2 py-0.5 text-[10px] font-semibold text-white">
               이어하기
             </span>
-            {needsHardnessInput(cc) && (
+            {needsHardnessInput(cc, hardnessTracked(cc.product.process)) && (
               <span className="rounded-md bg-[#FEF3C7] px-2 py-0.5 text-[10px] font-semibold text-[#B45309]">
                 경도 입력 필요
               </span>
@@ -691,6 +681,7 @@ function HistoryCard({
   cc: CrossCheckSummary;
   onClick: () => void;
 }) {
+  const processLabel = useProcessLabel();
   const badge = statusBadge(cc.status);
   const stage = getStage(cc.type, cc.product.process);
   return (
@@ -721,7 +712,7 @@ function HistoryCard({
         <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
           <InfoLine
             label="공정"
-            value={PROCESS_LABEL[cc.product.process] ?? cc.product.process}
+            value={processLabel(cc.product.process)}
           />
           <InfoLine label="설비" value={cc.equipment.name} />
           <InfoLine label="검사 차수" value={`${cc.typeLabel} (${cc.type})`} />

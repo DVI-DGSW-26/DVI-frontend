@@ -7,19 +7,12 @@ import {
   useDecideCrossCheck,
   useDeleteCrossCheck,
 } from "../api";
-import type { CrossCheckResultInfo, ProcessType } from "../api";
+import type { CrossCheckResultInfo } from "../api";
+import { useProcessFlag, useProcessLabel } from "../../process";
 import { useAuth } from "../../auth/AuthContext";
 import { getStage, STAGE_LABEL, STAGE_BADGE } from "../lib/stage";
 import PhotoCompareModal from "../../../components/shared/PhotoCompareModal";
 import { formatDateTime } from "../../../lib/datetime";
-
-const PROCESS_LABEL: Record<ProcessType, string> = {
-  EXTRUSION: "압출",
-  AL_CUTTING: "AL절단",
-  ST_CUTTING: "ST절단",
-  MACHINING: "가공",
-  PRESS: "프레스",
-};
 
 function isWithinTolerance(
   value: number,
@@ -53,7 +46,7 @@ function toErrorMessage(err: unknown): string {
       case "APPEARANCE_REQUIRED":
         return "외관 검사가 입력되지 않았습니다.";
       case "HARDNESS_REQUIRED":
-        return "EXTRUSION 공정 경도값이 입력되지 않았습니다.";
+        return "경도값이 입력되지 않았습니다.";
       case "REJECT_REASON_REQUIRED":
         return "반려 사유를 입력해주세요.";
       case "CROSS_CHECK_ALREADY_FINISHED":
@@ -72,6 +65,8 @@ export default function CrossCheckApprovalDetailPage() {
   const crossCheckId = Number(params.crossCheckId);
 
   const { user } = useAuth();
+  const processLabel = useProcessLabel();
+  const hardnessTracked = useProcessFlag("hardnessTracked");
   const detailQuery = useCrossCheckDetail(crossCheckId);
   const detail = detailQuery.data;
   const decideMut = useDecideCrossCheck(crossCheckId);
@@ -173,8 +168,11 @@ export default function CrossCheckApprovalDetailPage() {
     (user?.role === "QUALITY_ADMIN" || user?.role === "ADMIN") &&
     detail.status === "PENDING_APPROVAL";
   // 경도값은 순회검사자가 종품 측정 단계에서 입력한다. 결재자는 읽기 전용으로 확인만.
+  // 노출 조건은 공정의 hardnessTracked 플래그 — 예전엔 "압출이고 type 이 _3" 이었는데,
+  // 슬롯이 공정 스케줄로 옮겨가며 종품이 항상 _3 이 아니게 됐다.
   const isExtrusionFinal =
-    detail.product.process === "EXTRUSION" && /_3$/.test(detail.type);
+    hardnessTracked(detail.product.process) &&
+    getStage(detail.type, detail.product.process) === "FINAL";
   // 관리자만 삭제 가능. APPROVED(보고서 발행)는 백엔드가 거부하므로 버튼도 숨김.
   const canDelete =
     (user?.role === "ADMIN" || user?.role === "QUALITY_ADMIN") &&
@@ -231,7 +229,7 @@ export default function CrossCheckApprovalDetailPage() {
           <InfoLine
             label="공정"
             value={
-              PROCESS_LABEL[detail.product.process] ?? detail.product.process
+              processLabel(detail.product.process)
             }
           />
           <InfoLine label="설비" value={detail.equipment.name} />
