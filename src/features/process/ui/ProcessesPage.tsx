@@ -216,11 +216,13 @@ function DesktopTable({
   onToggleActive,
 }: ListProps) {
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+      <table className="w-full min-w-[640px] text-sm">
         <thead className="bg-[#F3E8F7] text-[#6B7280]">
           <tr>
-            <th className="px-4 py-3 text-left font-medium">표시명</th>
+            <th className="whitespace-nowrap px-4 py-3 text-left font-medium">
+              표시명
+            </th>
             <th className="px-4 py-3 text-left font-medium">코드</th>
             <th className="px-4 py-3 text-left font-medium">약칭</th>
             <th className="px-4 py-3 text-left font-medium">설정</th>
@@ -252,7 +254,9 @@ function DesktopTable({
           )}
           {items.map((item) => (
             <tr key={item.code} className="hover:bg-gray-50">
-              <td className="px-4 py-3 font-medium">{item.label}</td>
+              <td className="whitespace-nowrap px-4 py-3 font-medium">
+                {item.label}
+              </td>
               <td className="px-4 py-3 whitespace-nowrap text-[#6B7280]">
                 {item.code}
               </td>
@@ -262,7 +266,7 @@ function DesktopTable({
               <td className="px-4 py-3">
                 <FlagChips process={item} />
               </td>
-              <td className="px-4 py-3">
+              <td className="whitespace-nowrap px-4 py-3">
                 <ActiveBadge isActive={item.isActive} />
               </td>
               <td className="px-4 py-3">
