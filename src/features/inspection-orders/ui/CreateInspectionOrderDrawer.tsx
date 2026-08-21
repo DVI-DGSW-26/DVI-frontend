@@ -12,6 +12,8 @@ import type { InspectionOrder } from "../api";
 import { orderWorkers } from "../lib/orderWorkers";
 import { useAuth } from "../../auth/AuthContext";
 import type { User, WorkType } from "../../auth/type/types";
+import { useProcessSchedule } from "../../inspection-schedule/api";
+import type { Shift } from "../../inspection-schedule/api";
 
 interface Props {
   open: boolean;
@@ -37,6 +39,16 @@ function resolveManagerWorkType(user: User | null): WorkType | null {
   return null;
 }
 
+// 교대 선택. "둘 다" 는 POST 를 주간·야간으로 두 번 보내 지시 2건을 만든다
+// (서버는 요청 1건당 교대 1개만 받는다).
+type ShiftChoice = Shift | "BOTH";
+
+const SHIFT_CHOICES: { value: ShiftChoice; label: string }[] = [
+  { value: "DAY", label: "주간" },
+  { value: "NIGHT", label: "야간" },
+  { value: "BOTH", label: "둘 다" },
+];
+
 function todayISO() {
   const now = new Date();
   const yyyy = now.getFullYear();
@@ -56,6 +68,7 @@ export default function CreateInspectionOrderDrawer({
   const [productId, setProductId] = useState<number | "">("");
   // 공동 작업자 — 인원 제한 없이 여러 명 배정 가능(1명이어도 배열로 보낸다).
   const [workerIds, setWorkerIds] = useState<number[]>([]);
+  const [shiftChoice, setShiftChoice] = useState<ShiftChoice>("DAY");
 
   // 드로어가 열릴 때(등록/수정 대상이 바뀔 때) 폼을 초기화한다.
   // effect 가 아니라 "렌더 중 state 조정" 패턴 — 열자마자 빈 폼을 한 번 그린 뒤
@@ -69,6 +82,7 @@ export default function CreateInspectionOrderDrawer({
       setEquipmentId(order ? order.equipment.id : "");
       setProductId(order ? order.product.id : "");
       setWorkerIds(order ? orderWorkers(order).map((w) => w.id) : []);
+      setShiftChoice(order?.shift ?? "DAY");
     }
   }
 
@@ -77,7 +91,8 @@ export default function CreateInspectionOrderDrawer({
   const { data: productionUsers = [], isLoading: loadingProduction } =
     useUsersByRole("PRODUCTION");
   const { user } = useAuth();
-  const { mutate: create, isPending: isCreating } = useCreateInspectionOrder();
+  const { mutateAsync: createAsync, isPending: isCreating } =
+    useCreateInspectionOrder();
   const { mutate: update, isPending: isUpdating } = useUpdateInspectionOrder();
   const isPending = isCreating || isUpdating;
 
@@ -95,6 +110,16 @@ export default function CreateInspectionOrderDrawer({
         (e) => allowedProcesses.includes(e.process) || e.id === equipmentId,
       )
     : equipment;
+
+  // 선택한 제품의 공정 스케줄 — 주간·야간 슬롯이 둘 다 있으면 교대를 골라야 한다.
+  // (둘 다 있는데 shift 를 안 보내면 서버가 400 SHIFT_SELECTION_REQUIRED 로 막는다.)
+  const selectedProduct = products.find((p) => p.id === productId);
+  const { data: schedule } = useProcessSchedule(selectedProduct?.process);
+  const scheduleSlots = schedule?.slots ?? [];
+  const hasDaySlots = scheduleSlots.some((s) => s.shift === "DAY");
+  const hasNightSlots = scheduleSlots.some((s) => s.shift === "NIGHT");
+  // 수정에는 교대 변경이 없다 — 서버 수정 API 가 shift 를 받지 않는다.
+  const needsShiftChoice = !isEdit && hasDaySlots && hasNightSlots;
 
   // 제품 드롭다운: 선택한 설비 공정과 같은 제품만(제품 공정 = 설비 공정).
   const selectedEquipment = equipment.find((e) => e.id === equipmentId);
@@ -127,37 +152,61 @@ export default function CreateInspectionOrderDrawer({
     workerIds.length > 0 &&
     !isPending;
 
-  const handleSubmit = (e: { preventDefault: () => void }) => {
+  // 백엔드가 준 실제 사유(예: WORK_TYPE_MISMATCH — 담당 업무 구분 불일치)를 그대로
+  // 노출한다. 없을 때만 일반 메시지로 폴백.
+  const serverMessageOf = (err: unknown): string | undefined =>
+    err instanceof AxiosError
+      ? (err.response?.data as { message?: string } | undefined)?.message
+      : undefined;
+
+  const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
     if (!canSubmit) return;
-    const body = {
+    const base = {
       productId: productId as number,
       equipmentId: equipmentId as number,
       workerIds,
       targetDate,
     };
-    const handlers = {
-      onSuccess: () => onClose(),
-      onError: (err: unknown) => {
-        // 백엔드가 준 실제 사유(예: WORK_TYPE_MISMATCH — 담당 업무 구분 불일치)를
-        // 그대로 노출한다. 없을 때만 일반 메시지로 폴백.
-        const serverMessage =
-          err instanceof AxiosError
-            ? (err.response?.data as { message?: string } | undefined)?.message
-            : undefined;
-        alert(
-          serverMessage ??
-            (isEdit
-              ? "검사지시 수정 중 오류가 발생했습니다."
-              : "검사지시 등록 중 오류가 발생했습니다."),
-        );
-      },
-    };
+
     if (isEdit && order) {
-      update({ orderId: order.id, body }, handlers);
-    } else {
-      create(body, handlers);
+      update(
+        { orderId: order.id, body: base },
+        {
+          onSuccess: () => onClose(),
+          onError: (err: unknown) =>
+            alert(serverMessageOf(err) ?? "검사지시 수정 중 오류가 발생했습니다."),
+        },
+      );
+      return;
     }
+
+    // 교대를 고르지 않아도 되는 제품(주간만/야간만)은 shift 없이 한 번만 보낸다.
+    const shifts: (Shift | undefined)[] = !needsShiftChoice
+      ? [undefined]
+      : shiftChoice === "BOTH"
+        ? ["DAY", "NIGHT"]
+        : [shiftChoice];
+
+    const failed: string[] = [];
+    for (const shift of shifts) {
+      try {
+        await createAsync({ ...base, ...(shift ? { shift } : {}) });
+      } catch (err) {
+        const label = shift === "NIGHT" ? "야간" : shift === "DAY" ? "주간" : "";
+        const reason = serverMessageOf(err) ?? "등록 중 오류가 발생했습니다.";
+        failed.push(label ? `${label}: ${reason}` : reason);
+      }
+    }
+
+    if (failed.length === 0) {
+      onClose();
+      return;
+    }
+    // 둘 중 하나만 실패하면 성공한 지시는 그대로 두고, 무엇이 왜 실패했는지 알린다.
+    const madeCount = shifts.length - failed.length;
+    const prefix = madeCount > 0 ? `${madeCount}건은 등록됐습니다.` : "";
+    alert([prefix, ...failed].filter(Boolean).join("\n"));
   };
 
   const title = isEdit ? "검사지시 수정" : "검사지시 등록";
@@ -268,6 +317,35 @@ export default function CreateInspectionOrderDrawer({
               ))}
             </select>
           </label>
+          {needsShiftChoice && (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium text-[#212121]">교대</span>
+              <div className="grid grid-cols-3 gap-2">
+                {SHIFT_CHOICES.map((opt) => {
+                  const selected = shiftChoice === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setShiftChoice(opt.value)}
+                      className={`h-10 rounded-lg border text-sm font-medium transition-colors ${
+                        selected
+                          ? "border-[#931B82] bg-[#931B82] text-white"
+                          : "border-gray-300 bg-white text-[#6B7280] hover:bg-gray-50"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <span className="text-xs text-[#6B7280]">
+                {shiftChoice === "BOTH"
+                  ? "주간·야간 지시를 각각 1건씩, 총 2건 등록합니다."
+                  : "이 제품은 주간·야간 스케줄이 모두 있어 교대를 골라야 합니다."}
+              </span>
+            </div>
+          )}
 
           <fieldset className="flex flex-col gap-1.5">
             <legend className="text-sm font-medium text-[#212121]">

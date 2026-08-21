@@ -1,4 +1,4 @@
-export function formatSlotTime(time: string): string {
+export function formatSlotTime(time: string | null | undefined): string {
   if (!time) return "";
   const [h = "", m = ""] = time.split(":");
   return `${h.padStart(2, "0")}:${m.padStart(2, "0")}`;
@@ -16,19 +16,26 @@ export function formatInspectionTime(value: string): string {
   return `${y}-${mo}-${da} ${h}:${mi}`;
 }
 
-export function formatTolerance(plus: number, minus: number): string {
-  const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toString());
-  return `+${fmt(plus)} / -${fmt(minus)}`;
+// 공차는 부호 포함 편차라 값을 그대로 쓰되 양수엔 + 를 붙여 도면 표기와 맞춘다.
+// (+0.2 / -0.1, 단측 공차면 -0.25 / -0.4 처럼 둘 다 음수일 수 있다.)
+function signed(n: number): string {
+  const text = Number.isInteger(n) ? String(n) : n.toString();
+  return n > 0 ? `+${text}` : text;
+}
+
+export function formatTolerance(upper: number, lower: number): string {
+  return `${signed(upper)} / ${signed(lower)}`;
 }
 
 export function formatStandardWithTolerance(
   standard: number,
-  plus: number,
-  minus: number,
+  upper: number,
+  lower: number,
 ): string {
   const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toString());
-  if (plus === minus) return `${fmt(standard)} ±${fmt(plus)}`;
-  return `${fmt(standard)} +${fmt(plus)}/-${fmt(minus)}`;
+  // 대칭 공차(상한 = -하한)는 현장에서 쓰는 ± 표기로 줄여 보여준다.
+  if (upper === -lower && upper >= 0) return `${fmt(standard)} ±${fmt(upper)}`;
+  return `${fmt(standard)} ${signed(upper)}/${signed(lower)}`;
 }
 
 // 응답에 dimName 이 빠질 수 있어 화면 표시용 fallback.

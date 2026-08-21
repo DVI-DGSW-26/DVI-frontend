@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
 import { useAuth } from "../../auth/AuthContext";
+import { useProcessFlag } from "../../process";
 import type { ApiErrorData, StepResult } from "../../inspection/type/types";
 import {
   dimDisplayName,
@@ -25,7 +26,7 @@ interface ResultLocationState {
   productName?: string;
   inspectorName?: string;
   productionInspectorName?: string;
-  // EXTRUSION 일 때 경도 입력 노출 여부 판단.
+  // 경도 입력 노출 여부 판단 (공정의 hardnessTracked + 종품).
   process?: string;
 }
 
@@ -40,6 +41,7 @@ export default function CrossCheckResultPage() {
   const params = useParams<{ crossCheckId: string }>();
   const crossCheckId = Number(params.crossCheckId);
   const { user } = useAuth();
+  const hardnessTracked = useProcessFlag("hardnessTracked");
 
   const state = (location.state ?? {}) as ResultLocationState;
   const stateResults = useMemo(() => state.results ?? [], [state.results]);
@@ -66,8 +68,8 @@ export default function CrossCheckResultPage() {
           dimNo: r.dimNo,
           dimName: r.dimName,
           standardValue: r.standardValue,
-          tolerancePlus: r.tolerancePlus,
-          toleranceMinus: r.toleranceMinus,
+          toleranceUpper: r.toleranceUpper,
+          toleranceLower: r.toleranceLower,
           status,
           measuredValue: measured,
           imageUrl,
@@ -94,12 +96,12 @@ export default function CrossCheckResultPage() {
   const inspectorName = state.inspectorName ?? user?.name ?? "-";
   const productionInspectorName =
     state.productionInspectorName ?? detail?.production.name ?? "-";
-  // 압출 종품(EXTRUSION FINAL)은 순회검사자가 이 화면에서 경도값을 입력한다.
-  // 경도는 열처리 완료(8~12시간) 후에야 나오므로, 측정값만 저장한 채 DRAFT 로 두고
-  // 다음날 '작업 이어하기' 로 다시 들어와 경도 입력 후 결재 요청하는 흐름.
-  const isExtrusionFinal =
+  // 경도를 추적하는 공정(hardnessTracked)의 종품은 순회검사자가 이 화면에서 경도값을
+  // 입력한다. 경도는 열처리 완료(8~12시간) 후에야 나오므로, 측정값만 저장한 채 DRAFT 로
+  // 두고 다음날 '작업 이어하기' 로 다시 들어와 경도 입력 후 결재 요청하는 흐름.
+  const needsHardness =
     !!detail &&
-    detail.product.process === "EXTRUSION" &&
+    hardnessTracked(detail.product.process) &&
     getStage(detail.type, detail.product.process) === "FINAL";
 
   const saveMut = useSaveCrossCheckResults(crossCheckId);
@@ -140,14 +142,14 @@ export default function CrossCheckResultPage() {
     [results],
   );
 
-  // 경도값은 압출 공정이라도 결재요청 시점엔 선택. 초품검사 등 경도를 아직 측정
-  // 못 한 경우에도 결재요청이 가능해야 함 (경도는 압출 최종 후 입력).
+  // 경도값은 경도 추적 공정이라도 결재요청 시점엔 선택. 초품검사 등 아직 측정하지
+  // 못한 경우에도 결재요청이 가능해야 함 (경도는 열처리 후 입력).
   // 건너뜀(skipped) 항목이 있어도 결재 요청 자체는 허용 — 결재자가 판단해 반려하면
   // reopen 으로 돌아와 다시 측정할 수 있는 흐름이 마련돼 있음. 본인이 빠른 길로
   // 즉시 수정하려면 카드의 "다시 측정" 버튼을 쓰면 됨.
-  // 압출 종품은 경도값까지 입력돼야 결재 요청 가능 (열처리 후 입력).
+  // 경도 추적 공정의 종품은 경도값까지 입력돼야 결재 요청 가능 (열처리 후 입력).
   const canSubmit =
-    appearance !== null && (!isExtrusionFinal || hardness.trim() !== "");
+    appearance !== null && (!needsHardness || hardness.trim() !== "");
 
   if (needsFallback && detailQuery.isLoading) {
     return (
@@ -181,7 +183,7 @@ export default function CrossCheckResultPage() {
       await saveMut.mutateAsync({
         results: [],
         appearanceResult: appearance,
-        ...(isExtrusionFinal && hardness.trim()
+        ...(needsHardness && hardness.trim()
           ? { hardnessResult: hardness.trim() }
           : {}),
         ...(note.trim() ? { note: note.trim() } : {}),
@@ -303,13 +305,13 @@ export default function CrossCheckResultPage() {
           </div>
         </div>
 
-        {isExtrusionFinal && (
+        {needsHardness && (
           <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4">
             <label
               htmlFor="cross-check-hardness"
               className="block text-xs font-medium text-[#6B7280]"
             >
-              경도 측정값 (압출 종품 · 필수)
+              경도 측정값 (종품 · 필수)
             </label>
             <input
               id="cross-check-hardness"
@@ -393,8 +395,8 @@ function StepResultCard({
 }) {
   const dimText = formatStandardWithTolerance(
     result.standardValue,
-    result.tolerancePlus,
-    result.toleranceMinus,
+    result.toleranceUpper,
+    result.toleranceLower,
   );
 
   const [isEditing, setIsEditing] = useState(false);

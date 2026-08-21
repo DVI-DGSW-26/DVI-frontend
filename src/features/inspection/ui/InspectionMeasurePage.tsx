@@ -48,8 +48,8 @@ interface MeasureItem {
   dimNo: number;
   dimName?: string;
   standardValue: number;
-  tolerancePlus: number;
-  toleranceMinus: number;
+  toleranceUpper: number;
+  toleranceLower: number;
   // 항목 종류. PASS_FAIL 이면 사진·측정값 없이 OK/NG 만 입력. 누락 시 NUMBER.
   valueType: InspectionValueType;
   measuredValue?: number;
@@ -87,8 +87,8 @@ function toStepResult(item: MeasureItem): StepResult {
     dimNo: item.dimNo,
     dimName: item.dimName,
     standardValue: item.standardValue,
-    tolerancePlus: item.tolerancePlus,
-    toleranceMinus: item.toleranceMinus,
+    toleranceUpper: item.toleranceUpper,
+    toleranceLower: item.toleranceLower,
     // 측정값이 없는 항목을 "completed" 로 넘기면 결과 화면이 측정값 "-" 로 그린다.
     status: isItemDone(item) ? "completed" : "skipped",
     valueType: item.valueType,
@@ -170,8 +170,8 @@ export default function InspectionMeasurePage() {
           dimNo: r.dimNo,
           dimName: r.dimName ?? dimNameByNo.get(r.dimNo),
           standardValue: r.standardValue,
-          tolerancePlus: r.tolerancePlus,
-          toleranceMinus: r.toleranceMinus,
+          toleranceUpper: r.toleranceUpper,
+          toleranceLower: r.toleranceLower,
           valueType: r.valueType ?? "NUMBER",
           measuredValue: r.measuredValue ?? undefined,
           imageUrl: r.imageUrl ?? undefined,
@@ -187,8 +187,8 @@ export default function InspectionMeasurePage() {
           dimNo: d.dimNo,
           dimName: d.dimName ?? dimNameByNo.get(d.dimNo),
           standardValue: d.standardValue,
-          tolerancePlus: d.tolerancePlus,
-          toleranceMinus: d.toleranceMinus,
+          toleranceUpper: d.toleranceUpper,
+          toleranceLower: d.toleranceLower,
           valueType: d.valueType ?? "NUMBER",
         }))
         .sort((a, b) => a.dimNo - b.dimNo);
@@ -583,8 +583,8 @@ export default function InspectionMeasurePage() {
         dimNo: currentDim.dimNo,
         dimName: currentDim.dimName,
         standardValue: currentDim.standardValue,
-        tolerancePlus: currentDim.tolerancePlus,
-        toleranceMinus: currentDim.toleranceMinus,
+        toleranceUpper: currentDim.toleranceUpper,
+        toleranceLower: currentDim.toleranceLower,
         status: "completed",
         measuredValue,
         imageUrl: uploadedImageUrl ?? undefined,
@@ -634,8 +634,8 @@ export default function InspectionMeasurePage() {
         dimNo: currentDim.dimNo,
         dimName: currentDim.dimName,
         standardValue: currentDim.standardValue,
-        tolerancePlus: currentDim.tolerancePlus,
-        toleranceMinus: currentDim.toleranceMinus,
+        toleranceUpper: currentDim.toleranceUpper,
+        toleranceLower: currentDim.toleranceLower,
         status: "completed",
         valueType: currentDim.valueType,
         passFailResult,
@@ -676,8 +676,8 @@ export default function InspectionMeasurePage() {
       dimNo: currentDim.dimNo,
       dimName: currentDim.dimName,
       standardValue: currentDim.standardValue,
-      tolerancePlus: currentDim.tolerancePlus,
-      toleranceMinus: currentDim.toleranceMinus,
+      toleranceUpper: currentDim.toleranceUpper,
+      toleranceLower: currentDim.toleranceLower,
       status: "skipped",
     };
 
@@ -779,8 +779,8 @@ export default function InspectionMeasurePage() {
               ? dimDisplayName(currentDim)
               : formatStandardWithTolerance(
                   currentDim.standardValue,
-                  currentDim.tolerancePlus,
-                  currentDim.toleranceMinus,
+                  currentDim.toleranceUpper,
+                  currentDim.toleranceLower,
                 )}
           </div>
         </div>
@@ -862,8 +862,8 @@ export default function InspectionMeasurePage() {
               isPreparing={isPreparing}
               suggestedValue={ocrSuggestedValue}
               standardValue={currentDim.standardValue}
-              tolerancePlus={currentDim.tolerancePlus}
-              toleranceMinus={currentDim.toleranceMinus}
+              toleranceUpper={currentDim.toleranceUpper}
+              toleranceLower={currentDim.toleranceLower}
               process={
                 (info?.product.process ?? "EXTRUSION") as InspectionProcess
               }

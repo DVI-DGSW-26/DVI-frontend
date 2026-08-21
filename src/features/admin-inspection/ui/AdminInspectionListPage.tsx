@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
 import {
@@ -11,6 +11,7 @@ import type { MyInspectionStatus } from "../../my-inspection/type/types";
 import DeleteInspectionModal from "../../my-inspection/ui/DeleteInspectionModal";
 import Toast from "../../inspection/ui/Toast";
 import { formatDate } from "../../../lib/datetime";
+import ShiftBadge from "../../../components/shared/ShiftBadge";
 
 type StatusTab = "ALL" | "DRAFT" | "COMPLETED" | "INCOMPLETE";
 
@@ -191,7 +192,11 @@ export default function AdminInspectionListPage() {
                     </span>
                   </div>
                   <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-[#6B7280] sm:grid-cols-3">
-                    <Meta label="차수" value={`${item.typeLabel} (${item.type})`} />
+                    <Meta
+                      label="차수"
+                      value={`${item.typeLabel} (${item.type})`}
+                      suffix={<ShiftBadge shift={item.shift} compact />}
+                    />
                     <Meta label="작성자" value={item.production?.name ?? "-"} />
                     <Meta label="설비" value={item.equipment.name} />
                     <Meta label="시작일" value={formatDate(item.createdAt)} />
@@ -229,11 +234,21 @@ export default function AdminInspectionListPage() {
   );
 }
 
-function Meta({ label, value }: { label: string; value: string }) {
+function Meta({
+  label,
+  value,
+  suffix,
+}: {
+  label: string;
+  value: string;
+  /** 값 뒤에 붙일 배지 등. 없으면 아무것도 그리지 않는다. */
+  suffix?: ReactNode;
+}) {
   return (
     <div className="flex items-center gap-1">
       <span className="shrink-0 text-[#9CA3AF]">{label}</span>
       <span className="min-w-0 truncate text-[#374151]">{value}</span>
+      {suffix}
     </div>
   );
 }

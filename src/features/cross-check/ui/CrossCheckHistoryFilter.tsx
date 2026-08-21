@@ -5,18 +5,11 @@ import CheckboxMultiSelect, {
 } from "../../report/ui/CheckboxMultiSelect";
 import { EMPTY_HISTORY_FILTER, type HistoryFilter } from "../lib/historyFilter";
 import type { CrossCheckSummary } from "../api";
+import { useProcessOptions } from "../../process";
 
 // 통합관리자 보고서 페이지와 동일한 필터 UI를 "내 결재 이력"에 적용.
 // 보고서의 "결과(합격/불합격)"는 순회검사 요약엔 없어서 "상태(대기/승인/반려)"로 대체.
 // 필터 상태 타입/순수 로직(matchesHistoryFilter 등)은 ../lib/historyFilter 참고.
-
-const PROCESS_OPTIONS: MultiOption[] = [
-  { value: "EXTRUSION", label: "압출" },
-  { value: "AL_CUTTING", label: "AL절단" },
-  { value: "ST_CUTTING", label: "ST절단" },
-  { value: "MACHINING", label: "가공" },
-  { value: "PRESS", label: "프레스" },
-];
 
 // 이력 목록은 DRAFT 를 뺀 나머지 상태가 모두 들어온다. 초·중 차수는 개별 결재 없이
 // COMPLETED 로 끝나므로 이게 빠지면 이력의 상당수를 상태로 골라낼 수 없다.
@@ -34,6 +27,8 @@ export default function CrossCheckHistoryFilter({
   items: CrossCheckSummary[];
   onChange: (filter: HistoryFilter) => void;
 }) {
+  const processOptions = useProcessOptions();
+
   // 제품 옵션은 내 이력에 등장한 제품들로 구성.
   const productOptions = useMemo<MultiOption[]>(() => {
     const map = new Map<string, string>();
@@ -74,7 +69,7 @@ export default function CrossCheckHistoryFilter({
     processes.length === 0
       ? "공정"
       : processes.length === 1
-        ? (PROCESS_OPTIONS.find((o) => o.value === processes[0])?.label ??
+        ? (processOptions.find((o) => o.value === processes[0])?.label ??
           "공정")
         : `공정 ${processes.length}`;
 
@@ -139,7 +134,7 @@ export default function CrossCheckHistoryFilter({
 
         <CheckboxMultiSelect
           label={processLabel}
-          options={PROCESS_OPTIONS}
+          options={processOptions}
           value={processes}
           onChange={setProcesses}
           width="w-32"

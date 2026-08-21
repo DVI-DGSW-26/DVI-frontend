@@ -7,6 +7,8 @@ import type {
 import { STAGE_LABEL, STAGE_ORDER } from "../lib/stageMeasurements";
 import { formatSlotTime } from "../lib/inspectedTime";
 import { formatShortDateTime } from "../../../lib/datetime";
+import ShiftBadge from "../../../components/shared/ShiftBadge";
+import { resolveStageShift, type WorkShift } from "../lib/shift";
 
 const STAGE_BADGE: Record<ReportStage, string> = {
   INITIAL: "border-[#DBEAFE] bg-[#EFF6FF] text-[#1D4ED8]",
@@ -60,17 +62,24 @@ function StageBadge({ stage, label }: { stage: ReportStage; label: string }) {
 export default function ReportStagesSection({
   stages,
   variant,
+  shift,
 }: {
   stages: ReportStageInfo[] | undefined;
   variant: "web" | "mobile";
+  /** 보고서 전체의 근무조 — 차수에 shift 가 없을 때의 폴백. */
+  shift?: WorkShift | null;
 }) {
   if (!stages || stages.length === 0) return null;
 
   const ordered = [...stages].sort(
     (a, b) => (STAGE_ORDER[a.stage] ?? 9) - (STAGE_ORDER[b.stage] ?? 9),
   );
-  // 경도는 압출 종물에만 있어, 값이 하나도 없으면 열/행 자체를 숨긴다.
+  // 경도는 경도 추적 공정의 종물에만 있어, 값이 하나도 없으면 열/행 자체를 숨긴다.
   const hasHardness = ordered.some((s) => s.qualityHardnessResult);
+  // 묶음 보고서 하나에 주간·야간 차수가 섞일 수 있다. 전부 같은 교대면 상단에 이미
+  // 표시돼 있으므로 행마다 반복하지 않고, 섞였을 때만 차수별로 배지를 단다.
+  const stageShifts = ordered.map((s) => resolveStageShift(s, shift ?? null));
+  const mixedShift = new Set(stageShifts.filter(Boolean)).size > 1;
 
   if (variant === "mobile") {
     return (
@@ -81,7 +90,10 @@ export default function ReportStagesSection({
             className="flex flex-col gap-2 rounded-xl border border-[#E5E7EB] p-3"
           >
             <div className="flex items-center justify-between gap-2">
-              <StageBadge stage={s.stage} label={s.typeLabel} />
+              <span className="inline-flex items-center gap-1.5">
+                <StageBadge stage={s.stage} label={s.typeLabel} />
+                {mixedShift && <ShiftBadge shift={stageShifts[idx]} compact />}
+              </span>
               <span className="text-xs text-[#6B7280]">
                 {formatInspected(s)}
               </span>
@@ -131,7 +143,10 @@ export default function ReportStagesSection({
           {ordered.map((s, idx) => (
             <tr key={`${s.type}-${s.crossCheckId ?? idx}`} className="align-top">
               <td className="py-3 pr-3">
-                <StageBadge stage={s.stage} label={s.typeLabel} />
+                <span className="inline-flex items-center gap-1.5">
+                  <StageBadge stage={s.stage} label={s.typeLabel} />
+                  {mixedShift && <ShiftBadge shift={stageShifts[idx]} compact />}
+                </span>
               </td>
               <td className="py-3 pr-3 text-[#212121]">{formatInspected(s)}</td>
               <td className="py-3 pr-3 text-[#212121]">

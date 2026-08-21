@@ -3,7 +3,7 @@ import { Icon } from "@iconify/react";
 import { useInspectionDetail } from "../api";
 import type { InspectionDetailResult } from "../type/types";
 import { dimDisplayName, formatStandardWithTolerance } from "../lib/format";
-import { getProcessLabel } from "../lib/process";
+import { useProcessLabel } from "../../process";
 import { judgeMeasurement } from "../lib/judgment";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import JudgmentBadge from "./JudgmentBadge";
@@ -13,6 +13,7 @@ import SketchImage from "./SketchImage";
 // 순회검사자/관리자가 NG 발생 건을 확인하는 용도 — GET /inspection/{id}(권한:전체)로 조회한다.
 // 보고서는 순회검사 결재 후에야 생성되므로 NG 시점엔 이 화면이 유일한 교차 역할 상세다.
 export default function InspectionNgViewPage() {
+  const processLabel = useProcessLabel();
   const navigate = useNavigate();
   const params = useParams<{ inspectionId: string }>();
   const inspectionId = Number(params.inspectionId);
@@ -61,7 +62,7 @@ export default function InspectionNgViewPage() {
           <InfoRow label="설비" value={detail.equipment.name} />
           <InfoRow
             label="공정"
-            value={`${getProcessLabel(detail.product.process)} (${detail.product.process})`}
+            value={`${processLabel(detail.product.process)} (${detail.product.process})`}
           />
           <InfoRow label="고객사" value={detail.customer.name} />
           <InfoRow
@@ -152,8 +153,8 @@ function ResultCard({
 }) {
   const dimText = formatStandardWithTolerance(
     result.standardValue,
-    result.tolerancePlus,
-    result.toleranceMinus,
+    result.toleranceUpper,
+    result.toleranceLower,
   );
   // 가공 공정이면 작업자 판정값 우선, 다른 공정은 측정값 기준 자동 판정.
   const judgment = isMachining
@@ -165,8 +166,8 @@ function ResultCard({
     : judgeMeasurement(
         result.measuredValue,
         result.standardValue,
-        result.tolerancePlus,
-        result.toleranceMinus,
+        result.toleranceUpper,
+        result.toleranceLower,
       );
 
   return (

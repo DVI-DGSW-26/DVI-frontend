@@ -109,8 +109,8 @@ export interface CrossCheckResultInfo {
   dimNo: number;
   dimName?: string;
   standardValue: number;
-  tolerancePlus: number;
-  toleranceMinus: number;
+  toleranceUpper: number;
+  toleranceLower: number;
   productionValue: number | null;
   productionImageUrl: string | null;
   measuredValue: number | null;

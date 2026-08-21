@@ -8,6 +8,7 @@ import {
   dimDisplayName,
   formatStandardWithTolerance,
 } from "../../inspection/lib/format";
+import { judgeMeasurement } from "../../inspection/lib/judgment";
 import Toast from "../../inspection/ui/Toast";
 import CapturePhase from "../../inspection/ui/CapturePhase";
 import CropPhase from "../../inspection/ui/CropPhase";
@@ -35,8 +36,8 @@ interface MeasureItem {
   dimNo: number;
   dimName?: string;
   standardValue: number;
-  tolerancePlus: number;
-  toleranceMinus: number;
+  toleranceUpper: number;
+  toleranceLower: number;
   productionValue?: number;
   productionImageUrl?: string;
   measuredValue?: number;
@@ -55,8 +56,8 @@ function toCompletedStep(item: MeasureItem): StepResult {
     dimNo: item.dimNo,
     dimName: item.dimName,
     standardValue: item.standardValue,
-    tolerancePlus: item.tolerancePlus,
-    toleranceMinus: item.toleranceMinus,
+    toleranceUpper: item.toleranceUpper,
+    toleranceLower: item.toleranceLower,
     status: item.skipped ? "skipped" : "completed",
     measuredValue: item.measuredValue,
     imageUrl: item.imageUrl,
@@ -66,10 +67,10 @@ function toCompletedStep(item: MeasureItem): StepResult {
 function isWithinTolerance(
   value: number,
   standard: number,
-  plus: number,
-  minus: number,
+  upper: number,
+  lower: number,
 ): boolean {
-  return value >= standard - minus && value <= standard + plus;
+  return judgeMeasurement(value, standard, upper, lower) === "pass";
 }
 
 export default function CrossCheckMeasurePage() {
@@ -124,8 +125,8 @@ export default function CrossCheckMeasurePage() {
           dimNo: r.dimNo,
           dimName: r.dimName,
           standardValue: r.standardValue,
-          tolerancePlus: r.tolerancePlus,
-          toleranceMinus: r.toleranceMinus,
+          toleranceUpper: r.toleranceUpper,
+          toleranceLower: r.toleranceLower,
           productionValue:
             productionRef?.value ?? r.productionValue ?? undefined,
           productionImageUrl:
@@ -379,8 +380,8 @@ export default function CrossCheckMeasurePage() {
         dimNo: currentDim.dimNo,
         dimName: currentDim.dimName,
         standardValue: currentDim.standardValue,
-        tolerancePlus: currentDim.tolerancePlus,
-        toleranceMinus: currentDim.toleranceMinus,
+        toleranceUpper: currentDim.toleranceUpper,
+        toleranceLower: currentDim.toleranceLower,
         status: "completed",
         measuredValue,
         imageUrl: uploadedImageUrl ?? undefined,
@@ -432,8 +433,8 @@ export default function CrossCheckMeasurePage() {
       dimNo: currentDim.dimNo,
       dimName: currentDim.dimName,
       standardValue: currentDim.standardValue,
-      tolerancePlus: currentDim.tolerancePlus,
-      toleranceMinus: currentDim.toleranceMinus,
+      toleranceUpper: currentDim.toleranceUpper,
+      toleranceLower: currentDim.toleranceLower,
       status: "skipped",
     };
     upsertSessionResult(next);
@@ -507,8 +508,8 @@ export default function CrossCheckMeasurePage() {
       ? isWithinTolerance(
           currentDim.productionValue,
           currentDim.standardValue,
-          currentDim.tolerancePlus,
-          currentDim.toleranceMinus,
+          currentDim.toleranceUpper,
+          currentDim.toleranceLower,
         )
       : null;
   const productionValueColor =
@@ -641,8 +642,8 @@ export default function CrossCheckMeasurePage() {
           <div className="mt-1 text-base font-semibold text-[#212121]">
             {formatStandardWithTolerance(
               currentDim.standardValue,
-              currentDim.tolerancePlus,
-              currentDim.toleranceMinus,
+              currentDim.toleranceUpper,
+              currentDim.toleranceLower,
             )}
           </div>
         </div>
@@ -743,8 +744,8 @@ export default function CrossCheckMeasurePage() {
                 isPreparing={isPreparing}
                 suggestedValue={ocrSuggestedValue}
                 standardValue={currentDim.standardValue}
-                tolerancePlus={currentDim.tolerancePlus}
-                toleranceMinus={currentDim.toleranceMinus}
+                toleranceUpper={currentDim.toleranceUpper}
+                toleranceLower={currentDim.toleranceLower}
                 onRetake={() => {
                   setCroppedBlob(null);
                   setCapturedFile(null);

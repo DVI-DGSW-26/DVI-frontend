@@ -1,4 +1,5 @@
 import type { ApiResponse } from "../../auth/type/types";
+import type { Shift } from "../../inspection-schedule/api";
 import type {
   InspectionValueType,
   MyInspection,
@@ -16,8 +17,8 @@ export interface InspectionDetailResult {
   dimNo: number;
   dimName?: string;
   standardValue: number;
-  tolerancePlus: number;
-  toleranceMinus: number;
+  toleranceUpper: number;
+  toleranceLower: number;
   // 검사 항목 종류. PASS_FAIL 항목은 기준값/공차/측정값 없이 OK/NG 만 입력.
   // 누락 응답(구형) 대비 optional — 없으면 NUMBER 로 간주.
   valueType?: InspectionValueType;
@@ -37,6 +38,8 @@ export interface InspectionDetail {
   orderId?: number;
   type: string;
   typeLabel: string;
+  // 이 검사가 주간인지 야간인지. type 접두어로 추론하지 말고 이 값을 쓸 것.
+  shift?: Shift;
   inspectionTime: string | null;
   product: MyInspectionProduct;
   equipment: MyInspectionEquipment;
@@ -52,24 +55,25 @@ export interface InspectionDetail {
 
 export type InspectionDetailApiResponse = ApiResponse<InspectionDetail>;
 
-export type InspectionProcess =
-  | "EXTRUSION"
-  | "AL_CUTTING"
-  | "ST_CUTTING"
-  | "MACHINING"
-  | "PRESS";
+// 공정은 관리자가 등록·수정하는 DB 데이터라 값을 고정할 수 없다(GET /process).
+// 표시명·분기 판단은 features/process 의 useProcessLabel / useProcessInfo 로 한다.
+export type InspectionProcess = string;
 
 export interface InspectionSlot {
+  // 슬롯 식별자(DAY_1, NIGHT_3 ...). 순서를 매기는 내부 값일 뿐이라
+  // 여기서 주/야를 추론하면 안 된다 — 주/야는 아래 shift 로만 판단한다.
   type: string;
   label: string;
-  time: string;
+  // 초·중·종처럼 고정 시각이 없는 슬롯은 null.
+  time: string | null;
+  shift?: Shift;
 }
 
-// POST /inspection — 작업자가 직접 제품/설비를 선택해서 시작.
-// 검사 지시 사전 등록은 더 이상 필수가 아니다 (orderId 제거됨).
+// POST /inspection — 배정받은 작업지시(orderId) 안에서 시점(type)을 골라 시작한다.
+// 제품·설비는 오더에 이미 들어 있어 보내지 않는다. 배정된 오더가 없으면 검사를
+// 시작할 수 없다 — 서버가 더 이상 오더를 자동 생성하지 않는다.
 export interface StartInspectionRequest {
-  productId: number;
-  equipmentId: number;
+  orderId: number;
   type: string;
 }
 
@@ -81,12 +85,13 @@ export type InspectionSlotsResponse = ApiResponse<InspectionSlot[]>;
 export type StartInspectionApiResponse = ApiResponse<StartInspectionResponse>;
 
 export type StartInspectionErrorCode =
+  | "INSPECTION_ORDER_NOT_FOUND"
   | "NOT_ASSIGNED_PRODUCTION"
+  | "INSPECTION_ORDER_ALREADY_FINISHED"
   | "INVALID_INSPECTION_TYPE"
+  | "DIMS_NOT_REGISTERED"
   | "INSPECTION_ALREADY_EXISTS"
-  | "PREVIOUS_INSPECTION_NOT_COMPLETED"
-  | "PRODUCT_NOT_FOUND"
-  | "EQUIPMENT_NOT_FOUND";
+  | "PREVIOUS_INSPECTION_NOT_COMPLETED";
 
 // POST /inspection/{previousId}/next — 직전 검사의 같은 제품/설비로 다음 시점 검사 생성.
 export type StartNextInspectionResponse = MyInspection;
@@ -104,9 +109,9 @@ export interface StartNextInspectionErrorData {
 }
 
 // POST /inspection/skip — 해당 시점을 건너뛰어 SKIPPED 상태 Inspection 생성.
+// 시작(POST /inspection)과 같이 작업지시 기준이다.
 export interface SkipInspectionRequest {
-  productId: number;
-  equipmentId: number;
+  orderId: number;
   type: string;
   reason?: string;
 }
@@ -115,11 +120,11 @@ export type SkipInspectionResponse = MyInspection;
 export type SkipInspectionApiResponse = ApiResponse<SkipInspectionResponse>;
 
 export type SkipInspectionErrorCode =
+  | "INSPECTION_ORDER_NOT_FOUND"
+  | "INSPECTION_ORDER_ALREADY_FINISHED"
   | "INSPECTION_ALREADY_EXISTS"
   | "NOT_ASSIGNED_PRODUCTION"
-  | "INVALID_INSPECTION_TYPE"
-  | "PRODUCT_NOT_FOUND"
-  | "EQUIPMENT_NOT_FOUND";
+  | "INVALID_INSPECTION_TYPE";
 
 export interface SkipInspectionErrorData {
   code?: SkipInspectionErrorCode;
@@ -186,8 +191,8 @@ export interface StepResult {
   // dimName 누락 응답 대비 — optional.
   dimName?: string;
   standardValue: number;
-  tolerancePlus: number;
-  toleranceMinus: number;
+  toleranceUpper: number;
+  toleranceLower: number;
   status: StepStatus;
   // 항목 종류 — 결과 표시 분기에 사용. 없으면 NUMBER 로 간주.
   valueType?: InspectionValueType;

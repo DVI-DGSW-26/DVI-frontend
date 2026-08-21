@@ -12,10 +12,9 @@ import type {
   ProcessType,
   ProductDimInput,
   ProductListItem,
-  ProductScheduleType,
   ProductValueType,
 } from "../api";
-import { PROCESS_OPTIONS, processLabel } from "../lib/processLabels";
+import { useProcessOptions } from "../../process";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import {
   isAllowedImageFile,
@@ -36,8 +35,12 @@ interface DimDraft {
   dimName: string;
   // PASS_FAIL 항목은 숫자값이 의미 없지만 폼 상태는 동일하게 string 유지 (입력 안 함).
   standardValue: string;
-  tolerancePlus: string;
-  toleranceMinus: string;
+  // 부호 포함 편차(도면 표기 그대로). 상한이 음수인 단측 공차도 있다.
+  toleranceUpper: string;
+  toleranceLower: string;
+  // 하한을 사용자가 직접 입력했는지. false 인 동안에는 상한을 넣을 때
+  // 하한을 -상한으로 자동으로 채운다(대칭 공차가 대부분이라).
+  lowerEdited?: boolean;
   valueType: ProductValueType;
 }
 
@@ -47,8 +50,8 @@ function emptyDim(): DimDraft {
   return {
     dimName: "",
     standardValue: "",
-    tolerancePlus: "",
-    toleranceMinus: "",
+    toleranceUpper: "",
+    toleranceLower: "",
     valueType: "NUMBER",
   };
 }
@@ -57,41 +60,33 @@ function emptyPassFail(): DimDraft {
   return {
     dimName: "",
     standardValue: "",
-    tolerancePlus: "",
-    toleranceMinus: "",
+    toleranceUpper: "",
+    toleranceLower: "",
     valueType: "PASS_FAIL",
   };
+}
+
+/**
+ * 상한 공차 입력에 따른 갱신 내용.
+ *
+ * 현장 공차는 대부분 대칭(±)이라, 하한을 아직 직접 입력하지 않았으면 -상한으로
+ * 채워준다. 단측 공차(예: 상한 -0.25 / 하한 -0.4)는 사용자가 하한을 고치는 순간
+ * lowerEdited 가 서서 더 이상 자동으로 덮어쓰지 않는다.
+ */
+function upperPatch(dim: DimDraft, value: string): Partial<DimDraft> {
+  if (dim.lowerEdited) return { toleranceUpper: value };
+  const n = Number(value);
+  if (value.trim() === "" || !Number.isFinite(n)) {
+    return { toleranceUpper: value, toleranceLower: "" };
+  }
+  // -0 이 문자열로 새어나가지 않도록 0 은 그대로 둔다.
+  return { toleranceUpper: value, toleranceLower: n === 0 ? "0" : String(-n) };
 }
 
 function toNumber(value: string): number | null {
   if (value.trim() === "") return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
-}
-
-// 폼에서 고르는 스케줄 선택지. DEFAULT 는 요청 시 scheduleType: null (공정 기본 복귀).
-type ScheduleChoice = "DEFAULT" | ProductScheduleType;
-
-const SCHEDULE_OPTIONS: { value: ScheduleChoice; label: string }[] = [
-  { value: "DEFAULT", label: "공정 기본" },
-  { value: "CHO_JUNG_JONG", label: "초/중/종" },
-  { value: "TIME_BASED", label: "시간대별" },
-];
-
-const DEFAULT_INTERVAL_HOURS = 2;
-const DEFAULT_START_TIME = "08:00";
-
-// 공정별 기본 스케줄 설명 (백엔드 기본값과 일치) — "공정 기본" 선택 시 안내용.
-function processDefaultScheduleLabel(process: string): string {
-  return process === "AL_CUTTING"
-    ? "08:00~익일 02:00, 2시간 간격"
-    : "초/중/종 3회";
-}
-
-// TIME_BASED 하루 검사 횟수 = min(10, floor(24 / intervalHours)).
-function timeBasedCount(intervalHours: number): number {
-  if (intervalHours <= 0) return 0;
-  return Math.min(10, Math.floor(24 / intervalHours));
 }
 
 // 스케치 미리보기 — 주소가 살아있지 않을 때(백엔드 주소 문제 등) 빈 사각형만
@@ -146,13 +141,6 @@ export default function ProductFormDrawer({
   const [sketchError, setSketchError] = useState<string | null>(null);
   const sketchInputRef = useRef<HTMLInputElement | null>(null);
   const [dims, setDims] = useState<DimDraft[]>([emptyDim()]);
-  // 검사 스케줄. scheduleDirty 는 수정 모드에서 "사용자가 스케줄을 건드렸는지" 판단용 —
-  // 안 건드렸으면 payload 에서 빼서 기존 설정을 그대로 둔다(백엔드 GET 이 현재 스케줄을
-  // 안 내려줄 수 있어, 미조작 시 덮어쓰기로 인한 데이터 손실을 막기 위함).
-  const [scheduleChoice, setScheduleChoice] = useState<ScheduleChoice>("DEFAULT");
-  const [intervalHours, setIntervalHours] = useState(String(DEFAULT_INTERVAL_HOURS));
-  const [startTime, setStartTime] = useState(DEFAULT_START_TIME);
-  const [scheduleDirty, setScheduleDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // 수정 모드에서 dims 가 변경됐는지 판단용. 백엔드가 PATCH 시 dims 를 통째로 교체하면서
   // 기존 dim 이 검사 결과에서 참조될 경우 409 RESOURCE_IN_USE 가 떨어지므로,
@@ -164,6 +152,9 @@ export default function ProductFormDrawer({
     isLoading: loadingDetail,
     isError: detailError,
   } = useProductDetail(open && isEdit ? productId : null);
+
+  // 수정 중인 값이 비활성 공정이어도 선택이 풀리지 않도록 옵션에 포함시킨다.
+  const processOptions = useProcessOptions(process ? [process] : []);
 
   const { mutate: create, isPending: isCreating } = useCreateProduct();
   const { mutate: update, isPending: isUpdating } = useUpdateProduct();
@@ -189,10 +180,6 @@ export default function ProductFormDrawer({
       setSketchUrl("");
       setSketchError(null);
       setDims([emptyDim()]);
-      setScheduleChoice("DEFAULT");
-      setIntervalHours(String(DEFAULT_INTERVAL_HOURS));
-      setStartTime(DEFAULT_START_TIME);
-      setScheduleDirty(false);
       setError(null);
       originalDimsKeyRef.current = "";
       return;
@@ -214,31 +201,15 @@ export default function ProductFormDrawer({
                 id: d.id,
                 dimName: d.dimName ?? "",
                 standardValue: String(d.standardValue ?? ""),
-                tolerancePlus: String(d.tolerancePlus ?? ""),
-                toleranceMinus: String(d.toleranceMinus ?? ""),
+                toleranceUpper: String(d.toleranceUpper ?? ""),
+                toleranceLower: String(d.toleranceLower ?? ""),
+                // 저장된 값이 있으므로 상한을 고쳐도 하한을 덮어쓰지 않는다.
+                lowerEdited: true,
                 valueType: d.valueType ?? "NUMBER",
               }))
           : [emptyDim()];
       setDims(loadedDims);
       originalDimsKeyRef.current = JSON.stringify(loadedDims);
-      // 스케줄 복원 — 백엔드가 내려주면 사용, 없으면 "공정 기본"으로 표시.
-      // (표시만 기본값일 뿐, 아래 handleSubmit 에서 사용자가 건드리지 않으면 전송하지 않음.)
-      if (detail.scheduleType === "TIME_BASED") {
-        setScheduleChoice("TIME_BASED");
-        setIntervalHours(
-          String(detail.intervalHours ?? DEFAULT_INTERVAL_HOURS),
-        );
-        setStartTime(detail.startTime ?? DEFAULT_START_TIME);
-      } else if (detail.scheduleType === "CHO_JUNG_JONG") {
-        setScheduleChoice("CHO_JUNG_JONG");
-        setIntervalHours(String(DEFAULT_INTERVAL_HOURS));
-        setStartTime(DEFAULT_START_TIME);
-      } else {
-        setScheduleChoice("DEFAULT");
-        setIntervalHours(String(DEFAULT_INTERVAL_HOURS));
-        setStartTime(DEFAULT_START_TIME);
-      }
-      setScheduleDirty(false);
       setError(null);
     }
   }, [open, isEdit, detail]);
@@ -311,8 +282,8 @@ export default function ProductFormDrawer({
       const isEmpty =
         d.dimName.trim() === "" &&
         d.standardValue === "" &&
-        d.tolerancePlus === "" &&
-        d.toleranceMinus === "";
+        d.toleranceUpper === "" &&
+        d.toleranceLower === "";
       if (isEmpty) continue;
 
       // PASS_FAIL 항목은 측정 시 작업자가 OK/NG 직접 선택 — 기준값/공차 불필요.
@@ -329,22 +300,27 @@ export default function ProductFormDrawer({
       // NUMBER 항목: 항목명은 기존 데이터에 비어있는 경우가 있어 필수 처리하지 않음.
       // 수치값(기준/공차) 만 필수.
       const std = toNumber(d.standardValue);
-      const plus = toNumber(d.tolerancePlus);
-      const minus = toNumber(d.toleranceMinus);
+      const plus = toNumber(d.toleranceUpper);
+      const minus = toNumber(d.toleranceLower);
       if (std === null)
         return setError(`치수 ${i + 1}: 기준값을 입력하세요.`);
       if (plus === null)
-        return setError(`치수 ${i + 1}: 공차(+)를 입력하세요.`);
+        return setError(`치수 ${i + 1}: 상한 공차를 입력하세요.`);
       if (minus === null)
-        return setError(`치수 ${i + 1}: 공차(-)를 입력하세요.`);
+        return setError(`치수 ${i + 1}: 하한 공차를 입력하세요.`);
+      // 서버도 TOLERANCE_BOUNDS_INVALID 로 막지만, 저장을 눌러보기 전에 알려준다.
+      if (minus > plus)
+        return setError(
+          `치수 ${i + 1}: 하한 공차가 상한보다 큽니다. 부호를 확인해주세요(예: 상한 0.2 / 하한 -0.1).`,
+        );
 
       dimsInput.push({
         ...(d.id != null ? { id: d.id } : {}),
         dimNo: i + 1,
         dimName: d.dimName.trim(),
         standardValue: std,
-        tolerancePlus: plus,
-        toleranceMinus: minus,
+        toleranceUpper: plus,
+        toleranceLower: minus,
         valueType: "NUMBER",
       });
     }
@@ -366,26 +342,6 @@ export default function ProductFormDrawer({
     const dimsUnchanged =
       isEdit && dimsKey === originalDimsKeyRef.current;
 
-    // 스케줄 payload — 선택에 따라 필요한 필드만 보낸다.
-    // 수정 모드에서 사용자가 스케줄을 안 건드렸으면(scheduleDirty=false) 아예 제외 →
-    // 백엔드가 기존 설정을 그대로 유지한다.
-    let scheduleFields: Partial<CreateProductRequest> = {};
-    if (!isEdit || scheduleDirty) {
-      if (scheduleChoice === "CHO_JUNG_JONG") {
-        scheduleFields = { scheduleType: "CHO_JUNG_JONG" };
-      } else if (scheduleChoice === "TIME_BASED") {
-        const iv = toNumber(intervalHours);
-        scheduleFields = {
-          scheduleType: "TIME_BASED",
-          intervalHours: iv !== null && iv > 0 ? iv : DEFAULT_INTERVAL_HOURS,
-          startTime: startTime.trim() || DEFAULT_START_TIME,
-        };
-      } else {
-        // "공정 기본" — 제품별 설정을 지우고 공정 기본 스케줄로 복귀.
-        scheduleFields = { scheduleType: null };
-      }
-    }
-
     const body: CreateProductRequest = {
       customerId: resolvedCustomerId,
       name: name.trim(),
@@ -393,7 +349,6 @@ export default function ProductFormDrawer({
       process: process as ProcessType,
       sketchUrl: sketchUrl.trim() === "" ? null : sketchUrl.trim(),
       ...(dimsUnchanged ? {} : { dims: dimsInput }),
-      ...scheduleFields,
     } as CreateProductRequest;
 
     const handlers = {
@@ -409,6 +364,12 @@ export default function ProductFormDrawer({
           if (code === "RESOURCE_IN_USE") {
             setError(
               "이미 검사·보고서가 참조 중인 치수는 삭제하거나 종류를 바꿀 수 없습니다. 값(기준·공차·이름) 수정만 가능합니다.",
+            );
+            return;
+          }
+          if (code === "TOLERANCE_BOUNDS_INVALID") {
+            setError(
+              "하한 공차가 상한보다 큽니다. 부호를 포함해 입력했는지 확인해주세요.",
             );
             return;
           }
@@ -444,21 +405,6 @@ export default function ProductFormDrawer({
     : isPending
       ? "등록 중..."
       : "등록";
-
-  const scheduleHint = (() => {
-    if (scheduleChoice === "DEFAULT") {
-      return process
-        ? `공정 기본 스케줄을 사용합니다 (${processDefaultScheduleLabel(process)}).`
-        : "공정 기본 스케줄을 사용합니다.";
-    }
-    if (scheduleChoice === "CHO_JUNG_JONG") {
-      return "초물·중물·종물 3회 검사합니다.";
-    }
-    const iv = toNumber(intervalHours);
-    const shownIv = iv !== null && iv > 0 ? iv : DEFAULT_INTERVAL_HOURS;
-    const shownStart = startTime.trim() || DEFAULT_START_TIME;
-    return `${shownStart}부터 ${shownIv}시간 간격으로 하루 ${timeBasedCount(shownIv)}회 검사합니다.`;
-  })();
 
   return (
     <>
@@ -573,7 +519,7 @@ export default function ProductFormDrawer({
                 className="h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none"
               >
                 <option value="">공정을 선택하세요</option>
-                {PROCESS_OPTIONS.map((opt) => (
+                {processOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
@@ -645,84 +591,6 @@ export default function ProductFormDrawer({
               />
               {sketchError && (
                 <span className="text-xs text-[#EF4444]">{sketchError}</span>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-[#212121]">검사 스케줄</span>
-              <div className="grid grid-cols-3 gap-2">
-                {SCHEDULE_OPTIONS.map((opt) => {
-                  const selected = scheduleChoice === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => {
-                        setScheduleChoice(opt.value);
-                        setScheduleDirty(true);
-                      }}
-                      className={`h-10 rounded-lg border text-sm font-medium transition-colors ${
-                        selected
-                          ? "border-[#931B82] bg-[#931B82] text-white"
-                          : "border-gray-300 bg-white text-[#6B7280] hover:bg-gray-50"
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {scheduleChoice === "TIME_BASED" && (
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[11px] text-[#6B7280]">간격(시간)</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={24}
-                      step={1}
-                      value={intervalHours}
-                      onChange={(e) => {
-                        setIntervalHours(e.target.value);
-                        setScheduleDirty(true);
-                      }}
-                      className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none"
-                    />
-                  </label>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[11px] text-[#6B7280]">시작 시각</span>
-                    <input
-                      type="time"
-                      value={startTime}
-                      onChange={(e) => {
-                        setStartTime(e.target.value);
-                        setScheduleDirty(true);
-                      }}
-                      className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none"
-                    />
-                  </label>
-                </div>
-              )}
-
-              {scheduleChoice === "DEFAULT" ? (
-                <div className="rounded-md border border-gray-200 bg-[#FAFAFA] px-3 py-2 text-[11px] leading-relaxed text-[#6B7280]">
-                  <p className="font-medium text-[#4B5563]">
-                    제품별 설정을 지우고 공정 기본 스케줄로 되돌립니다.
-                  </p>
-                  <ul className="mt-1 space-y-0.5">
-                    <li>· 압출 · ST 절단 · 가공 · 프레스 → 초/중/종 3회</li>
-                    <li>· AL 절단 → 08:00~익일 02:00, 2시간 간격</li>
-                  </ul>
-                  {process && (
-                    <p className="mt-1.5 font-medium text-[#931B82]">
-                      현재 공정({processLabel(process)}) →{" "}
-                      {processDefaultScheduleLabel(process)}
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <p className="text-[11px] text-[#6B7280]">{scheduleHint}</p>
               )}
             </div>
 
@@ -823,17 +691,20 @@ export default function ProductFormDrawer({
                             }
                           />
                           <DimNumberInput
-                            label="공차 +"
-                            value={d.tolerancePlus}
-                            onChange={(v) =>
-                              updateDim(idx, { tolerancePlus: v })
-                            }
+                            label="상한 공차"
+                            placeholder="0.2"
+                            value={d.toleranceUpper}
+                            onChange={(v) => updateDim(idx, upperPatch(d, v))}
                           />
                           <DimNumberInput
-                            label="공차 -"
-                            value={d.toleranceMinus}
+                            label="하한 공차"
+                            placeholder="-0.2"
+                            value={d.toleranceLower}
                             onChange={(v) =>
-                              updateDim(idx, { toleranceMinus: v })
+                              updateDim(idx, {
+                                toleranceLower: v,
+                                lowerEdited: true,
+                              })
                             }
                           />
                         </div>
@@ -877,9 +748,15 @@ interface DimNumberInputProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  placeholder?: string;
 }
 
-function DimNumberInput({ label, value, onChange }: DimNumberInputProps) {
+function DimNumberInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: DimNumberInputProps) {
   return (
     <label className="flex flex-col gap-1">
       <span className="text-[11px] text-[#6B7280]">{label}</span>
@@ -887,6 +764,7 @@ function DimNumberInput({ label, value, onChange }: DimNumberInputProps) {
         type="number"
         step="any"
         value={value}
+        placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="h-10 rounded-md border border-gray-300 bg-white px-2 text-sm focus:border-[#931B82] focus:outline-none"
       />

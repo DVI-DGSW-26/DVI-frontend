@@ -14,6 +14,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/products": "제품관리",
   "/equipment": "설비관리",
   "/customers": "고객사 관리",
+  "/processes": "공정관리",
   "/cross-checks": "순회검사 현황",
   "/my-page": "마이페이지",
 };

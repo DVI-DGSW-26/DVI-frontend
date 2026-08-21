@@ -16,8 +16,8 @@ interface Props {
   suggestedValue: string | null;
   /** 기준값/공차 — 자주검사처럼 입력 값이 합격 범위 안인지 실시간 판정 표시 용도. */
   standardValue: number;
-  tolerancePlus: number;
-  toleranceMinus: number;
+  toleranceUpper: number;
+  toleranceLower: number;
   onRetake: () => void;
   /** 입력 단계에서도 이전 dim 으로 이동 가능하게. 부모가 stepIndex > 0 일 때만 전달. */
   onGoBack?: () => void;
@@ -35,8 +35,8 @@ export default function CrossCheckInputPhase({
   isPreparing,
   suggestedValue,
   standardValue,
-  tolerancePlus,
-  toleranceMinus,
+  toleranceUpper,
+  toleranceLower,
   onRetake,
   onGoBack,
   onGoNext,
@@ -77,7 +77,7 @@ export default function CrossCheckInputPhase({
 
   // 실시간 합격/불합격 — 입력 값이 비어있거나 유효하지 않으면 null (뱃지 숨김).
   const judgment = isValid
-    ? judgeMeasurement(numeric, standardValue, tolerancePlus, toleranceMinus)
+    ? judgeMeasurement(numeric, standardValue, toleranceUpper, toleranceLower)
     : null;
 
   const inputDisabled = isSaving || isPreparing;

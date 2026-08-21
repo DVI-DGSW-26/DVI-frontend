@@ -7,6 +7,7 @@ import {
   useIncompleteInspection,
   useInspectionDetail,
   useSaveInspectionResults,
+  useSlotSequences,
   useStartNextInspection,
 } from "../api";
 import { useAuth } from "../../auth/AuthContext";
@@ -19,7 +20,6 @@ import type {
 import { useProductDetail } from "../../products/api";
 import { dimDisplayName, formatStandardWithTolerance } from "../lib/format";
 import { judgeMeasurement } from "../lib/judgment";
-import { getNextSlot } from "../lib/slotSequence";
 import JudgmentBadge from "./JudgmentBadge";
 import Toast from "./Toast";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
@@ -87,8 +87,8 @@ export default function InspectionResultPage() {
           dimNo: r.dimNo,
           dimName: r.dimName ?? dimNameByNo.get(r.dimNo),
           standardValue: r.standardValue,
-          tolerancePlus: r.tolerancePlus,
-          toleranceMinus: r.toleranceMinus,
+          toleranceUpper: r.toleranceUpper,
+          toleranceLower: r.toleranceLower,
           valueType,
           status: done ? "completed" : "skipped",
           measuredValue: measured,
@@ -118,11 +118,13 @@ export default function InspectionResultPage() {
     "complete" | "incomplete" | null
   >(null);
 
-  // 다음 시점이 존재하는지 (process + type 기반).
+  const { getNextSlot } = useSlotSequences();
+
+  // 다음 시점이 존재하는지 — 공정 스케줄(서버 슬롯 순서) 기준.
   const nextType = useMemo(() => {
     if (!detail) return null;
     return getNextSlot(detail.product.process, detail.type);
-  }, [detail]);
+  }, [detail, getNextSlot]);
 
   const [reasonKey, setReasonKey] = useState<string>("");
   const [customReason, setCustomReason] = useState("");
@@ -511,8 +513,8 @@ function StepResultCard({
     ? "OK/NG 판정 항목"
     : formatStandardWithTolerance(
         result.standardValue,
-        result.tolerancePlus,
-        result.toleranceMinus,
+        result.toleranceUpper,
+        result.toleranceLower,
       );
   // PASS_FAIL 항목 또는 가공 공정이면 작업자 판정값(OK/NG), 그 외는 측정값 자동 계산.
   const usePassFail = isPassFail || isMachining;
@@ -525,8 +527,8 @@ function StepResultCard({
     : judgeMeasurement(
         result.measuredValue,
         result.standardValue,
-        result.tolerancePlus,
-        result.toleranceMinus,
+        result.toleranceUpper,
+        result.toleranceLower,
       );
 
   return (
