@@ -5,6 +5,7 @@ import {
   useCreateProduct,
   useProductDetail,
   useUpdateProduct,
+  useUploadProductSketch,
 } from "../api";
 import type {
   CreateProductRequest,
@@ -15,6 +16,11 @@ import type {
   ProductValueType,
 } from "../api";
 import { PROCESS_OPTIONS, processLabel } from "../lib/processLabels";
+import { toBackendImageUrl } from "../../../lib/imageUrl";
+import {
+  isAllowedImageFile,
+  MAX_UPLOAD_BYTES,
+} from "../../../lib/uploadImage";
 
 interface Props {
   open: boolean;
@@ -88,6 +94,39 @@ function timeBasedCount(intervalHours: number): number {
   return Math.min(10, Math.floor(24 / intervalHours));
 }
 
+// 스케치 미리보기 — 주소가 살아있지 않을 때(백엔드 주소 문제 등) 빈 사각형만
+// 남지 않도록 안내를 띄운다. 부모에서 key={src} 로 새 URL 마다 상태를 초기화한다.
+function SketchPreview({ src }: { src: string }) {
+  const resolved = toBackendImageUrl(src) ?? "";
+  const [failed, setFailed] = useState(resolved === "");
+
+  return (
+    <div className="relative h-28 w-36 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-[#F9FAFB]">
+      {!failed && (
+        <img
+          src={resolved}
+          alt="제품 스케치 미리보기"
+          onError={() => setFailed(true)}
+          className="h-full w-full object-contain"
+        />
+      )}
+      {failed && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-2 text-center">
+          <Icon
+            icon="solar:gallery-broken"
+            width={22}
+            height={22}
+            className="text-[#D1D5DB]"
+          />
+          <span className="text-[11px] leading-tight text-[#9CA3AF]">
+            이미지를 불러올 수 없습니다
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProductFormDrawer({
   open,
   onClose,
@@ -102,7 +141,10 @@ export default function ProductFormDrawer({
   const [customerId, setCustomerId] = useState<number | "">("");
   const [customerIdManual, setCustomerIdManual] = useState("");
   const [process, setProcess] = useState<ProcessType | "">("");
+  // 스케치는 파일을 업로드해 받은 URL 을 담아둔다 (payload 는 예전처럼 sketchUrl 문자열).
   const [sketchUrl, setSketchUrl] = useState("");
+  const [sketchError, setSketchError] = useState<string | null>(null);
+  const sketchInputRef = useRef<HTMLInputElement | null>(null);
   const [dims, setDims] = useState<DimDraft[]>([emptyDim()]);
   // 검사 스케줄. scheduleDirty 는 수정 모드에서 "사용자가 스케줄을 건드렸는지" 판단용 —
   // 안 건드렸으면 payload 에서 빼서 기존 설정을 그대로 둔다(백엔드 GET 이 현재 스케줄을
@@ -125,6 +167,8 @@ export default function ProductFormDrawer({
 
   const { mutate: create, isPending: isCreating } = useCreateProduct();
   const { mutate: update, isPending: isUpdating } = useUpdateProduct();
+  const { mutate: uploadSketch, isPending: isUploadingSketch } =
+    useUploadProductSketch();
   const isPending = isCreating || isUpdating;
 
   const customerInOptions = useMemo(
@@ -143,6 +187,7 @@ export default function ProductFormDrawer({
       setCustomerIdManual("");
       setProcess("");
       setSketchUrl("");
+      setSketchError(null);
       setDims([emptyDim()]);
       setScheduleChoice("DEFAULT");
       setIntervalHours(String(DEFAULT_INTERVAL_HOURS));
@@ -159,6 +204,7 @@ export default function ProductFormDrawer({
       setCustomerIdManual(String(detail.customer.id));
       setProcess((detail.process as ProcessType) || "");
       setSketchUrl(detail.sketchUrl ?? "");
+      setSketchError(null);
       const loadedDims: DimDraft[] =
         detail.dims.length > 0
           ? detail.dims
@@ -196,6 +242,30 @@ export default function ProductFormDrawer({
       setError(null);
     }
   }, [open, isEdit, detail]);
+
+  const pickSketch = () => sketchInputRef.current?.click();
+
+  const handleSketchFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // 같은 파일을 다시 골라도 change 가 발생하도록 값 비우기.
+    e.target.value = "";
+    if (!file) return;
+    if (!isAllowedImageFile(file)) {
+      setSketchError("PNG/JPG 이미지만 등록할 수 있습니다.");
+      return;
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setSketchError("최대 10MB 이하의 이미지만 등록할 수 있습니다.");
+      return;
+    }
+    setSketchError(null);
+    // 저장 버튼과 무관하게 즉시 올리고, 받은 URL 을 sketchUrl 에 담아둔다.
+    uploadSketch(file, {
+      onSuccess: (url) => setSketchUrl(url),
+      onError: () =>
+        setSketchError("이미지 업로드에 실패했습니다. 다시 시도해주세요."),
+    });
+  };
 
   const addDim = () => {
     if (dims.length >= MAX_DIMS) return;
@@ -278,6 +348,9 @@ export default function ProductFormDrawer({
         valueType: "NUMBER",
       });
     }
+
+    if (isUploadingSketch)
+      return setError("스케치 이미지 업로드가 끝난 뒤 저장해주세요.");
 
     // 신규 등록은 치수 최소 1개 필요 (제품을 만들면서 치수가 없는 건 어색).
     // 수정은 기존 데이터에 치수가 없는 케이스가 있어 허용 — 다른 필드만 수정해서 저장 가능.
@@ -508,18 +581,72 @@ export default function ProductFormDrawer({
               </select>
             </label>
 
-            <label className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5">
               <span className="text-sm font-medium text-[#212121]">
-                스케치 URL <span className="text-xs text-[#A8A8A8]">(선택)</span>
+                스케치 이미지 <span className="text-xs text-[#A8A8A8]">(선택)</span>
               </span>
+              {sketchUrl ? (
+                <div className="flex items-start gap-3">
+                  <SketchPreview key={sketchUrl} src={sketchUrl} />
+                  <div className="flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={pickSketch}
+                      disabled={isUploadingSketch}
+                      className="flex items-center gap-1 rounded-md border border-[#931B82] px-3 py-1.5 text-xs font-medium text-[#931B82] transition-colors hover:bg-[#F3E8F7] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Icon
+                        icon={isUploadingSketch ? "mdi:loading" : "solar:refresh-linear"}
+                        width={14}
+                        height={14}
+                        className={isUploadingSketch ? "animate-spin" : undefined}
+                      />
+                      {isUploadingSketch ? "업로드 중..." : "사진 변경"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSketchUrl("");
+                        setSketchError(null);
+                      }}
+                      disabled={isUploadingSketch}
+                      className="flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-[#6B7280] transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Icon icon="mdi:trash-can-outline" width={14} height={14} />
+                      삭제
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={pickSketch}
+                  disabled={isUploadingSketch}
+                  className="flex h-28 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-300 bg-[#F9FAFB] text-sm font-medium text-[#6B7280] transition-colors hover:border-[#931B82] hover:text-[#931B82] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Icon
+                    icon={isUploadingSketch ? "mdi:loading" : "solar:gallery-add-linear"}
+                    width={26}
+                    height={26}
+                    className={isUploadingSketch ? "animate-spin" : undefined}
+                  />
+                  {isUploadingSketch ? "업로드 중..." : "사진 선택 / 촬영"}
+                  <span className="text-xs font-normal text-[#A8A8A8]">
+                    PNG/JPG · 최대 10MB
+                  </span>
+                </button>
+              )}
               <input
-                type="url"
-                value={sketchUrl}
-                onChange={(e) => setSketchUrl(e.target.value)}
-                placeholder="https://example.com/sketches/DV-A0100.png"
-                className="h-11 rounded-lg border border-gray-300 px-3 text-sm focus:border-[#931B82] focus:outline-none"
+                ref={sketchInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleSketchFile}
+                className="hidden"
               />
-            </label>
+              {sketchError && (
+                <span className="text-xs text-[#EF4444]">{sketchError}</span>
+              )}
+            </div>
 
             <div className="flex flex-col gap-2">
               <span className="text-sm font-medium text-[#212121]">검사 스케줄</span>
@@ -733,7 +860,7 @@ export default function ProductFormDrawer({
               </button>
               <button
                 type="submit"
-                disabled={isPending}
+                disabled={isPending || isUploadingSketch}
                 className="h-11 flex-1 rounded-lg bg-[#931B82] text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {submitLabel}

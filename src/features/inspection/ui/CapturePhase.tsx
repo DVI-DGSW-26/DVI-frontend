@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
-import { isAllowedImageFile, MAX_UPLOAD_BYTES } from "../lib/cropImage";
+import {
+  isAllowedImageFile,
+  MAX_UPLOAD_BYTES,
+} from "../../../lib/uploadImage";
 import CaptureGuideModal from "./CaptureGuideModal";
 
 // 촬영 가이드 예시 화면을 세션당 1회만 자동 노출하기 위한 키.
