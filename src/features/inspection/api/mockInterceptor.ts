@@ -3,7 +3,7 @@
  * /inspection-order, /inspection/slots, POST /inspection, /inspection/my
  * 4개 엔드포인트를 가짜 응답으로 처리한다.
  *
- * POST /inspection 트리거 (productId 별 동작):
+ * POST /inspection 트리거 (orderId 별 동작):
  *  - 9001  → POST 성공
  *  - 9403  → 403 NOT_ASSIGNED_PRODUCTION
  *  - 9400  → 400 INVALID_INSPECTION_TYPE
@@ -338,8 +338,8 @@ function tryMock(
     const body = parseBody<StartInspectionRequest>(config.data);
     const slot = baseSlots.find((s) => s.type === body.type) ?? baseSlots[0];
 
-    // mock 트리거: productId 로 에러 케이스 시뮬레이션. 9001 / 9400 / 9403 / 9409 동일.
-    switch (body.productId) {
+    // mock 트리거: orderId 로 에러 케이스 시뮬레이션. 9001 / 9400 / 9403 / 9409 동일.
+    switch (body.orderId) {
       case 9403:
         return Promise.reject(
           (() =>
@@ -392,12 +392,12 @@ function tryMock(
             ))(),
         );
       default: {
-        const order = mockOrders.find((o) => o.id === body.productId);
+        const order = mockOrders.find((o) => o.id === body.orderId);
         const process =
           (order?.product.process as InspectionProcess) ?? "EXTRUSION";
         const inspection = makeMyInspection(
           Math.floor(Math.random() * 9000) + 1000,
-          body.productId,
+          body.orderId,
           body.type,
           slot.label,
           slot.time,

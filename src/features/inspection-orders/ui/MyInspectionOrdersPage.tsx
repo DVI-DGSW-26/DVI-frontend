@@ -5,6 +5,7 @@ import { useMyInspectionOrders } from "../api";
 import type { InspectionOrder, InspectionOrderStatus } from "../api";
 import type { InspectionProcess } from "../../inspection/type/types";
 import { kstDateKey } from "../../../lib/datetime";
+import ShiftBadge from "../../../components/shared/ShiftBadge";
 
 // 자주검사자(생산 작업자)가 생산 관리자에게 배정받은 검사 지시 목록 (GET /inspection-order/my).
 // 읽기 전용 — 실제 자주검사 수행은 기존 검사 흐름에서 진행한다.
@@ -48,11 +49,12 @@ export default function MyInspectionOrdersPage() {
     return orders.filter((o) => o.targetDate?.slice(0, 10) === selectedDate);
   }, [orders, selectedDate]);
 
-  // 지시를 탭하면 해당 제품·설비 컨텍스트로 시점(ScanPage) 선택 화면으로 이동한다.
-  // 실제 검사 시작(POST /inspection)은 시점 선택 시 ScanPage 가 담당.
+  // 지시를 탭하면 시점(ScanPage) 선택 화면으로 이동한다.
+  // 실제 검사 시작(POST /inspection)은 시점 선택 시 ScanPage 가 orderId 로 호출.
   const handleStart = (order: InspectionOrder) => {
     navigate("/scan", {
       state: {
+        orderId: order.id,
         productId: order.product.id,
         equipmentId: order.equipment.id,
         process: order.product.process as InspectionProcess,
@@ -144,7 +146,10 @@ function OrderCard({
             {order.customer?.name ?? "-"} · {order.equipment?.name ?? "-"}
           </div>
         </div>
-        {statusBadge(order.status)}
+        <div className="flex shrink-0 items-center gap-1.5">
+          <ShiftBadge shift={order.shift} compact />
+          {statusBadge(order.status)}
+        </div>
       </div>
 
       <div className="mt-3 flex items-center gap-1.5 text-xs text-[#6B7280]">
