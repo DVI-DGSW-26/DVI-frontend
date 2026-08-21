@@ -93,7 +93,11 @@ function App() {
                 path="/admin-inspections"
                 element={<AdminInspectionListPage />}
               />
+            </Route>
 
+            {/* 기준정보 관리 — 제품·설비·고객사·공정. 통합관리자와 품질관리자 둘 다
+                같은 화면을 쓴다(권한만 열어둔 것이고 기능 차이는 없다). */}
+            <Route element={<RouteGuard roles={["ADMIN", "QUALITY_ADMIN"]} />}>
               <Route path="/products" element={<ProductsPage />} />
               <Route path="/equipment" element={<EquipmentPage />} />
               <Route path="/customers" element={<CustomersPage />} />
