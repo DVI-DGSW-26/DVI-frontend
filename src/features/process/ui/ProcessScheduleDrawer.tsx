@@ -157,7 +157,7 @@ export default function ProcessScheduleDrawer({ open, onClose, process }: Props)
     <>
       <div
         onClick={onClose}
-        className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 ${
+        className={`fixed inset-0 z-60 bg-black/40 transition-opacity duration-300 ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
         aria-hidden
@@ -167,7 +167,7 @@ export default function ProcessScheduleDrawer({ open, onClose, process }: Props)
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-lg flex-col bg-white shadow-2xl transition-transform duration-300 ease-out ${
+        className={`fixed right-0 top-0 z-70 flex h-full w-full max-w-lg flex-col bg-white shadow-2xl transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
