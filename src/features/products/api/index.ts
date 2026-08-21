@@ -4,6 +4,7 @@ export {
   getProductDetail,
   getProducts,
   updateProduct,
+  uploadProductSketch,
 } from "./productApi";
 export {
   productKeys,
@@ -12,6 +13,7 @@ export {
   useProductDetail,
   useProductList,
   useUpdateProduct,
+  useUploadProductSketch,
 } from "./queries";
 export type {
   CreateProductRequest,
