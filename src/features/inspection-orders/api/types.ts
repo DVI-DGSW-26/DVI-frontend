@@ -33,6 +33,9 @@ export interface CreateInspectionOrderRequest {
   equipmentId: number;
   workerIds: number[];
   targetDate: string;
+  // 제품 스케줄에 주간·야간 슬롯이 둘 다 있으면 필수 (없으면 400 SHIFT_SELECTION_REQUIRED).
+  // 한쪽만 있는 제품은 생략 — 서버가 알아서 정한다.
+  shift?: Shift;
 }
 
 export type InspectionOrderStatus =

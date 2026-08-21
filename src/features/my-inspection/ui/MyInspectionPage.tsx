@@ -158,12 +158,17 @@ export default function MyInspectionPage() {
 
   const handleRestart = async (inspection: MyInspection) => {
     if (pendingRestartId !== null) return;
+    // 검사 시작은 작업지시 기준이라 orderId 가 없으면 다시 시작할 수 없다.
+    const orderId = inspection.orderId;
+    if (orderId == null) {
+      setToast("작업지시 정보가 없어 다시 시작할 수 없습니다.");
+      return;
+    }
     setPendingRestartId(inspection.inspectionId);
     try {
-      // 완료돼 있어도 같은 (제품·설비·차수)로 새 검사 생성 — 백엔드가 허용(이전 건 보존).
+      // 완료돼 있어도 같은 (지시·차수)로 새 검사 생성 — 백엔드가 허용(이전 건 보존).
       const created = await startInspectionMutation.mutateAsync({
-        productId: inspection.product.id,
-        equipmentId: inspection.equipment.id,
+        orderId,
         type: inspection.type,
       });
       navigate(`/inspection/${created.inspectionId}/measure`, {
