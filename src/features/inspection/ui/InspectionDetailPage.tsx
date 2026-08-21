@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { useMyInspectionList } from "../../my-inspection/api";
@@ -10,6 +10,7 @@ import {
 } from "../lib/format";
 import { useProcessLabel } from "../../process";
 import SketchImage from "./SketchImage";
+import ShiftBadge from "../../../components/shared/ShiftBadge";
 
 interface DetailLocationState {
   inspection?: MyInspection;
@@ -97,6 +98,7 @@ export default function InspectionDetailPage() {
           <InfoRow
             label="검사 차수"
             value={`${inspection.typeLabel} (${inspection.type})`}
+            suffix={<ShiftBadge shift={inspection.shift} compact />}
           />
           <InfoRow label="작업자" value={user?.name ?? "-"} />
           {state.qualityName && (
@@ -172,13 +174,23 @@ export default function InspectionDetailPage() {
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({
+  label,
+  value,
+  suffix,
+}: {
+  label: string;
+  value: string;
+  /** 값 뒤에 붙일 배지 등. */
+  suffix?: ReactNode;
+}) {
   return (
     <div className="flex items-center gap-1.5 text-[#6B7280]">
       <span className="shrink-0">{label}</span>
       <span className="ml-auto min-w-0 truncate text-right text-[#212121]">
         {value}
       </span>
+      {suffix}
     </div>
   );
 }
