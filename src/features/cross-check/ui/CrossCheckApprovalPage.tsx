@@ -5,6 +5,7 @@ import { Icon } from "@iconify/react";
 import { usePendingCrossChecks, useDeleteCrossCheckById } from "../api";
 import type { CrossCheckSummary } from "../api";
 import { useAuth } from "../../auth/AuthContext";
+import { useProcessLabel } from "../../process";
 import { getStage, STAGE_LABEL, STAGE_BADGE } from "../lib/stage";
 import { groupByRun, runStatus } from "../lib/runGroup";
 import { formatDate, formatDateTime } from "../../../lib/datetime";
@@ -32,14 +33,6 @@ function toDeleteErrorMessage(err: unknown): string {
   }
   return "삭제 중 오류가 발생했습니다.";
 }
-
-const PROCESS_LABEL: Record<string, string> = {
-  EXTRUSION: "압출",
-  AL_CUTTING: "AL절단",
-  ST_CUTTING: "ST절단",
-  MACHINING: "가공",
-  PRESS: "프레스",
-};
 
 // 결재 목록에 섞여 오는 상태별 배지/노출 순서.
 // PENDING_APPROVAL(종 차수 = 승인 대상)을 먼저, 그다음 초·중 완료(COMPLETED, 조회용),
@@ -302,6 +295,7 @@ function ApprovalCard({
   onClick: () => void;
   onDelete: () => void;
 }) {
+  const processLabel = useProcessLabel();
   const meta = STATUS_META[cc.status] ?? STATUS_META.DRAFT;
   const isDraft = cc.status === "DRAFT";
   const stage = getStage(cc.type, cc.product.process);
@@ -341,7 +335,7 @@ function ApprovalCard({
           <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
             <InfoLine
               label="공정"
-              value={PROCESS_LABEL[cc.product.process] ?? cc.product.process}
+              value={processLabel(cc.product.process)}
             />
             <InfoLine label="고객사" value={cc.customer.name} />
             <InfoLine label="작업자" value={cc.production.name} />

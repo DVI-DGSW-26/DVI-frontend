@@ -91,7 +91,8 @@ function makeMyInspection(
   orderId: number,
   type: string,
   label: string,
-  time: string,
+  // 초·중·종 슬롯은 고정 시각이 없어 null 이 온다.
+  time: string | null,
   process: InspectionProcess,
   status: MyInspection["status"] = "DRAFT",
 ): MyInspection {

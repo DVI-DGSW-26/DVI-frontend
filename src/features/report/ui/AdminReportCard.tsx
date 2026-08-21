@@ -1,17 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { ReportProcess, ReportSummary } from "../api/types";
+import type { ReportSummary } from "../api/types";
 import { downloadReportPdf } from "../lib/downloadReportPdf";
 import { resolveSummaryShift, SHIFT_LABEL } from "../lib/shift";
 import { formatDate } from "../../../lib/datetime";
-
-const PROCESS_LABEL: Record<ReportProcess, string> = {
-  EXTRUSION: "압출공정",
-  AL_CUTTING: "AL절단공정",
-  ST_CUTTING: "ST절단공정",
-  MACHINING: "가공공정",
-  PRESS: "프레스공정",
-};
+import { useProcessLabel } from "../../process";
 
 // 검사일자 = 대상일(targetDate). 없으면 발행일(createdAt) 날짜로 폴백.
 // 발행 시각(createdAt 의 시:분)은 검사 시간과 무관해 혼동을 주므로 표시하지 않는다.
@@ -30,11 +23,11 @@ const AdminReportCard = ({ report, onClick }: Props) => {
   const navigate = useNavigate();
   const [downloading, setDownloading] = useState(false);
 
+  const processLabelOf = useProcessLabel();
   const isPass = report.result === "PASS";
   // 판정 근거(초품 실제 검사시각)가 목록 응답에 없으면 null → 항목 자체를 숨긴다.
   const shift = resolveSummaryShift(report);
-  const processLabel =
-    PROCESS_LABEL[report.process] ?? String(report.process ?? "");
+  const processLabel = processLabelOf(report.process);
 
   const authorParts = [
     report.productionName ? `자주 ${report.productionName}` : null,

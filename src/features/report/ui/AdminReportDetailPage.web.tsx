@@ -7,7 +7,6 @@ import type { DeleteReportErrorData } from "../api";
 import type {
   AppearanceResult,
   JudgeResult,
-  ReportProcess,
   ReportResultItem,
 } from "../api/types";
 import { downloadReportPdf } from "../lib/downloadReportPdf";
@@ -23,14 +22,7 @@ import {
 import DeleteReportModal from "./DeleteReportModal";
 import Toast from "../../inspection/ui/Toast";
 import { useAuth } from "../../auth/AuthContext";
-
-const PROCESS_LABEL: Record<ReportProcess, string> = {
-  EXTRUSION: "압출",
-  AL_CUTTING: "AL절단",
-  ST_CUTTING: "ST절단",
-  MACHINING: "가공",
-  PRESS: "프레스",
-};
+import { useProcessLabel } from "../../process";
 
 function formatDateTime(iso: string) {
   const d = new Date(iso);
@@ -188,6 +180,7 @@ const MeasureCard = ({
 
 const AdminReportDetailPageWeb = () => {
   const { reportId } = useParams<{ reportId: string }>();
+  const processLabelOf = useProcessLabel();
   const navigate = useNavigate();
   const id = Number(reportId);
   const validId = Number.isFinite(id) && id > 0;
@@ -268,7 +261,7 @@ const AdminReportDetailPageWeb = () => {
   }
 
   const isPass = data.result === "PASS";
-  const processLabel = PROCESS_LABEL[data.process] ?? String(data.process ?? "");
+  const processLabel = processLabelOf(data.process);
   const shift = resolveShift(data);
   const inspectionBadge = (
     <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
@@ -366,7 +359,7 @@ const AdminReportDetailPageWeb = () => {
 
       {data.stages && data.stages.length > 0 && (
         <Section title="차수별 검사 정보">
-          <ReportStagesSection stages={data.stages} variant="web" />
+          <ReportStagesSection stages={data.stages} shift={shift} variant="web" />
         </Section>
       )}
 

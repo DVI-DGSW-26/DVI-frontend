@@ -7,14 +7,7 @@ import CheckboxMultiSelect, {
   type MultiOption,
 } from "./CheckboxMultiSelect";
 import { useProductList } from "../../inspection-orders/api";
-
-const PROCESS_OPTIONS: MultiOption[] = [
-  { value: "EXTRUSION", label: "압출" },
-  { value: "AL_CUTTING", label: "AL절단" },
-  { value: "ST_CUTTING", label: "ST절단" },
-  { value: "MACHINING", label: "가공" },
-  { value: "PRESS", label: "프레스" },
-];
+import { useProcessOptions } from "../../process";
 
 const RESULT_OPTIONS: MultiOption[] = [
   { value: "PASS", label: "합격" },
@@ -23,6 +16,7 @@ const RESULT_OPTIONS: MultiOption[] = [
 
 const AdminReportPageWeb = () => {
   const navigate = useNavigate();
+  const processOptions = useProcessOptions();
   const { data: reports = [], isLoading, isError } = useReportList();
   const { data: products = [] } = useProductList();
 
@@ -123,7 +117,7 @@ const AdminReportPageWeb = () => {
     draftProcesses.length === 0
       ? "공정"
       : draftProcesses.length === 1
-        ? (PROCESS_OPTIONS.find((o) => o.value === draftProcesses[0])?.label ??
+        ? (processOptions.find((o) => o.value === draftProcesses[0])?.label ??
           "공정")
         : `공정 ${draftProcesses.length}`;
 
@@ -191,7 +185,7 @@ const AdminReportPageWeb = () => {
 
           <CheckboxMultiSelect
             label={processLabel}
-            options={PROCESS_OPTIONS}
+            options={processOptions}
             value={draftProcesses}
             onChange={setDraftProcesses}
             width="w-32"

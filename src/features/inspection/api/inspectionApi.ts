@@ -32,6 +32,19 @@ export async function getInspectionSlots(
   return data.data ?? [];
 }
 
+/**
+ * 제품 하나의 검사 슬롯. 제품이 속한 공정의 스케줄이 그대로 내려온다 —
+ * 야간 슬롯(야간초/야간중/야간종)도 여기 포함되므로 검사 시작 화면은 이걸 쓴다.
+ */
+export async function getProductSlots(
+  productId: number,
+): Promise<InspectionSlot[]> {
+  const { data } = await http.get<InspectionSlotsResponse>(
+    `/inspection/slots/product/${productId}`,
+  );
+  return data.data ?? [];
+}
+
 export async function getInspectionDetail(
   inspectionId: number,
 ): Promise<InspectionDetail> {

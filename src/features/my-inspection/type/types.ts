@@ -1,4 +1,5 @@
 import type { ApiResponse } from "../../auth/type/types";
+import type { Shift } from "../../inspection-schedule/api";
 
 // 검사 항목 종류 — 제품 등록 시 항목별로 지정.
 // NUMBER = 치수(측정값 입력), PASS_FAIL = 사진·측정값 없이 OK/NG 만 선택.
@@ -51,6 +52,8 @@ export interface MyInspection {
   orderId?: number;
   type: string;
   typeLabel: string;
+  // 주/야 표시는 이 값으로만 한다 (type 은 슬롯 순서용 내부 식별자).
+  shift?: Shift;
   inspectionTime: string;
   product: MyInspectionProduct;
   equipment: MyInspectionEquipment;

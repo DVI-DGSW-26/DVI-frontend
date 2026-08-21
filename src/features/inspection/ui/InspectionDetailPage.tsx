@@ -8,7 +8,7 @@ import {
   dimDisplayName,
   formatTolerance,
 } from "../lib/format";
-import { getProcessLabel } from "../lib/process";
+import { useProcessLabel } from "../../process";
 import SketchImage from "./SketchImage";
 
 interface DetailLocationState {
@@ -17,6 +17,7 @@ interface DetailLocationState {
 }
 
 export default function InspectionDetailPage() {
+  const processLabel = useProcessLabel();
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams<{ inspectionId: string }>();
@@ -90,7 +91,7 @@ export default function InspectionDetailPage() {
           <InfoRow label="설비" value={inspection.equipment.name} />
           <InfoRow
             label="공정"
-            value={`${getProcessLabel(inspection.product.process)} (${inspection.product.process})`}
+            value={`${processLabel(inspection.product.process)} (${inspection.product.process})`}
           />
           <InfoRow label="고객사" value={inspection.customer.name} />
           <InfoRow

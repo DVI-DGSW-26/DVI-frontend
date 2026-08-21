@@ -1,4 +1,5 @@
 import type { ApiResponse } from "../../auth/type/types";
+import type { Shift } from "../../inspection-schedule/api";
 import type {
   InspectionValueType,
   MyInspection,
@@ -37,6 +38,8 @@ export interface InspectionDetail {
   orderId?: number;
   type: string;
   typeLabel: string;
+  // 이 검사가 주간인지 야간인지. type 접두어로 추론하지 말고 이 값을 쓸 것.
+  shift?: Shift;
   inspectionTime: string | null;
   product: MyInspectionProduct;
   equipment: MyInspectionEquipment;
@@ -52,17 +55,18 @@ export interface InspectionDetail {
 
 export type InspectionDetailApiResponse = ApiResponse<InspectionDetail>;
 
-export type InspectionProcess =
-  | "EXTRUSION"
-  | "AL_CUTTING"
-  | "ST_CUTTING"
-  | "MACHINING"
-  | "PRESS";
+// 공정은 관리자가 등록·수정하는 DB 데이터라 값을 고정할 수 없다(GET /process).
+// 표시명·분기 판단은 features/process 의 useProcessLabel / useProcessInfo 로 한다.
+export type InspectionProcess = string;
 
 export interface InspectionSlot {
+  // 슬롯 식별자(DAY_1, NIGHT_3 ...). 순서를 매기는 내부 값일 뿐이라
+  // 여기서 주/야를 추론하면 안 된다 — 주/야는 아래 shift 로만 판단한다.
   type: string;
   label: string;
-  time: string;
+  // 초·중·종처럼 고정 시각이 없는 슬롯은 null.
+  time: string | null;
+  shift?: Shift;
 }
 
 // POST /inspection — 작업자가 직접 제품/설비를 선택해서 시작.

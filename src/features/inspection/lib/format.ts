@@ -1,4 +1,4 @@
-export function formatSlotTime(time: string): string {
+export function formatSlotTime(time: string | null | undefined): string {
   if (!time) return "";
   const [h = "", m = ""] = time.split(":");
   return `${h.padStart(2, "0")}:${m.padStart(2, "0")}`;

@@ -1,9 +1,15 @@
 import { useMemo } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   completeInspection,
   getInspectionDetail,
   getInspectionSlots,
+  getProductSlots,
   incompleteInspection,
   ocrInspectionImage,
   reopenInspection,
@@ -23,7 +29,7 @@ import type {
 import type { MyInspection } from "../../my-inspection/type/types";
 import { myInspectionKeys } from "../../my-inspection/api";
 import { reportKeys } from "../../report/api";
-import { getNextSlot as getNextSlotStatic } from "../lib/slotSequence";
+import { useProcessList } from "../../process/api";
 
 // 새 inspection 이 만들어진 직후 invalidate 만 호출하면 refetch 가 완료되기 전에 화면이
 // 잠깐 OLD 상태로 보일 수 있다 (사용자가 빠르게 navigate/back 한 경우 "이어 작업하기" 카드가
@@ -46,6 +52,8 @@ export const inspectionKeys = {
   all: ["inspection"] as const,
   slots: (process: InspectionProcess) =>
     [...inspectionKeys.all, "slots", process] as const,
+  productSlots: (productId: number) =>
+    [...inspectionKeys.all, "slots", "product", productId] as const,
   detail: (inspectionId: number) =>
     [...inspectionKeys.all, "detail", inspectionId] as const,
 };
@@ -63,6 +71,15 @@ export function useInspectionDetail(inspectionId: number | undefined) {
   });
 }
 
+/** 제품 기준 슬롯 — 검사 시작 화면(시점 선택)은 이걸 쓴다. */
+export function useProductSlots(productId: number | null | undefined) {
+  return useQuery({
+    queryKey: inspectionKeys.productSlots(productId ?? 0),
+    queryFn: () => getProductSlots(productId as number),
+    enabled: !!productId,
+  });
+}
+
 export function useInspectionSlots(process: InspectionProcess | undefined) {
   return useQuery({
     queryKey: inspectionKeys.slots(process as InspectionProcess),
@@ -71,60 +88,45 @@ export function useInspectionSlots(process: InspectionProcess | undefined) {
   });
 }
 
-// 모든 공정의 슬롯 순서를 백엔드에서 받아 "다음 시점" 계산 함수를 제공한다.
-// 하드코딩된 slotSequence 는 실제 백엔드 슬롯(코드/개수/순서)과 어긋날 수 있어
-// (예: AL_CUTTING) 다음 시점을 못 찾는 문제가 있었다. 실제 슬롯을 진실의 원천으로 삼되,
-// 아직 로드 전이거나 조회 실패한 공정은 하드코딩 시퀀스로 폴백한다.
-const ALL_PROCESSES: InspectionProcess[] = [
-  "EXTRUSION",
-  "PRESS",
-  "AL_CUTTING",
-  "ST_CUTTING",
-  "MACHINING",
-];
-
+/**
+ * 모든 공정의 슬롯 순서를 백엔드에서 받아 "다음 시점" 계산 함수를 제공한다.
+ *
+ * 공정 목록이 DB 로 옮겨가면서(GET /process) 개수가 고정이 아니게 됐다. 훅을 공정마다
+ * 부를 수 없으므로 useQueries 로 한 번에 띄운다. 슬롯을 아직 못 받은 공정은 null 을
+ * 돌려주고 — 예전엔 하드코딩 시퀀스로 폴백했지만, 야간 슬롯이 추가된 지금은 그 상수가
+ * 실제 스케줄과 어긋나 잘못된 다음 시점을 만들어낸다.
+ */
 export function useSlotSequences() {
-  const extrusion = useInspectionSlots("EXTRUSION");
-  const press = useInspectionSlots("PRESS");
-  const alCutting = useInspectionSlots("AL_CUTTING");
-  const stCutting = useInspectionSlots("ST_CUTTING");
-  const machining = useInspectionSlots("MACHINING");
+  const { data: processes } = useProcessList(true);
+  const codes = useMemo(
+    () => (processes ?? []).map((p) => p.code),
+    [processes],
+  );
+
+  const results = useQueries({
+    queries: codes.map((code) => ({
+      queryKey: inspectionKeys.slots(code),
+      queryFn: () => getInspectionSlots(code),
+    })),
+  });
 
   const seqByProcess = useMemo(() => {
-    const queries = {
-      EXTRUSION: extrusion.data,
-      PRESS: press.data,
-      AL_CUTTING: alCutting.data,
-      ST_CUTTING: stCutting.data,
-      MACHINING: machining.data,
-    } as const;
-    const map: Partial<Record<InspectionProcess, string[]>> = {};
-    for (const process of ALL_PROCESSES) {
-      const slots = queries[process];
-      if (slots && slots.length > 0) {
-        map[process] = slots.map((s) => s.type);
-      }
-    }
+    const map = new Map<string, string[]>();
+    codes.forEach((code, i) => {
+      const slots = results[i]?.data;
+      if (slots && slots.length > 0) map.set(code, slots.map((s) => s.type));
+    });
     return map;
-  }, [
-    extrusion.data,
-    press.data,
-    alCutting.data,
-    stCutting.data,
-    machining.data,
-  ]);
+  }, [codes, results]);
 
   const getNextSlot = useMemo(
     () =>
       (process: string, currentType: string): string | null => {
-        const seq = seqByProcess[process as InspectionProcess];
-        if (seq && seq.length > 0) {
-          const idx = seq.indexOf(currentType);
-          if (idx === -1 || idx === seq.length - 1) return null;
-          return seq[idx + 1];
-        }
-        // 실제 슬롯이 아직 없으면 하드코딩 시퀀스로 폴백.
-        return getNextSlotStatic(process, currentType);
+        const seq = seqByProcess.get(process);
+        if (!seq || seq.length === 0) return null;
+        const idx = seq.indexOf(currentType);
+        if (idx === -1 || idx === seq.length - 1) return null;
+        return seq[idx + 1];
       },
     [seqByProcess],
   );

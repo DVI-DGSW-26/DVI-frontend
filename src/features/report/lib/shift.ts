@@ -1,6 +1,5 @@
 import { kstHour, WORK_DAY_START_HOUR } from "../../../lib/datetime";
-import { SLOT_SEQUENCE } from "../../inspection/lib/slotSequence";
-import type { InspectionProcess } from "../../inspection/type/types";
+import type { Shift } from "../../inspection-schedule/api";
 import type {
   ReportDetail,
   ReportStageInfo,
@@ -8,7 +7,7 @@ import type {
 } from "../api/types";
 import { STAGE_ORDER } from "./stageMeasurements";
 
-export type WorkShift = "DAY" | "NIGHT";
+export type WorkShift = Shift;
 
 /** 야간 시작 시각. 17시 정각부터 야간이다 (현장 규칙, 백엔드 판별 로직과 동일). */
 export const NIGHT_SHIFT_START_HOUR = 17;
@@ -19,8 +18,7 @@ export const NIGHT_SHIFT_START_HOUR = 17;
  * 17시~다음날 06시가 야간이다. 상한(06시)이 필요한 건 야간 작업이 자정을
  * 넘겨서도 이어지기 때문 — 실서버에 초·중·종을 01:17 / 04:13 / 05:42 에 기록한
  * 건이 있는데, "17시 이후" 만 보면 이게 주간으로 뒤집힌다. 경계는 작업일 경계와
- * 같은 06시를 쓴다(`WORK_DAY_START_HOUR`) — 06시 이전 기록을 전날 작업분으로
- * 보는 기존 규칙과 어긋나면 같은 검사가 화면마다 다른 날짜/근무조로 보인다.
+ * 같은 06시를 쓴다(`WORK_DAY_START_HOUR`).
  */
 function isNightHour(hour: number): boolean {
   return hour >= NIGHT_SHIFT_START_HOUR || hour < WORK_DAY_START_HOUR;
@@ -41,35 +39,20 @@ function firstStage(
   )[0];
 }
 
-// 이 공정에 야간 슬롯이 정의돼 있는지. 슬롯 정의를 그대로 보고 판단해야
-// 나중에 압출·프레스에 야간 슬롯이 추가돼도 이 파일을 같이 고치지 않아도 된다.
-function hasNightSlots(process: string): boolean {
-  const seq = SLOT_SEQUENCE[process as InspectionProcess];
-  return !!seq?.some((t) => t.startsWith("NIGHT_"));
-}
-
 /**
  * 보고서 한 건의 근무조(주간/야간). 판정할 수 없으면 null → 호출부에서 숨긴다.
  *
- * **초품 기준 1회만** 판정하고 중·종은 그 결과를 따른다. 야간 작업의 중품은
- * 새벽 01시, 종품은 05시라 차수마다 따로 물으면 주간으로 뒤집히고, 압출은
- * 종품을 다음날 아침에 순회검사자가 확인해 더 확실하게 뒤집힌다.
+ * **서버가 내려주는 shift 가 1순위다.** 슬롯 타입(DAY_1 등)으로 추론하면 안 된다 —
+ * type 은 슬롯 순서를 매기는 내부 식별자라 실제 교대와 어긋날 수 있다.
  *
- * 실제 검사 시각(inspectedAt)이 1순위다. 없을 때만 슬롯 타입으로 폴백하는데,
- * `NIGHT_*` 는 확실하지만 `DAY_*` 는 야간 슬롯이 있는 공정에서만 주간이라고
- * 단정할 수 있다 — 압출·프레스는 야간 슬롯 자체가 없어 야간 작업도 `DAY_*` 로
- * 기록된다.
+ * 시각 기반 추정은 shift 가 없는 구 보고서용 폴백으로만 남겨둔다. 이때도 **초품
+ * 기준 1회만** 판정하고 중·종은 그 결과를 따른다 — 야간 작업의 중품은 새벽 01시,
+ * 종품은 05시라 차수마다 따로 물으면 주간으로 뒤집히고, 압출은 종품을 다음날
+ * 아침에 순회검사자가 확인해 더 확실하게 뒤집힌다.
  */
 export function resolveShift(detail: ReportDetail): WorkShift | null {
   const first = firstStage(detail.stages);
-
-  const byTime = shiftAt(first?.inspectedAt);
-  if (byTime) return byTime;
-
-  const type = first?.type ?? detail.inspectionType;
-  if (type?.startsWith("NIGHT_")) return "NIGHT";
-  if (type?.startsWith("DAY_") && hasNightSlots(detail.process)) return "DAY";
-  return null;
+  return detail.shift ?? first?.shift ?? shiftAt(first?.inspectedAt) ?? null;
 }
 
 // 검사 시각 하나로 판정. 값이 없거나 파싱 못 하면 null.
@@ -82,13 +65,16 @@ function shiftAt(inspectedAt: string | null | undefined): WorkShift | null {
 /**
  * 목록 카드(요약)의 근무조. 판정할 수 없으면 null → 카드에서 숨긴다.
  *
- * 요약에는 차수(stages)가 없어 백엔드가 주는 초품 실제 검사시각만 근거로 쓴다.
- * 상세와 달리 슬롯 타입 폴백을 쓰지 않는 건, 실서버가 야간 작업도 `DAY_*` 로
- * 기록해 폴백이 야간을 "주간" 으로 단정해버리기 때문이다(2026-08-19 실측: 최근
- * 80건 중 야간 5건이 전부 `DAY_5`, 같은 `DAY_5` 주간이 24건). 상세는 초품
- * inspectedAt 이 채워져 있어 폴백까지 갈 일이 거의 없지만, 목록은 이 값이 없으면
- * 폴백이 곧 오표시라 아예 표시하지 않는 쪽을 택한다.
+ * 서버 shift 가 1순위, 없으면 초품 실제 검사시각으로 폴백한다.
  */
 export function resolveSummaryShift(summary: ReportSummary): WorkShift | null {
-  return shiftAt(summary.initialInspectedAt);
+  return summary.shift ?? shiftAt(summary.initialInspectedAt) ?? null;
+}
+
+/** 차수(스테이지) 한 줄의 근무조 — 묶음 보고서는 주·야가 섞일 수 있다. */
+export function resolveStageShift(
+  stage: ReportStageInfo,
+  fallback: WorkShift | null = null,
+): WorkShift | null {
+  return stage.shift ?? shiftAt(stage.inspectedAt) ?? fallback;
 }
