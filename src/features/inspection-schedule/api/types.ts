@@ -5,6 +5,9 @@ export type Shift = "DAY" | "NIGHT";
 
 export type ScheduleType = "CHO_JUNG_JONG" | "TIME_BASED";
 
+/** 이 스케줄이 걸린 대상. PRODUCT 는 제품 전용 오버라이드다. */
+export type ScheduleScope = "PROCESS" | "PRODUCT";
+
 export interface ScheduleSlot {
   // 1부터 시작하는 순서. 목록 순서가 곧 검사 순서다.
   slotOrder: number;
@@ -21,12 +24,18 @@ export interface ScheduleSlot {
 
 export interface InspectionSchedule {
   id: number;
-  process: string;
+  scope: ScheduleScope;
+  // scope=PROCESS 일 때만 값이 있다.
+  process: string | null;
+  // scope=PRODUCT 일 때만 값이 있다.
+  productId: number | null;
   scheduleType: ScheduleType;
   slots: ScheduleSlot[];
 }
 
 export type InspectionScheduleResponse = ApiResponse<InspectionSchedule>;
+// 제품 전용 스케줄 조회는 오버라이드가 없으면 data 가 null 이다(에러가 아니다).
+export type ProductScheduleResponse = ApiResponse<InspectionSchedule | null>;
 export type InspectionScheduleListResponse = ApiResponse<InspectionSchedule[]>;
 
 /** PUT 으로 보내는 슬롯 한 줄. 리스트 순서가 그대로 slotOrder 가 된다. */
