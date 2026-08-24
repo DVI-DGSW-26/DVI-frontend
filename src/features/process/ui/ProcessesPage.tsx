@@ -95,6 +95,9 @@ export default function ProcessesPage() {
   const scheduleByProcess = useMemo(() => {
     const map = new Map<string, ScheduleSummary>();
     for (const s of schedules) {
+      // 공정 전체 조회라 process 는 항상 채워져 오지만, 타입상 제품 전용 스케줄과
+      // 같은 모델을 쓰므로(그쪽은 null) 방어해둔다.
+      if (!s.process) continue;
       const night = (s.slots ?? []).filter((x) => x.shift === "NIGHT").length;
       map.set(s.process, {
         type: s.scheduleType,

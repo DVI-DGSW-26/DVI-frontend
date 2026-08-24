@@ -17,12 +17,26 @@ import type {
 import { useProcessLabel, useProcessOptions } from "../../process";
 import { useProcessInfo } from "../../process";
 import ProcessScheduleDrawer from "../../process/ui/ProcessScheduleDrawer";
-import { useProcessSchedule } from "../../inspection-schedule/api";
+import {
+  useProcessSchedule,
+  useProductSchedule,
+} from "../../inspection-schedule/api";
+import type { InspectionSchedule } from "../../inspection-schedule/api";
+import ProductScheduleDrawer from "../../inspection-schedule/ui/ProductScheduleDrawer";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import {
   isAllowedImageFile,
   MAX_UPLOAD_BYTES,
 } from "../../../lib/uploadImage";
+
+// "시간대별 8시점 (야간 3)" 같은 한 줄 요약. 슬롯이 없으면 null.
+function describeSchedule(schedule: InspectionSchedule | null): string | null {
+  const slots = schedule?.slots ?? [];
+  if (slots.length === 0) return null;
+  const night = slots.filter((s) => s.shift === "NIGHT").length;
+  const kind = schedule?.scheduleType === "TIME_BASED" ? "시간대별" : "초/중/종";
+  return `${kind} ${slots.length}시점${night > 0 ? ` (야간 ${night})` : ""}`;
+}
 
 interface Props {
   open: boolean;
@@ -163,14 +177,20 @@ export default function ProductFormDrawer({
   const processInfo = useProcessInfo(process || null);
   const { data: schedule } = useProcessSchedule(process || null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
-  const scheduleSummary = useMemo(() => {
-    if (!schedule) return null;
-    const slots = schedule.slots ?? [];
-    if (slots.length === 0) return null;
-    const night = slots.filter((s) => s.shift === "NIGHT").length;
-    const kind = schedule.scheduleType === "TIME_BASED" ? "시간대별" : "초/중/종";
-    return `${kind} ${slots.length}시점${night > 0 ? ` (야간 ${night})` : ""}`;
-  }, [schedule]);
+  const scheduleSummary = useMemo(
+    () => describeSchedule(schedule ?? null),
+    [schedule],
+  );
+  // 제품 전용 스케줄이 걸려 있으면 공정 기본이 아니라 이쪽이 실제 적용되는 주기다.
+  // 없으면(대부분의 제품) null 이 내려온다 — 조회 실패가 아니다.
+  const { data: productSchedule } = useProductSchedule(
+    open && isEdit ? productId : null,
+  );
+  const [productScheduleOpen, setProductScheduleOpen] = useState(false);
+  const productScheduleSummary = useMemo(
+    () => describeSchedule(productSchedule ?? null),
+    [productSchedule],
+  );
 
   const { mutate: create, isPending: isCreating } = useCreateProduct();
   const { mutate: update, isPending: isUpdating } = useUpdateProduct();
@@ -544,26 +564,32 @@ export default function ProductFormDrawer({
             </label>
 
 
-            {/* 검사 주기 — 서버가 스케줄을 공정 단위로만 관리해서 제품마다 따로 둘 수는
-                없다. 대신 이 제품이 속한 공정의 주기를 여기서 바로 보고 고칠 수 있게 한다. */}
+            {/* 검사 주기 — 기본은 공정 단위이고, 제품 전용 스케줄을 걸면 그 제품만
+                따로 간다. 어느 쪽이 실제로 적용 중인지 여기서 바로 보이게 한다. */}
             <div className="flex flex-col gap-1.5">
               <span className="text-sm font-medium text-[#212121]">검사 주기</span>
               {process === "" ? (
                 <p className="rounded-lg border border-dashed border-gray-300 bg-[#FAFAFA] px-3 py-3 text-xs text-[#6B7280]">
                   공정을 먼저 선택하면 그 공정의 검사 주기가 표시됩니다.
                 </p>
-              ) : (
+              ) : productSchedule ? (
                 <button
                   type="button"
-                  onClick={() => setScheduleOpen(true)}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-left transition-colors hover:border-[#931B82]"
+                  onClick={() => setProductScheduleOpen(true)}
+                  className="flex items-center justify-between gap-2 rounded-lg border border-[#E9D5FF] bg-[#FAF5FF] px-3 py-2.5 text-left transition-colors hover:border-[#931B82]"
                 >
                   <span className="min-w-0">
-                    <span className="block text-sm text-[#212121]">
-                      {scheduleSummary ?? "설정된 주기가 없습니다"}
+                    <span className="flex items-center gap-1.5">
+                      <span className="shrink-0 rounded bg-[#F3E8F7] px-1.5 py-0.5 text-[10px] font-medium text-[#931B82]">
+                        제품 전용
+                      </span>
+                      <span className="truncate text-sm text-[#212121]">
+                        {productScheduleSummary ?? "설정된 시점이 없습니다"}
+                      </span>
                     </span>
                     <span className="mt-0.5 block text-[11px] text-[#6B7280]">
-                      {processLabel(process)} 공정의 모든 제품에 함께 적용됩니다
+                      이 제품에만 적용됩니다 · {processLabel(process)} 공정 기본은{" "}
+                      {scheduleSummary ?? "없음"}
                     </span>
                   </span>
                   <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-[#931B82]">
@@ -571,6 +597,37 @@ export default function ProductFormDrawer({
                     <Icon icon="mdi:chevron-right" width={14} height={14} />
                   </span>
                 </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setScheduleOpen(true)}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-left transition-colors hover:border-[#931B82]"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-sm text-[#212121]">
+                        {scheduleSummary ?? "설정된 주기가 없습니다"}
+                      </span>
+                      <span className="mt-0.5 block text-[11px] text-[#6B7280]">
+                        {processLabel(process)} 공정의 모든 제품에 함께 적용됩니다
+                      </span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-[#931B82]">
+                      설정
+                      <Icon icon="mdi:chevron-right" width={14} height={14} />
+                    </span>
+                  </button>
+                  {isEdit && productId !== null && (
+                    <button
+                      type="button"
+                      onClick={() => setProductScheduleOpen(true)}
+                      className="flex items-center gap-1 self-start text-[11px] font-medium text-[#931B82] hover:underline"
+                    >
+                      <Icon icon="mdi:tag-plus-outline" width={13} height={13} />
+                      이 제품만 다른 주기로 검사하기
+                    </button>
+                  )}
+                </>
               )}
             </div>
 
@@ -793,6 +850,17 @@ export default function ProductFormDrawer({
         onClose={() => setScheduleOpen(false)}
         process={processInfo ?? null}
       />
+
+      {isEdit && productId !== null && process !== "" && (
+        <ProductScheduleDrawer
+          open={productScheduleOpen}
+          onClose={() => setProductScheduleOpen(false)}
+          productId={productId}
+          productName={name.trim() || product?.name || "제품"}
+          process={process}
+          processLabel={processLabel(process)}
+        />
+      )}
     </>
   );
 }

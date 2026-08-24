@@ -12,7 +12,7 @@ import type { InspectionOrder } from "../api";
 import { orderWorkers } from "../lib/orderWorkers";
 import { useAuth } from "../../auth/AuthContext";
 import type { User, WorkType } from "../../auth/type/types";
-import { useProcessSchedule } from "../../inspection-schedule/api";
+import { useProductSlots } from "../../inspection/api";
 import type { Shift } from "../../inspection-schedule/api";
 
 interface Props {
@@ -111,13 +111,18 @@ export default function CreateInspectionOrderDrawer({
       )
     : equipment;
 
-  // 선택한 제품의 공정 스케줄 — 주간·야간 슬롯이 둘 다 있으면 교대를 골라야 한다.
+  // 선택한 제품의 실제 검사 슬롯 — 주간·야간이 둘 다 있으면 교대를 골라야 한다.
   // (둘 다 있는데 shift 를 안 보내면 서버가 400 SHIFT_SELECTION_REQUIRED 로 막는다.)
-  const selectedProduct = products.find((p) => p.id === productId);
-  const { data: schedule } = useProcessSchedule(selectedProduct?.process);
-  const scheduleSlots = schedule?.slots ?? [];
-  const hasDaySlots = scheduleSlots.some((s) => s.shift === "DAY");
-  const hasNightSlots = scheduleSlots.some((s) => s.shift === "NIGHT");
+  //
+  // 공정 스케줄이 아니라 제품 슬롯을 보는 이유 두 가지 —
+  //   1. 제품 전용 스케줄이 걸려 있으면 공정 기본과 주·야 구성이 다르다.
+  //   2. 스케줄 API 는 QUALITY_ADMIN 전용이라 이 화면 주인(PRODUCTION_MANAGER)이
+  //      부르면 403 이다. 슬롯 API 는 전 역할이 부를 수 있다.
+  const { data: productSlots = [] } = useProductSlots(
+    productId === "" ? null : productId,
+  );
+  const hasDaySlots = productSlots.some((s) => s.shift === "DAY");
+  const hasNightSlots = productSlots.some((s) => s.shift === "NIGHT");
   // 수정에는 교대 변경이 없다 — 서버 수정 API 가 shift 를 받지 않는다.
   const needsShiftChoice = !isEdit && hasDaySlots && hasNightSlots;
 
