@@ -17,7 +17,7 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'http://112.146.55.78:3378',
+        target: 'https://api.dvi-ind.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
         bypass: (req) => {
