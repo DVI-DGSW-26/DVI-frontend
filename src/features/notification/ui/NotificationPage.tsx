@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -9,6 +9,11 @@ import {
 } from "../api";
 import { resolveNotificationLink } from "../lib/resolveNotificationLink";
 import { parseServerDate } from "../../../lib/datetime";
+import {
+  webNotificationPermission,
+  type WebNotificationPermission,
+} from "../lib/webNotification";
+import { enableWebPush, isWebPushConfigured } from "../lib/webPush";
 
 type NotificationType = "error" | "warning" | "success" | "info";
 
@@ -80,6 +85,40 @@ function groupByDay(items: NotificationResponse[]) {
   return Array.from(map.entries()).map(([label, items]) => ({ label, items }));
 }
 
+// 알림 권한 요청 배너. 권한 요청은 사용자 조작 안에서 해야 해서
+// (사파리는 제스처 없으면 그냥 거부) 자동 요청 대신 버튼으로 받는다.
+// 이미 허용했거나 거부한 사용자에게는 보이지 않는다.
+function WebNotificationPrompt() {
+  const [permission, setPermission] = useState<WebNotificationPermission>(
+    webNotificationPermission,
+  );
+
+  if (permission !== "default") return null;
+
+  return (
+    <div className="flex items-center gap-3 rounded-xl bg-white px-4 py-3">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#F3E8FF]">
+        <Icon icon="mdi:bell-ring" width={20} height={20} color="#931B82" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-[#212121]">알림 받기</p>
+        <p className="mt-0.5 text-xs text-[#A8A8A8]">
+          {isWebPushConfigured
+            ? "허용하면 앱을 닫아둔 동안에도 새 알림을 받습니다."
+            : "허용하면 다른 화면을 보고 있어도 새 알림이 표시됩니다."}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={async () => setPermission(await enableWebPush())}
+        className="shrink-0 rounded-md bg-[#931B82] px-3 py-1.5 text-sm font-medium text-white"
+      >
+        허용
+      </button>
+    </div>
+  );
+}
+
 const NotificationPage = () => {
   const navigate = useNavigate();
   const {
@@ -108,6 +147,8 @@ const NotificationPage = () => {
   return (
     <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-20">
       <div className="flex flex-col gap-6 px-4 pb-5 pt-3">
+        <WebNotificationPrompt />
+
         <div className="flex justify-end">
           <button
             type="button"

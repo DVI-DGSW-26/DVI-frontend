@@ -9,6 +9,7 @@ import {
 import { AxiosError } from "axios";
 import { useQueryClient } from "@tanstack/react-query";
 import { accountStorage, getMe, login as loginApi, tokenStorage } from "./api";
+import { stopWebPush } from "../notification/lib/webPush";
 import type { LoginRequest, StoredAccount, User } from "./api";
 
 interface AuthContextValue {
@@ -117,6 +118,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
+    // 이 기기로 더 이상 푸시가 가지 않도록 해제한다. 토큰을 지우기 전에 시작해야
+    // 인증된 요청으로 나가므로, 직전 accessToken 을 넘겨준다.
+    void stopWebPush(tokenStorage.getAccess() ?? undefined);
     tokenStorage.clearAll();
     queryClient.clear();
     setUser(null);
