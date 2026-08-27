@@ -4,6 +4,7 @@ export {
   markAsRead,
   markAllAsRead,
 } from "./notificationApi";
+export { registerPushToken, unregisterPushToken } from "./pushTokenApi";
 export {
   useNotifications,
   useNotificationsInfinite,
