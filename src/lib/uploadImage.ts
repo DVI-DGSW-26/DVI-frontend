@@ -1,4 +1,4 @@
-import { http } from "./http";
+import { http, UPLOAD_TIMEOUT_MS } from "./http";
 
 // 백엔드 업로드 제한과 동일. 초과하면 서버가 거절하므로 프론트에서 먼저 거른다.
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
@@ -48,6 +48,8 @@ export async function uploadImageFile(
   const { data } = await http.post<UploadImageApiResponse>("/image", form, {
     headers: { "Content-Type": undefined },
     transformRequest: [(d) => d],
+    // 사진 전송은 기본 제한 시간(20초)으로는 부족할 수 있다.
+    timeout: UPLOAD_TIMEOUT_MS,
   });
   return data.data.url;
 }
