@@ -1,5 +1,5 @@
 import { AxiosError } from "axios";
-import { http } from "../../../lib/http";
+import { http, UPLOAD_TIMEOUT_MS } from "../../../lib/http";
 import { uploadImageFile } from "../../../lib/uploadImage";
 import type { ApiResponse } from "../../auth/type/types";
 import type {
@@ -121,6 +121,8 @@ export async function ocrInspectionImage(blob: Blob): Promise<string | null> {
   const { data } = await http.post<OcrApiResponse>("/api/ocr", form, {
     headers: { "Content-Type": undefined },
     transformRequest: [(d) => d],
+    // OCR 은 사진 전송 + 서버 인식까지라 기본 제한 시간(20초)으로는 부족할 수 있다.
+    timeout: UPLOAD_TIMEOUT_MS,
   });
   return data.data.value;
 }

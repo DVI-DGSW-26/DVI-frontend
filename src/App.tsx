@@ -39,6 +39,7 @@ import MonitorPage from "./features/monitor/ui/MonitorPage";
 
 import { useAuth } from "./features/auth/AuthContext";
 import { useNotificationAlerts } from "./features/notification/model/useNotificationAlerts";
+import ServerStatusOverlay from "./components/shared/ServerStatusOverlay";
 
 // 알림을 앱 밖(OS 알림창)으로 내보내는 배선. 그리는 것은 없다.
 // useNavigate 를 쓰므로 BrowserRouter 안에 있어야 한다.
@@ -62,6 +63,8 @@ function App() {
   return (
     <BrowserRouter>
       <NotificationAlerts />
+      {/* 서버 끊김·지연 알림 — 어느 화면에 있든 뜨도록 라우트 밖에 둔다. */}
+      <ServerStatusOverlay />
       <Routes>
         <Route path="/signup" element={<SignupForm />} />
         <Route path="/login" element={<LoginForm />} />

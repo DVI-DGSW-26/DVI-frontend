@@ -1,5 +1,6 @@
 import { AxiosError } from "axios";
 import { http } from "../../../lib/http";
+import { isConnectionError } from "../../../lib/serverStatus";
 import {
   AuthError,
   type ApiResponse,
@@ -7,6 +8,9 @@ import {
   type SignupRequest,
   type TokenData,
 } from "../type/types";
+
+const CONNECTION_ERROR_MESSAGE =
+  "서버에 연결할 수 없습니다. 네트워크 상태를 확인하거나 관리자에게 서버 상태를 문의해 주세요.";
 
 export async function signup(body: SignupRequest): Promise<void> {
   try {
@@ -30,6 +34,9 @@ export async function signup(body: SignupRequest): Promise<void> {
       if (serverMessage) {
         throw new AuthError("UNKNOWN", serverMessage);
       }
+    }
+    if (isConnectionError(err)) {
+      throw new AuthError("UNKNOWN", CONNECTION_ERROR_MESSAGE);
     }
     throw new AuthError("UNKNOWN", "회원가입 중 오류가 발생했습니다.");
   }
@@ -56,6 +63,11 @@ export async function login(body: LoginRequest): Promise<TokenData> {
           "아직 관리자 승인되지 않은 계정입니다.",
         );
       }
+    }
+    // 서버까지 닿지 못한 실패를 "로그인 중 오류" 로 뭉뚱그리면, 사용자가 계정
+    // 문제로 오해하고 아이디·비밀번호를 계속 다시 친다. 원인을 밝혀준다.
+    if (isConnectionError(err)) {
+      throw new AuthError("UNKNOWN", CONNECTION_ERROR_MESSAGE);
     }
     throw new AuthError("UNKNOWN", "로그인 중 오류가 발생했습니다.");
   }
