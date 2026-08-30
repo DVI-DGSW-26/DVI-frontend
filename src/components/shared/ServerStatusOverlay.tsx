@@ -5,10 +5,14 @@ import { recheckServerNow, useServerStatus } from "../../lib/serverStatus";
  * 서버 장애를 사용자에게 알리는 전역 표시. App 최상단에 한 번만 올린다.
  *
  * 현장 요구 — "자주검사/순회검사 중에 진행이 안 될 때, 앱이 느린 건지 서버가
- * 죽은 건지 몰라서 계속 기다리게 된다." 그래서 두 단계로 나눠 알린다.
+ * 죽은 건지 몰라서 계속 기다리게 된다."
  *
- *   느림(slow)        : 상단 얇은 띠. "느린 것뿐이니 기다리면 된다" 를 알린다.
  *   끊김(down/offline): 화면을 덮는 팝업. 놓칠 수 없게 만든다.
+ *
+ * 느림(slow) 은 아무것도 그리지 않는다. 조금 느린 것뿐인데 배너가 떠서
+ * 오히려 고장난 것처럼 보인다는 현장 피드백으로 뺐다. 상태 자체는
+ * serverStatus 에 그대로 남아 있다 — down 판정으로 넘어가는 길목이라
+ * 지우면 끊김 감지가 늦어진다.
  *
  * 팝업은 닫을 수 있고, 닫으면 상단 띠로 줄어든다(화면 내용은 계속 볼 수 있게).
  * 연결이 돌아오면 팝업·띠가 저절로 사라지고 복구 안내가 잠깐 뜬다.
@@ -35,35 +39,6 @@ function CheckIcon() {
       <path
         fill="currentColor"
         d="M12 2a10 10 0 1 0 0 20a10 10 0 0 0 0-20m4.53 7.47a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 0 1-1.06 0l-2.5-2.5a.75.75 0 1 1 1.06-1.06l1.97 1.97l4.47-4.47a.75.75 0 0 1 1.06 0"
-      />
-    </svg>
-  );
-}
-
-function SpinnerIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width={16}
-      height={16}
-      aria-hidden="true"
-      className="animate-spin"
-    >
-      <circle
-        cx="12"
-        cy="12"
-        r="9"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        opacity="0.3"
-      />
-      <path
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-        d="M21 12a9 9 0 0 0-9-9"
       />
     </svg>
   );
@@ -116,17 +91,6 @@ export default function ServerStatusOverlay() {
         <div className="flex items-center gap-2 rounded-full bg-[#059669] px-4 py-2 text-xs font-semibold text-white shadow-lg">
           <CheckIcon />
           서버와 다시 연결되었습니다
-        </div>
-      </div>
-    );
-  }
-
-  if (status === "slow") {
-    return (
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-[100] flex justify-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <div className="flex items-center gap-2 rounded-full bg-[#B45309] px-4 py-2 text-xs font-semibold text-white shadow-lg">
-          <SpinnerIcon />
-          서버 응답이 느립니다. 잠시만 기다려 주세요
         </div>
       </div>
     );
