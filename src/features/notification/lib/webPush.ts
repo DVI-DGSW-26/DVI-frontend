@@ -125,7 +125,10 @@ export async function startWebPush(): Promise<boolean> {
       vapidKey,
       serviceWorkerRegistration: registration,
     });
-    if (!token) return false;
+    if (!token) {
+      console.warn("[webPush] 토큰이 비어 있어 등록을 건너뜁니다.");
+      return false;
+    }
 
     localStorage.setItem(TOKEN_KEY, token);
     await registerPushToken(token);
@@ -149,9 +152,15 @@ export async function startWebPush(): Promise<boolean> {
 
     setActive(true);
     return true;
-  } catch {
+  } catch (err) {
     // 설정 오류·미지원 브라우저·서버 미반영 등. 앱 사용을 막지 않고,
     // 폴링 대체 경로가 그대로 살아 있다.
+    //
+    // 다만 흔적 없이 넘어가면 "왜 알림이 안 오지"를 추적할 방법이 없다.
+    // 실제로 VAPID 키에 문자 하나가 더 붙어 있어 브라우저가 구독을 거부한
+    // 적이 있는데, 조용히 실패해서 원인을 찾는 데 한참 걸렸다.
+    // 치명적이지 않으니 error 가 아니라 warn 으로 남긴다.
+    console.warn("[webPush] 시작 실패 — 폴링 알림으로 동작합니다:", err);
     setActive(false);
     return false;
   }
