@@ -71,7 +71,8 @@ export interface CrossCheckSummary {
   orderId?: number | null;
 }
 
-// GET /cross-check/assigned 응답. 시작 가능(AVAILABLE) 또는 이미 시작된(IN_PROGRESS) 건.
+// GET /cross-check/assigned 응답. 시작 가능(AVAILABLE)·진행 중(IN_PROGRESS) 및
+// 이미 끝난(COMPLETED / PENDING_APPROVAL) 건이 함께 내려온다.
 export interface AssignedInspection {
   inspectionId: number;
   productName: string;
@@ -85,8 +86,12 @@ export interface AssignedInspection {
   completedAt: string;
   // 검사(자주검사)를 시작한 날짜. 백엔드가 보내주면 목록에 표시, 없으면 숨김.
   createdAt?: string;
-  // 선점 상태 — IN_PROGRESS 면 이미 다른(또는 본인) 담당자가 시작한 건.
-  status?: "AVAILABLE" | "IN_PROGRESS";
+  // 선점/진행 상태.
+  // - AVAILABLE: 아직 아무도 시작하지 않은 건 (시작 가능)
+  // - IN_PROGRESS: 다른(또는 본인) 담당자가 시작한 건. ownerName=null 이면 이어받기 가능
+  // - COMPLETED: 초·중 차수가 개별 결재 없이 끝난 건 (조회 전용)
+  // - PENDING_APPROVAL: 종 차수 결재 대기 중인 건 (조회 전용)
+  status?: "AVAILABLE" | "IN_PROGRESS" | "COMPLETED" | "PENDING_APPROVAL";
   // 진행 중일 때 담당자 이름.
   ownerName?: string | null;
   // 진행 중일 때 시작된 순회검사 id.
