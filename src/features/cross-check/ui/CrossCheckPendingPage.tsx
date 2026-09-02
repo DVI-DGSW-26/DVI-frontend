@@ -16,7 +16,7 @@ import {
   useProcessList,
   useProcessOptions,
 } from "../../process";
-import { countUnprocessed, isTakeoverable } from "../lib/assigned";
+import { countUnprocessed, isFinished, isTakeoverable } from "../lib/assigned";
 import { toCancelErrorMessage } from "../lib/cancelError";
 import {
   getStage,
@@ -239,6 +239,8 @@ const CrossCheckPendingPage = () => {
     // 담당자가 살아있는 진행 중 건은 시작 불가 (카드도 비활성이지만 방어).
     // 취소로 담당이 빠진 건(isTakeoverable)은 같은 inspectionId 로 POST 해서 이어받는다.
     if (item.status === "IN_PROGRESS" && !isTakeoverable(item)) return;
+    // 이미 끝난 건(차수 완료/결재 대기)도 새로 시작하지 않는다 — 배지 표시 전용.
+    if (isFinished(item)) return;
     setStartingId(item.inspectionId);
     try {
       const detail = await createMut.mutateAsync({

@@ -1,6 +1,6 @@
 import { Icon } from "@iconify/react";
 import type { AssignedInspection } from "../api";
-import { isTakeoverable } from "../lib/assigned";
+import { finishedBadge, isTakeoverable } from "../lib/assigned";
 import { elapsedFrom, TONE_COLOR } from "../lib/elapsed";
 import { getStage, STAGE_BADGE, STAGE_LABEL } from "../lib/stage";
 import { formatDate } from "../../../lib/datetime";
@@ -19,6 +19,10 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
   const takeoverable = isTakeoverable(item);
   // 남이 진행 중인 IN_PROGRESS — 목록엔 보이되 시작 불가(클릭 X). 이어받기 건은 제외.
   const owned = item.status === "IN_PROGRESS" && !takeoverable;
+  // 이미 끝난 건(차수 완료/결재 대기) — 배지로 결과만 보여주고 시작 불가(클릭 X).
+  const finished = finishedBadge(item);
+  // 시작(또는 이어받기)할 수 없는 상태 통칭.
+  const locked = owned || finished != null;
   // 검사 차수 — 결재 목록과 동일하게 초/중/종 배지 + 차수 라벨로 노출.
   const stage = getStage(item.type, item.process);
 
@@ -26,9 +30,9 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
     <button
       type="button"
       onClick={() => {
-        if (!owned) onClick?.(item);
+        if (!locked) onClick?.(item);
       }}
-      disabled={isStarting || owned}
+      disabled={isStarting || locked}
       className="flex w-full items-center gap-3 rounded-2xl bg-white px-5 py-4 text-left shadow-sm disabled:opacity-60"
     >
       <div className="flex min-w-0 flex-1 flex-col">
@@ -51,6 +55,13 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
           {owned && (
             <span className="shrink-0 rounded-md bg-[#FEF3C7] px-2 py-0.5 text-[10px] font-semibold text-[#B45309]">
               진행 중
+            </span>
+          )}
+          {finished && (
+            <span
+              className={`shrink-0 rounded-md px-2 py-0.5 text-[10px] font-semibold ${finished.className}`}
+            >
+              {finished.label}
             </span>
           )}
         </div>
@@ -83,7 +94,14 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-2">
-        {owned ? (
+        {finished ? (
+          // 끝난 건은 경과시간(빨간 대기시간)이 의미 없으므로 상태 문구로 대체.
+          <span
+            className={`text-right text-xs font-medium ${finished.textClassName}`}
+          >
+            {finished.label}
+          </span>
+        ) : owned ? (
           <span className="text-right text-xs font-medium text-[#B45309]">
             {item.ownerName ? `${item.ownerName} 진행 중` : "진행 중"}
           </span>
