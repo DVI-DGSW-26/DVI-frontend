@@ -523,7 +523,7 @@ export default function ProductFormDrawer({
                   <option value="">고객사를 선택하세요</option>
                   {customerOptions.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.name} (#{c.id})
+                      {c.name}
                     </option>
                   ))}
                 </select>
