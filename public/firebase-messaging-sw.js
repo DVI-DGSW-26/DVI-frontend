@@ -50,8 +50,16 @@ messaging.onBackgroundMessage((payload) => {
   return self.registration.showNotification(title, {
     body,
     icon: "/app-icon.png",
-    badge: "/favicon.png",
+    // 안드로이드 상태바 아이콘. 알파 채널만 쓰여 흰 실루엣으로 그려지므로
+    // 불투명 배경이 있는 이미지를 주면 흰 사각형이 된다. 전용 배지를 쓴다.
+    badge: "/notification-badge.png",
     tag,
+    // tag 가 있을 때만 유효하다. 없이 주면 크롬이 TypeError 를 던진다.
+    renotify: Boolean(tag),
+    // 진동이 있어야 사용자가 알아챈다. 무음으로 조용히 쌓이는 것을 막는다.
+    vibrate: [200, 100, 200],
+    // 데스크톱에서 자동으로 사라지지 않고 남는다. 안드로이드는 무시한다.
+    requireInteraction: true,
     // 클릭 처리(notificationclick)가 읽어갈 값. 앱이 type 별 라우팅 규칙을 태운다.
     data: { linkUrl: data.linkUrl, type: data.type },
   });
