@@ -38,14 +38,21 @@ export async function showWebNotification(
 ): Promise<void> {
   if (webNotificationPermission() !== "granted") return;
 
-  const options: NotificationOptions = {
+  // vibrate / renotify 는 표준 타입 정의에 없어서(브라우저는 지원) 캐스팅한다.
+  const options = {
     body,
     icon: "/app-icon.png",
-    badge: "/favicon.png",
+    // 안드로이드 상태바 아이콘. 알파 채널만 쓰여 흰 실루엣으로 그려지므로
+    // 불투명 배경이 있는 이미지를 주면 흰 사각형이 된다. 전용 배지를 쓴다.
+    badge: "/notification-badge.png",
     data: { url },
     // 같은 태그면 알림이 쌓이지 않고 교체된다 — 폴링이 겹쳐도 중복 노출을 막는다.
     tag: "dvi-notification",
-  };
+    // 교체되더라도 다시 알린다. tag 가 있을 때만 유효하다.
+    renotify: true,
+    vibrate: [200, 100, 200],
+    requireInteraction: true,
+  } as NotificationOptions;
 
   try {
     const registration = await navigator.serviceWorker?.getRegistration();
