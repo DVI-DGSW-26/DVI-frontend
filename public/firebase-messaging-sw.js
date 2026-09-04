@@ -23,9 +23,39 @@ firebase.initializeApp({
   appId: params.get("appId"),
 });
 
-// 백그라운드 알림 표시는 FCM 이 payload 의 notification(title/body)으로 자동 처리한다.
-// 이 호출은 SDK 가 백그라운드 핸들러를 붙이게 하는 용도다.
-firebase.messaging();
+const messaging = firebase.messaging();
+
+// 백그라운드 수신.
+//
+// payload 에 notification(title/body)이 있으면 브라우저가 알아서 띄워주므로
+// 여기서는 손대지 않는다. 건드리면 같은 알림이 두 번 뜬다.
+//
+// 문제는 data 만 담겨 오는 경우다. 그때는 자동 표시가 일어나지 않아 **아무것도
+// 뜨지 않는다.** 앱이 열려 있을 때는 페이지 쪽 onMessage 가 직접 띄우기 때문에
+// 정상으로 보이고, 앱을 닫았을 때만 조용히 사라진다 — 원인을 찾기 어려운 형태다.
+// 실제로 서버가 안드로이드 대응으로 페이로드 구조를 바꾸면서 이 상태가 됐다.
+//
+// 그래서 payload 형태와 무관하게 뜨도록 직접 표시한다.
+messaging.onBackgroundMessage((payload) => {
+  if (payload.notification) return; // 브라우저가 이미 표시함
+
+  const data = payload.data || {};
+  const title = data.title || "새 알림";
+  const body = data.body || "";
+
+  // 알림마다 다른 tag 를 줘야 여러 건이 쌓인다. 같은 tag 면 뒤엣것이 앞엣것을
+  // 덮어써서, 연달아 온 알림 중 마지막 하나만 남는다.
+  const tag = data.notificationId ? `dvi-${data.notificationId}` : undefined;
+
+  return self.registration.showNotification(title, {
+    body,
+    icon: "/app-icon.png",
+    badge: "/favicon.png",
+    tag,
+    // 클릭 처리(notificationclick)가 읽어갈 값. 앱이 type 별 라우팅 규칙을 태운다.
+    data: { linkUrl: data.linkUrl, type: data.type },
+  });
+});
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
