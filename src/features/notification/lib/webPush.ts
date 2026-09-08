@@ -169,10 +169,19 @@ export async function startWebPush(): Promise<boolean> {
 /**
  * 알림 권한을 요청하고 이어서 웹 푸시를 켠다.
  * ⚠️ 반드시 사용자 조작(버튼 클릭) 안에서 호출할 것.
+ *
+ * **권한 결과가 나오는 즉시 반환한다.** 등록(startWebPush)은 기다리지 않는다.
+ * 등록에는 SDK 내려받기, 서비스워커 등록, FCM 토큰 발급(구글 왕복), 서버 등록이
+ * 줄줄이 들어 있어 몇 초가 걸리고, 네트워크가 막히면 끝나지 않을 수도 있다.
+ * 그동안 호출부가 붙잡혀 있으면 "허용" 을 눌러도 배너가 그대로 남아 사용자는
+ * 버튼이 안 먹은 줄 안다.
+ *
+ * 기다리지 않아도 되는 이유는, 등록이 실패해도 폴링 알림으로 떨어질 뿐
+ * 화면이 할 일이 달라지지 않기 때문이다. 성공하면 구독을 통해 알아서 반영된다.
  */
 export async function enableWebPush(): Promise<WebNotificationPermission> {
   const permission = await requestWebNotificationPermission();
-  if (permission === "granted") await startWebPush();
+  if (permission === "granted") void startWebPush();
   return permission;
 }
 
