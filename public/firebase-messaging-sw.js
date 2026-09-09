@@ -48,27 +48,45 @@ self.addEventListener("notificationclick", (event) => {
   const data =
     event.notification.data?.FCM_MSG?.data || event.notification.data || {};
 
+  // 앱이 못 읽거나 규칙에 안 걸려도 알림 목록에는 도착하도록 이 주소를 쓴다.
+  const query = new URLSearchParams();
+  if (data.type) query.set("push_type", data.type);
+  if (data.linkUrl) query.set("push_link", data.linkUrl);
+  const target = `/notifications${query.toString() ? `?${query}` : ""}`;
+
   event.waitUntil(
-    self.clients
-      .matchAll({ type: "window", includeUncontrolled: true })
-      .then((clientList) => {
+    (async () => {
+      try {
+        const clientList = await self.clients.matchAll({
+          type: "window",
+          includeUncontrolled: true,
+        });
+
         for (const client of clientList) {
-          if ("focus" in client) {
+          if (!("focus" in client)) continue;
+          try {
             client.postMessage({
               type: "push-notification-click",
               url: data.linkUrl,
               notificationType: data.type,
             });
-            return client.focus();
+            await client.focus();
+            return;
+          } catch (err) {
+            // 창이 있어도 포커스가 거부될 수 있다(숨겨진 창, 다른 프로필 등).
+            // 여기서 그냥 끝내면 아무 일도 안 일어난 것처럼 보이므로,
+            // 다음 창을 시도하고 그마저 없으면 새로 연다.
+            console.warn("[sw] 창 포커스 실패, 다음 후보로 넘어갑니다:", err);
           }
         }
-        // 앱이 못 읽거나 규칙에 안 걸려도 알림 목록에는 도착하도록 이 주소를 쓴다.
-        const query = new URLSearchParams();
-        if (data.type) query.set("push_type", data.type);
-        if (data.linkUrl) query.set("push_link", data.linkUrl);
-        const suffix = query.toString() ? `?${query}` : "";
-        return self.clients.openWindow(`/notifications${suffix}`);
-      }),
+
+        await self.clients.openWindow(target);
+      } catch (err) {
+        // 여기서 끝나면 클릭이 완전히 무반응이 된다. SDK 기본 동작도 막아둔
+        // 상태라 대신 열어줄 것이 없다. 원인을 남겨 추적할 수 있게 한다.
+        console.warn("[sw] 알림 클릭 처리 실패:", err);
+      }
+    })(),
   );
 });
 
