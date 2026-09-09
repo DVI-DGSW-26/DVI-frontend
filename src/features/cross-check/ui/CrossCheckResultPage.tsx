@@ -148,26 +148,13 @@ export default function CrossCheckResultPage() {
   // 순회검사 묶음(bundle)은 "이미 시작된 차수"만 내려주므로 아직 손대지 않은 차수를
   // 알 수 없다. 계획표에 해당하는 이 API 로 전체 차수를 얻어 현재 위치 뒤를 남은
   // 차수로 본다.
-  //
-  // ⚠️ 주/야간이 둘 다 있는 제품은 이 API 가 **양쪽 슬롯을 모두** 내려줄 수 있다.
-  // 서버는 로그인 사용자에게 배정된 작업지시의 교대로 걸러주는데, 순회검사자는
-  // 그 제품에 배정된 오더가 없어 필터가 걸리지 않는다. 지금 차수와 같은 교대만
-  // 남겨야 야간 차수가 섞여 나오지 않는다.
   const slotsQuery = useProductSlots(detail?.product.id);
   const remainingSlotLabels = useMemo(() => {
     const slots = slotsQuery.data;
     if (!slots?.length || !detail) return [];
-
-    const current = slots.find((s) => s.type === detail.type);
-    if (!current) return [];
-
-    const sameShift = current.shift
-      ? slots.filter((s) => s.shift === current.shift)
-      : slots;
-    const currentIdx = sameShift.findIndex((s) => s.type === detail.type);
+    const currentIdx = slots.findIndex((s) => s.type === detail.type);
     if (currentIdx < 0) return [];
-
-    return sameShift.slice(currentIdx + 1).map((s) => s.label);
+    return slots.slice(currentIdx + 1).map((s) => s.label);
   }, [slotsQuery.data, detail]);
 
   // 경도값은 경도 추적 공정이라도 결재요청 시점엔 선택. 초품검사 등 아직 측정하지
