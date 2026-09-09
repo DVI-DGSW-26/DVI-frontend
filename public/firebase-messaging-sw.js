@@ -32,10 +32,14 @@ firebase.initializeApp({
 // 먼저 등록하고 stopImmediatePropagation 으로 SDK 핸들러를 막는다.
 //
 // 어디로 보낼지는 type 별 규칙이 필요한데(resolveNotificationLink.ts), 그 로직은
-// 앱 번들 안에 있고 여기서 불러올 수 없다. 그래서
-//   - 열려 있는 창이 있으면 : 그 창에 넘겨 앱이 규칙대로 이동시킨다
-//   - 창이 하나도 없으면    : 알림 목록으로 연다. linkUrl 을 그대로 열면 아직
-//     생성되지 않은 리소스나 권한 밖 경로로 가 빈 화면이 뜨는 타입이 있다.
+// 앱 번들 안에 있고 여기서 불러올 수 없다. 규칙을 여기에 베껴 두면 두 곳이
+// 갈라지므로, 판단은 항상 앱에 맡기고 서비스워커는 재료만 넘긴다.
+//   - 열려 있는 창이 있으면 : 그 창에 postMessage 로 넘긴다
+//   - 창이 하나도 없으면    : 알림 목록 주소에 재료를 쿼리로 실어 연다.
+//                            앱이 부팅하면서 규칙을 태워 제 위치로 옮긴다.
+//
+// linkUrl 을 그대로 열지 않는 이유는, 아직 생성되지 않은 리소스나 권한 밖
+// 경로를 가리키는 타입이 있어서다. 그대로 열면 빈 화면이 뜬다.
 self.addEventListener("notificationclick", (event) => {
   event.stopImmediatePropagation();
   event.notification.close();
@@ -58,7 +62,12 @@ self.addEventListener("notificationclick", (event) => {
             return client.focus();
           }
         }
-        return self.clients.openWindow("/notifications");
+        // 앱이 못 읽거나 규칙에 안 걸려도 알림 목록에는 도착하도록 이 주소를 쓴다.
+        const query = new URLSearchParams();
+        if (data.type) query.set("push_type", data.type);
+        if (data.linkUrl) query.set("push_link", data.linkUrl);
+        const suffix = query.toString() ? `?${query}` : "";
+        return self.clients.openWindow(`/notifications${suffix}`);
       }),
   );
 });
