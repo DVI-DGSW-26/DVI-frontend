@@ -148,6 +148,14 @@ export default function CrossCheckResultPage() {
   // 순회검사 묶음(bundle)은 "이미 시작된 차수"만 내려주므로 아직 손대지 않은 차수를
   // 알 수 없다. 계획표에 해당하는 이 API 로 전체 차수를 얻어 현재 위치 뒤를 남은
   // 차수로 본다.
+  //
+  // 교대(주/야)로 거르지 않는다. 검사 지시 하나에 주·야 슬롯이 함께 들어갈 수 있고
+  // (InspectionOrder.shift 주석 참고), 결재는 그 지시 전체 단위로 걸린다. 야간 차수도
+  // 같은 결재를 막고 있으므로 걸러내면 정작 남은 차수를 숨기게 된다 — 이 안내를 붙인
+  // 이유가 "결재 직전에야 막히는 왕복을 없애자" 였으니 본말이 뒤집힌다.
+  //
+  // 반대로 이 지시가 주간만 쓰는 경우에는 야간 차수가 더 붙어 보일 수 있다.
+  // 덜 알려서 막히는 것보다 더 보여주는 쪽이 안전하다고 보고 그대로 둔다.
   const slotsQuery = useProductSlots(detail?.product.id);
   const remainingSlotLabels = useMemo(() => {
     const slots = slotsQuery.data;
