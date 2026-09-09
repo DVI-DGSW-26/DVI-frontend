@@ -23,6 +23,46 @@ firebase.initializeApp({
   appId: params.get("appId"),
 });
 
+// 알림 클릭 → 해당 화면으로 이동.
+//
+// ⚠️ 이 리스너는 firebase.messaging() **앞**에 등록해야 한다.
+// SDK 도 자체 notificationclick 리스너를 붙이는데, 그쪽은 알림을 눌렀을 때
+// 그냥 사이트 첫 화면을 연다. 리스너는 등록된 순서대로 실행되므로 SDK 를
+// 먼저 만들면 그쪽이 창을 선점해 버려서, 무엇을 눌러도 홈으로 가버린다.
+// 먼저 등록하고 stopImmediatePropagation 으로 SDK 핸들러를 막는다.
+//
+// 어디로 보낼지는 type 별 규칙이 필요한데(resolveNotificationLink.ts), 그 로직은
+// 앱 번들 안에 있고 여기서 불러올 수 없다. 그래서
+//   - 열려 있는 창이 있으면 : 그 창에 넘겨 앱이 규칙대로 이동시킨다
+//   - 창이 하나도 없으면    : 알림 목록으로 연다. linkUrl 을 그대로 열면 아직
+//     생성되지 않은 리소스나 권한 밖 경로로 가 빈 화면이 뜨는 타입이 있다.
+self.addEventListener("notificationclick", (event) => {
+  event.stopImmediatePropagation();
+  event.notification.close();
+
+  // 우리가 직접 띄운 알림은 data 에, FCM 이 자동 표시한 알림은 FCM_MSG 안에 들어 있다.
+  const data =
+    event.notification.data?.FCM_MSG?.data || event.notification.data || {};
+
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
+        for (const client of clientList) {
+          if ("focus" in client) {
+            client.postMessage({
+              type: "push-notification-click",
+              url: data.linkUrl,
+              notificationType: data.type,
+            });
+            return client.focus();
+          }
+        }
+        return self.clients.openWindow("/notifications");
+      }),
+  );
+});
+
 const messaging = firebase.messaging();
 
 // 백그라운드 수신.
@@ -67,34 +107,3 @@ messaging.onBackgroundMessage((payload) => {
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
-
-// 알림 클릭 → 해당 화면으로 이동.
-//
-// 어디로 보낼지는 type 별 규칙이 필요한데(resolveNotificationLink.ts), 그 로직은
-// 앱 번들 안에 있고 여기서 불러올 수 없다. 그래서
-//   - 열려 있는 창이 있으면 : 그 창에 넘겨 앱이 규칙대로 이동시킨다
-//   - 창이 하나도 없으면    : 알림 목록으로 연다. linkUrl 을 그대로 열면 아직
-//     생성되지 않은 리소스나 권한 밖 경로로 가 빈 화면이 뜨는 타입이 있다.
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-  const data =
-    event.notification.data?.FCM_MSG?.data || event.notification.data || {};
-
-  event.waitUntil(
-    self.clients
-      .matchAll({ type: "window", includeUncontrolled: true })
-      .then((clientList) => {
-        for (const client of clientList) {
-          if ("focus" in client) {
-            client.postMessage({
-              type: "push-notification-click",
-              url: data.linkUrl,
-              notificationType: data.type,
-            });
-            return client.focus();
-          }
-        }
-        return self.clients.openWindow("/notifications");
-      }),
-  );
-});
