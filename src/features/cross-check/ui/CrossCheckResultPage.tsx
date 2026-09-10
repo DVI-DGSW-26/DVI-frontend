@@ -286,15 +286,11 @@ export default function CrossCheckResultPage() {
                     남은 차수 {remainingSlotLabels.join(" · ")}
                   </span>
                 )}
+                {/* 결재가 언제 막히는지는 확인되지 않았다. 승인 조건을 단정하는
+                    문구는 쓰지 않고, 남은 차수라는 사실만 적는다. */}
               </div>
             );
           })()}
-        {remainingSlotLabels.length > 0 && (
-          <p className="mb-2 rounded-md bg-[#FFFBEB] px-3 py-2 text-xs text-[#B45309]">
-            이번 차수를 마쳐도 <b>{remainingSlotLabels.join(", ")}</b> 이(가) 남아
-            있습니다. 마지막 차수까지 끝나야 최종 승인이 진행됩니다.
-          </p>
-        )}
         <InfoRow label="기계명" value={equipmentName} />
         {detail && (
           <InfoRow label="검사일자" value={formatDate(detail.createdAt)} />
