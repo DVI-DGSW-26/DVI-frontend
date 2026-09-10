@@ -16,6 +16,7 @@ import {
   useSaveCrossCheckResults,
 } from "../api";
 import type { AppearanceResult } from "../api";
+import { useProductSlots } from "../../inspection/api";
 import { getStage, STAGE_LABEL, STAGE_BADGE } from "../lib/stage";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import { formatDate } from "../../../lib/datetime";
@@ -142,6 +143,28 @@ export default function CrossCheckResultPage() {
     [results],
   );
 
+  // 남은 차수 안내용. 제품의 검사 슬롯(계획된 차수)에서 지금 차수 뒤에 오는 것들.
+  //
+  // 순회검사 묶음(bundle)은 "이미 시작된 차수"만 내려주므로 아직 손대지 않은 차수를
+  // 알 수 없다. 계획표에 해당하는 이 API 로 전체 차수를 얻어 현재 위치 뒤를 남은
+  // 차수로 본다.
+  //
+  // 교대(주/야)로 거르지 않는다. 검사 지시 하나에 주·야 슬롯이 함께 들어갈 수 있고
+  // (InspectionOrder.shift 주석 참고), 결재는 그 지시 전체 단위로 걸린다. 야간 차수도
+  // 같은 결재를 막고 있으므로 걸러내면 정작 남은 차수를 숨기게 된다 — 이 안내를 붙인
+  // 이유가 "결재 직전에야 막히는 왕복을 없애자" 였으니 본말이 뒤집힌다.
+  //
+  // 반대로 이 지시가 주간만 쓰는 경우에는 야간 차수가 더 붙어 보일 수 있다.
+  // 덜 알려서 막히는 것보다 더 보여주는 쪽이 안전하다고 보고 그대로 둔다.
+  const slotsQuery = useProductSlots(detail?.product.id);
+  const remainingSlotLabels = useMemo(() => {
+    const slots = slotsQuery.data;
+    if (!slots?.length || !detail) return [];
+    const currentIdx = slots.findIndex((s) => s.type === detail.type);
+    if (currentIdx < 0) return [];
+    return slots.slice(currentIdx + 1).map((s) => s.label);
+  }, [slotsQuery.data, detail]);
+
   // 경도값은 경도 추적 공정이라도 결재요청 시점엔 선택. 초품검사 등 아직 측정하지
   // 못한 경우에도 결재요청이 가능해야 함 (경도는 열처리 후 입력).
   // 건너뜀(skipped) 항목이 있어도 결재 요청 자체는 허용 — 결재자가 판단해 반려하면
@@ -197,6 +220,28 @@ export default function CrossCheckResultPage() {
     }
   };
 
+  // 건너뛴 항목의 건너뜀 표시만 해제한다. 측정값을 넣어 되돌리는 것은 "다시 측정"
+  // 쪽이고(서버가 값이 들어오면 자동 해제한다), 이 버튼은 값 없이 표시만 푸는 경우다.
+  //
+  // 저장 mutation 은 측정 흐름의 진행도가 튀는 것을 막으려고 detail 을 일부러
+  // invalidate 하지 않는다. 여기서는 화면이 바로 반영돼야 하므로 직접 다시 읽는다.
+  const handleCancelSkip = async (dimNo: number) => {
+    const meta = metaByDimNo.get(dimNo);
+    if (!meta) {
+      setToast("해제할 수 없습니다. 새로고침 후 다시 시도해주세요.");
+      return;
+    }
+    try {
+      await saveMut.mutateAsync({
+        results: [{ resultId: meta.resultId, skipped: false }],
+      });
+      await detailQuery.refetch();
+      setToast("건너뜀이 해제되었습니다");
+    } catch (err) {
+      setToast(toErrorMessage(err));
+    }
+  };
+
   const handleEditMeasuredValue = async (dimNo: number, newValue: number) => {
     const meta = metaByDimNo.get(dimNo);
     if (!meta) {
@@ -236,6 +281,13 @@ export default function CrossCheckResultPage() {
                 >
                   {STAGE_LABEL[stage]}
                 </span>
+                {remainingSlotLabels.length > 0 && (
+                  <span className="text-xs text-[#A8A8A8]">
+                    남은 차수 {remainingSlotLabels.join(" · ")}
+                  </span>
+                )}
+                {/* 결재가 언제 막히는지는 확인되지 않았다. 승인 조건을 단정하는
+                    문구는 쓰지 않고, 남은 차수라는 사실만 적는다. */}
               </div>
             );
           })()}
@@ -266,6 +318,11 @@ export default function CrossCheckResultPage() {
                   navigate(`/cross-check/${crossCheckId}/measure`, {
                     state: { editMode: true, targetDimNo: r.dimNo },
                   })
+                }
+                onCancelSkip={
+                  r.status === "skipped" && metaByDimNo.has(r.dimNo)
+                    ? () => handleCancelSkip(r.dimNo)
+                    : undefined
                 }
               />
             </li>
@@ -385,6 +442,7 @@ function StepResultCard({
   editable,
   onEditSubmit,
   onRetake,
+  onCancelSkip,
 }: {
   step: number;
   result: StepResult;
@@ -392,6 +450,8 @@ function StepResultCard({
   onEditSubmit: (value: number) => Promise<void>;
   // 건너뜀 항목에 한해 "다시 측정" 버튼을 노출하기 위한 핸들러.
   onRetake?: () => void;
+  // 값을 넣지 않고 건너뜀 표시만 푸는 경우. 건너뜀 항목에만 넘어온다.
+  onCancelSkip?: () => void;
 }) {
   const dimText = formatStandardWithTolerance(
     result.standardValue,
@@ -537,6 +597,15 @@ function StepResultCard({
             >
               <Icon icon="solar:refresh-linear" width={16} height={16} />
               다시 측정
+            </button>
+          )}
+          {onCancelSkip && (
+            <button
+              type="button"
+              onClick={onCancelSkip}
+              className="mt-2 flex h-9 w-full items-center justify-center text-xs font-medium text-[#6B7280] underline underline-offset-2 hover:text-[#374151]"
+            >
+              건너뜀 해제
             </button>
           )}
         </>
