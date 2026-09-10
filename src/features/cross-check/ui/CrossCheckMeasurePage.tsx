@@ -365,13 +365,21 @@ export default function CrossCheckMeasurePage() {
   const handleSubmitMeasured = async (measuredValue: number) => {
     if (!currentDim) return;
     try {
+      // 이 항목에 최종적으로 붙을 사진. 이번에 찍은 것이 있으면 그것이 우선이고,
+      // 없으면 서버에 이미 저장된 사진을 그대로 다시 실어 보낸다.
+      //
+      // 생략해도 서버가 기존 값을 보존하지만, 그러면 "무엇이 붙는지"가 요청에
+      // 드러나지 않아 사진이 안 바뀐 건이 생겼을 때 어느 쪽 문제인지 가릴 수가 없다.
+      // 항상 명시해서 요청만 보고도 판별되게 한다.
+      const effectiveImageUrl = uploadedImageUrl ?? currentDim.imageUrl ?? null;
+
       await saveResults.mutateAsync({
         results: [
           {
             resultId: currentDim.resultId,
             measuredValue,
-            // 사진 없이 입력한 경우 imageUrl 은 생략 (백엔드에서 선택).
-            ...(uploadedImageUrl ? { imageUrl: uploadedImageUrl } : {}),
+            // 사진이 한 번도 없었던 항목은 보낼 값이 없으므로 생략한다(백엔드에서 선택).
+            ...(effectiveImageUrl ? { imageUrl: effectiveImageUrl } : {}),
           },
         ],
       });
@@ -384,7 +392,7 @@ export default function CrossCheckMeasurePage() {
         toleranceLower: currentDim.toleranceLower,
         status: "completed",
         measuredValue,
-        imageUrl: uploadedImageUrl ?? undefined,
+        imageUrl: effectiveImageUrl ?? undefined,
       };
 
       upsertSessionResult(next);
