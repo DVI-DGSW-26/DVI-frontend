@@ -8,10 +8,14 @@ export interface PagedList<T> {
   paused: boolean;
   /** 자동 넘김 멈춤/재개. */
   togglePause: () => void;
+  /** 자동 넘김 멈춤 — 사람이 직접 고른 항목을 그 자리에 붙잡아 둘 때. */
+  pause: () => void;
   /** 수동으로 한 페이지 뒤로 (끝에서 순환). */
   prev: () => void;
   /** 수동으로 한 페이지 앞으로 (끝에서 순환). */
   next: () => void;
+  /** 특정 페이지로 바로 이동 (범위를 벗어나면 무시). */
+  goTo: (page: number) => void;
 }
 
 /**
@@ -63,15 +67,33 @@ export function usePagedList<T>(
   const prev = useCallback(() => go(-1), [go]);
   const next = useCallback(() => go(1), [go]);
   const togglePause = useCallback(() => setPaused((v) => !v), []);
+  const pause = useCallback(() => setPaused(true), []);
+
+  const goTo = useCallback(
+    (target: number) => {
+      if (target < 0 || target >= pageCount) return;
+      setPage(target);
+      // 직접 고른 직후에도 타이머를 다시 건다 — 남은 몇백 ms 만에 넘어가 버리면
+      // 눌러서 띄운 화면을 읽을 새가 없다.
+      setNudge((n) => n + 1);
+    },
+    [pageCount],
+  );
 
   const safePage = page < pageCount ? page : 0;
+  // 마지막 페이지는 앞쪽과 겹치더라도 끝에서부터 한 화면을 채운다 — 열두 건이 다섯 칸
+  // 짜리 화면에 걸리면 마지막 페이지가 두 줄만 남아, 벽에서 보면 화면이 고장 난 것처럼
+  // 보인다. 겹쳐 보여줘도 "빠짐없이 보여준다"는 성질은 그대로다.
+  const start = Math.min(safePage * size, Math.max(0, items.length - size));
   return {
     page: safePage,
     pageCount,
-    visible: items.slice(safePage * size, safePage * size + size),
+    visible: items.slice(start, start + size),
     paused,
     togglePause,
+    pause,
     prev,
     next,
+    goTo,
   };
 }

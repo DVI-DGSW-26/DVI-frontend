@@ -1,8 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { tokenStorage, refreshAccessToken } from "../../auth/api";
-import { getMonitorSnapshot } from "./monitorApi";
-import type { MonitorConnection, MonitorSnapshot } from "../type/types";
+import {
+  getMonitorQuality,
+  getMonitorSchedule,
+  getMonitorSnapshot,
+} from "./monitorApi";
+import type {
+  MonitorConnection,
+  MonitorQualityBoard,
+  MonitorScheduleBoard,
+  MonitorSnapshot,
+} from "../type/types";
 
 // 스트림이 연속 실패하면 폴링으로 내려앉는 임계값. 공장 벽 화면이라 "멈춘 화면"
 // 보다는 5초 지연이라도 계속 갱신되는 쪽이 낫다.
@@ -24,52 +33,106 @@ const sleep = (ms: number, signal: AbortSignal) =>
     });
   });
 
+/** 한 커넥션에 섞여 오는 보드들 — 이벤트 이름이 곧 화면 구분이다. */
+export interface MonitorBoardTimes {
+  snapshot: Date | null;
+  quality: Date | null;
+  schedule: Date | null;
+}
+
+export interface MonitorStream {
+  /** 페이지1 현황판 (event: snapshot). */
+  snapshot: MonitorSnapshot | null;
+  /** 페이지3 품질·불량 보드 (event: quality). */
+  quality: MonitorQualityBoard | null;
+  /** 페이지4 진행·지연 보드 (event: schedule). */
+  schedule: MonitorScheduleBoard | null;
+  connection: MonitorConnection;
+  /**
+   * 보드별 마지막 갱신 시각. 이벤트는 내용이 바뀔 때만 나가므로 보드마다 다르다 —
+   * "5분째 그대로"가 고장이 아니라 정상일 수 있다는 뜻이라, 화면에는 연결 상태와
+   * 함께 보여줘야 오해가 없다.
+   */
+  updatedAt: MonitorBoardTimes;
+  /** 셋 중 가장 최근 갱신 — 헤더 표시등용. */
+  lastEventAt: Date | null;
+}
+
+const NO_TIMES: MonitorBoardTimes = {
+  snapshot: null,
+  quality: null,
+  schedule: null,
+};
+
 /**
- * GET /monitor/stream 구독.
+ * GET /monitor/stream 구독 — 커넥션 하나로 네 페이지를 모두 먹인다.
  *
  * - 브라우저 기본 EventSource 는 Authorization 헤더를 못 실어 사용 불가 →
  *   fetch 기반 SSE 로 접속한다.
- * - 접속 즉시 스냅샷 1회, 이후 변경 시마다 전체 스냅샷이 다시 내려온다.
+ * - 페이지 구분은 이벤트 이름(snapshot/quality/schedule)이다. 페이지를 넘길 때
+ *   새로 연결하지 않는다 — 보이지 않는 페이지의 데이터도 계속 최신으로 들고 있어야
+ *   탭 배지(불량 N건·지연 N칸)가 맞고, 넘어간 순간 이미 그려져 있다.
+ * - 접속 즉시 서버가 캐싱해 둔 최신값 3종이 한 번에 온다. 앱 기동 직후라 캐시가
+ *   아직 없으면 최대 한 주기(5초) 비므로, REST 로 한 번 먼저 채운다.
+ * - 이후엔 페이로드가 바뀔 때만 온다. 매 주기 재전송이 아니라 받을 때마다 통째로
+ *   갈아끼워도 불필요한 리렌더가 생기지 않는다.
  * - 액세스 토큰 만료(401)는 axios 인터셉터가 잡아주지 않는 경로이므로
  *   refreshAccessToken() 으로 직접 재발급하고 새 토큰으로 재연결한다.
  * - 재연결은 라이브러리 자동 재시도를 끄고 직접 돌린다. 매 시도마다 헤더를
  *   새로 만들어야 재발급된 토큰이 실제로 반영되기 때문.
  */
-export function useMonitorStream() {
+export function useMonitorStream(): MonitorStream {
   const [snapshot, setSnapshot] = useState<MonitorSnapshot | null>(null);
+  const [quality, setQuality] = useState<MonitorQualityBoard | null>(null);
+  const [schedule, setSchedule] = useState<MonitorScheduleBoard | null>(null);
   const [connection, setConnection] = useState<MonitorConnection>("connecting");
-  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
-
-  // 렌더와 무관한 최신값 참조 — 이펙트를 재실행시키지 않기 위해 ref 로 둔다.
-  const applyRef = useRef((next: MonitorSnapshot) => {
-    setSnapshot(next);
-    setUpdatedAt(new Date());
-  });
+  const [updatedAt, setUpdatedAt] = useState<MonitorBoardTimes>(NO_TIMES);
 
   useEffect(() => {
     const controller = new AbortController();
     const { signal } = controller;
-    const apply = applyRef.current;
 
-    // 스트림이 첫 스냅샷을 주기 전에도 화면이 비어 있지 않도록 REST 로 먼저 채운다.
-    void getMonitorSnapshot(signal)
-      .then(apply)
-      .catch(() => {
-        // 실패해도 스트림이 곧 채워주므로 무시.
-      });
+    // useState 세터는 렌더가 바뀌어도 같은 참조라 이펙트 안에서 그대로 써도 된다.
+    const stamp = (key: keyof MonitorBoardTimes) =>
+      setUpdatedAt((prev) => ({ ...prev, [key]: new Date() }));
+
+    const apply = {
+      snapshot: (v: MonitorSnapshot) => {
+        setSnapshot(v);
+        stamp("snapshot");
+      },
+      quality: (v: MonitorQualityBoard) => {
+        setQuality(v);
+        stamp("quality");
+      },
+      schedule: (v: MonitorScheduleBoard) => {
+        setSchedule(v);
+        stamp("schedule");
+      },
+    };
+
+    /** 세 보드를 한 번씩 REST 로 받아 채운다. 하나가 실패해도 나머지는 채운다. */
+    const fetchAll = () =>
+      Promise.allSettled([
+        getMonitorSnapshot(signal).then(apply.snapshot),
+        getMonitorQuality(signal).then(apply.quality),
+        getMonitorSchedule(signal).then(apply.schedule),
+      ]);
+
+    // 스트림이 첫 값을 주기 전에도 화면이 비어 있지 않도록 REST 로 먼저 채운다.
+    void fetchAll();
 
     let failures = 0;
 
     async function poll() {
       setConnection("polling");
       while (!signal.aborted) {
-        try {
-          apply(await getMonitorSnapshot(signal));
-          setConnection("polling");
-        } catch {
-          if (signal.aborted) return;
-          setConnection("down");
-        }
+        const results = await fetchAll();
+        if (signal.aborted) return;
+        // 하나라도 받았으면 화면은 갱신되고 있다 — 전멸일 때만 끊김으로 본다.
+        setConnection(
+          results.some((r) => r.status === "fulfilled") ? "polling" : "down",
+        );
         await sleep(POLL_INTERVAL_MS, signal);
       }
     }
@@ -98,9 +161,21 @@ export function useMonitorStream() {
             },
             onmessage: (ev) => {
               // 하트비트(:hb) 는 주석 프레임이라 여기까지 오지 않는다.
-              if (ev.event !== "snapshot" || !ev.data) return;
+              if (!ev.data) return;
               try {
-                apply(JSON.parse(ev.data) as MonitorSnapshot);
+                // 모르는 이벤트 이름은 조용히 흘린다 — 서버가 페이지를 더 늘려도
+                // 이 화면이 깨지지 않아야 한다.
+                switch (ev.event) {
+                  case "snapshot":
+                    apply.snapshot(JSON.parse(ev.data) as MonitorSnapshot);
+                    break;
+                  case "quality":
+                    apply.quality(JSON.parse(ev.data) as MonitorQualityBoard);
+                    break;
+                  case "schedule":
+                    apply.schedule(JSON.parse(ev.data) as MonitorScheduleBoard);
+                    break;
+                }
               } catch {
                 // 깨진 프레임 1건 때문에 연결을 끊지는 않는다.
               }
@@ -149,5 +224,14 @@ export function useMonitorStream() {
     return () => controller.abort();
   }, []);
 
-  return { snapshot, connection, updatedAt };
+  const lastEventAt = latest(updatedAt);
+  return { snapshot, quality, schedule, connection, updatedAt, lastEventAt };
+}
+
+function latest(times: MonitorBoardTimes): Date | null {
+  let best: Date | null = null;
+  for (const t of [times.snapshot, times.quality, times.schedule]) {
+    if (t && (!best || t > best)) best = t;
+  }
+  return best;
 }
