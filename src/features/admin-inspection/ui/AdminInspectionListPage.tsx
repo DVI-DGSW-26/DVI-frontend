@@ -12,6 +12,7 @@ import DeleteInspectionModal from "../../my-inspection/ui/DeleteInspectionModal"
 import Toast from "../../inspection/ui/Toast";
 import { formatDate } from "../../../lib/datetime";
 import ShiftBadge from "../../../components/shared/ShiftBadge";
+import { useViewState } from "../../../lib/viewState";
 
 type StatusTab = "ALL" | "DRAFT" | "COMPLETED" | "INCOMPLETE";
 
@@ -78,7 +79,8 @@ function toDeleteErrorMessage(err: unknown): string {
 }
 
 export default function AdminInspectionListPage() {
-  const [tab, setTab] = useState<StatusTab>("DRAFT");
+  // 보던 탭은 뒤로가기로 돌아왔을 때 그대로여야 한다.
+  const [tab, setTab] = useViewState<StatusTab>("tab", "DRAFT");
   const [deleteTarget, setDeleteTarget] = useState<AdminInspection | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 

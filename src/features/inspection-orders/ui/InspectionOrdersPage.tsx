@@ -10,6 +10,7 @@ import {
 import type { InspectionOrder, InspectionOrderStatus } from "../api";
 import { orderWorkers, workerNames } from "../lib/orderWorkers";
 import { kstDateKey } from "../../../lib/datetime";
+import { useViewState } from "../../../lib/viewState";
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "대기",
@@ -79,8 +80,9 @@ function statusBadge(status: InspectionOrderStatus) {
 export default function InspectionOrdersPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<InspectionOrder | null>(null);
-  const [selectedDate, setSelectedDate] = useState("");
-  const [keyword, setKeyword] = useState("");
+  // 지시를 눌러 다른 화면에 갔다 돌아와도 걸어 둔 조건 그대로.
+  const [selectedDate, setSelectedDate] = useViewState("selectedDate", "");
+  const [keyword, setKeyword] = useViewState("keyword", "");
   const isMobile = useMediaQuery("(max-width: 767px)");
   const { data: orders = [], isLoading, isError } = useInspectionOrderList();
   const { mutate: remove, isPending: isDeleting } = useDeleteInspectionOrder();

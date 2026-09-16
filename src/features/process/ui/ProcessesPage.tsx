@@ -6,6 +6,7 @@ import type { ProcessInfo } from "../api";
 import ProcessFormDrawer from "./ProcessFormDrawer";
 import ProcessScheduleDrawer from "./ProcessScheduleDrawer";
 import { useAllProcessSchedules } from "../../inspection-schedule/api";
+import { useViewState } from "../../../lib/viewState";
 
 // 공정 설정 3개를 목록에서 한눈에 보기 위한 칩.
 const FLAG_CHIPS: { key: keyof ProcessInfo; label: string; style: string }[] = [
@@ -82,9 +83,10 @@ function ActiveBadge({ isActive }: { isActive: boolean }) {
 export default function ProcessesPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ProcessInfo | null>(null);
-  const [showInactive, setShowInactive] = useState(false);
+  // 다른 화면에 갔다 뒤로 돌아와도 걸어 둔 조건 그대로.
+  const [showInactive, setShowInactive] = useViewState("showInactive", false);
   const [scheduleTarget, setScheduleTarget] = useState<ProcessInfo | null>(null);
-  const [keyword, setKeyword] = useState("");
+  const [keyword, setKeyword] = useViewState("keyword", "");
 
   const isMobile = useMediaQuery("(max-width: 767px)");
   // 비활성 포함으로 한 번만 받아두고 화면에서 거른다 — 토글할 때마다 다시 받지 않는다.
