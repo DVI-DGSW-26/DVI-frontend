@@ -10,6 +10,7 @@ import { AxiosError } from "axios";
 import { useQueryClient } from "@tanstack/react-query";
 import { accountStorage, getMe, login as loginApi, tokenStorage } from "./api";
 import { stopWebPush } from "../notification/lib/webPush";
+import { clearViewState } from "../../lib/viewState";
 import type { LoginRequest, StoredAccount, User } from "./api";
 
 interface AuthContextValue {
@@ -85,6 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       accountStorage.upsert(me);
       // 이전 사용자로 받아둔 캐시가 새 계정 화면에 그대로 뜨는 것을 막는다.
       queryClient.clear();
+      // 목록 화면에 기억해 둔 필터도 같이 버린다 — 앞 사용자가 걸어 둔 조건이다.
+      clearViewState();
       setUser(me);
       setAccounts(accountStorage.list());
       return me;
@@ -103,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         accountStorage.upsert(me);
         // 역할마다 보이는 데이터가 다르므로 이전 계정의 캐시는 통째로 버린다.
         queryClient.clear();
+        clearViewState();
         setUser(me);
         setAccounts(accountStorage.list());
         return me;
@@ -123,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void stopWebPush(tokenStorage.getAccess() ?? undefined);
     tokenStorage.clearAll();
     queryClient.clear();
+    clearViewState();
     setUser(null);
     setAccounts([]);
   }, [queryClient]);

@@ -14,6 +14,7 @@ import {
 } from "../../inspection/api";
 import type { StartNextInspectionErrorData } from "../../inspection/type/types";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
+import { useViewState } from "../../../lib/viewState";
 import type { MyInspection } from "../type/types";
 import {
   DATE_FILTERS,
@@ -49,10 +50,14 @@ function filterByTab(inspections: MyInspection[], tab: Tab): MyInspection[] {
 
 export default function MyInspectionPage() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>("ALL");
+  // 검사 상세를 보고 뒤로 돌아와도 보던 탭·기간 그대로.
+  const [tab, setTab] = useViewState<Tab>("tab", "ALL");
   const [deleteTarget, setDeleteTarget] = useState<MyInspection | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [dateFilter, setDateFilter] = useState<DateFilter>("TODAY");
+  const [dateFilter, setDateFilter] = useViewState<DateFilter>(
+    "dateFilter",
+    "TODAY",
+  );
 
   const inspectionsQuery = useMyInspectionList({ includeFinished: true });
   // 백엔드 실제 슬롯 순서 기반 "다음 시점" 계산기 — 하드코딩 시퀀스와 어긋나도 정확.

@@ -20,6 +20,7 @@ import {
 import DateRangeFilter from "./DateRangeFilter";
 import DeleteInspectionModal from "../../my-inspection/ui/DeleteInspectionModal";
 import Toast from "../../inspection/ui/Toast";
+import { useViewState } from "../../../lib/viewState";
 
 function toDeleteErrorMessage(err: unknown): string {
   if (err instanceof AxiosError) {
@@ -84,8 +85,11 @@ export default function CrossCheckApprovalPage() {
     isError,
   } = usePendingCrossChecks(processFilter);
   // 진입 시 기본으로 오늘자 결재만 보여주고, 필요하면 필터를 넓힐 수 있게 한다.
-  const [dateFilter, setDateFilter] =
-    useState<DateFilterValue>(TODAY_DATE_FILTER);
+  // 결재 상세를 열었다 돌아오면 넓혀 둔 기간이 그대로 유지된다.
+  const [dateFilter, setDateFilter] = useViewState<DateFilterValue>(
+    "dateFilter",
+    TODAY_DATE_FILTER,
+  );
   // 목록에서 바로 삭제 — 확인 모달 대상.
   const [deleteTarget, setDeleteTarget] = useState<CrossCheckSummary | null>(
     null,

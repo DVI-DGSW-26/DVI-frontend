@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { AxiosError } from "axios";
 import {
   useApprovalUsers,
@@ -10,6 +10,7 @@ import {
   STATUS_BADGE,
 } from "../../user-search/lib/userLabels";
 import type { UserDetail } from "../../user-search/api/types";
+import { useViewState } from "../../../lib/viewState";
 
 type Tab = "PENDING" | "COMPLETED";
 
@@ -26,7 +27,8 @@ const AccountApprovalPageMobile = () => {
   const { data: users = [], isLoading, isError } = useApprovalUsers();
   const { mutate: approve, isPending, variables } = useApproveUser();
 
-  const [tab, setTab] = useState<Tab>("PENDING");
+  // 보던 탭은 뒤로가기로 돌아왔을 때 그대로여야 한다.
+  const [tab, setTab] = useViewState<Tab>("tab", "PENDING");
 
   const pending = useMemo(
     () =>

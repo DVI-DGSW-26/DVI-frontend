@@ -4,6 +4,7 @@ import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import { useCustomerList, useDeleteCustomer } from "../api";
 import type { Customer } from "../api";
 import CustomerFormDrawer from "./CustomerFormDrawer";
+import { useViewState } from "../../../lib/viewState";
 
 function formatDate(iso: string): string {
   if (!iso) return "-";
@@ -13,7 +14,8 @@ function formatDate(iso: string): string {
 export default function CustomersPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Customer | null>(null);
-  const [keyword, setKeyword] = useState("");
+  // 다른 화면에 갔다 뒤로 돌아와도 검색어 그대로.
+  const [keyword, setKeyword] = useViewState("keyword", "");
 
   const isMobile = useMediaQuery("(max-width: 767px)");
   const { data: customers = [], isLoading, isError } = useCustomerList();

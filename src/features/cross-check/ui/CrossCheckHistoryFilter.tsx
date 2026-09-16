@@ -1,4 +1,4 @@
-import { useMemo, useState, type KeyboardEvent } from "react";
+import { useMemo, type KeyboardEvent } from "react";
 import { Icon } from "@iconify/react";
 import CheckboxMultiSelect, {
   type MultiOption,
@@ -6,6 +6,7 @@ import CheckboxMultiSelect, {
 import { EMPTY_HISTORY_FILTER, type HistoryFilter } from "../lib/historyFilter";
 import type { CrossCheckSummary } from "../api";
 import { useProcessOptions } from "../../process";
+import { useViewState } from "../../../lib/viewState";
 
 // 통합관리자 보고서 페이지와 동일한 필터 UI를 "내 결재 이력"에 적용.
 // 보고서의 "결과(합격/불합격)"는 순회검사 요약엔 없어서 "상태(대기/승인/반려)"로 대체.
@@ -40,11 +41,23 @@ export default function CrossCheckHistoryFilter({
     return [...map.entries()].map(([value, label]) => ({ value, label }));
   }, [items]);
 
-  const [keyword, setKeyword] = useState("");
-  const [date, setDate] = useState("");
-  const [processes, setProcesses] = useState<string[]>([]);
-  const [products, setProducts] = useState<string[]>([]);
-  const [statuses, setStatuses] = useState<string[]>([]);
+  // 입력칸 상태. 적용된 필터(부모의 historyFilter)와 같이 기억해 둬야
+  // 뒤로가기로 돌아왔을 때 화면의 조건과 목록이 어긋나지 않는다.
+  // 키 앞에 history. 를 붙이는 건 같은 경로의 다른 필터와 겹치지 않게 하기 위함.
+  const [keyword, setKeyword] = useViewState("history.keyword", "");
+  const [date, setDate] = useViewState("history.date", "");
+  const [processes, setProcesses] = useViewState<string[]>(
+    "history.processes",
+    [],
+  );
+  const [products, setProducts] = useViewState<string[]>(
+    "history.products",
+    [],
+  );
+  const [statuses, setStatuses] = useViewState<string[]>(
+    "history.statuses",
+    [],
+  );
 
   const apply = () =>
     onChange({ keyword, date, processes, products, statuses });
