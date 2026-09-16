@@ -5,6 +5,7 @@ import { useDeleteEquipment, useEquipmentList } from "../api";
 import type { Equipment } from "../api";
 import { useProcessLabel, useProcessOptions } from "../../process";
 import EquipmentFormDrawer from "./EquipmentFormDrawer";
+import { useViewState } from "../../../lib/viewState";
 
 // 공정 코드 또는 "ALL"(전체). 공정은 DB 데이터라 값을 고정하지 않는다.
 type ProcessFilter = string;
@@ -38,8 +39,9 @@ function formatDate(iso: string): string {
 export default function EquipmentPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Equipment | null>(null);
-  const [filter, setFilter] = useState<ProcessFilter>("ALL");
-  const [keyword, setKeyword] = useState("");
+  // 다른 화면에 갔다 뒤로 돌아와도 걸어 둔 조건 그대로.
+  const [filter, setFilter] = useViewState<ProcessFilter>("filter", ALL_FILTER);
+  const [keyword, setKeyword] = useViewState("keyword", "");
 
   const isMobile = useMediaQuery("(max-width: 767px)");
   const processOptions = useProcessOptions();

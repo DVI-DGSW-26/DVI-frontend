@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Icon } from "@iconify/react";
 import Select, { type StylesConfig } from "react-select";
 import AdminReportCard from "./AdminReportCard";
@@ -7,6 +7,7 @@ import {
   useEquipmentList,
   useProductList,
 } from "../../inspection-orders/api";
+import { useViewState } from "../../../lib/viewState";
 
 type Option = { value: string; label: string };
 
@@ -72,16 +73,29 @@ export default function ReportPage() {
   const { data: equipment = [] } = useEquipmentList();
   const { data: products = [] } = useProductList();
 
-  const [searchInput, setSearchInput] = useState("");
-  const [appliedSearch, setAppliedSearch] = useState("");
+  // 보고서 상세에 들어갔다 뒤로 돌아와도 걸어 둔 조건이 그대로 남아 있어야 한다.
+  const [searchInput, setSearchInput] = useViewState("searchInput", "");
+  const [appliedSearch, setAppliedSearch] = useViewState("appliedSearch", "");
 
-  const [draftDate, setDraftDate] = useState("");
-  const [draftEquipment, setDraftEquipment] = useState<Option | null>(null);
-  const [draftProduct, setDraftProduct] = useState<Option | null>(null);
+  const [draftDate, setDraftDate] = useViewState("draftDate", "");
+  const [draftEquipment, setDraftEquipment] = useViewState<Option | null>(
+    "draftEquipment",
+    null,
+  );
+  const [draftProduct, setDraftProduct] = useViewState<Option | null>(
+    "draftProduct",
+    null,
+  );
 
-  const [appliedDate, setAppliedDate] = useState("");
-  const [appliedEquipmentName, setAppliedEquipmentName] = useState("");
-  const [appliedProductCode, setAppliedProductCode] = useState("");
+  const [appliedDate, setAppliedDate] = useViewState("appliedDate", "");
+  const [appliedEquipmentName, setAppliedEquipmentName] = useViewState(
+    "appliedEquipmentName",
+    "",
+  );
+  const [appliedProductCode, setAppliedProductCode] = useViewState(
+    "appliedProductCode",
+    "",
+  );
 
   const equipmentOptions = useMemo<Option[]>(
     () =>

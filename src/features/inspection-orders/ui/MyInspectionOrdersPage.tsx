@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useMyInspectionOrders } from "../api";
@@ -6,6 +6,7 @@ import type { InspectionOrder, InspectionOrderStatus } from "../api";
 import type { InspectionProcess } from "../../inspection/type/types";
 import { kstDateKey } from "../../../lib/datetime";
 import ShiftBadge from "../../../components/shared/ShiftBadge";
+import { useViewState } from "../../../lib/viewState";
 
 // 자주검사자(생산 작업자)가 생산 관리자에게 배정받은 검사 지시 목록 (GET /inspection-order/my).
 // 읽기 전용 — 실제 자주검사 수행은 기존 검사 흐름에서 진행한다.
@@ -41,7 +42,10 @@ function statusBadge(status: InspectionOrderStatus) {
 export default function MyInspectionOrdersPage() {
   const navigate = useNavigate();
   // 진입 시 기본으로 오늘자 지시만 보여준다(KST 기준). 초기화하면 전체가 보인다.
-  const [selectedDate, setSelectedDate] = useState(() => kstDateKey(new Date()));
+  // 시점 선택 화면에 갔다 뒤로 돌아오면 고른 날짜 그대로.
+  const [selectedDate, setSelectedDate] = useViewState("selectedDate", () =>
+    kstDateKey(new Date()),
+  );
   const { data: orders = [], isLoading, isError } = useMyInspectionOrders();
 
   const filtered = useMemo(() => {

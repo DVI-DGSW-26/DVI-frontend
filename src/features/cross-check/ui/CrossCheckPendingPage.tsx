@@ -43,6 +43,7 @@ import {
   type HistoryFilter,
 } from "../lib/historyFilter";
 import Toast from "../../inspection/ui/Toast";
+import { useViewState } from "../../../lib/viewState";
 
 type Tab = "assigned" | "history";
 
@@ -72,7 +73,8 @@ const CrossCheckPendingPage = () => {
   const [searchParams] = useSearchParams();
   // 품질시스템현황에서 카운트 카드 클릭 시 ?tab=history|assigned 로 진입.
   const initialTab: Tab = searchParams.get("tab") === "history" ? "history" : "assigned";
-  const [tab, setTab] = useState<Tab>(initialTab);
+  // 뒤로가기로 돌아오면 보던 탭 그대로. 카운트 카드로 새로 들어오면 그 탭부터.
+  const [tab, setTab] = useViewState<Tab>("tab", initialTab);
   const [toast, setToast] = useState<string | null>(null);
   const [startingId, setStartingId] = useState<number | null>(null);
   const processLabel = useProcessLabel();
@@ -90,11 +92,15 @@ const CrossCheckPendingPage = () => {
   const [cancelError, setCancelError] = useState<string | null>(null);
   // 탭별 검사 일시 필터 (할당 대기 / 내 결재 이력 따로 유지).
   // 할당 대기는 진입 시 오늘자 검사만 기본 노출.
-  const [assignedFilter, setAssignedFilter] =
-    useState<DateFilterValue>(TODAY_DATE_FILTER);
+  const [assignedFilter, setAssignedFilter] = useViewState<DateFilterValue>(
+    "assignedFilter",
+    TODAY_DATE_FILTER,
+  );
   // 내 결재 이력은 통합관리자 보고서와 동일한 다중 필터(검색어/날짜/공정/제품/상태).
-  const [historyFilter, setHistoryFilter] =
-    useState<HistoryFilter>(EMPTY_HISTORY_FILTER);
+  const [historyFilter, setHistoryFilter] = useViewState<HistoryFilter>(
+    "historyFilter",
+    EMPTY_HISTORY_FILTER,
+  );
 
   // 공정 필터는 서버에 보내 목록 자체를 좁힌다(빈 배열이면 전체).
   // 선택 상태는 이 기기의 localStorage 에만 남아 새로고침해도 유지된다.

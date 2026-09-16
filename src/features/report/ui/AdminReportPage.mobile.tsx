@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useReportList } from "../api";
@@ -6,6 +6,7 @@ import AdminReportCard from "./AdminReportCard";
 import CheckboxMultiSelect, { type MultiOption } from "./CheckboxMultiSelect";
 import { useProductList } from "../../inspection-orders/api";
 import { useProcessOptions } from "../../process";
+import { useViewState } from "../../../lib/viewState";
 
 const AdminReportPageMobile = () => {
   const navigate = useNavigate();
@@ -22,15 +23,32 @@ const AdminReportPageMobile = () => {
     [products],
   );
 
-  const [draftKeyword, setDraftKeyword] = useState("");
-  const [draftDate, setDraftDate] = useState("");
-  const [draftProcesses, setDraftProcesses] = useState<string[]>([]);
-  const [draftProducts, setDraftProducts] = useState<string[]>([]);
+  // 보고서 상세를 보고 뒤로 돌아오면 걸어 둔 조건 그대로 다시 보여야 한다.
+  // 입력칸(draft)과 적용된 조건(applied)을 같이 기억해 둬야 화면과 목록이 어긋나지 않는다.
+  const [draftKeyword, setDraftKeyword] = useViewState("draftKeyword", "");
+  const [draftDate, setDraftDate] = useViewState("draftDate", "");
+  const [draftProcesses, setDraftProcesses] = useViewState<string[]>(
+    "draftProcesses",
+    [],
+  );
+  const [draftProducts, setDraftProducts] = useViewState<string[]>(
+    "draftProducts",
+    [],
+  );
 
-  const [appliedKeyword, setAppliedKeyword] = useState("");
-  const [appliedDate, setAppliedDate] = useState("");
-  const [appliedProcesses, setAppliedProcesses] = useState<string[]>([]);
-  const [appliedProducts, setAppliedProducts] = useState<string[]>([]);
+  const [appliedKeyword, setAppliedKeyword] = useViewState(
+    "appliedKeyword",
+    "",
+  );
+  const [appliedDate, setAppliedDate] = useViewState("appliedDate", "");
+  const [appliedProcesses, setAppliedProcesses] = useViewState<string[]>(
+    "appliedProcesses",
+    [],
+  );
+  const [appliedProducts, setAppliedProducts] = useViewState<string[]>(
+    "appliedProducts",
+    [],
+  );
 
   const filtered = useMemo(() => {
     const kw = appliedKeyword.trim().toLowerCase();
