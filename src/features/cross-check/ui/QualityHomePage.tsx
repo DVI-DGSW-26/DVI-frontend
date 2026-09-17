@@ -8,14 +8,20 @@ import type { NotificationResponse } from "../../notification/api";
 import { resolveNotificationLink } from "../../notification/lib/resolveNotificationLink";
 import {
   useAssignedCrossChecks,
+  useCreateCrossCheck,
   useMyCrossChecks,
   useMyDelegation,
   useReopenCrossCheck,
 } from "../api";
-import type { CrossCheckSummary } from "../api";
+import type { AssignedInspection, CrossCheckSummary } from "../api";
 import { elapsedFrom } from "../lib/elapsed";
-import { countUnprocessed } from "../lib/assigned";
+import { isUnprocessed } from "../lib/assigned";
+import { TODAY_DATE_FILTER, matchesDateFilter } from "../lib/dateFilter";
 import { formatDateTime } from "../../../lib/datetime";
+import CrossCheckCard from "./CrossCheckCard";
+
+// 홈에는 할 수 있는 검사 중 가장 오래 기다린 몇 건만 — 나머지는 순회검사 현황에서.
+const HOME_ACTIONABLE_LIMIT = 5;
 
 const QualityHomePage = () => {
   const navigate = useNavigate();
@@ -29,10 +35,53 @@ const QualityHomePage = () => {
   const reopenMut = useReopenCrossCheck();
   const [reopeningId, setReopeningId] = useState<number | null>(null);
   const [reopenError, setReopenError] = useState<string | null>(null);
+  const createMut = useCreateCrossCheck();
+  const [startingId, setStartingId] = useState<number | null>(null);
+  const [startError, setStartError] = useState<string | null>(null);
 
-  // 미처리 = 아직 아무도 시작하지 않은 건. 진행중(IN_PROGRESS)은 순회검사 목록의
-  // 미처리 카드와 같은 기준으로 제외해 두 화면 숫자를 맞춘다.
-  const pendingCount = useMemo(() => countUnprocessed(assigned), [assigned]);
+  // 미처리 = 오늘 검사 중 지금 시작(또는 이어받기)할 수 있는 건. 순회검사 목록의
+  // 기본 필터(오늘)·미처리 카드와 같은 기준이라 두 화면 숫자가 맞는다.
+  // 홈 목록도 이 건들만 대기시간순으로 보여준다.
+  const actionable = useMemo(
+    () =>
+      assigned
+        .filter(
+          (i) =>
+            isUnprocessed(i) &&
+            matchesDateFilter(
+              i.completedAt ?? i.createdAt ?? i.inspectionTime,
+              TODAY_DATE_FILTER,
+            ),
+        )
+        .sort(
+          (a, b) =>
+            elapsedFrom(b.completedAt).minutes -
+            elapsedFrom(a.completedAt).minutes,
+        ),
+    [assigned],
+  );
+  const pendingCount = actionable.length;
+
+  const handleStart = async (item: AssignedInspection) => {
+    if (createMut.isPending) return;
+    setStartingId(item.inspectionId);
+    setStartError(null);
+    try {
+      const detail = await createMut.mutateAsync({
+        inspectionId: item.inspectionId,
+      });
+      navigate(`/cross-check/${detail.crossCheckId}/measure`);
+    } catch (err) {
+      setStartError(
+        err instanceof AxiosError
+          ? err.response?.data?.message ??
+              "이미 다른 담당자가 진행 중이거나 시작에 실패했습니다."
+          : "순회검사 시작에 실패했습니다.",
+      );
+    } finally {
+      setStartingId(null);
+    }
+  };
 
   const handleNotificationClick = (n: NotificationResponse) => {
     if (!n.isRead) markAsRead.mutate(n.id);
@@ -179,6 +228,39 @@ const QualityHomePage = () => {
       >
         직전 작업 이어하기
       </button>
+
+      {actionable.length > 0 && (
+        <section>
+          <div className="mb-2 flex items-baseline justify-between">
+            <h2 className="text-sm font-semibold text-[#212121]">
+              지금 할 수 있는 검사
+            </h2>
+            <button
+              type="button"
+              onClick={() => navigate("/cross-checks")}
+              className="text-xs font-medium text-[#931B82]"
+            >
+              전체 보기
+            </button>
+          </div>
+          <ul className="flex flex-col gap-2">
+            {actionable.slice(0, HOME_ACTIONABLE_LIMIT).map((item) => (
+              <li key={item.inspectionId}>
+                <CrossCheckCard
+                  item={item}
+                  onClick={handleStart}
+                  isStarting={startingId === item.inspectionId}
+                />
+              </li>
+            ))}
+          </ul>
+          {startError && (
+            <p className="mt-2 rounded-md bg-[#FEF2F2] px-3 py-2 text-xs text-[#B91C1C]">
+              {startError}
+            </p>
+          )}
+        </section>
+      )}
 
       {rejectedCrossChecks.length > 0 && (
         <section>
