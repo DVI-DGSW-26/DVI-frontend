@@ -23,6 +23,15 @@ export function isUnprocessed(item: AssignedInspection): boolean {
   return item.status !== "IN_PROGRESS" || isTakeoverable(item);
 }
 
+// 배정 목록 정렬 우선순위 — 낮을수록 위. 지금 할 수 있는 건을 맨 위로 올리고,
+// 흐리게(비활성) 보이는 건은 아래로 내려 스크롤 없이 할 일부터 보이게 한다.
+// 0: 시작/이어받기 가능, 1: 남이 진행 중, 2: 이미 끝남(차수 완료/결재 대기)
+export function assignedSortRank(item: AssignedInspection): number {
+  if (isFinished(item)) return 2;
+  if (isUnprocessed(item)) return 0;
+  return 1;
+}
+
 export function countUnprocessed(items: AssignedInspection[]): number {
   return items.filter(isUnprocessed).length;
 }

@@ -16,7 +16,12 @@ import {
   useProcessList,
   useProcessOptions,
 } from "../../process";
-import { countUnprocessed, isFinished, isTakeoverable } from "../lib/assigned";
+import {
+  assignedSortRank,
+  countUnprocessed,
+  isFinished,
+  isTakeoverable,
+} from "../lib/assigned";
 import { toCancelErrorMessage } from "../lib/cancelError";
 import {
   getStage,
@@ -130,16 +135,19 @@ const CrossCheckPendingPage = () => {
 
   const sortedAssigned = useMemo(
     () =>
+      // 할 수 있는 건 → 남이 진행 중 → 이미 끝난 건 순, 같은 순위 안에서는 대기시간순.
       [...assigned].sort(
         (a, b) =>
+          assignedSortRank(a) - assignedSortRank(b) ||
           elapsedFrom(b.completedAt).minutes -
-          elapsedFrom(a.completedAt).minutes,
+            elapsedFrom(a.completedAt).minutes,
       ),
     [assigned],
   );
 
   // 공정별로 묶는다 — 각 그룹 안에서는 위 대기시간순 정렬 유지.
-  // 섹션 순서는 서버 공정 목록 순서를 따르고, 목록에 없는 공정은 뒤에 붙인다.
+  // 섹션 순서는 할 수 있는 검사가 있는 공정 먼저, 그 안에서는 서버 공정 목록 순서를
+  // 따르고, 목록에 없는 공정은 뒤에 붙인다.
   // 내 순회검사 id 전체 — 새 배정 목록에서 중복/잔상 노출 제외용.
   // (내 진행 건은 "진행 중(이어하기)", 완료 건은 "내 결재 이력"에서 보임)
   // ※ 백엔드 assigned 가 완료(PENDING_APPROVAL 등)된 건도 IN_PROGRESS 로 계속 반환하는
@@ -180,10 +188,13 @@ const CrossCheckPendingPage = () => {
       ...processOrder.filter((p) => map.has(p)),
       ...[...map.keys()].filter((p) => !processOrder.includes(p)),
     ];
-    return ordered.map((process) => ({
-      process,
-      items: map.get(process) ?? [],
-    }));
+    // 할 수 있는 검사가 있는 공정을 위로 — 그룹 안은 이미 순위순이라 첫 카드가 그 공정의
+    // 최우선 순위다. 같은 순위끼리는 서버 공정 목록 순서 유지(sort 는 안정 정렬).
+    return ordered
+      .map((process) => ({ process, items: map.get(process) ?? [] }))
+      .sort(
+        (a, b) => assignedSortRank(a.items[0]) - assignedSortRank(b.items[0]),
+      );
   }, [filteredAssigned, processOrder]);
 
   // 결재 요청 이력: DRAFT 제외 (DRAFT 는 측정 중 — 할당 대기 탭에서 이어하기로 노출)
