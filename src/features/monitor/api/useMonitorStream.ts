@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { tokenStorage, refreshAccessToken } from "../../auth/api";
+import { apiBase } from "../../../lib/apiServer";
 import {
   getMonitorQuality,
   getMonitorSchedule,
@@ -140,7 +141,8 @@ export function useMonitorStream(): MonitorStream {
     async function stream() {
       while (!signal.aborted) {
         try {
-          await fetchEventSource("/api/monitor/stream", {
+          // 세션 서버(운영/테스트)는 재연결마다 다시 읽는다 — 토큰과 짝이 맞아야 한다.
+          await fetchEventSource(`${apiBase()}/monitor/stream`, {
             signal,
             headers: {
               Authorization: `Bearer ${tokenStorage.getAccess() ?? ""}`,

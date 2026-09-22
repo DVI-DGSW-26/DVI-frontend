@@ -14,6 +14,7 @@ import {
 import type { CreateInspectionOrderRequest, InspectionOrder } from "./types";
 import { getUsers } from "./userApi";
 import type { Role } from "../../auth/type/types";
+import { isTestSession } from "../../../lib/apiServer";
 
 export const inspectionOrderKeys = {
   all: ["inspection-orders"] as const,
@@ -55,11 +56,18 @@ export function useProductList() {
 }
 
 export function useUsersByRole(role: Role) {
+  // 테스트 계정 세션(dev 서버)에서는 테스트 계정도 대상에 넣는다 — 한 계정으로
+  // 배정부터 승인까지 돌려 보려면 자기 자신을 고를 수 있어야 한다. 운영 목록에는
+  // 섞이지 않도록 테스트 세션일 때만.
+  const includeTest = isTestSession();
   return useQuery({
     queryKey: userKeys.byRole(role),
     queryFn: getUsers,
     // 상태(ACTIVE/PENDING 등)와 무관하게 해당 역할 전원 노출 — 미승인 작업자에게도 지시 가능.
-    select: (users) => users.filter((u) => u.role === role),
+    select: (users) =>
+      users.filter(
+        (u) => u.role === role || (includeTest && u.role === "TEST"),
+      ),
   });
 }
 

@@ -4,6 +4,7 @@ import Logo from "../../assets/Logo.svg";
 import { useAuth } from "../../features/auth/AuthContext";
 import { ROLE_HOME } from "../../features/auth/constants";
 import type { Role } from "../../features/auth/api";
+import { visibleTabsFor } from "./tabVisibility";
 
 type TabItem = {
   label: string;
@@ -31,9 +32,7 @@ const TABS: TabItem[] = [
 
 const TabBarWeb = () => {
   const { user } = useAuth();
-  const visibleTabs = user
-    ? TABS.filter((tab) => tab.roles.includes(user.role))
-    : [];
+  const visibleTabs = visibleTabsFor(TABS, user?.role);
   const homePath = user ? ROLE_HOME[user.role] : "/";
 
   return (
@@ -44,7 +43,7 @@ const TabBarWeb = () => {
       </Link>
     </div>
 
-    <nav className="flex flex-1 flex-col gap-1 w-full px-4">
+    <nav className="flex min-h-0 flex-1 flex-col gap-1 w-full overflow-y-auto px-4">
       {visibleTabs.map((tab) => (
         <NavLink
           key={tab.to}
