@@ -196,6 +196,10 @@ export const accountStorage = {
   activeLoginId(): string | null {
     return readRaw(ACTIVE_KEY);
   },
+  /** 저장된 계정 하나를 목록에서 뺀다. 지금 세션(토큰)은 건드리지 않는다. */
+  remove(loginId: string) {
+    writeAccounts(readAccounts().filter((a) => a.loginId !== loginId));
+  },
   /** 로그인 직후 — 아직 누구인지 모르는 구간. save() 가 남의 토큰을 덮어쓰지 않도록. */
   clearActive() {
     removeRaw(ACTIVE_KEY);

@@ -37,6 +37,17 @@ function releasePushIfServerChanged(previous: PushSession | undefined) {
   }
 }
 
+// 운영 서버에 붙어 있는 테스트 계정 세션인가. 테스트 계정 전환이 배포되기 전에
+// 로그인해 둔 세션이 그렇다 — 전환은 로그인할 때만 일어나서, 그대로 두면
+// 새로고침해도 운영으로 계속 요청한다. 비밀번호가 없어 dev 로 옮겨 줄 수는 없고,
+// 세션을 버려 다시 로그인하게 한다(로그인이 dev 로 전환해 준다).
+function isTestAccountOnProd(role: string | undefined): boolean {
+  return role === "TEST" && currentApiServer() === "prod";
+}
+
+const TEST_ACCOUNT_RELOGIN_MESSAGE =
+  "테스트 계정은 테스트 서버로 다시 로그인해야 합니다. 로그인해 주세요.";
+
 function assertTokens(tokens: TokenData | undefined): TokenData {
   if (!tokens?.accessToken) {
     throw new Error(
@@ -74,14 +85,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
   const queryClient = useQueryClient();
 
+  // 지금 세션만 버리고 로그인 화면으로 보낸다. 이 세션이 운영에 등록해 둔 푸시도 푼다.
+  const discardSession = useCallback(() => {
+    void stopWebPush(currentPushSession());
+    tokenStorage.clear();
+    setUser(null);
+    setAccounts(accountStorage.list());
+  }, []);
+
   const refresh = useCallback(async () => {
     if (!tokenStorage.getAccess()) {
       setUser(null);
       setAccounts(accountStorage.list());
       return;
     }
+    // 운영 세션으로 남은 테스트 계정 — 저장해 둔 역할로 알 수 있으면 운영에
+    // 요청을 하나도 보내지 않고 바로 버린다.
+    const activeLoginId = accountStorage.activeLoginId();
+    const storedRole = accountStorage
+      .list()
+      .find((a) => a.loginId === activeLoginId)?.role;
+    if (isTestAccountOnProd(storedRole)) {
+      discardSession();
+      return;
+    }
     try {
       const me = await getMe();
+      // 저장된 역할이 없던(오래된) 세션은 내 정보를 받아 봐야 안다.
+      if (isTestAccountOnProd(me.role)) {
+        discardSession();
+        return;
+      }
       // 저장된 계정의 이름/역할/토큰을 최신 상태로 유지한다.
       accountStorage.upsert(me);
       setUser(me);
@@ -97,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setAccounts(accountStorage.list());
     }
-  }, []);
+  }, [discardSession]);
 
   useEffect(() => {
     refresh().finally(() => setLoading(false));
@@ -150,6 +184,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (loginId: string) => {
       const previous = accountStorage.activeLoginId();
       const previousPush = currentPushSession();
+      // 운영 토큰으로 저장돼 있는 테스트 계정은 올리지 않고 목록에서 뺀다.
+      const target = accountStorage.list().find((a) => a.loginId === loginId);
+      if (target?.role === "TEST" && (target.server ?? "prod") === "prod") {
+        accountStorage.remove(loginId);
+        setAccounts(accountStorage.list());
+        throw new AuthError("UNKNOWN", TEST_ACCOUNT_RELOGIN_MESSAGE);
+      }
       // 저장된 계정마다 발급 서버가 기록돼 있어, 올리는 순간 요청 기준 주소도
       // 그 서버로 바뀐다.
       if (!accountStorage.activate(loginId)) {
@@ -157,6 +198,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       try {
         const me = await getMe();
+        if (isTestAccountOnProd(me.role)) {
+          accountStorage.remove(loginId);
+          throw new AuthError("UNKNOWN", TEST_ACCOUNT_RELOGIN_MESSAGE);
+        }
         accountStorage.upsert(me);
         releasePushIfServerChanged(previousPush);
         // 역할마다 보이는 데이터가 다르므로 이전 계정의 캐시는 통째로 버린다.
