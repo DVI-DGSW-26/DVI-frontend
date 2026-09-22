@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/api-test/:path*", "destination": "https://api.dvi-ind.com/test/:path*" },
     { "source": "/api/:path*", "destination": "https://api.dvi-ind.com/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]

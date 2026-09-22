@@ -53,7 +53,9 @@ function HomePage() {
 
   if (user?.role === "PRODUCTION") return <ProductionHomePage />;
   if (user?.role === "PRODUCTION_MANAGER") return <InspectionOrdersPage />;
-  if (user?.role === "ADMIN") return <DashboardPage />;
+  // 테스트 계정은 모든 역할의 화면을 쓰지만 홈은 하나여야 한다 — 전체 현황이
+  // 보이는 관리자 대시보드로 둔다. 다른 역할 화면은 메뉴로 들어간다.
+  if (user?.role === "ADMIN" || user?.role === "TEST") return <DashboardPage />;
   if (user?.role === "QUALITY") return <QualityHomePage />;
 
   return <div className="p-6">홈</div>;

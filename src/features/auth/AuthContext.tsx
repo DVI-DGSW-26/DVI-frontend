@@ -8,10 +8,43 @@ import {
 } from "react";
 import { AxiosError } from "axios";
 import { useQueryClient } from "@tanstack/react-query";
-import { accountStorage, getMe, login as loginApi, tokenStorage } from "./api";
+import {
+  AuthError,
+  accountStorage,
+  getMe,
+  login as loginApi,
+  tokenStorage,
+} from "./api";
 import { stopWebPush } from "../notification/lib/webPush";
+import type { PushSession } from "../notification/api/pushTokenApi";
 import { clearViewState } from "../../lib/viewState";
-import type { LoginRequest, StoredAccount, User } from "./api";
+import { currentApiServer, type ApiServer } from "../../lib/apiServer";
+import type { LoginRequest, StoredAccount, TokenData, User } from "./api";
+
+// 지금 올라가 있는 세션 — 푸시 해제를 보낼 곳. 세션을 바꾸거나 지우기 "전에"
+// 잡아 둬야 한다. 바꾼 뒤에 읽으면 새 세션의 토큰·서버가 나온다.
+function currentPushSession(): PushSession | undefined {
+  const accessToken = tokenStorage.getAccess();
+  return accessToken ? { accessToken, server: currentApiServer() } : undefined;
+}
+
+// 운영↔테스트 서버를 넘나들었으면 이전 서버의 푸시 등록을 푼다. 새 서버 등록은
+// 사용자가 바뀌면 useNotificationAlerts 가 알아서 한다. 같은 서버 안에서의 전환은
+// 서버가 토큰 소유자를 새 계정으로 옮겨 주므로 풀 필요가 없다.
+function releasePushIfServerChanged(previous: PushSession | undefined) {
+  if (previous && previous.server !== currentApiServer()) {
+    void stopWebPush(previous);
+  }
+}
+
+function assertTokens(tokens: TokenData | undefined): TokenData {
+  if (!tokens?.accessToken) {
+    throw new Error(
+      "로그인 응답에 accessToken 이 없습니다. 백엔드 응답 형태를 확인해주세요.",
+    );
+  }
+  return tokens;
+}
 
 interface AuthContextValue {
   user: User | null;
@@ -72,18 +105,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (body: LoginRequest, persist?: boolean) => {
-      const tokens = await loginApi(body);
-      if (!tokens?.accessToken) {
-        throw new Error(
-          "로그인 응답에 accessToken 이 없습니다. 백엔드 응답 형태를 확인해주세요.",
-        );
+      const previousPush = currentPushSession();
+
+      // 로그인은 항상 운영 서버에서 시작한다. 받은 토큰은 아직 세션에 올리지
+      // 않고, 그 토큰으로 누구인지만 확인한다.
+      let tokens = assertTokens(await loginApi(body, "prod"));
+      let server: ApiServer = "prod";
+      let me = await getMe({ accessToken: tokens.accessToken, server });
+
+      if (me.role === "TEST") {
+        // 테스트 계정 — 백엔드에서 모든 권한을 가져서 운영에서 쓰면 안 된다.
+        // 운영 토큰은 버리고 같은 자격증명으로 dev 서버에 다시 로그인한다.
+        // (운영과 dev 는 JWT 비밀키가 달라 운영 토큰을 dev 에 쓸 수 없다)
+        server = "test";
+        try {
+          tokens = assertTokens(await loginApi(body, server));
+        } catch (err) {
+          if (err instanceof AuthError) {
+            throw new AuthError(err.code, `테스트 서버 로그인 실패: ${err.message}`);
+          }
+          throw err;
+        }
+        me = await getMe({ accessToken: tokens.accessToken, server });
       }
+
       // 아직 누구로 로그인했는지 모르는 구간 — 활성 포인터를 비워야 save() 가
       // "직전 계정"의 저장된 토큰을 새 토큰으로 덮어쓰지 않는다.
       accountStorage.clearActive();
-      tokenStorage.save(tokens, persist);
-      const me = await getMe();
+      tokenStorage.save(tokens, persist, server);
       accountStorage.upsert(me);
+      releasePushIfServerChanged(previousPush);
       // 이전 사용자로 받아둔 캐시가 새 계정 화면에 그대로 뜨는 것을 막는다.
       queryClient.clear();
       // 목록 화면에 기억해 둔 필터도 같이 버린다 — 앞 사용자가 걸어 둔 조건이다.
@@ -98,12 +149,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const switchAccount = useCallback(
     async (loginId: string) => {
       const previous = accountStorage.activeLoginId();
+      const previousPush = currentPushSession();
+      // 저장된 계정마다 발급 서버가 기록돼 있어, 올리는 순간 요청 기준 주소도
+      // 그 서버로 바뀐다.
       if (!accountStorage.activate(loginId)) {
         throw new Error("저장된 계정이 아닙니다.");
       }
       try {
         const me = await getMe();
         accountStorage.upsert(me);
+        releasePushIfServerChanged(previousPush);
         // 역할마다 보이는 데이터가 다르므로 이전 계정의 캐시는 통째로 버린다.
         queryClient.clear();
         clearViewState();
@@ -122,9 +177,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
-    // 이 기기로 더 이상 푸시가 가지 않도록 해제한다. 토큰을 지우기 전에 시작해야
-    // 인증된 요청으로 나가므로, 직전 accessToken 을 넘겨준다.
-    void stopWebPush(tokenStorage.getAccess() ?? undefined);
+    // 이 기기로 더 이상 푸시가 가지 않도록 해제한다. 세션을 지운 뒤엔 토큰도
+    // 서버(운영/테스트)도 알 수 없으므로, 지우기 전에 보낼 곳을 정해 넘긴다.
+    void stopWebPush(currentPushSession());
     tokenStorage.clearAll();
     queryClient.clear();
     clearViewState();

@@ -1,3 +1,8 @@
+import {
+  API_SERVER_KEY,
+  currentApiServer,
+  type ApiServer,
+} from "../../../lib/apiServer";
 import type { Role, TokenData, User } from "../type/types";
 
 const ACCESS_KEY = "accessToken";
@@ -17,6 +22,8 @@ export interface StoredAccount {
   role: Role;
   accessToken: string;
   refreshToken: string;
+  /** 이 토큰을 발급한 서버. 없으면 운영(이 필드가 생기기 전에 저장된 계정). */
+  server?: ApiServer;
 }
 
 function getPersistPref(): boolean {
@@ -95,10 +102,22 @@ function writeAccounts(accounts: StoredAccount[], storage = primaryStorage()) {
   writeRaw(ACCOUNTS_KEY, JSON.stringify(accounts), storage);
 }
 
+// 세션 서버 표시. 운영이면 키 자체를 두지 않는다 — 이 기능 이전의 세션과 같은 모양.
+function writeServer(server: ApiServer, storage: Storage) {
+  if (server === "test") writeRaw(API_SERVER_KEY, "test", storage);
+  else removeRaw(API_SERVER_KEY);
+}
+
 export const tokenStorage = {
   // persist 미지정 시 이전 로그인 시 선택한 옵션을 그대로 사용 (reissue 같은 갱신 케이스).
-  save({ accessToken, refreshToken }: TokenData, persist?: boolean) {
+  // server 미지정 시 지금 세션의 서버 그대로 (재발급은 같은 서버에서 받은 토큰이다).
+  save(
+    { accessToken, refreshToken }: TokenData,
+    persist?: boolean,
+    server?: ApiServer,
+  ) {
     const shouldPersist = persist ?? getPersistPref();
+    const nextServer = server ?? currentApiServer();
     // 저장 위치가 바뀔 수 있으므로 계정 목록을 먼저 읽어둔다.
     const accounts = readAccounts();
     const activeLoginId = readRaw(ACTIVE_KEY);
@@ -111,6 +130,7 @@ export const tokenStorage = {
     other.removeItem(REFRESH_KEY);
     primary.setItem(ACCESS_KEY, accessToken);
     primary.setItem(REFRESH_KEY, refreshToken);
+    writeServer(nextServer, primary);
 
     // 재발급(reissue) 으로 토큰이 갱신되면 저장된 계정의 토큰도 같이 갱신해야
     // 나중에 그 계정으로 되돌아왔을 때 죽은 토큰을 쓰지 않는다.
@@ -147,6 +167,7 @@ export const tokenStorage = {
   clear() {
     removeRaw(ACCESS_KEY);
     removeRaw(REFRESH_KEY);
+    removeRaw(API_SERVER_KEY);
     const activeLoginId = readRaw(ACTIVE_KEY);
     const rest = activeLoginId
       ? readAccounts().filter((a) => a.loginId !== activeLoginId)
@@ -161,6 +182,7 @@ export const tokenStorage = {
   clearAll() {
     removeRaw(ACCESS_KEY);
     removeRaw(REFRESH_KEY);
+    removeRaw(API_SERVER_KEY);
     removeRaw(ACCOUNTS_KEY);
     removeRaw(ACTIVE_KEY);
     removeRaw(PERSIST_KEY);
@@ -189,6 +211,7 @@ export const accountStorage = {
       role: user.role,
       accessToken,
       refreshToken,
+      server: currentApiServer(),
     };
     const rest = readAccounts().filter((a) => a.loginId !== user.loginId);
     writeAccounts([...rest, entry]);
@@ -204,6 +227,8 @@ export const accountStorage = {
     const primary = primaryStorage();
     writeRaw(ACCESS_KEY, target.accessToken, primary);
     writeRaw(REFRESH_KEY, target.refreshToken, primary);
+    // 토큰을 발급한 서버로 기준 주소도 같이 옮긴다. 다른 서버에 보내면 401 이다.
+    writeServer(target.server ?? "prod", primary);
     writeRaw(ACTIVE_KEY, target.loginId, primary);
     return true;
   },

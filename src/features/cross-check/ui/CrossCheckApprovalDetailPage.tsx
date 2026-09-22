@@ -12,6 +12,7 @@ import { useProcessFlag, useProcessLabel } from "../../process";
 import { formatStandardWithTolerance } from "../../inspection/lib/format";
 import { judgeMeasurement } from "../../inspection/lib/judgment";
 import { useAuth } from "../../auth/AuthContext";
+import { hasRole } from "../../auth/roles";
 import { getStage, STAGE_LABEL, STAGE_BADGE } from "../lib/stage";
 import PhotoCompareModal from "../../../components/shared/PhotoCompareModal";
 import { formatDateTime } from "../../../lib/datetime";
@@ -159,7 +160,7 @@ export default function CrossCheckApprovalDetailPage() {
   // 승인/반려 액션은 결재자(QUALITY_ADMIN/ADMIN)가 결재 대기 건을 볼 때만.
   // 순회검사자(QUALITY)나 이미 처리된 건은 읽기 전용 — 반려 사유만 확인.
   const canDecide =
-    (user?.role === "QUALITY_ADMIN" || user?.role === "ADMIN") &&
+    hasRole(user?.role, ["QUALITY_ADMIN", "ADMIN"]) &&
     detail.status === "PENDING_APPROVAL";
   // 경도값은 순회검사자가 종품 측정 단계에서 입력한다. 결재자는 읽기 전용으로 확인만.
   // 노출 조건은 공정의 hardnessTracked 플래그 — 예전엔 "압출이고 type 이 _3" 이었는데,
@@ -169,7 +170,7 @@ export default function CrossCheckApprovalDetailPage() {
     getStage(detail.type, detail.product.process) === "FINAL";
   // 관리자만 삭제 가능. APPROVED(보고서 발행)는 백엔드가 거부하므로 버튼도 숨김.
   const canDelete =
-    (user?.role === "ADMIN" || user?.role === "QUALITY_ADMIN") &&
+    hasRole(user?.role, ["ADMIN", "QUALITY_ADMIN"]) &&
     detail.status !== "APPROVED";
 
   return (

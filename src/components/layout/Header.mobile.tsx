@@ -26,7 +26,7 @@ const HeaderMobile = () => {
   const { data: unreadCount = 0 } = useUnreadCount();
 
   const title =
-    pathname === "/" && user?.role === "ADMIN"
+    pathname === "/" && (user?.role === "ADMIN" || user?.role === "TEST")
       ? "대시보드"
       : /^\/inspection\/\d+\/measure$/.test(pathname)
         ? "품질 검사 시스템"
