@@ -5,6 +5,7 @@ import { Icon } from "@iconify/react";
 import { usePendingCrossChecks, useDeleteCrossCheckById } from "../api";
 import type { CrossCheckSummary } from "../api";
 import { useAuth } from "../../auth/AuthContext";
+import { hasRole } from "../../auth/roles";
 import { useProcessLabel, useProcessOptions } from "../../process";
 import { getStage, STAGE_LABEL, STAGE_BADGE } from "../lib/stage";
 import { useProcessFilter } from "../lib/processFilter";
@@ -99,8 +100,7 @@ export default function CrossCheckApprovalPage() {
 
   // 관리자(ADMIN/QUALITY_ADMIN)만 삭제. APPROVED(보고서 발행)는 백엔드가 거부하므로
   // 버튼도 숨긴다(결재 목록엔 원래 안 뜨지만 방어).
-  const canDelete =
-    user?.role === "QUALITY_ADMIN" || user?.role === "ADMIN";
+  const canDelete = hasRole(user?.role, ["QUALITY_ADMIN", "ADMIN"]);
 
   // 최근 결재 요청부터 위로 (updatedAt 우선, 없으면 createdAt)
   const sorted = useMemo(

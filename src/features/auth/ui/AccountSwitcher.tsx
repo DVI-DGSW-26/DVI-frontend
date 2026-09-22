@@ -7,6 +7,13 @@ import { ROLE_HOME, ROLE_LABEL } from "../constants";
 import { SWITCHABLE_ACCOUNTS } from "../switchableAccounts";
 import type { SwitchableAccount } from "../switchableAccounts";
 
+/**
+ * 전환 대상. 목록에 없는 계정(테스트 계정 등)도 이 기기에 로그인해 둔 적이 있으면
+ * 저장된 토큰으로 오갈 수 있게 보여 준다. 그런 계정은 비밀번호가 없어서, 토큰이
+ * 만료되면 직접 다시 로그인해야 한다.
+ */
+type SwitchTarget = Omit<SwitchableAccount, "password"> & { password?: string };
+
 interface Props {
   /** 전환으로 화면을 떠날 때 호출 — 헤더 팝오버 닫기 용도. */
   onDone?: () => void;
@@ -20,14 +27,21 @@ export default function AccountSwitcher({ onDone }: Props) {
 
   const activeLoginId = user?.loginId ?? null;
 
-  const handleSwitch = async (target: SwitchableAccount) => {
+  const targets: SwitchTarget[] = [
+    ...SWITCHABLE_ACCOUNTS,
+    ...accounts
+      .filter((a) => !SWITCHABLE_ACCOUNTS.some((s) => s.loginId === a.loginId))
+      .map((a) => ({ loginId: a.loginId, label: a.name, role: a.role })),
+  ];
+
+  const handleSwitch = async (target: SwitchTarget) => {
     if (target.loginId === activeLoginId || busyLoginId) return;
     setError(null);
     setBusyLoginId(target.loginId);
-    const credentials = {
-      loginId: target.loginId,
-      password: target.password,
-    };
+    const { password } = target;
+    const credentials = password
+      ? { loginId: target.loginId, password }
+      : null;
     const saved = accounts.some((a) => a.loginId === target.loginId);
     try {
       let me;
@@ -35,12 +49,15 @@ export default function AccountSwitcher({ onDone }: Props) {
         try {
           // 저장된 토큰으로 즉시 전환 (네트워크 로그인 없음).
           me = await switchAccount(target.loginId);
-        } catch {
+        } catch (err) {
           // 토큰이 만료됐으면 자격증명으로 조용히 다시 로그인한다.
+          if (!credentials) throw err;
           me = await login(credentials);
         }
-      } else {
+      } else if (credentials) {
         me = await login(credentials);
+      } else {
+        throw new Error("저장된 계정이 아닙니다.");
       }
       onDone?.();
       navigate(ROLE_HOME[me.role] ?? "/", { replace: true });
@@ -49,7 +66,9 @@ export default function AccountSwitcher({ onDone }: Props) {
         err instanceof AxiosError && err.response?.status === 401;
       setError(
         badCredentials
-          ? `${target.label}(${target.loginId}) 계정 정보가 서버와 맞지 않습니다.`
+          ? credentials
+            ? `${target.label}(${target.loginId}) 계정 정보가 서버와 맞지 않습니다.`
+            : `${target.label}(${target.loginId}) 로그인이 만료되었습니다. 로그아웃 후 다시 로그인해 주세요.`
           : "계정 전환에 실패했습니다. 잠시 후 다시 시도해주세요.",
       );
     } finally {
@@ -60,7 +79,7 @@ export default function AccountSwitcher({ onDone }: Props) {
   return (
     <div className="flex flex-col">
       <ul className="divide-y divide-gray-100">
-        {SWITCHABLE_ACCOUNTS.map((target) => {
+        {targets.map((target) => {
           const isActive = target.loginId === activeLoginId;
           const isBusy = busyLoginId === target.loginId;
           // 한 번이라도 로그인했다면 서버가 준 실제 이름을 쓴다.

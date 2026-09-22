@@ -2,6 +2,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useAuth } from "../../features/auth/AuthContext";
 import type { Role } from "../../features/auth/api";
+import { visibleTabsFor } from "./tabVisibility";
 
 type TabItem = {
   label: string;
@@ -48,16 +49,25 @@ const TABS: TabItem[] = [
   { label: "마이페이지", to: "/my-page", icon: "mdi:account-circle", roles: ["ADMIN", "QUALITY_ADMIN", "PRODUCTION", "PRODUCTION_MANAGER", "QUALITY"] },
 ];
 
+// 한 줄 균등 분할로 버티는 최대 탭 수 — 지금 가장 많은 통합 관리자가 11개다.
+// 이보다 많으면(모든 역할의 탭을 받는 테스트 계정) 아이콘이 겹친다.
+const MAX_EVEN_TABS = 11;
+
 const TabBarMobile = () => {
   const { user } = useAuth();
   const location = useLocation();
 
-  const visibleTabs = user
-    ? TABS.filter((tab) => tab.roles.includes(user.role))
-    : [];
+  const visibleTabs = visibleTabsFor(TABS, user?.role);
+  // 테스트 계정은 모든 역할의 탭을 받아 한 줄에 다 들어가지 않는다. 그때만
+  // 탭 폭을 고정하고 가로로 밀어 보게 한다. 일반 역할은 기존처럼 균등 분할.
+  const crowded = visibleTabs.length > MAX_EVEN_TABS;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 flex h-16 items-center justify-around border-t border-[#E5E7EB] bg-white">
+    <nav
+      className={`fixed bottom-0 left-0 right-0 z-30 flex h-16 items-center border-t border-[#E5E7EB] bg-white ${
+        crowded ? "overflow-x-auto" : "justify-around"
+      }`}
+    >
       {visibleTabs.map((tab) => {
         const customActive = tab.activeMatch?.(location.pathname);
         return (
@@ -68,7 +78,9 @@ const TabBarMobile = () => {
             aria-label={tab.label}
             className={({ isActive: navActive }) => {
               const isActive = customActive ?? navActive;
-              return `flex flex-1 items-center justify-center transition-colors ${
+              return `flex items-center justify-center transition-colors ${
+                crowded ? "w-14 shrink-0" : "flex-1"
+              } ${
                 isActive ? "text-[#931B82]" : "text-[#A8A8A8]"
               }`;
             }}

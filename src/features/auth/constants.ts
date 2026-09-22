@@ -1,4 +1,5 @@
 import type { Role, StoredAccount, User } from "./api";
+import { hasRole } from "./roles";
 
 export const ROLE_LABEL: Record<Role, string> = {
   ADMIN: "통합 관리자",
@@ -6,6 +7,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   PRODUCTION: "생산자",
   PRODUCTION_MANAGER: "생산 관리자",
   QUALITY: "품질 담당자",
+  TEST: "테스트",
 };
 
 // 로그인/계정 전환 직후 이동할 첫 화면. 역할마다 접근 가능한 라우트가 다르므로
@@ -16,10 +18,11 @@ export const ROLE_HOME: Record<Role, string> = {
   PRODUCTION: "/",
   PRODUCTION_MANAGER: "/inspection-orders",
   QUALITY: "/",
+  TEST: "/dashboard",
 };
 
 /**
- * 계정 전환은 통합 관리자(ADMIN) 전용 기능이다.
+ * 계정 전환은 통합 관리자(ADMIN) 전용 기능이다. 테스트 계정(TEST)도 쓸 수 있다.
  *
  * 단, 관리자가 다른 역할 계정으로 전환한 뒤에는 현재 역할이 ADMIN 이 아니므로,
  * 저장된 목록에 관리자 계정이 남아 있으면 계속 노출한다 — 그러지 않으면
@@ -30,5 +33,8 @@ export function canSwitchAccounts(
   accounts: StoredAccount[],
 ): boolean {
   if (!user) return false;
-  return user.role === "ADMIN" || accounts.some((a) => a.role === "ADMIN");
+  return (
+    hasRole(user.role, ["ADMIN"]) ||
+    accounts.some((a) => hasRole(a.role, ["ADMIN"]))
+  );
 }

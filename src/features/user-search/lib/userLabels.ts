@@ -7,6 +7,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   QUALITY: "품질 담당자",
   QUALITY_ADMIN: "품질 관리자",
   ADMIN: "통합 관리자",
+  TEST: "테스트",
 };
 
 export const DEPARTMENT_LABEL: Record<Role, string> = {
@@ -15,6 +16,7 @@ export const DEPARTMENT_LABEL: Record<Role, string> = {
   QUALITY: "품질부",
   QUALITY_ADMIN: "품질부",
   ADMIN: "관리부",
+  TEST: "테스트",
 };
 
 export interface StatusBadgeStyle {

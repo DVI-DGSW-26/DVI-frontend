@@ -140,7 +140,10 @@ export default function CreateInspectionOrderDrawer({
   const assignableWorkers =
     managerWorkType && workersHaveWorkType
       ? productionUsers.filter(
-          (u) => u.workType === managerWorkType || workerIds.includes(u.id),
+          (u) =>
+            u.workType === managerWorkType ||
+            u.role === "TEST" ||
+            workerIds.includes(u.id),
         )
       : productionUsers;
 
