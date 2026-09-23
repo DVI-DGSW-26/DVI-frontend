@@ -18,7 +18,6 @@ import {
 } from "../../my-inspection/api";
 import { getRecentInspectionId } from "../lib/recentInspection";
 import { skipErrorMessage, SKIP_DELETE_DRAFT_ERROR } from "../lib/skipError";
-import { isSameKstDay } from "../../../lib/datetime";
 import SlotItem, { type SlotStatus } from "./SlotItem";
 import SkipModal from "./SkipModal";
 import Toast from "./Toast";
@@ -42,7 +41,7 @@ export default function ScanPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state ?? {}) as ScanLocationState;
-  const { orderId, productId, equipmentId, qualityName } = state;
+  const { orderId, productId, qualityName } = state;
   // POST /inspection 은 orderId + type 만 받는다. 제품은 슬롯 조회에 필요.
   const hasContext = !!orderId && !!productId;
 
@@ -55,8 +54,10 @@ export default function ScanPage() {
   // skip 은 되돌릴 수 없는 종결 상태라 로컬 기록이 서버와 어긋날 일이 없다.
   const [skippedTypes, setSkippedTypes] = useState<Set<string>>(new Set());
 
-  // 슬롯은 제품 기준으로 받는다 — 제품이 속한 공정의 스케줄이 그대로 온다.
-  const slotsQuery = useProductSlots(productId);
+  // 슬롯은 제품 + 작업지시 기준으로 받는다 — orderId 를 보내면 그 지시의 교대
+  // 슬롯만 온다. 안 보내면 서버가 "내 최신 작업지시" 로 골라, 주간·야간 지시를 함께
+  // 받은 작업자의 주간 화면에 야간 슬롯이 섞인다.
+  const slotsQuery = useProductSlots(productId, orderId);
   // 슬롯 상태(잠금/이어하기 등) 정확히 계산하려면 COMPLETED/INCOMPLETE_APPROVED 등
   // 종결된 검사 정보도 필요 — 홈에서 안 받는 케이스가 있어 ScanPage 가 자체 조회.
   const myInspectionsQuery = useMyInspectionList({ includeFinished: true });
@@ -109,32 +110,20 @@ export default function ScanPage() {
     }
   }, [hasContext, recentInspection, latestDraft, navigate]);
 
-  // 같은 제품/설비 콘텍스트의 기존 검사를 시점별로 매핑.
+  // 이 작업지시(orderId)의 기존 검사를 시점별로 매핑.
   //
-  // [KST 오늘 방어] 전날 검사가 오늘 슬롯을 막지 않도록 KST 오늘 것만 반영한다.
-  // 서버가 "오늘 검사" 판정을 UTC 로 해서 전날 검사를 KST 09:00(=UTC 자정)까지 계속
-  // 내려주는 경우, 날짜 구분 없이 type 으로 매핑하면 오늘 슬롯이 "완료"로 잠겨
-  // 새 검사가 안 열린다. createdAt 등 KST 날짜가 오늘과 다르면 슬롯 계산에서 제외.
-  // 날짜 필드가 없거나 파싱 불가하면(판단 보류) 기존 동작 유지 위해 통과시킨다.
+  // 날짜로 거르지 않는다. 예전엔 "KST 오늘 검사"만 반영했는데, 야간 작업이 자정을
+  // 넘기면 자정 전에 끝낸 시점이 빠져 첫 슬롯이 다시 열리고 나머지는 잠겼다.
+  // 작업지시는 교대 하나에 대응하므로 orderId 로 묶으면 전날 검사가 오늘 슬롯을
+  // 막는 문제(날짜 필터를 넣었던 원래 이유)도 같이 해결된다 — 다른 작업지시다.
+  // orderId 는 /inspection/my 응답에 항상 들어온다(백엔드 확인, 2026-09-23).
   const inspectionByType = useMemo(() => {
     const map = new Map<string, MyInspection>();
-    const now = new Date();
     for (const ins of myInspectionsQuery.data ?? []) {
-      if (
-        ins.product?.id === productId &&
-        ins.equipment?.id === equipmentId
-      ) {
-        // inspectionTime 은 표시/스케줄용이라 신뢰도가 낮아 제외 — 실제 서버
-        // 타임스탬프(createdAt/completedAt/updatedAt) 로만 오늘 여부를 판정.
-        // 진행 중(DRAFT)은 자정을 넘겨 이어서 작업할 수 있으므로 날짜 무관하게 유지.
-        const dateSource = ins.createdAt ?? ins.completedAt ?? ins.updatedAt;
-        if (ins.status !== "DRAFT" && isSameKstDay(dateSource, now) === false)
-          continue;
-        map.set(ins.type, ins);
-      }
+      if (ins.orderId === orderId) map.set(ins.type, ins);
     }
     return map;
-  }, [myInspectionsQuery.data, productId, equipmentId]);
+  }, [myInspectionsQuery.data, orderId]);
 
   // 시점 순서는 GET /inspection/slots 응답 순서를 따른다.
   // 본인 상태 우선 — COMPLETED / DRAFT / INCOMPLETE / INCOMPLETE_APPROVED.

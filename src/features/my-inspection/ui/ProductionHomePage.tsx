@@ -18,6 +18,7 @@ import type {
 } from "../../inspection/type/types";
 import { isTerminableInspection } from "../../inspection/lib/process";
 import { useMyInspectionOrders } from "../../inspection-orders/api";
+import { orderWorkDayKey } from "../../inspection-orders/lib/orderWorkDay";
 import type { InspectionOrder } from "../../inspection-orders/api";
 import type { MyInspection } from "../type/types";
 import { getStatusBadge } from "../lib/inspectionStatus";
@@ -76,13 +77,11 @@ export default function ProductionHomePage() {
   );
 
   // 프로덕트 매니저가 배정한 검사 지시 중 오늘(targetDate) 것만 홈에 노출.
+  // 달력 날짜가 아니라 작업일(KST 06:00 경계) 기준 — 자정을 넘겨 일하는 야간 작업자
+  // 화면에서 전날 날짜로 등록된 야간 지시가 사라지면 검사를 시작할 방법이 없어진다.
+  // 기기 시간대가 아닌 KST 로 계산한다(공장 태블릿 시간대 오설정 대비).
   const { data: myOrders = [] } = useMyInspectionOrders();
-  const todayStr = useMemo(() => {
-    const d = new Date();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${d.getFullYear()}-${mm}-${dd}`;
-  }, []);
+  const todayStr = orderWorkDayKey(new Date());
   const todaysOrders = useMemo(
     () => myOrders.filter((o) => o.targetDate?.slice(0, 10) === todayStr),
     [myOrders, todayStr],
