@@ -53,6 +53,8 @@ export const todayInspections: AdminInspection[] = ROWS.flatMap((row, ri) =>
       ? [
           {
             inspectionId: 2000 + ri * 10 + si,
+            // 한 작업자(행)의 시점들은 같은 작업지시에서 나온 것으로 본다.
+            orderId: 1000 + ri,
             type: slots[si].type,
             typeLabel: slots[si].label,
             inspectionTime: "",
