@@ -4,7 +4,7 @@ import { Icon } from "@iconify/react";
 import { useMyInspectionOrders } from "../api";
 import type { InspectionOrder, InspectionOrderStatus } from "../api";
 import type { InspectionProcess } from "../../inspection/type/types";
-import { kstDateKey } from "../../../lib/datetime";
+import { orderWorkDayKey } from "../lib/orderWorkDay";
 import ShiftBadge from "../../../components/shared/ShiftBadge";
 import { useViewState } from "../../../lib/viewState";
 
@@ -41,10 +41,12 @@ function statusBadge(status: InspectionOrderStatus) {
 
 export default function MyInspectionOrdersPage() {
   const navigate = useNavigate();
-  // 진입 시 기본으로 오늘자 지시만 보여준다(KST 기준). 초기화하면 전체가 보인다.
+  // 진입 시 기본으로 오늘자 지시만 보여준다. 초기화하면 전체가 보인다.
+  // 달력 날짜가 아니라 작업일(KST 06:00 경계) 기준 — 자정을 넘겨 일하는 야간
+  // 작업자에게 전날 날짜의 야간 지시가 계속 보여야 한다.
   // 시점 선택 화면에 갔다 뒤로 돌아오면 고른 날짜 그대로.
   const [selectedDate, setSelectedDate] = useViewState("selectedDate", () =>
-    kstDateKey(new Date()),
+    orderWorkDayKey(new Date()),
   );
   const { data: orders = [], isLoading, isError } = useMyInspectionOrders();
 
