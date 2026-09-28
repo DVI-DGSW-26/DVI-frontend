@@ -577,14 +577,12 @@ function CrossBar({
         // 없으면 이관 대기(release)라 아직 이어받은 사람이 없다는 뜻이다.
         const fromOwners =
           cell.inspectionId != null ? (owners.get(cell.inspectionId) ?? null) : null;
-        // 반려 칸은 조용히 내려가므로 이름도 띄우지 않는다 — 회색 칸에 사람 이름만
-        // 남으면 "이 사람이 뭘 하는 중"으로 잘못 읽힌다.
-        const checker =
-          cell.cross === "REJECTED"
-            ? null
-            : live
-              ? (live.checkerName ?? fromOwners ?? "이관 대기")
-              : fromOwners;
+        const checker = live
+          ? (live.checkerName ?? fromOwners ?? "이관 대기")
+          : fromOwners;
+        // 반려는 채움색을 새로 늘리지 않고 테두리로 겹쳐 그린다 — 진행·지연 보드의
+        // '지연'과 같은 방식이다. 칸의 색은 순회 대상 여부를, 테두리는 반려를 말한다.
+        const rejected = cell.cross === "REJECTED";
         return (
           <div
             key={cell.type}
@@ -594,6 +592,9 @@ function CrossBar({
               backgroundColor: s.bg,
               color: s.fg,
               border: s.border ? `1px solid ${s.border}` : undefined,
+              boxShadow: rejected
+                ? `inset 0 0 0 3px ${T.error[700]}`
+                : undefined,
               ...capStyle(i, cells.length),
             }}
             title={
@@ -813,7 +814,15 @@ function Legend() {
       />
       <LegendGroup
         title="순회"
-        items={cross.map((k) => CROSS_STYLE[k])}
+        items={[
+          ...cross.map((k) => CROSS_STYLE[k]),
+          // 반려는 채움이 아니라 겹쳐 그리는 테두리라 범례도 그 모양 그대로 보여준다.
+          {
+            bg: CROSS_STYLE.REJECTED.bg,
+            ring: T.error[700],
+            name: "반려",
+          },
+        ]}
         color={TRACK_COLOR.cross}
       />
     </div>
@@ -826,7 +835,7 @@ function LegendGroup({
   color,
 }: {
   title: string;
-  items: { bg: string; border?: string; name: string }[];
+  items: { bg: string; border?: string; ring?: string; name: string }[];
   /** 트랙 이름표 색 — 막대 왼쪽 라벨과 같은 값을 쓴다. */
   color: string;
 }) {
@@ -846,6 +855,7 @@ function LegendGroup({
             style={{
               backgroundColor: s.bg,
               border: s.border ? `1px solid ${s.border}` : undefined,
+              boxShadow: s.ring ? `inset 0 0 0 2px ${s.ring}` : undefined,
             }}
           />
           {s.name}
