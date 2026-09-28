@@ -12,6 +12,7 @@ import { useFitCount } from "../lib/useFitCount";
 import { useBoxSize } from "../lib/useBoxSize";
 import { fitRows } from "../lib/fitRows";
 import { useSkipReasons } from "../api/useSkipReasons";
+import { useCrossCheckOwners } from "../api/useCrossCheckOwners";
 import { formatElapsed } from "../lib/time";
 import { T } from "../lib/tokens";
 import {
@@ -181,6 +182,9 @@ export default function StatusBoard({
   );
   const skipReasons = useSkipReasons(skippedIds);
 
+  // 끝난 차수의 순회검사자 이름은 스냅샷에 없다 — 배정 목록에서 메운다.
+  const crossOwners = useCrossCheckOwners();
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="grid shrink-0 grid-cols-5 gap-4 px-6 pt-5 pb-4">
@@ -274,6 +278,7 @@ export default function StatusBoard({
                     height={layout.rowHeight}
                     compact={layout.compact}
                     skipReasons={skipReasons}
+                    crossOwners={crossOwners}
                   />
                 ))}
               </div>
@@ -314,6 +319,7 @@ function ProgressRowView({
   height,
   compact,
   skipReasons,
+  crossOwners,
 }: {
   row: ProgressRow;
   online: boolean;
@@ -325,6 +331,8 @@ function ProgressRowView({
   compact: boolean;
   /** 건너뛴 칸의 사유 (자주검사 id → 사유). */
   skipReasons: Map<number, string>;
+  /** 시점별 순회검사 담당자 (자주검사 id → 이름). */
+  crossOwners: Map<number, string>;
 }) {
   const selfBar = compact ? 34 : 44;
   const crossBar = compact ? 26 : 30;
@@ -402,7 +410,12 @@ function ProgressRowView({
           skipReasons={skipReasons}
         />
         <TrackLabel text="순회" color={TRACK_COLOR.cross} />
-        <CrossBar cells={row.cells} height={crossBar} now={now} />
+        <CrossBar
+          cells={row.cells}
+          height={crossBar}
+          now={now}
+          owners={crossOwners}
+        />
       </div>
     </div>
   );
@@ -522,10 +535,12 @@ function CrossBar({
   cells,
   height,
   now,
+  owners,
 }: {
   cells: ProgressRow["cells"];
   height: number;
   now: Date;
+  owners: Map<number, string>;
 }) {
   return (
     <div className="flex w-full gap-0.5">
@@ -535,8 +550,14 @@ function CrossBar({
         // 검사자 이름을 칸 안에 넣는다 — 줄 오른쪽에 칩으로 몇 개만 달면 순회검사가
         // 셋 이상인 줄에서 누군가는 화면에서 사라진다. 칸에 넣으면 전원이, 자기가
         // 맡은 시점 자리에 그대로 선다.
-        // 이관 대기(release)로 아직 이어받은 사람이 없으면 이름이 null 로 온다.
-        const checker = live?.checkerName ?? null;
+        //
+        // 진행중 건은 스냅샷이, 끝난 건은 배정 목록이 이름을 준다. 진행중인데 이름이
+        // 없으면 이관 대기(release)라 아직 이어받은 사람이 없다는 뜻이다.
+        const fromOwners =
+          cell.inspectionId != null ? (owners.get(cell.inspectionId) ?? null) : null;
+        const checker = live
+          ? (live.checkerName ?? fromOwners ?? "이관 대기")
+          : fromOwners;
         return (
           <div
             key={cell.type}
@@ -550,14 +571,12 @@ function CrossBar({
             }}
             title={
               live
-                ? `${cell.label} 순회검사 ${s.name} — ${checker ?? "이관 대기"} · ${formatElapsed(live.updatedAt, now)}`
-                : `${cell.label} 순회검사 ${s.name}`
+                ? `${cell.label} 순회검사 ${s.name} — ${checker} · ${formatElapsed(live.updatedAt, now)}`
+                : `${cell.label} 순회검사 ${s.name}${checker ? ` — ${checker}` : ""}`
             }
           >
             <span aria-hidden>{s.mark}</span>
-            {live && (
-              <span className="truncate">{checker ?? "이관 대기"}</span>
-            )}
+            {checker && <span className="truncate">{checker}</span>}
           </div>
         );
       })}

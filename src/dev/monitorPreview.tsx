@@ -13,7 +13,13 @@ import type { AxiosAdapter, AxiosResponse } from "axios";
 import { http } from "../lib/http";
 import MonitorPage from "../features/monitor/ui/MonitorPage";
 import { kstStamp, quality, schedule, snapshot } from "./mockMonitorData";
-import { detailFor, processes, slots, todayInspections } from "./mockRest";
+import {
+  assignedCrossChecks,
+  detailFor,
+  processes,
+  slots,
+  todayInspections,
+} from "./mockRest";
 import { broadcast, installMockStream } from "./mockStream";
 import "../index.css";
 
@@ -76,6 +82,7 @@ function payload(url: string): unknown {
   if (url.includes("/monitor/snapshot")) return snapshot;
   if (url.includes("/monitor/quality")) return quality;
   if (url.includes("/monitor/schedule")) return schedule;
+  if (url.includes("/cross-check/assigned")) return assignedCrossChecks;
   if (url.includes("/inspection/slots")) return slots;
   if (url.includes("/inspection/all")) return todayInspections;
   if (url.includes("/process")) return processes;
