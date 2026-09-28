@@ -557,9 +557,14 @@ function CrossBar({
         // 없으면 이관 대기(release)라 아직 이어받은 사람이 없다는 뜻이다.
         const fromOwners =
           cell.inspectionId != null ? (owners.get(cell.inspectionId) ?? null) : null;
-        const checker = live
-          ? (live.checkerName ?? fromOwners ?? "이관 대기")
-          : fromOwners;
+        // 반려 칸은 조용히 내려가므로 이름도 띄우지 않는다 — 회색 칸에 사람 이름만
+        // 남으면 "이 사람이 뭘 하는 중"으로 잘못 읽힌다.
+        const checker =
+          cell.cross === "REJECTED"
+            ? null
+            : live
+              ? (live.checkerName ?? fromOwners ?? "이관 대기")
+              : fromOwners;
         return (
           <div
             key={cell.type}
@@ -686,11 +691,16 @@ const CROSS_STYLE: Record<
     mark: "✓",
     name: "완료(결재 대기)",
   },
+  // 반려되면 자주검사가 COMPLETED→DRAFT 로 되돌아간다 — 즉 "현장에 일이 돌아왔다"는
+  // 사실은 바로 위 자주 막대가 이미 진행중으로 말하고 있다. 순회 막대에서 빨강으로
+  // 한 번 더 외칠 필요가 없고, 되돌아간 그 시점은 순회 대상도 아니게 된다.
+  // 반려 건수는 상단 "순회 대기" 카드의 숫자가 그대로 알린다.
   REJECTED: {
-    bg: T.error[700],
-    fg: T.neutral.white,
-    mark: "✕",
-    name: "반려",
+    bg: T.neutral.sub,
+    fg: "#6B6B6B",
+    border: T.neutral.border,
+    mark: "·",
+    name: "반려 — 자주검사 재측정 중",
   },
   // 순회검사자를 기다리는 칸 — 결재 대기(앰버)와는 기다리는 사람도 할 일도 다르므로
   // 색을 나눈다. 순회 트랙 이름표와 같은 파랑 계열이라 "순회 쪽 할 일"로 읽힌다.
@@ -733,13 +743,9 @@ function Legend() {
     "INCOMPLETE_APPROVED",
     "NONE",
   ];
-  // 승인대기는 완료와 같은 칸으로 묶여 막대에 따로 나오지 않는다 — 범례에서도 뺀다.
-  const cross: CrossCellStatus[] = [
-    "CHECKED",
-    "DRAFT",
-    "REJECTED",
-    "WAITING",
-  ];
+  // 승인대기·반려는 막대에 따로 나오지 않는다(완료로 묶이거나 조용히 내려간다) —
+  // 범례에서도 뺀다. 막대에 없는 색을 범례가 설명하면 안 된다.
+  const cross: CrossCellStatus[] = ["CHECKED", "DRAFT", "WAITING"];
   return (
     <div
       className="flex flex-wrap items-center gap-x-5 gap-y-2 text-base"

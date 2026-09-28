@@ -27,6 +27,13 @@ import ScheduleBoard from "./ScheduleBoard";
 // 고정할 수 있게 뒀다. 고정은 이 화면에만 걸리고 ?page= 로 주소에 남는다 —
 // 모니터가 여러 대일 때 한 대는 품질 보드만 띄워 두는 식으로 쓸 수 있다.
 
+/**
+ * 화면 전체의 이름. 머리말은 "검사 진행 현황 · 현황판" 처럼 이 이름 뒤에 지금 보는
+ * 보드를 붙여 쓴다 — 네 페이지가 돌아가는 화면이라, 무엇을 보고 있는지가 늘 제목에
+ * 남아 있어야 한다.
+ */
+const BOARD_TITLE = "검사 진행 현황";
+
 interface BoardData {
   stream: MonitorStream;
   now: Date;
@@ -218,11 +225,35 @@ export default function MonitorPage() {
           borderBottom: `1px solid ${T.neutral.border}`,
         }}
       >
-        <div className="flex min-w-0 items-baseline gap-3">
-          <h1 className="truncate text-3xl font-bold tracking-tight">
-            {page.title}
+        {/*
+          제목은 글자 크기를 키우지 않고 강조한다 — 머리말이 커지면 그만큼 아래 목록
+          줄이 줄어든다. 대신 굵기(900)와 색 대비로 세운다: 화면 이름은 먹색 굵게,
+          지금 보는 보드는 같은 크기의 옅은 글씨로 붙여 위계를 만든다.
+        */}
+        <div className="flex min-w-0 items-baseline gap-2.5">
+          <h1
+            className="shrink-0 text-3xl font-black tracking-tight"
+            style={{ color: T.neutral.ink }}
+          >
+            {BOARD_TITLE}
           </h1>
-          <span className="shrink-0 text-xl" style={{ color: T.inkSub }}>
+          <span
+            aria-hidden
+            className="shrink-0 text-2xl"
+            style={{ color: T.neutral.border }}
+          >
+            ·
+          </span>
+          <span
+            className="min-w-0 truncate text-3xl font-medium"
+            style={{ color: T.inkSub }}
+          >
+            {page.label}
+          </span>
+          <span
+            className="shrink-0 text-xl"
+            style={{ color: T.neutral.muted }}
+          >
             {formatDateLabel(now)}
           </span>
         </div>
