@@ -9,9 +9,12 @@ export interface Band {
   max: number;
 }
 
-/** 눈금에서 허용 구간이 차지하는 자리 — 양쪽 20% 는 이탈값이 설 자리로 비워둔다. */
-export const BAND_START = 0.2;
-export const BAND_SPAN = 0.6;
+// 눈금에서 허용 구간이 차지하는 자리. 양쪽은 이탈값이 설 자리다.
+//
+// 허용 구간을 넓게 잡을수록 "어디쯤인지"가 잘 보이지만, 벗어난 값이 설 자리가
+// 좁아진다. 70% 가 둘 사이의 타협점이다 — 이탈 구간은 양쪽 15% 씩.
+export const BAND_START = 0.15;
+export const BAND_SPAN = 0.7;
 
 /** 문자열/숫자 어느 쪽으로 와도 숫자로 읽는다. 못 읽으면 null. */
 export function toNumber(value: unknown): number | null {

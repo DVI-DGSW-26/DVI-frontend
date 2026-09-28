@@ -10,14 +10,20 @@ import {
 /**
  * 허용 구간 위에 측정값을 점 하나로 세운 눈금.
  *
- * 벽에서 "10.42 / 9.90 ~ 10.10" 같은 숫자 세 개를 비교해 주는 사람은 없다. 가운데
- * 60% 가 허용 구간이고 양쪽 20% 가 이탈 구간이라, 점이 초록 띠 밖으로 나가 있으면
- * 그것만으로 불량이 읽힌다. 얼마나 나갔는지는 점의 위치가 말해 준다.
+ * 벽에서 "10.42 / 9.90 ~ 10.10" 같은 숫자 세 개를 비교해 주는 사람은 없다. 눈금 위
+ * 점 하나로 바꾸면 "가운데냐 가장자리냐"가 읽는 즉시 보인다.
+ *
+ * 구간을 색으로 갈라 둔다 — 가운데 초록이 허용 구간, 양쪽 붉은 자리가 이탈 구간이다.
+ * 예전에는 바깥을 회색으로 뒀는데, 회색은 이 화면에서 "할 일 없는 칸"의 색이라
+ * 중립적으로 읽혀 바깥까지 허용범위인 줄 알기 쉬웠다.
+ *
+ * 하한·상한 숫자는 반드시 초록 띠의 경계 바로 아래에 세운다. 트랙 양 끝에 두면
+ * 숫자가 가리키는 자리와 실제 경계가 어긋나, 바깥 여백까지 허용범위로 읽힌다.
  */
 export function ToleranceGauge({
   band,
   value,
-  height = 14,
+  height = 20,
   bounds = true,
 }: {
   band: Band;
@@ -31,26 +37,30 @@ export function ToleranceGauge({
   const offset = value != null ? gaugeOffset(value, band) : null;
   const markColor = out ? T.error[700] : T.success[700];
 
+  const bandStart = BAND_START * 100;
+  const bandEnd = (BAND_START + BAND_SPAN) * 100;
+
   return (
     <div className="w-full">
       <div
-        className="relative w-full overflow-hidden rounded"
+        className="relative w-full rounded"
         style={{
           height,
-          backgroundColor: T.neutral.sub,
-          border: `1px solid ${T.neutral.border}`,
+          // 트랙 전체가 이탈 구간 — 그 위에 허용 구간을 얹는다.
+          backgroundColor: T.error[100],
         }}
       >
-        {/* 허용 구간 — 이 띠 안에 점이 있으면 합격이다. */}
+        {/* 허용 구간 — 이 띠 안에 점이 있으면 합격이다. 경계선을 굵게 세워 어디까지가
+            허용인지가 멀리서도 끊겨 보이게 한다. */}
         <span
           aria-hidden
           className="absolute inset-y-0"
           style={{
-            left: `${BAND_START * 100}%`,
+            left: `${bandStart}%`,
             width: `${BAND_SPAN * 100}%`,
             backgroundColor: T.success[100],
-            borderLeft: `1px solid ${T.success[500]}`,
-            borderRight: `1px solid ${T.success[500]}`,
+            borderLeft: `2px solid ${T.success[700]}`,
+            borderRight: `2px solid ${T.success[700]}`,
           }}
         />
         {/* 구간 한가운데 눈금 — 기준값 자리. */}
@@ -66,11 +76,13 @@ export function ToleranceGauge({
         {offset != null && (
           <span
             aria-hidden
-            className="absolute -inset-y-px"
+            className="absolute"
             style={{
-              left: `calc(${offset * 100}% - 3px)`,
-              width: 6,
-              borderRadius: 3,
+              top: -3,
+              bottom: -3,
+              left: `calc(${offset * 100}% - 5px)`,
+              width: 10,
+              borderRadius: 5,
               backgroundColor: markColor,
               boxShadow: `0 0 0 2px ${T.neutral.white}`,
             }}
@@ -78,12 +90,23 @@ export function ToleranceGauge({
         )}
       </div>
       {bounds && (
+        // 숫자는 띠 경계 바로 아래에 붙인다 — 이 자리가 곧 허용 한계다.
         <div
-          className="mt-0.5 flex justify-between text-sm tabular-nums"
-          style={{ color: T.neutral.muted }}
+          className="relative mt-1 h-5 w-full text-sm font-bold tabular-nums"
+          style={{ color: T.success[700] }}
         >
-          <span>{formatValue(band.min)}</span>
-          <span>{formatValue(band.max)}</span>
+          <span
+            className="absolute -translate-x-1/2 whitespace-nowrap"
+            style={{ left: `${bandStart}%` }}
+          >
+            {formatValue(band.min)}
+          </span>
+          <span
+            className="absolute -translate-x-1/2 whitespace-nowrap"
+            style={{ left: `${bandEnd}%` }}
+          >
+            {formatValue(band.max)}
+          </span>
         </div>
       )}
     </div>
