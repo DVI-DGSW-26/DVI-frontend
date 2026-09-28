@@ -151,7 +151,11 @@ export function buildProgressRows(
         (c) => c.status === "COMPLETED" || c.status === "INCOMPLETE_APPROVED",
       ).length,
       skipped: cells.filter((c) => c.status === "SKIPPED").length,
-      crossChecked: cells.filter((c) => c.cross === "CHECKED").length,
+      // 결재만 남은 시점(승인대기)도 순회검사 자체는 끝났다 — 진행 비율에서는 끝난
+      // 것으로 센다. 화면에서도 완료와 같은 칸으로 그린다.
+      crossChecked: cells.filter(
+        (c) => c.cross === "CHECKED" || c.cross === "PENDING_APPROVAL",
+      ).length,
       crossWaiting: cells.filter((c) => c.cross === "WAITING").length,
       crossLive: cells.filter((c) => c.crossCheck).length,
       crossTarget: cells.filter((c) => c.cross !== "NA").length,

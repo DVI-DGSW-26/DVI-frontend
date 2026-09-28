@@ -105,10 +105,12 @@ export default function StatusBoard({
       for (const c of row.cells) {
         if (c.crossCheck) todayCrossChecks.push(c.crossCheck);
       }
+      // 현장에서 더 손댈 것이 없으면 마감으로 내린다 — 결재만 남은 줄(승인대기)도
+      // 여기 포함한다. 아직 사람이 해야 할 일이 남은 건 작성중과 반려뿐이다.
       const done =
         row.settled === row.cells.length &&
         row.crossWaiting === 0 &&
-        row.crossLive === 0;
+        row.cells.every((c) => c.cross !== "DRAFT" && c.cross !== "REJECTED");
       (done ? finished : ongoing).push(row);
     }
 
@@ -674,12 +676,15 @@ const CROSS_STYLE: Record<
     mark: "▶",
     name: "작성중",
   },
-  // 승인대기·반려는 채운 색으로 — 사람이 손을 대야 하는 칸이라 멀리서 먼저 보여야 한다.
+  // 순회검사자의 일은 끝났고 결재만 남은 칸 — 현장 진행으로는 완료와 다르지 않다.
+  // 벽 화면을 본다고 결재가 빨라지지도 않는다. 완료와 같은 초록으로 묶어 막대에서
+  // 색 하나를 줄이면, 정말 사람이 가야 하는 칸(반려·대기)이 더 도드라진다.
+  // 결재가 밀리는 것은 상단 요약의 "승인대기" 숫자가 알린다.
   PENDING_APPROVAL: {
-    bg: T.warning[700],
+    bg: T.success[700],
     fg: T.neutral.white,
-    mark: "△",
-    name: "승인대기",
+    mark: "✓",
+    name: "완료(결재 대기)",
   },
   REJECTED: {
     bg: T.error[700],
@@ -728,10 +733,10 @@ function Legend() {
     "INCOMPLETE_APPROVED",
     "NONE",
   ];
+  // 승인대기는 완료와 같은 칸으로 묶여 막대에 따로 나오지 않는다 — 범례에서도 뺀다.
   const cross: CrossCellStatus[] = [
     "CHECKED",
     "DRAFT",
-    "PENDING_APPROVAL",
     "REJECTED",
     "WAITING",
   ];
