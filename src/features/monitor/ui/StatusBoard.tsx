@@ -187,22 +187,6 @@ export default function StatusBoard({
   // 끝난 차수의 순회검사자 이름은 스냅샷에 없다 — 배정 목록에서 메운다.
   const crossOwners = useCrossCheckOwners();
 
-  // 반려 칸은 막대에서 조용히 내려갔다. 대신 어디가 반려됐는지를 머리말에서 알린다 —
-  // 품질관리자 결재 반려는 자주검사를 되돌리지 않아, 막대만 보면 흔적이 남지 않는다.
-  const rejected = useMemo(
-    () =>
-      byEquipment.flatMap((row) =>
-        row.cells
-          .filter((c) => c.cross === "REJECTED")
-          .map((c) => ({
-            key: `${row.key}-${c.type}`,
-            equipmentName: row.equipmentName,
-            label: c.label,
-            checkerName: c.crossCheck?.checkerName ?? null,
-          })),
-      ),
-    [byEquipment],
-  );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -274,10 +258,7 @@ export default function StatusBoard({
       <main className="flex min-h-0 flex-1 px-6 pb-6">
         <Card className="flex-1">
           <CardHead title="시점별 진행도" pager={rowPage} pagerLabel="진행도">
-            <div className="flex flex-wrap items-center gap-4">
-              {rejected.length > 0 && <RejectedChip items={rejected} />}
-              <Legend />
-            </div>
+            <Legend />
           </CardHead>
           {/* 남은 높이를 전부 쓰고, 넘치는 줄은 잘리는 대신 다음 페이지로 간다. */}
           <div ref={rowsRef} className="min-h-0 flex-1 overflow-hidden px-6">
@@ -752,41 +733,6 @@ const CROSS_STYLE: Record<
     name: "정보 없음",
   },
 };
-
-/**
- * 반려된 시점 알림 — 반려가 있을 때만 뜬다.
- *
- * 막대에서 반려를 내린 대신 여기서 알린다. 평소에는 아예 없으므로 화면이 조용하고,
- * 생기는 순간에만 어느 설비의 어느 시점인지까지 한 줄로 말한다. 세로 공간을 새로
- * 쓰지 않도록 이미 있는 머리말 줄에 얹었다.
- */
-function RejectedChip({
-  items,
-}: {
-  items: { key: string; equipmentName: string; label: string; checkerName: string | null }[];
-}) {
-  const first = items[0];
-  return (
-    <span
-      className="inline-flex items-center gap-2 rounded-md px-2.5 py-1 text-base font-bold"
-      style={{ backgroundColor: T.error[100], color: T.error[700] }}
-      title={items
-        .map(
-          (i) =>
-            `${i.equipmentName} ${i.label} 순회검사 반려${i.checkerName ? ` — ${i.checkerName}` : ""}`,
-        )
-        .join(" / ")}
-    >
-      <span aria-hidden>▲</span>
-      순회 반려 {items.length}건
-      <span className="font-normal">
-        {first.equipmentName} {first.label}
-        {first.checkerName ? ` · ${first.checkerName}` : ""}
-        {items.length > 1 ? ` 외 ${items.length - 1}` : ""}
-      </span>
-    </span>
-  );
-}
 
 function Legend() {
   // 두 트랙 모두 나오는 상태를 빠짐없이 싣는다 — 자주 막대의 앰버 칸(미완료)이 범례에서
