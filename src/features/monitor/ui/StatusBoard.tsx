@@ -9,6 +9,9 @@ import type {
 } from "../lib/buildProgress";
 import { usePagedList } from "../lib/usePagedList";
 import { useFitCount } from "../lib/useFitCount";
+import { useBoxSize } from "../lib/useBoxSize";
+import { fitRows } from "../lib/fitRows";
+import { useSkipReasons } from "../api/useSkipReasons";
 import { formatElapsed } from "../lib/time";
 import { T } from "../lib/tokens";
 import {
@@ -22,11 +25,7 @@ import {
   Pager,
   StatCard,
 } from "./parts";
-import type {
-  MonitorCrossCheck,
-  MonitorCrossCheckStatus,
-  MonitorSnapshot,
-} from "../type/types";
+import type { MonitorCrossCheck, MonitorSnapshot } from "../type/types";
 
 // 페이지1 — 실시간 현황판. 공장 벽걸이 모니터의 기본 화면이다.
 //
@@ -50,19 +49,12 @@ import type {
 // 상태는 색만으로 구분하지 않는다 — 세그먼트마다 기호(✓ ▶ ⊘ ·)와 라벨을 함께 넣고
 // 범례를 둔다.
 
-/**
- * 진행도 한 줄의 높이(px). 남은 높이를 이 값으로 나눠 한 페이지 줄 수를 정하므로,
- * 줄이 실제로 이 높이여야 한다 — 내용에 따라 늘어나면 계산이 어긋난다.
- * 내부 구성: 이름줄 36 + 간격 12 + 자주 막대 44 + 간격 6 + 순회 막대 28 = 126, 여백 32.
- */
-const ROW_HEIGHT = 158;
-
 /** "오늘 마감" 칩 한 개의 크기(px) — 개수 계산이 맞도록 실제로 이 크기로 그린다. */
 const CHIP_WIDTH = 240;
 const CHIP_HEIGHT = 36;
 const CHIP_GAP = 8;
 /** 마감 칩을 몇 줄까지 쓸지. 아래쪽은 부가 정보라 진행도 줄에 높이를 양보한다. */
-const CHIP_LINES = 2;
+const CHIP_LINES = 1;
 
 export default function StatusBoard({
   snapshot,
@@ -155,34 +147,66 @@ export default function StatusBoard({
     [todayCrossChecks],
   );
 
-  // 진행도 줄이 쓸 수 있는 높이를 실제로 재서 한 페이지 줄 수를 정한다 — 상수로 박으면
-  // 모니터 해상도가 조금만 달라져도 잘리거나 아래가 비어 보인다.
+  // 설비 순서로 세운다. 급한 순으로 세우면 상황이 바뀔 때마다 줄이 위아래로 옮겨다녀,
+  // 하루 종일 보는 사람이 "1호기는 저기"를 외울 수가 없다. 자리를 고정해 두고 급한
+  // 것은 색과 배지로 알린다.
+  const byEquipment = useMemo(
+    () =>
+      [...ongoing].sort(
+        (a, b) =>
+          a.equipmentName.localeCompare(b.equipmentName, "ko", {
+            numeric: true,
+          }) ||
+          a.productName.localeCompare(b.productName, "ko") ||
+          a.workerName.localeCompare(b.workerName, "ko"),
+      ),
+    [ongoing],
+  );
+
+  // 벽 화면은 넘겨 보는 화면이 아니다 — 줄 수에 맞춰 높이를 줄이고, 그래도 모자라면
+  // 두 단으로 나눈다. 페이지 넘김은 그 다음 수단이다(fitRows).
   const rowsRef = useRef<HTMLDivElement>(null);
-  const rowsPerPage = useFitCount(rowsRef, ROW_HEIGHT);
-  const rowPage = usePagedList(ongoing, rowsPerPage, PAGE_INTERVAL_MS);
+  const box = useBoxSize(rowsRef);
+  const layout = fitRows(byEquipment.length, box);
+  const rowPage = usePagedList(byEquipment, layout.perPage, PAGE_INTERVAL_MS);
+
+  // 건너뜀 사유는 목록 API 에 없어 건너뛴 칸만 상세로 한 번씩 받아 온다.
+  const skippedIds = useMemo(
+    () =>
+      byEquipment
+        .flatMap((r) => r.cells)
+        .filter((c) => c.status === "SKIPPED" && c.inspectionId != null)
+        .map((c) => c.inspectionId as number),
+    [byEquipment],
+  );
+  const skipReasons = useSkipReasons(skippedIds);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="grid shrink-0 grid-cols-5 gap-4 px-6 pt-5 pb-4">
         <StatCard
+          dense
           label="완료"
           tag={<TrackTag text="자주" />}
           value={totals.done}
           color={T.success[700]}
         />
         <StatCard
+          dense
           label="진행중"
           tag={<TrackTag text="자주" />}
           value={totals.active}
           color={T.primary[500]}
         />
         <StatCard
+          dense
           label="건너뜀"
           tag={<TrackTag text="자주" />}
           value={totals.skipped}
           color={T.inkSub}
         />
         <StatCard
+          dense
           label="남은 시점"
           tag={<TrackTag text="자주" />}
           value={totals.remaining}
@@ -194,6 +218,7 @@ export default function StatusBoard({
           더해 읽히지 않도록 제목을 달아 끊어 놓는다.
         */}
         <StatCard
+          dense
           label="순회 대기"
           tag={<TrackTag text="순회" />}
           value={totals.crossWaiting}
@@ -201,7 +226,6 @@ export default function StatusBoard({
           // 찾게 되고, 대기 칸은 파랑이라 영영 못 찾는다. 칸 모양 그대로도 이름 옆에 붙인다.
           color={CROSS_STYLE.WAITING.fg}
           swatch={CROSS_STYLE.WAITING}
-          footLabel="붙은 순회검사"
           foot={
             <>
               <FootStat
@@ -231,16 +255,28 @@ export default function StatusBoard({
           </CardHead>
           {/* 남은 높이를 전부 쓰고, 넘치는 줄은 잘리는 대신 다음 페이지로 간다. */}
           <div ref={rowsRef} className="min-h-0 flex-1 overflow-hidden px-6">
-            <Flip token={rowPage.page}>
-              {rowPage.visible.map((row, i) => (
-                <ProgressRowView
-                  key={row.key}
-                  row={row}
-                  online={online.has(row.workerName)}
-                  now={now}
-                  first={i === 0}
-                />
-              ))}
+            <Flip token={`${rowPage.page}-${layout.columns}`}>
+              <div
+                className="grid"
+                style={{
+                  gridTemplateColumns: `repeat(${layout.columns}, minmax(0, 1fr))`,
+                  columnGap: 28,
+                }}
+              >
+                {rowPage.visible.map((row, i) => (
+                  <ProgressRowView
+                    key={row.key}
+                    row={row}
+                    online={online.has(row.workerName)}
+                    now={now}
+                    // 각 단의 첫 줄만 윗선을 뺀다.
+                    first={i < layout.columns}
+                    height={layout.rowHeight}
+                    compact={layout.compact}
+                    skipReasons={skipReasons}
+                  />
+                ))}
+              </div>
             </Flip>
             {inspections && rows.length === 0 && (
               <Empty text="오늘 등록된 검사가 없습니다" />
@@ -275,54 +311,73 @@ function ProgressRowView({
   online,
   now,
   first,
+  height,
+  compact,
+  skipReasons,
 }: {
   row: ProgressRow;
   online: boolean;
   now: Date;
   first: boolean;
+  /** 줄 높이(px) — 줄 수에 맞춰 바깥에서 정해 준다. */
+  height: number;
+  /** 줄이 얇아졌을 때의 압축 배치. */
+  compact: boolean;
+  /** 건너뛴 칸의 사유 (자주검사 id → 사유). */
+  skipReasons: Map<number, string>;
 }) {
-  // 진행중 순회검사는 칸에 이미 붙어 있다 — 칩은 칸에 안 들어가는 검사자·경과용.
-  const live = row.cells
-    .map((c) => c.crossCheck)
-    .filter((cc): cc is MonitorCrossCheck => cc !== null);
+  const selfBar = compact ? 34 : 44;
+  const crossBar = compact ? 26 : 30;
 
   return (
-    // 높이를 고정한다 — 한 페이지 줄 수를 이 값으로 나눠 구하므로 내용에 따라 늘어나면
-    // 계산이 어긋나 마지막 줄이 잘린다.
+    // 높이는 바깥에서 받은 값으로 고정한다 — 내용에 따라 늘어나면 줄 수 계산이 어긋난다.
     <div
       className="flex flex-col justify-center overflow-hidden"
       style={{
-        height: ROW_HEIGHT,
+        height,
         ...(first ? {} : { borderTop: `1px solid ${T.neutral.border}` }),
       }}
     >
+      {/*
+        설비를 맨 앞 큰 글자로 둔다 — 줄 순서도 설비 기준이라, 찾는 설비를 이름으로
+        바로 짚을 수 있어야 한다. 제품과 작업자는 그 설비에서 지금 무엇을 누가 하는지를
+        말하는 보조 정보다.
+      */}
       <div className="flex items-center justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-3">
-          <Avatar name={row.workerName} online={online} />
-          <span className="shrink-0 text-2xl font-bold">{row.workerName}</span>
-          <span className="truncate text-xl" style={{ color: T.inkSub }}>
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span
+            className={`shrink-0 font-bold ${compact ? "text-xl" : "text-2xl"}`}
+          >
+            {row.equipmentName}
+          </span>
+          <span
+            className={`truncate ${compact ? "text-lg" : "text-xl"}`}
+            style={{ color: T.inkSub }}
+          >
             {row.productName}
-            <span style={{ color: T.neutral.muted }}>
-              {" · "}
-              {row.equipmentName}
+          </span>
+          <span className="flex shrink-0 items-center gap-1.5">
+            <Avatar
+              name={row.workerName}
+              online={online}
+              size={compact ? 26 : 30}
+            />
+            <span
+              className={compact ? "text-base" : "text-lg"}
+              style={{ color: T.inkSub }}
+            >
+              {row.workerName}
             </span>
           </span>
         </div>
 
         <div className="flex shrink-0 items-center gap-3">
-          {live.slice(0, 2).map((cc) => (
-            <CrossCheckChip key={cc.crossCheckId} item={cc} now={now} />
-          ))}
-          {live.length > 2 && (
-            <span className="text-lg tabular-nums" style={{ color: T.inkSub }}>
-              +{live.length - 2}
-            </span>
-          )}
           <Ratio
             label="자주"
             labelColor={TRACK_COLOR.self}
             done={row.settled}
             total={row.cells.length}
+            compact={compact}
           />
           {/* 순회 대상이 아직 하나도 없으면(자주검사가 초반) 분모가 0 — 숫자 대신 "–". */}
           <Ratio
@@ -330,16 +385,24 @@ function ProgressRowView({
             labelColor={TRACK_COLOR.cross}
             done={row.crossChecked}
             total={row.crossTarget}
+            compact={compact}
           />
         </div>
       </div>
 
       {/* 두 막대가 같은 시점 눈금을 쓰므로 라벨 열 너비를 고정해 세로로 맞춘다. */}
-      <div className="mt-3 grid grid-cols-[3rem_1fr] items-center gap-x-3 gap-y-1.5">
+      <div
+        className="grid grid-cols-[2.5rem_1fr] items-center gap-x-2"
+        style={{ marginTop: compact ? 6 : 12, rowGap: compact ? 4 : 6 }}
+      >
         <TrackLabel text="자주" color={TRACK_COLOR.self} />
-        <SegmentBar cells={row.cells} />
+        <SegmentBar
+          cells={row.cells}
+          height={selfBar}
+          skipReasons={skipReasons}
+        />
         <TrackLabel text="순회" color={TRACK_COLOR.cross} />
-        <CrossBar cells={row.cells} />
+        <CrossBar cells={row.cells} height={crossBar} now={now} />
       </div>
     </div>
   );
@@ -367,15 +430,20 @@ function Ratio({
   labelColor,
   done,
   total,
+  compact,
 }: {
   label: string;
   labelColor: string;
   done: number;
   total: number;
+  compact?: boolean;
 }) {
   return (
-    <span className="text-xl tabular-nums">
-      <span className="text-base font-bold" style={{ color: labelColor }}>
+    <span className={`tabular-nums ${compact ? "text-lg" : "text-xl"}`}>
+      <span
+        className={`font-bold ${compact ? "text-sm" : "text-base"}`}
+        style={{ color: labelColor }}
+      >
         {label}{" "}
       </span>
       {total === 0 ? (
@@ -394,25 +462,51 @@ function Ratio({
  * 시점을 꽉 찬 세그먼트로 늘어놓은 막대.
  * 세그먼트 사이 2px 흰 간격을 둬 경계가 색에만 의존하지 않게 한다.
  */
-function SegmentBar({ cells }: { cells: ProgressRow["cells"] }) {
+function SegmentBar({
+  cells,
+  height,
+  skipReasons,
+}: {
+  cells: ProgressRow["cells"];
+  height: number;
+  skipReasons: Map<number, string>;
+}) {
   return (
     <div className="flex w-full gap-0.5">
       {cells.map((cell, i) => {
         const s = CELL_STYLE[cell.status];
+        // 건너뛴 칸은 "왜 건너뛰었나"가 곧 그 칸의 내용이다 — 시점 아래 한 줄로 붙인다.
+        const reason =
+          cell.status === "SKIPPED" && cell.inspectionId != null
+            ? skipReasons.get(cell.inspectionId)
+            : undefined;
+        const skipped = cell.status === "SKIPPED";
         return (
           <div
             key={cell.type}
-            className="flex h-11 flex-1 items-center justify-center gap-1.5 text-lg font-bold tabular-nums"
+            className="flex min-w-0 flex-1 flex-col items-center justify-center text-lg font-bold tabular-nums"
             style={{
+              height,
               backgroundColor: s.bg,
               color: s.fg,
               border: s.border ? `1px solid ${s.border}` : undefined,
               ...capStyle(i, cells.length),
             }}
-            title={`${cell.label} 자주검사 ${s.name}`}
+            title={
+              skipped
+                ? `${cell.label} 자주검사 건너뜀 — ${reason ?? "사유 없음"}`
+                : `${cell.label} 자주검사 ${s.name}`
+            }
           >
-            <span aria-hidden>{s.mark}</span>
-            {cell.label}
+            <span className="flex items-center gap-1.5 leading-none">
+              <span aria-hidden>{s.mark}</span>
+              {cell.label}
+            </span>
+            {skipped && (
+              <span className="max-w-full truncate px-1.5 text-sm font-normal">
+                {reason ?? "사유 없음"}
+              </span>
+            )}
           </div>
         );
       })}
@@ -424,28 +518,46 @@ function SegmentBar({ cells }: { cells: ProgressRow["cells"] }) {
  * 자주 막대와 같은 눈금 위의 순회검사 줄. 시점 라벨은 위 막대에 이미 있으므로
  * 기호만 두고 높이를 낮춰, 두 줄이 서로 다른 층위라는 게 멀리서도 보이게 한다.
  */
-function CrossBar({ cells }: { cells: ProgressRow["cells"] }) {
+function CrossBar({
+  cells,
+  height,
+  now,
+}: {
+  cells: ProgressRow["cells"];
+  height: number;
+  now: Date;
+}) {
   return (
     <div className="flex w-full gap-0.5">
       {cells.map((cell, i) => {
         const s = CROSS_STYLE[cell.cross];
+        const live = cell.crossCheck;
+        // 검사자 이름을 칸 안에 넣는다 — 줄 오른쪽에 칩으로 몇 개만 달면 순회검사가
+        // 셋 이상인 줄에서 누군가는 화면에서 사라진다. 칸에 넣으면 전원이, 자기가
+        // 맡은 시점 자리에 그대로 선다.
+        // 이관 대기(release)로 아직 이어받은 사람이 없으면 이름이 null 로 온다.
+        const checker = live?.checkerName ?? null;
         return (
           <div
             key={cell.type}
-            className="flex h-7 flex-1 items-center justify-center text-lg font-bold"
+            className="flex min-w-0 flex-1 items-center justify-center gap-1 overflow-hidden text-base font-bold"
             style={{
+              height,
               backgroundColor: s.bg,
               color: s.fg,
               border: s.border ? `1px solid ${s.border}` : undefined,
               ...capStyle(i, cells.length),
             }}
             title={
-              cell.crossCheck
-                ? `${cell.label} 순회검사 ${s.name} — ${cell.crossCheck.checkerName}`
+              live
+                ? `${cell.label} 순회검사 ${s.name} — ${checker ?? "이관 대기"} · ${formatElapsed(live.updatedAt, now)}`
                 : `${cell.label} 순회검사 ${s.name}`
             }
           >
             <span aria-hidden>{s.mark}</span>
+            {live && (
+              <span className="truncate">{checker ?? "이관 대기"}</span>
+            )}
           </div>
         );
       })}
@@ -764,48 +876,4 @@ function FinishedStrip({
       </div>
     </div>
   );
-}
-
-/* ── 순회검사 ─────────────────────────────────────────────── */
-
-const CROSS_CHECK_STATUS: Record<
-  MonitorCrossCheckStatus,
-  { label: string; bg: string; fg: string }
-> = {
-  DRAFT: { label: "작성중", bg: T.primary[100], fg: T.primary[700] },
-  PENDING_APPROVAL: {
-    label: "승인대기",
-    bg: T.warning[100],
-    fg: T.warning[700],
-  },
-  REJECTED: { label: "반려", bg: T.error[100], fg: T.error[700] },
-};
-
-/** 줄에 붙는 진행중 순회검사 한 건 — 시점 + 상태 + 검사자 + 경과. */
-function CrossCheckChip({
-  item,
-  now,
-}: {
-  item: MonitorCrossCheck;
-  now: Date;
-}) {
-  const s = CROSS_CHECK_STATUS[item.status];
-  return (
-    <span
-      className="inline-flex items-center gap-2 rounded-md px-2.5 py-1 text-base"
-      style={{ backgroundColor: s.bg, color: s.fg }}
-      title={`${item.productName} · ${item.equipmentName} — ${item.checkerName}`}
-    >
-      {/* 어느 칸 이야기인지 — 아래 순회 막대의 그 칸과 짝이 된다. */}
-      <span className="font-bold">{slotText(item)}</span>
-      <span>{s.label}</span>
-      <span>{item.checkerName}</span>
-      <span className="tabular-nums">{formatElapsed(item.updatedAt, now)}</span>
-    </span>
-  );
-}
-
-/** 순회검사의 시점 표시 — 라벨이 없으면 슬롯 코드로. */
-function slotText(item: MonitorCrossCheck): string {
-  return item.slotLabel || item.type;
 }

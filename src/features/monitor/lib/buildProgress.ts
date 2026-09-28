@@ -40,6 +40,8 @@ export const CROSS_CHECK_URGENCY: Record<MonitorCrossCheckStatus, number> = {
 export interface ProgressCell {
   /** 슬롯 코드 (DAY_1 등). */
   type: string;
+  /** 이 시점의 자주검사 id — 기록이 없는 시점(미시작)은 null. 건너뜀 사유 조회에 쓴다. */
+  inspectionId: number | null;
   /** 표시 라벨 — "초/중/종" 또는 "08:00". */
   label: string;
   status: CellStatus;
@@ -125,6 +127,7 @@ export function buildProgressRows(
       const live = rec ? (liveByInspection.get(rec.inspectionId) ?? null) : null;
       return {
         type: slot.type,
+        inspectionId: rec?.inspectionId ?? null,
         label: slot.label || slot.type,
         status,
         cross: crossCellStatus(status, rec?.hasCrossCheck, live),
