@@ -219,7 +219,7 @@ export default function MonitorPage() {
       style={{ backgroundColor: T.neutral.sub, color: T.neutral.ink }}
     >
       <header
-        className="flex shrink-0 items-center justify-between gap-6 px-8 py-4"
+        className="flex shrink-0 items-center justify-between gap-6 px-8 py-3"
         style={{
           backgroundColor: T.neutral.white,
           borderBottom: `1px solid ${T.neutral.border}`,
@@ -227,26 +227,24 @@ export default function MonitorPage() {
       >
         {/*
           제목은 글자 크기를 키우지 않고 강조한다 — 머리말이 커지면 그만큼 아래 목록
-          줄이 줄어든다. 대신 굵기(900)와 색 대비로 세운다: 화면 이름은 먹색 굵게,
-          지금 보는 보드는 같은 크기의 옅은 글씨로 붙여 위계를 만든다.
+          줄이 줄어들기 때문이다. 흰 바탕에 먹색 글자는 이미 대비가 최대라 색으로는
+          더 올릴 데가 없어, 남은 수단은 반전뿐이다. 브랜드색으로 채운 칩에 흰 글자를
+          올려 면적으로 세운다(대비 7.72 — 큰 글자·본문 모두 안전).
+          늘어난 칩 높이만큼 머리말 세로 여백을 줄여 전체 높이는 그대로 둔다.
         */}
-        <div className="flex min-w-0 items-baseline gap-2.5">
+        <div className="flex min-w-0 items-center gap-3">
           <h1
-            className="shrink-0 text-3xl font-black tracking-tight"
-            style={{ color: T.neutral.ink }}
+            className="shrink-0 rounded-lg px-3 py-1 text-3xl font-black tracking-tight"
+            style={{
+              backgroundColor: T.primary[500],
+              color: T.neutral.white,
+            }}
           >
             {BOARD_TITLE}
           </h1>
           <span
-            aria-hidden
-            className="shrink-0 text-2xl"
-            style={{ color: T.neutral.border }}
-          >
-            ·
-          </span>
-          <span
-            className="min-w-0 truncate text-3xl font-medium"
-            style={{ color: T.inkSub }}
+            className="min-w-0 truncate text-3xl font-bold"
+            style={{ color: T.neutral.ink }}
           >
             {page.label}
           </span>
