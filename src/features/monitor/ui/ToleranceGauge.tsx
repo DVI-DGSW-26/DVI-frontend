@@ -39,6 +39,8 @@ export function ToleranceGauge({
 
   const bandStart = BAND_START * 100;
   const bandEnd = (BAND_START + BAND_SPAN) * 100;
+  /** 허용 구간의 한가운데 — 편차 막대가 여기서 출발한다. */
+  const center = BAND_START + BAND_SPAN / 2;
 
   return (
     <div className="w-full">
@@ -63,30 +65,42 @@ export function ToleranceGauge({
             borderRight: `2px solid ${T.success[700]}`,
           }}
         />
-        {/* 구간 한가운데 눈금 — 기준값 자리. */}
+        {/* 가운데 기준선 — 막대가 여기서 출발한다. 여러 줄을 볼 때 이 선이 세로로
+            정렬돼, 줄마다 따로 노는 눈금이 아니라 하나의 차트처럼 읽힌다. */}
         <span
           aria-hidden
-          className="absolute inset-y-1"
-          style={{
-            left: `${(BAND_START + BAND_SPAN / 2) * 100}%`,
-            width: 1,
-            backgroundColor: T.success[500],
-          }}
+          className="absolute inset-y-0"
+          style={{ left: `${center * 100}%`, width: 2, backgroundColor: T.inkSub }}
         />
         {offset != null && (
-          <span
-            aria-hidden
-            className="absolute"
-            style={{
-              top: -3,
-              bottom: -3,
-              left: `calc(${offset * 100}% - 5px)`,
-              width: 10,
-              borderRadius: 5,
-              backgroundColor: markColor,
-              boxShadow: `0 0 0 2px ${T.neutral.white}`,
-            }}
-          />
+          <>
+            {/* 편차 막대 — 기준에서 측정값까지. 길이가 곧 "공차를 얼마나 먹었나"라서
+                줄을 훑기만 해도 아슬아슬한 항목이 먼저 눈에 걸린다. */}
+            <span
+              aria-hidden
+              className="absolute inset-y-1"
+              style={{
+                left: `${Math.min(center, offset) * 100}%`,
+                width: `${Math.abs(offset - center) * 100}%`,
+                backgroundColor: markColor,
+                borderRadius: 2,
+              }}
+            />
+            {/* 끝점 — 막대가 짧아도(기준값에 딱 맞아도) 어디까지 갔는지 보이게 한다. */}
+            <span
+              aria-hidden
+              className="absolute"
+              style={{
+                top: -3,
+                bottom: -3,
+                left: `calc(${offset * 100}% - 3px)`,
+                width: 6,
+                borderRadius: 3,
+                backgroundColor: markColor,
+                boxShadow: `0 0 0 2px ${T.neutral.white}`,
+              }}
+            />
+          </>
         )}
       </div>
       {bounds && (
