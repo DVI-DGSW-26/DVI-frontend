@@ -370,9 +370,9 @@ function Sep() {
 /* ── 측정 항목 한 줄 ───────────────────────────────────────── */
 
 // 열 너비를 상수 하나로 묶어 제목줄과 값줄이 어긋나지 않게 한다.
-// 눈금이 이 줄의 주인공이라 남는 폭을 눈금 쪽으로 몰아준다.
+// 측정값과 눈금이 이 줄의 주인공이다. 나머지 열은 최소로 두고 남는 폭을 둘에 준다.
 const DIM_GRID =
-  "3rem minmax(6rem, 0.9fr) 10rem 8rem minmax(14rem, 1.7fr) 4.5rem";
+  "3rem minmax(6rem, 0.85fr) 9rem 9.5rem minmax(13rem, 1.6fr) 4.5rem";
 
 function DimColumns() {
   return (
@@ -440,7 +440,7 @@ function DimRow({
         측정값이 없는 항목은 빈칸으로 두지 않는다 — 기준·공차·측정값이 모두 "–" 인데
         판정만 NG 로 서 있으면 "아무것도 안 찍혔는데 왜 불량이지?"로 읽힌다.
       */}
-      <span className="text-lg tabular-nums" style={{ color: T.inkSub }}>
+      <span className="text-base tabular-nums" style={{ color: T.inkSub }}>
         {passFail
           ? "OK/NG 판정 항목"
           : formatStandardWithTolerance(
@@ -458,7 +458,7 @@ function DimRow({
         ) : (
           <>
             <span
-              className="block text-3xl leading-none font-bold tabular-nums"
+              className="block text-4xl leading-none font-black tabular-nums"
               style={{ color: ng ? T.error[700] : T.neutral.ink }}
             >
               {formatValue(result.measuredValue)}
