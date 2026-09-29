@@ -103,10 +103,28 @@ export function ToleranceGauge({
           </>
         )}
       </div>
+      {/*
+        측정값을 막대 바로 아래, 막대가 끝나는 자리에 띄운다 — 숫자와 위치가 한 덩어리로
+        읽혀 "이 값이 여기쯤"이 눈금만 봐도 끝난다.
+        경계 숫자와는 줄을 나눈다. 벗어난 값일수록 마커가 경계 쪽으로 붙는데, 한 줄에
+        두면 하필 가장 중요한 순간에 두 숫자가 겹친다.
+      */}
       {bounds && (
-        // 숫자는 띠 경계 바로 아래에 붙인다 — 이 자리가 곧 허용 한계다.
+        <div className="relative mt-1 h-6 w-full text-lg font-bold tabular-nums">
+          {offset != null && value != null && (
+            <span
+              className="absolute whitespace-nowrap"
+              style={{ ...labelAnchor(offset), color: markColor }}
+            >
+              {formatValue(value)}
+            </span>
+          )}
+        </div>
+      )}
+      {bounds && (
+        // 경계 숫자는 띠 경계 바로 아래에 붙인다 — 이 자리가 곧 허용 한계다.
         <div
-          className="relative mt-1 h-5 w-full text-sm font-bold tabular-nums"
+          className="relative h-5 w-full text-sm font-bold tabular-nums"
           style={{ color: T.success[700] }}
         >
           <span
@@ -125,6 +143,16 @@ export function ToleranceGauge({
       )}
     </div>
   );
+}
+
+/**
+ * 눈금 위 숫자를 마커 자리에 맞춰 세운다.
+ * 양 끝에서는 가운데 정렬을 포기하고 모서리에 붙인다 — 안 그러면 칸 밖으로 잘린다.
+ */
+function labelAnchor(offset: number): React.CSSProperties {
+  if (offset <= 0.12) return { left: 0 };
+  if (offset >= 0.88) return { right: 0 };
+  return { left: `${offset * 100}%`, transform: "translateX(-50%)" };
 }
 
 /** OK/NG 한 글자 판정 — 색 + 글자 두 겹으로 표시한다. */
