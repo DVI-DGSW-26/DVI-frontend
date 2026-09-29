@@ -178,6 +178,7 @@ export function PagerButton({
 export function StatCard({
   label,
   tag,
+  dense = false,
   tone = "normal",
   value,
   unit,
@@ -190,6 +191,11 @@ export function StatCard({
   label: string;
   /** 이름 앞에 붙는 표식 — 트랙 이름표(자주/순회) 등. */
   tag?: React.ReactNode;
+  /**
+   * 조밀 배치. 아래 목록이 주인공이고 요약은 거들기만 하는 화면(현황판)에서 쓴다 —
+   * 같은 카드 생김새를 유지한 채 높이만 줄여, 줄 하나라도 더 들어가게 한다.
+   */
+  dense?: boolean;
   /**
    * 경고 단계. "alert" 면 카드를 통째로 물들여 다른 칸보다 먼저 눈에 들어오게 한다.
    * 한 화면에 하나만 쓴다 — 여럿이 빨개지면 어디를 봐야 할지가 다시 사라진다.
@@ -213,7 +219,9 @@ export function StatCard({
 
   return (
     <div
-      className="relative overflow-hidden rounded-xl px-6 py-4"
+      className={`relative overflow-hidden rounded-xl ${
+        dense ? "px-5 py-2.5" : "px-6 py-4"
+      }`}
       style={{
         backgroundColor: alert ? color : T.neutral.white,
         border: `1px solid ${alert ? color : T.neutral.border}`,
@@ -236,15 +244,19 @@ export function StatCard({
           </span>
         )}
         <span
-          className={`text-lg ${alert ? "font-bold" : ""}`}
+          className={`${dense ? "text-base" : "text-lg"} ${alert ? "font-bold" : ""}`}
           style={{ color: alert ? T.neutral.white : T.inkSub }}
         >
           {label}
         </span>
       </div>
-      <div className="mt-1.5 flex items-baseline gap-1.5">
+      <div
+        className={`flex items-baseline gap-1.5 ${dense ? "mt-0.5" : "mt-1.5"}`}
+      >
         <span
-          className="text-5xl leading-none font-bold tabular-nums"
+          className={`leading-none font-bold tabular-nums ${
+            dense ? "text-4xl" : "text-5xl"
+          }`}
           style={{ color: ink }}
         >
           {value}
@@ -262,7 +274,7 @@ export function StatCard({
       </div>
       {foot && (
         <div
-          className="mt-2.5 pt-2"
+          className={dense ? "mt-1.5 pt-1.5" : "mt-2.5 pt-2"}
           style={{ borderTop: `1px solid ${T.neutral.border}` }}
         >
           {footLabel && (
@@ -446,18 +458,20 @@ export function Meter({
   total,
   color,
   width = 120,
+  height = 8,
 }: {
   value: number;
   total: number;
   color: string;
   width?: number | string;
+  height?: number;
 }) {
   const ratio = total > 0 ? Math.min(1, Math.max(0, value / total)) : 0;
   return (
     <span
       aria-hidden
       className="inline-block shrink-0 overflow-hidden rounded-full align-middle"
-      style={{ width, height: 8, backgroundColor: T.neutral.border }}
+      style={{ width, height, backgroundColor: T.neutral.border }}
     >
       <span
         className="block h-full rounded-full"

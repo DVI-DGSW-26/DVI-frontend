@@ -72,6 +72,38 @@ export const todayInspections: AdminInspection[] = ROWS.flatMap((row, ri) =>
   ),
 );
 
+/* ── 순회검사 배정 목록 (GET /cross-check/assigned) ───────────
+ *
+ * 끝난 차수의 담당자 이름은 모니터 스냅샷에 없고 이 목록에만 있다.
+ * 순회검사가 붙은(cross=true) 시점마다 담당자를 하나씩 만들어 둔다.
+ */
+
+const CHECKERS = ["한서준", "오지현", "문가영"];
+
+export const assignedCrossChecks = ROWS.flatMap((row, ri) =>
+  row.states.flatMap((status, si) =>
+    status && row.cross[si]
+      ? [
+          {
+            inspectionId: 2000 + ri * 10 + si,
+            productName: row.product,
+            productCode: `P-${10 + ri}`,
+            process: "EXTRUSION",
+            equipmentName: row.equipment,
+            productionName: row.worker,
+            type: slots[si].type,
+            typeLabel: slots[si].label,
+            inspectionTime: slots[si].label,
+            completedAt: kstStamp(si * 40),
+            status: "COMPLETED" as const,
+            ownerName: CHECKERS[(ri + si) % CHECKERS.length],
+            crossCheckId: 8000 + ri * 10 + si,
+          },
+        ]
+      : [],
+  ),
+);
+
 /* ── 페이지2: 검사 상세 ──────────────────────────────────── */
 
 /** 제품별 측정 항목 틀: [항목명, 기준값, 상한, 하한, 측정값(없으면 아직 안 찍힘)]. */
@@ -114,6 +146,17 @@ const DIM_SETS: Record<number, DimSpec[]> = {
     ["평면도", 0.1, 0.03, -0.03, 0.09],
     ["리브 높이", 8, 0.1, -0.1, 8.02],
   ],
+};
+
+/**
+ * 자주검사에 적힌 사유 (자주검사 id → 사유).
+ * 건너뜀과 미완료가 같은 필드(incompleteReason)를 쓴다.
+ *   2021 건너뜀 / 2033 미완료(결재 대기) / 2050 미완료 승인
+ */
+const INSPECTION_REASONS: Record<number, string> = {
+  2021: "금형 교체로 라인 정지",
+  2033: "압출 1호기 모터 고장으로 측정 불가",
+  2050: "정전으로 초품 측정 누락 — 사유 인정",
 };
 
 const FALLBACK: DimSpec[] = [
@@ -164,7 +207,7 @@ export function detailFor(inspectionId: number, filled: number): InspectionDetai
     results,
     appearanceResult: inspectionId % 3 === 0 ? "NG" : "OK",
     status: "DRAFT",
-    incompleteReason: null,
+    incompleteReason: INSPECTION_REASONS[inspectionId] ?? null,
     createdAt: "",
     updatedAt: item.updatedAt,
   };

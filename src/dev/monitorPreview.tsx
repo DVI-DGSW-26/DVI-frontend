@@ -12,8 +12,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { AxiosAdapter, AxiosResponse } from "axios";
 import { http } from "../lib/http";
 import MonitorPage from "../features/monitor/ui/MonitorPage";
-import { kstStamp, quality, schedule, snapshot } from "./mockMonitorData";
-import { detailFor, processes, slots, todayInspections } from "./mockRest";
+import { kstStamp, quality, snapshot } from "./mockMonitorData";
+import {
+  assignedCrossChecks,
+  detailFor,
+  processes,
+  slots,
+  todayInspections,
+} from "./mockRest";
 import { broadcast, installMockStream } from "./mockStream";
 import "../index.css";
 
@@ -21,30 +27,6 @@ import "../index.css";
 let tick = 0;
 
 function advance(): void {
-  // 진행중인 칸 하나를 완료로 넘기고, 다음 칸을 진행중으로 만든다.
-  const order = schedule.orders[tick % schedule.orders.length];
-  const running = order.slots.findIndex((s) => s.state === "IN_PROGRESS");
-  if (running >= 0) {
-    order.slots[running] = {
-      ...order.slots[running],
-      state: "DONE",
-      overdue: false,
-    };
-    order.doneCount = Math.min(order.totalCount, order.doneCount + 1);
-    const next = order.slots.findIndex((s) => s.state === "NOT_STARTED");
-    if (next >= 0) {
-      order.slots[next] = { ...order.slots[next], state: "IN_PROGRESS" };
-    }
-    schedule.summary = {
-      ...schedule.summary,
-      doneSlots: schedule.summary.doneSlots + 1,
-      overdueSlots: schedule.orders.reduce(
-        (n, o) => n + o.slots.filter((s) => s.overdue).length,
-        0,
-      ),
-    };
-  }
-
   // 세 틱마다 새 불량 한 건 — 목록 맨 위로 올라온다.
   if (tick % 3 === 0) {
     const src = quality.defects[tick % quality.defects.length];
@@ -59,14 +41,12 @@ function advance(): void {
 installMockStream(() => [
   ["snapshot", snapshot],
   ["quality", quality],
-  ["schedule", schedule],
 ]);
 
 setInterval(() => {
   tick += 1;
   advance();
-  // 서버는 내용이 바뀐 보드만 다시 밀어준다 — 여기서도 바뀐 둘만 보낸다.
-  broadcast("schedule", schedule);
+  // 서버는 내용이 바뀐 보드만 다시 밀어준다 — 여기서도 바뀐 것만 보낸다.
   broadcast("quality", quality);
 }, 6000);
 
@@ -75,7 +55,14 @@ setInterval(() => {
 function payload(url: string): unknown {
   if (url.includes("/monitor/snapshot")) return snapshot;
   if (url.includes("/monitor/quality")) return quality;
-  if (url.includes("/monitor/schedule")) return schedule;
+  if (url.includes("/cross-check/assigned")) return assignedCrossChecks;
+  const crossDetail = /\/cross-check\/(\d+)$/.exec(url);
+  if (crossDetail) {
+    return {
+      crossCheckId: Number(crossDetail[1]),
+      rejectReason: "DIM1 NG 확인됨 — 자주검사 재측정 요청",
+    };
+  }
   if (url.includes("/inspection/slots")) return slots;
   if (url.includes("/inspection/all")) return todayInspections;
   if (url.includes("/process")) return processes;
