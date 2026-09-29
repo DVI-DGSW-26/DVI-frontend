@@ -44,6 +44,11 @@ export interface ProgressCell {
   inspectionId: number | null;
   /** 표시 라벨 — "초/중/종" 또는 "08:00". */
   label: string;
+  /**
+   * 슬롯 예정 시각(HH:mm). 초/중/종처럼 시각이 없는 슬롯은 null —
+   * 비교할 시각이 없으므로 지연 판정 대상이 아니다.
+   */
+  time: string | null;
   status: CellStatus;
   cross: CrossCellStatus;
   /** 이 시점에 걸린 진행중 순회검사 — 검사자·경과처럼 칸에 안 들어가는 정보용. */
@@ -129,6 +134,7 @@ export function buildProgressRows(
         type: slot.type,
         inspectionId: rec?.inspectionId ?? null,
         label: slot.label || slot.type,
+        time: slot.time ?? null,
         status,
         cross: crossCellStatus(status, rec?.hasCrossCheck, live),
         crossCheck: live,

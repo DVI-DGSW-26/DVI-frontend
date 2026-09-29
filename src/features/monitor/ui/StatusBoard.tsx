@@ -13,12 +13,18 @@ import { useBoxSize } from "../lib/useBoxSize";
 import { fitRows } from "../lib/fitRows";
 import { useInspectionReasons } from "../api/useInspectionReasons";
 import { useCrossCheckOwners } from "../api/useCrossCheckOwners";
-import { formatElapsed } from "../lib/time";
+import {
+  formatCountdown,
+  formatElapsed,
+  overdueSeconds,
+  secondsUntilSlot,
+} from "../lib/time";
 import { T } from "../lib/tokens";
 import {
   Avatar,
   Card,
   CardHead,
+  Chip,
   Empty,
   Flip,
   FootStat,
@@ -184,13 +190,19 @@ export default function StatusBoard({
   );
   const skipReasons = useInspectionReasons(skippedIds);
 
+  // 지연은 초 단위로 바뀌는 값이라 따로 센다(메모하면 분·초가 멈춘다).
+  const overdueCount = rows.reduce(
+    (n, r) => n + r.cells.filter((c) => overdueSecondsOf(c, now) != null).length,
+    0,
+  );
+
   // 끝난 차수의 순회검사자 이름은 스냅샷에 없다 — 배정 목록에서 메운다.
   const crossOwners = useCrossCheckOwners();
 
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="grid shrink-0 grid-cols-5 gap-4 px-6 pt-5 pb-4">
+      <div className="grid shrink-0 grid-cols-6 gap-4 px-6 pt-5 pb-4">
         <StatCard
           dense
           label="완료"
@@ -218,6 +230,19 @@ export default function StatusBoard({
           tag={<TrackTag text="자주" />}
           value={totals.remaining}
           color={T.neutral.ink}
+        />
+        {/*
+          앞 네 칸을 쪼갠 수가 아니다 — 예정 시각이 지났는데 아직 끝나지 않은 칸이라
+          '진행중'과 '남은 시점' 양쪽에 걸쳐 있다. 더해 읽히지 않도록 이름을 나눴다.
+        */}
+        <StatCard
+          dense
+          label="지연"
+          tag={<TrackTag text="자주" />}
+          value={overdueCount}
+          unit="칸"
+          color={overdueCount > 0 ? T.warning[700] : T.success[700]}
+          sub={overdueCount > 0 ? "시각 경과" : "정시"}
         />
         {/*
           앞 네 칸과 세는 대상이 다르다 — 자주검사가 끝나 순회검사자를 기다리는 시점 수다.
@@ -340,6 +365,17 @@ function ProgressRowView({
   const selfBar = compact ? 34 : 44;
   const crossBar = compact ? 26 : 30;
 
+  // 늦은 칸이 있으면 얼마나 늦었는지를, 없으면 다음 마감까지 남은 시간을 알린다.
+  // 서버는 이런 연속값을 주지 않는다 — 슬롯 시각으로 여기서 센다.
+  const late = row.cells.reduce(
+    (worst, c) => Math.max(worst, overdueSecondsOf(c, now) ?? 0),
+    0,
+  );
+  const lateCount = row.cells.filter(
+    (c) => overdueSecondsOf(c, now) != null,
+  ).length;
+  const next = nextDeadline(row.cells, now);
+
   return (
     // 높이는 바깥에서 받은 값으로 고정한다 — 내용에 따라 늘어나면 줄 수 계산이 어긋난다.
     <div
@@ -383,6 +419,23 @@ function ProgressRowView({
         </div>
 
         <div className="flex shrink-0 items-center gap-3">
+          {lateCount > 0 ? (
+            <Chip bg={OVERDUE_COLOR} fg={T.neutral.ink} strong>
+              <span aria-hidden>▲</span> 지연 {lateCount}칸
+              {late > 0 && (
+                <span className="tabular-nums">· {formatCountdown(late)}</span>
+              )}
+            </Chip>
+          ) : next ? (
+            <Chip bg={T.neutral.sub} fg={T.inkSub} border={T.neutral.border}>
+              <span>
+                <span className="font-bold">{next.label}</span>까지
+              </span>
+              <span className="tabular-nums">
+                {formatCountdown(next.seconds)}
+              </span>
+            </Chip>
+          ) : null}
           <Ratio
             label="자주"
             labelColor={TRACK_COLOR.self}
@@ -411,6 +464,7 @@ function ProgressRowView({
           cells={row.cells}
           height={selfBar}
           skipReasons={skipReasons}
+          now={now}
         />
         <TrackLabel text="순회" color={TRACK_COLOR.cross} />
         <CrossBar
@@ -422,6 +476,44 @@ function ProgressRowView({
       </div>
     </div>
   );
+}
+
+/**
+ * 지연 — 예정 시각이 지났는데 아직 끝나지 않은 칸(미시작·진행중).
+ *
+ * 진행·지연 보드가 쓰던 서버 판정(overdue)과 같은 규칙을 화면에서 직접 계산한다.
+ * 그 보드는 작업지시가 행이라 여기(작업자 × 제품·설비)와 행이 맞지 않았다 — 어차피
+ * 슬롯 시각과 상태가 이 화면에 다 있어 결과는 같다.
+ *
+ * 시각이 없는 슬롯(초/중/종)은 비교할 것이 없어 지연이 아니다. 완료·미완료·건너뜀은
+ * 이미 종결된 칸이라 시각이 지났든 말든 지연으로 보지 않는다.
+ */
+function overdueSecondsOf(cell: ProgressRow["cells"][number], now: Date) {
+  if (cell.status !== "NONE" && cell.status !== "DRAFT") return null;
+  return overdueSeconds(cell.time, now);
+}
+
+/**
+ * 지연 표식 색 — 앰버.
+ *
+ * 순회 막대의 반려가 이미 빨간 테두리를 쓰고 있어 색을 갈랐다. 앰버는 진행중(마젠타)
+ * 채움 위에서도 밝아 잘 보이고, 미완료(진한 앰버 채움)와는 채움/테두리로 갈린다 —
+ * 미완료 칸은 종결된 칸이라 애초에 지연 대상이 아니라 한 칸에 둘이 겹치지 않는다.
+ */
+const OVERDUE_COLOR = T.warning[500];
+
+/** 아직 끝나지 않은 칸 중 시각이 있고 아직 지나지 않은 가장 이른 칸. */
+function nextDeadline(cells: ProgressRow["cells"], now: Date) {
+  let best: { label: string; seconds: number } | null = null;
+  for (const cell of cells) {
+    if (cell.status !== "NONE" && cell.status !== "DRAFT") continue;
+    const seconds = secondsUntilSlot(cell.time, now);
+    if (seconds == null || seconds < 0) continue;
+    if (!best || seconds < best.seconds) {
+      best = { label: cell.label, seconds };
+    }
+  }
+  return best;
 }
 
 // 두 줄은 같은 상태에 같은 색을 쓰므로(막대) 어느 쪽 줄인지는 이름표 색이 알려준다.
@@ -482,10 +574,12 @@ function SegmentBar({
   cells,
   height,
   skipReasons,
+  now,
 }: {
   cells: ProgressRow["cells"];
   height: number;
   skipReasons: Map<number, string>;
+  now: Date;
 }) {
   return (
     <div className="flex w-full gap-0.5">
@@ -497,23 +591,38 @@ function SegmentBar({
             ? skipReasons.get(cell.inspectionId)
             : undefined;
         const skipped = cell.status === "SKIPPED";
+        // 지연은 상태를 덮어쓰지 않고 테두리로 겹친다 — 진행중이면서 늦은 칸이 있다.
+        const late = overdueSecondsOf(cell, now);
         return (
           <div
             key={cell.type}
-            className="flex min-w-0 flex-1 flex-col items-center justify-center text-lg font-bold tabular-nums"
+            className="relative flex min-w-0 flex-1 flex-col items-center justify-center text-lg font-bold tabular-nums"
             style={{
               height,
               backgroundColor: s.bg,
               color: s.fg,
               border: s.border ? `1px solid ${s.border}` : undefined,
+              boxShadow:
+                late != null ? `inset 0 0 0 3px ${OVERDUE_COLOR}` : undefined,
               ...capStyle(i, cells.length),
             }}
             title={
               skipped
                 ? `${cell.label} 자주검사 건너뜀 — ${reason ?? "사유 없음"}`
-                : `${cell.label} 자주검사 ${s.name}`
+                : `${cell.label} 자주검사 ${s.name}${
+                    late != null ? ` · ${formatCountdown(late)} 지연` : ""
+                  }`
             }
           >
+            {late != null && (
+              <span
+                aria-hidden
+                className="absolute top-0 right-1 text-sm leading-none"
+                style={{ color: OVERDUE_COLOR }}
+              >
+                ▲
+              </span>
+            )}
             <span className="flex items-center gap-1.5 leading-none">
               <span aria-hidden>{s.mark}</span>
               {cell.label}
@@ -755,7 +864,11 @@ function Legend() {
     >
       <LegendGroup
         title="자주"
-        items={self.map((k) => CELL_STYLE[k])}
+        items={[
+          ...self.map((k) => CELL_STYLE[k]),
+          // 지연은 채움이 아니라 겹쳐 그리는 테두리라 범례도 그 모양 그대로 보여준다.
+          { bg: T.neutral.sub, ring: OVERDUE_COLOR, name: "지연" },
+        ]}
         color={TRACK_COLOR.self}
       />
       <LegendGroup

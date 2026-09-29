@@ -9,19 +9,21 @@ import { CARD_SHADOW, ConnectionBadge } from "./parts";
 import StatusBoard from "./StatusBoard";
 import DetailBoard from "./DetailBoard";
 import QualityBoard from "./QualityBoard";
-import ScheduleBoard from "./ScheduleBoard";
 
 // 공장 벽걸이 모니터. 멀리서 읽히는 것이 최우선이고, 사람이 붙어 조작하는 화면이 아니다.
 //
-// 네 페이지가 스스로 돌아간다:
-//   1 현황판     지금 누가 어디까지 갔나 (event: snapshot)
+// 세 페이지가 스스로 돌아간다:
+//   1 현황판     지금 누가 어디까지 갔나, 무엇이 늦고 있나 (event: snapshot)
 //   2 검사 상세  지금 무슨 값이 찍히고 있나 (GET /inspection/{id} — 신규 API 없음)
-//   3 품질·불량  오늘 무엇이 걸렸나 (event: quality)
-//   4 진행·지연  무엇이 제 시각에 안 되고 있나 (event: schedule)
+//   3 품질·불량  오늘 무엇이 걸렸나, 그래서 어떻게 됐나 (event: quality)
+//
+// 진행·지연은 따로 한 페이지였는데 현황판과 같은 매트릭스를 작업지시 기준으로 다시
+// 그린 것뿐이라 접었다. 지연 표시만 현황판으로 옮겼다(SSE 의 schedule 이벤트도 더
+// 받지 않는다 — 되살리려면 이 커밋을 되돌리면 된다).
 //
 // SSE 커넥션은 하나다(GET /monitor/stream). 페이지를 넘길 때 다시 연결하지 않고,
-// 보이지 않는 페이지의 데이터도 계속 받아 둔다 — 그래야 탭의 경고 수(불량·지연)가
-// 맞고, 넘어간 순간 이미 그려져 있다.
+// 보이지 않는 페이지의 데이터도 계속 받아 둔다 — 그래야 탭의 경고 수(불량)가 맞고,
+// 넘어간 순간 이미 그려져 있다.
 //
 // 자동 순환만으로는 방금 지나간 화면을 다시 볼 수 없어 탭·좌우 화살표·스페이스로
 // 고정할 수 있게 뒀다. 고정은 이 화면에만 걸리고 ?page= 로 주소에 남는다 —
@@ -48,7 +50,7 @@ interface PageDef {
   /** 이 페이지에 머무는 시간. 읽을 것이 많은 화면일수록 길게. */
   dwellMs: number;
   /** 이 페이지가 쓰는 이벤트 — 머리말의 "마지막 변경"을 보드별로 맞춘다. */
-  source: "snapshot" | "quality" | "schedule";
+  source: "snapshot" | "quality";
   /** 자동 순환에서 건너뛸지 — 보여줄 게 아예 없는 페이지에 머물지 않는다. */
   available: (d: BoardData) => boolean;
   /** 탭에 붙는 수 — 이 페이지를 안 보고 있어도 알아야 하는 것만. */
@@ -104,21 +106,6 @@ const PAGES: PageDef[] = [
         today={today}
         now={now}
       />
-    ),
-  },
-  {
-    key: "schedule",
-    label: "진행·지연",
-    title: "작업지시 진행·지연",
-    dwellMs: 24_000,
-    source: "schedule",
-    available: () => true,
-    badge: ({ stream }) => {
-      const n = stream.schedule?.summary?.overdueSlots ?? 0;
-      return n > 0 ? { count: n, tone: "alert" } : null;
-    },
-    render: ({ stream, now }) => (
-      <ScheduleBoard board={stream.schedule} now={now} />
     ),
   },
 ];
