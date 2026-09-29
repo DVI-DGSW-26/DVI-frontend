@@ -64,7 +64,7 @@ const DEFECT_ROW_HEIGHT = 88;
  * 조치 한 줄 높이(px).
  * 사유가 이 줄의 알맹이다 — 두 줄까지 접히게 잡아 둔다.
  */
-const ACTION_ROW_HEIGHT = 128;
+const ACTION_ROW_HEIGHT = 140;
 
 export default function QualityBoard({
   board,
@@ -227,7 +227,7 @@ export default function QualityBoard({
 
       {/* 오른쪽 열은 "무슨 유형이 몰리나"와 "어떻게 조치했나"를 맡는다 — 목록만큼
           중요한 정보라 폭을 넉넉히 준다. */}
-      <main className="grid min-h-0 flex-1 grid-cols-[1fr_32rem] gap-4 px-6 pb-6">
+      <main className="grid min-h-0 flex-1 grid-cols-[1fr_38rem] gap-4 px-6 pb-6">
         <Card>
           <CardHead
             title="불량 항목"
@@ -395,7 +395,13 @@ function DefectRow({ defect, now }: { defect: MonitorDefect; now: Date }) {
 
 /* ── 곁들이 ───────────────────────────────────────────────── */
 
-/** 불량이 어느 종류에 몰려 있는지 — 수치보다 "치수냐 외관이냐"가 먼저 보이게. */
+/**
+ * 불량이 어느 종류에 몰려 있는지 — 수치보다 "치수냐 외관이냐"가 먼저 보이게.
+ *
+ * 셋을 가로로 늘어놓는다. 세로로 쌓으면 카드가 높아져 아래 조치 현황이 그만큼 줄어드는데,
+ * 여기서 필요한 건 종류별 "크기 비교"라 수를 크게 두는 편이 낫다. 비교는 숫자가 맡고
+ * 막대는 거들기만 한다.
+ */
 function TypeBreakdown({
   counts,
   total,
@@ -407,38 +413,44 @@ function TypeBreakdown({
   return (
     <Card>
       <CardHead title="불량 유형" />
-      <div className="flex flex-col gap-4 px-6 pb-5">
+      <div className="grid grid-cols-3 gap-4 px-6 pb-6">
         {types.map((t) => {
           const s = defectStyle(t);
           const n = counts[t];
+          const on = n > 0;
           return (
-            <div key={t} className="flex items-center gap-3">
+            <div key={t} className="flex min-w-0 flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <span
+                  aria-hidden
+                  className="flex size-9 shrink-0 items-center justify-center rounded-md text-xl font-bold"
+                  style={{
+                    backgroundColor: on ? T.error[700] : T.neutral.sub,
+                    color: on ? T.neutral.white : T.neutral.muted,
+                  }}
+                >
+                  {s.mark}
+                </span>
+                <span
+                  className="truncate text-xl"
+                  style={{ color: on ? T.neutral.ink : T.inkSub }}
+                >
+                  {s.name}
+                </span>
+              </div>
               <span
-                aria-hidden
-                className="flex size-11 shrink-0 items-center justify-center rounded-md text-2xl font-bold"
-                style={{
-                  backgroundColor: n > 0 ? T.error[700] : T.neutral.sub,
-                  color: n > 0 ? T.neutral.white : T.neutral.muted,
-                }}
-              >
-                {s.mark}
-              </span>
-              <span className="w-32 shrink-0 text-2xl">{s.name}</span>
-              <span className="min-w-0 flex-1">
-                <Meter
-                  value={n}
-                  total={total}
-                  color={n > 0 ? T.error[700] : T.neutral.border}
-                  width="100%"
-                  height={16}
-                />
-              </span>
-              <span
-                className="w-12 shrink-0 text-right text-4xl font-bold tabular-nums"
-                style={{ color: n > 0 ? T.error[700] : T.neutral.muted }}
+                className="text-6xl leading-none font-bold tabular-nums"
+                style={{ color: on ? T.error[700] : T.neutral.muted }}
               >
                 {n}
               </span>
+              <Meter
+                value={n}
+                total={total}
+                color={on ? T.error[700] : T.neutral.border}
+                width="100%"
+                height={12}
+              />
             </div>
           );
         })}
@@ -542,23 +554,23 @@ function ActionCard({ items, now }: { items: ActionItem[]; now: Date }) {
               >
                 <div className="flex items-center gap-2">
                   <span
-                    className="shrink-0 rounded-md px-2.5 py-1 text-lg font-bold"
+                    className="shrink-0 rounded-md px-3 py-1 text-xl font-bold"
                     style={{ backgroundColor: s.bg, color: T.neutral.white }}
                   >
                     {s.label}
                   </span>
-                  <span className="truncate text-2xl font-bold">
+                  <span className="truncate text-3xl font-bold">
                     {item.productName}
                   </span>
                   <span
-                    className="shrink-0 text-lg"
+                    className="shrink-0 text-xl"
                     style={{ color: T.inkSub }}
                   >
                     {item.equipmentName}
                   </span>
                   {item.at && (
                     <span
-                      className="ml-auto shrink-0 text-base tabular-nums"
+                      className="ml-auto shrink-0 text-lg tabular-nums"
                       style={{ color: T.neutral.muted }}
                     >
                       {formatElapsed(item.at, now)}
@@ -567,12 +579,12 @@ function ActionCard({ items, now }: { items: ActionItem[]; now: Date }) {
                 </div>
                 {/* 사유가 이 줄의 알맹이다 — 무슨 일이 있었는지가 여기 적힌다. */}
                 <div
-                  className="line-clamp-2 text-xl leading-snug font-bold"
+                  className="line-clamp-2 text-2xl leading-snug font-bold"
                   title={item.reason ?? undefined}
                 >
                   {item.reason ?? "사유 없음"}
                 </div>
-                <div className="flex items-baseline gap-2 text-lg">
+                <div className="flex items-baseline gap-2 text-xl">
                   <span style={{ color: T.inkSub }}>{item.person}</span>
                   {/* 그래서 지금 어떻게 됐는지 — 조치의 결말. */}
                   <span className="font-bold" style={{ color: s.bg }}>
