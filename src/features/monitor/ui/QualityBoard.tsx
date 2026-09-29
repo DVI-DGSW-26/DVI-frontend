@@ -135,19 +135,40 @@ export default function QualityBoard({
         reason: incompleteReasons.get(i.inspectionId) ?? null,
         at: i.updatedAt ?? null,
       })),
-      ...crossRejected.map((c) => ({
-        key: `c-${c.crossCheckId}`,
-        kind: "CROSS_REJECTED" as const,
-        productName: c.productName,
-        equipmentName: c.equipmentName,
-        person: c.checkerName ?? "이관 대기",
-        reason: rejectReasons.get(c.crossCheckId) ?? null,
-        at: c.updatedAt,
-      })),
+      ...crossRejected.map((c) => {
+        // 반려는 두 종류다. 순회검사자가 직접 반려하면 자주검사가 DRAFT 로 되돌아가
+        // 작업자가 재측정하고, 품질관리자가 결재에서 반려하면 자주검사는 완료인 채로
+        // 순회검사자가 다시 한다. 둘 다 상태는 REJECTED 라 자주검사를 봐야 갈린다.
+        const inspection = (inspections ?? []).find(
+          (i) => i.inspectionId === c.inspectionId,
+        );
+        return {
+          key: `c-${c.crossCheckId}`,
+          kind: "CROSS_REJECTED" as const,
+          productName: c.productName,
+          equipmentName: c.equipmentName,
+          person: c.checkerName ?? "이관 대기",
+          reason: rejectReasons.get(c.crossCheckId) ?? null,
+          at: c.updatedAt,
+          note:
+            inspection?.status === "DRAFT"
+              ? "작업자 재측정 중"
+              : inspection
+                ? "순회검사자 재작업 필요"
+                : undefined,
+        };
+      }),
     ];
     // 최근에 벌어진 일이 위로. 시각이 없는 건은 맨 뒤로 민다.
     return list.sort((a, b) => stamp(b.at) - stamp(a.at));
-  }, [terminated, incomplete, crossRejected, incompleteReasons, rejectReasons]);
+  }, [
+    terminated,
+    incomplete,
+    crossRejected,
+    inspections,
+    incompleteReasons,
+    rejectReasons,
+  ]);
 
   const listRef = useRef<HTMLDivElement>(null);
   const perPage = useFitCount(listRef, DEFECT_ROW_HEIGHT);
@@ -478,6 +499,8 @@ interface ActionItem {
   person: string;
   reason: string | null;
   at: string | null;
+  /** 줄마다 결말이 갈리는 경우에만 채운다 — 비면 종류별 기본 문구를 쓴다. */
+  note?: string;
 }
 
 type ActionKind =
@@ -510,10 +533,12 @@ const ACTION_STYLE: Record<
     bg: T.success[700],
     note: "사유 인정 · 슬롯 종료",
   },
+  // 반려는 자주검사가 되돌아갔는지에 따라 다음 차례가 갈린다 — 줄마다 note 로 덮는다.
+  // 여기 기본값은 어느 쪽인지 알 수 없을 때(오늘 자주검사 목록에 없을 때)만 쓰인다.
   CROSS_REJECTED: {
     label: "순회 반려",
     bg: T.primary[500],
-    note: "작업자 재측정 중",
+    note: "재작업 대기",
   },
 };
 
@@ -543,6 +568,7 @@ function ActionCard({ items, now }: { items: ActionItem[]; now: Date }) {
         <Flip token={page.page}>
           {page.visible.map((item) => {
             const s = ACTION_STYLE[item.kind];
+            const note = item.note ?? s.note;
             return (
               <div
                 key={item.key}
@@ -588,7 +614,7 @@ function ActionCard({ items, now }: { items: ActionItem[]; now: Date }) {
                   <span style={{ color: T.inkSub }}>{item.person}</span>
                   {/* 그래서 지금 어떻게 됐는지 — 조치의 결말. */}
                   <span className="font-bold" style={{ color: s.bg }}>
-                    {s.note}
+                    {note}
                   </span>
                 </div>
               </div>

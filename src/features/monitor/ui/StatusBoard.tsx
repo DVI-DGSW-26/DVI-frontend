@@ -673,6 +673,10 @@ function CrossBar({
         // 반려는 채움색을 새로 늘리지 않고 테두리로 겹쳐 그린다 — 진행·지연 보드의
         // '지연'과 같은 방식이다. 칸의 색은 순회 대상 여부를, 테두리는 반려를 말한다.
         const rejected = cell.cross === "REJECTED";
+        // 반려는 두 종류다. 순회검사자가 직접 반려하면 자주검사가 DRAFT 로 되돌아가
+        // 작업자가 재측정하고, 품질관리자가 결재에서 반려하면 자주검사는 완료인 채로
+        // 순회검사자가 다시 한다. 둘 다 상태는 REJECTED 라 자주 막대를 봐야 갈린다.
+        const backToWorker = rejected && cell.status === "DRAFT";
         return (
           <div
             key={cell.type}
@@ -688,9 +692,13 @@ function CrossBar({
               ...capStyle(i, cells.length),
             }}
             title={
-              live
-                ? `${cell.label} 순회검사 ${s.name} — ${checker} · ${formatElapsed(live.updatedAt, now)}`
-                : `${cell.label} 순회검사 ${s.name}${checker ? ` — ${checker}` : ""}`
+              rejected
+                ? `${cell.label} 순회검사 반려 — ${
+                    backToWorker ? "작업자 재측정 중" : "순회검사자 재작업 필요"
+                  }${checker ? ` · ${checker}` : ""}`
+                : live
+                  ? `${cell.label} 순회검사 ${s.name} — ${checker} · ${formatElapsed(live.updatedAt, now)}`
+                  : `${cell.label} 순회검사 ${s.name}${checker ? ` — ${checker}` : ""}`
             }
           >
             <span aria-hidden>{s.mark}</span>
@@ -811,7 +819,7 @@ const CROSS_STYLE: Record<
     fg: "#6B6B6B",
     border: T.neutral.border,
     mark: "·",
-    name: "반려 — 자주검사 재측정 중",
+    name: "반려",
   },
   // 순회검사자를 기다리는 칸 — 결재 대기(앰버)와는 기다리는 사람도 할 일도 다르므로
   // 색을 나눈다. 순회 트랙 이름표와 같은 파랑 계열이라 "순회 쪽 할 일"로 읽힌다.
