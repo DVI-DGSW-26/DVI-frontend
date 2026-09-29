@@ -83,6 +83,13 @@ function payload(url: string): unknown {
   if (url.includes("/monitor/quality")) return quality;
   if (url.includes("/monitor/schedule")) return schedule;
   if (url.includes("/cross-check/assigned")) return assignedCrossChecks;
+  const crossDetail = /\/cross-check\/(\d+)$/.exec(url);
+  if (crossDetail) {
+    return {
+      crossCheckId: Number(crossDetail[1]),
+      rejectReason: "DIM1 NG 확인됨 — 자주검사 재측정 요청",
+    };
+  }
   if (url.includes("/inspection/slots")) return slots;
   if (url.includes("/inspection/all")) return todayInspections;
   if (url.includes("/process")) return processes;

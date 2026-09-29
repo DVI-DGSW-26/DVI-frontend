@@ -1,4 +1,8 @@
 import { useMemo, useRef } from "react";
+import { parseServerDate } from "../../../lib/datetime";
+import { useTodayInspections } from "../api/useTodayInspections";
+import { useInspectionReasons } from "../api/useInspectionReasons";
+import { useCrossCheckReasons } from "../api/useCrossCheckReasons";
 import { usePagedList } from "../lib/usePagedList";
 import { useFitCount } from "../lib/useFitCount";
 import { formatElapsed, timeOf } from "../lib/time";
@@ -19,7 +23,7 @@ import type {
   MonitorDefect,
   MonitorDefectType,
   MonitorQualityBoard,
-  MonitorTerminated,
+  MonitorSnapshot,
 } from "../type/types";
 
 // 페이지3 — 품질·불량 보드.
@@ -57,21 +61,93 @@ function qualityLevel(ngCount: number, rate: number | null): QualityLevel {
 /** 불량 한 줄 높이(px) — 한 페이지 줄 수를 이 값으로 나눠 구하므로 실제로 이 높이여야 한다. */
 const DEFECT_ROW_HEIGHT = 88;
 /**
- * 조기종료 한 줄 높이(px).
+ * 조치 한 줄 높이(px).
  * 사유가 이 줄의 알맹이다 — 두 줄까지 접히게 잡아 둔다.
  */
-const TERMINATED_ROW_HEIGHT = 108;
+const ACTION_ROW_HEIGHT = 124;
 
 export default function QualityBoard({
   board,
+  snapshot,
+  today,
   now,
 }: {
   board: MonitorQualityBoard | null;
+  /** 순회 반려를 가져오려고 함께 받는다 — 반려는 품질 보드 API 에 없다. */
+  snapshot: MonitorSnapshot | null;
+  /** KST 오늘 — 미완료·승인 건을 오늘 자주검사에서 찾는다. */
+  today: string;
   now: Date;
 }) {
   const defects = useMemo(() => board?.defects ?? [], [board?.defects]);
-  const terminated = board?.terminated ?? [];
+  const terminated = useMemo(() => board?.terminated ?? [], [board?.terminated]);
   const summary = board?.summary;
+
+  // ── 조치 현황 ──────────────────────────────────────────────
+  // 서버는 "조치"를 따로 기록하지 않는다. 상태가 바뀐 흔적과 그때 적은 사유를 세 곳에서
+  // 모아 엮는다 — 조기종료(품질 보드), 미완료·승인(오늘 자주검사), 순회 반려(스냅샷).
+  const { data: inspections } = useTodayInspections(today);
+
+  const incomplete = useMemo(
+    () =>
+      (inspections ?? []).filter(
+        (i) =>
+          i.status === "INCOMPLETE" || i.status === "INCOMPLETE_APPROVED",
+      ),
+    [inspections],
+  );
+  const crossRejected = useMemo(
+    () => (snapshot?.crossChecks ?? []).filter((c) => c.status === "REJECTED"),
+    [snapshot?.crossChecks],
+  );
+
+  const incompleteIds = useMemo(
+    () => incomplete.map((i) => i.inspectionId),
+    [incomplete],
+  );
+  const rejectedIds = useMemo(
+    () => crossRejected.map((c) => c.crossCheckId),
+    [crossRejected],
+  );
+  const incompleteReasons = useInspectionReasons(incompleteIds);
+  const rejectReasons = useCrossCheckReasons(rejectedIds);
+
+  const actions = useMemo<ActionItem[]>(() => {
+    const list: ActionItem[] = [
+      ...terminated.map((t) => ({
+        key: `t-${t.inspectionId}-${t.at}`,
+        kind: "TERMINATED" as const,
+        productName: t.productName,
+        equipmentName: t.equipmentName,
+        person: t.workerName,
+        reason: t.reason,
+        at: t.at,
+      })),
+      ...incomplete.map((i) => ({
+        key: `i-${i.inspectionId}`,
+        kind:
+          i.status === "INCOMPLETE_APPROVED"
+            ? ("INCOMPLETE_APPROVED" as const)
+            : ("INCOMPLETE" as const),
+        productName: i.product.name,
+        equipmentName: i.equipment.name,
+        person: i.production?.name ?? "미배정",
+        reason: incompleteReasons.get(i.inspectionId) ?? null,
+        at: i.updatedAt ?? null,
+      })),
+      ...crossRejected.map((c) => ({
+        key: `c-${c.crossCheckId}`,
+        kind: "CROSS_REJECTED" as const,
+        productName: c.productName,
+        equipmentName: c.equipmentName,
+        person: c.checkerName ?? "이관 대기",
+        reason: rejectReasons.get(c.crossCheckId) ?? null,
+        at: c.updatedAt,
+      })),
+    ];
+    // 최근에 벌어진 일이 위로. 시각이 없는 건은 맨 뒤로 민다.
+    return list.sort((a, b) => stamp(b.at) - stamp(a.at));
+  }, [terminated, incomplete, crossRejected, incompleteReasons, rejectReasons]);
 
   const listRef = useRef<HTMLDivElement>(null);
   const perPage = useFitCount(listRef, DEFECT_ROW_HEIGHT);
@@ -187,7 +263,7 @@ export default function QualityBoard({
 
         <div className="grid min-h-0 grid-rows-[auto_1fr] gap-4">
           <TypeBreakdown counts={byType} total={defects.length} />
-          <TerminatedCard items={terminated} now={now} />
+          <ActionCard items={actions} now={now} />
         </div>
       </main>
     </div>
@@ -371,87 +447,145 @@ function TypeBreakdown({
   );
 }
 
+/* ── 조치 현황 ────────────────────────────────────────────── */
+
+/** 정렬용 시각 — 값이 없거나 못 읽으면 맨 뒤로. */
+function stamp(at: string | null): number {
+  if (!at) return 0;
+  const t = parseServerDate(at).getTime();
+  return Number.isNaN(t) ? 0 : t;
+}
+
+/** 불량이 났을 때 그 뒤로 무슨 일이 있었는지 한 줄. */
+interface ActionItem {
+  key: string;
+  kind: ActionKind;
+  productName: string;
+  equipmentName: string;
+  /** 그 조치에 이름이 걸린 사람 — 작업자 또는 순회검사자. */
+  person: string;
+  reason: string | null;
+  at: string | null;
+}
+
+type ActionKind =
+  | "TERMINATED"
+  | "INCOMPLETE"
+  | "INCOMPLETE_APPROVED"
+  | "CROSS_REJECTED";
+
+// 색은 앱의 상태 색 규칙을 그대로 따른다 — 빨강은 중단, 앰버는 결재 대기,
+// 초록은 종결, 마젠타는 지금 사람이 하는 중.
+const ACTION_STYLE: Record<
+  ActionKind,
+  { label: string; bg: string; note: string }
+> = {
+  TERMINATED: {
+    label: "조기종료",
+    bg: T.error[700],
+    note: "검사 중단",
+  },
+  INCOMPLETE: {
+    label: "미완료",
+    bg: T.warning[700],
+    note: "결재 대기",
+  },
+  INCOMPLETE_APPROVED: {
+    label: "미완료 승인",
+    bg: T.success[700],
+    note: "사유 인정 · 슬롯 종료",
+  },
+  CROSS_REJECTED: {
+    label: "순회 반려",
+    bg: T.primary[500],
+    note: "작업자 재측정 중",
+  },
+};
+
 /**
- * 품질 문제로 검사를 중간에 끊은 건 — 불량 항목 몇 개보다 무거운 신호라 따로 세운다.
+ * 불량이 난 뒤 무슨 조치가 있었는지 모아 보여준다.
+ *
+ * 서버는 조치를 따로 기록하지 않는다 — 대신 상태가 바뀐 흔적(조기종료·미완료·승인·
+ * 순회 반려)과 그때 적은 사유가 남는다. 그 둘을 엮어 "그래서 어떻게 됐나"를 만든다.
+ *
+ * 시간순 이력은 만들 수 없다. 서버가 전이 로그를 주지 않아 "지금 어느 단계인지"만
+ * 알 수 있고, 미완료가 반려된 건은 사유까지 지워져 흔적이 남지 않는다.
  */
-function TerminatedCard({
-  items,
-  now,
-}: {
-  items: MonitorTerminated[];
-  now: Date;
-}) {
+function ActionCard({ items, now }: { items: ActionItem[]; now: Date }) {
   const ref = useRef<HTMLDivElement>(null);
-  const perPage = useFitCount(ref, TERMINATED_ROW_HEIGHT);
+  const perPage = useFitCount(ref, ACTION_ROW_HEIGHT);
   const page = usePagedList(items, perPage, PAGE_INTERVAL_MS);
 
   return (
-    // 일반 불량과 무게가 다르다 — 검사가 아예 멈춘 건이라, 한 건이라도 있으면
-    // 머리말에 "검사 중단" 칩을 세워 목록에서 먼저 찾게 한다.
     <Card>
       <CardHead
-        title="조기종료"
+        title="조치 현황"
         count={items.length || undefined}
         pager={page}
-        pagerLabel="조기종료"
-      >
-        {items.length > 0 && (
-          <Chip bg={T.warning[100]} fg={T.warning[700]} strong>
-            검사 중단
-          </Chip>
-        )}
-      </CardHead>
+        pagerLabel="조치"
+      />
       <div ref={ref} className="min-h-0 flex-1 overflow-hidden px-5">
         <Flip token={page.page}>
-          {page.visible.map((t) => (
-          <div
-            key={`${t.inspectionId}-${t.at}`}
-            className="flex flex-col justify-center gap-1 overflow-hidden"
-            style={{
-              height: TERMINATED_ROW_HEIGHT,
-              borderTop: `1px solid ${T.neutral.border}`,
-            }}
-          >
-            <div className="flex items-baseline gap-2">
-              <span className="truncate text-xl font-bold">
-                {t.productName}
-              </span>
-              <span
-                className="shrink-0 text-base"
-                style={{ color: T.inkSub }}
+          {page.visible.map((item) => {
+            const s = ACTION_STYLE[item.kind];
+            return (
+              <div
+                key={item.key}
+                className="flex flex-col justify-center gap-1 overflow-hidden"
+                style={{
+                  height: ACTION_ROW_HEIGHT,
+                  borderTop: `1px solid ${T.neutral.border}`,
+                }}
               >
-                {t.equipmentName}
-              </span>
-              <span
-                className="ml-auto shrink-0 text-sm tabular-nums"
-                style={{ color: T.neutral.muted }}
-              >
-                {formatElapsed(t.at, now)}
-              </span>
-            </div>
-            {/*
-              사유가 이 줄에서 가장 중요한 내용이다 — 불량이 났을 때 무엇을 했는지가
-              여기 적힌다. 제품명만큼 크게 두고 두 줄까지 펼친다.
-            */}
-            <div
-              className="line-clamp-2 text-lg leading-snug font-bold"
-              style={{ color: T.warning[700] }}
-              title={t.reason ?? undefined}
-            >
-              {t.reason || "사유 없음"}
-            </div>
-            <div className="text-base" style={{ color: T.inkSub }}>
-              {t.workerName}
-            </div>
-            </div>
-          ))}
+                <div className="flex items-center gap-2">
+                  <span
+                    className="shrink-0 rounded px-2 py-0.5 text-base font-bold"
+                    style={{ backgroundColor: s.bg, color: T.neutral.white }}
+                  >
+                    {s.label}
+                  </span>
+                  <span className="truncate text-xl font-bold">
+                    {item.productName}
+                  </span>
+                  <span
+                    className="shrink-0 text-base"
+                    style={{ color: T.inkSub }}
+                  >
+                    {item.equipmentName}
+                  </span>
+                  {item.at && (
+                    <span
+                      className="ml-auto shrink-0 text-sm tabular-nums"
+                      style={{ color: T.neutral.muted }}
+                    >
+                      {formatElapsed(item.at, now)}
+                    </span>
+                  )}
+                </div>
+                {/* 사유가 이 줄의 알맹이다 — 무슨 일이 있었는지가 여기 적힌다. */}
+                <div
+                  className="line-clamp-2 text-lg leading-snug font-bold"
+                  title={item.reason ?? undefined}
+                >
+                  {item.reason ?? "사유 없음"}
+                </div>
+                <div className="flex items-baseline gap-2 text-base">
+                  <span style={{ color: T.inkSub }}>{item.person}</span>
+                  {/* 그래서 지금 어떻게 됐는지 — 조치의 결말. */}
+                  <span className="font-bold" style={{ color: s.bg }}>
+                    {s.note}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </Flip>
         {items.length === 0 && (
           <div
             className="flex h-full items-center justify-center text-lg"
             style={{ color: T.neutral.muted }}
           >
-            중단된 검사 없음
+            조치가 필요했던 검사 없음
           </div>
         )}
       </div>

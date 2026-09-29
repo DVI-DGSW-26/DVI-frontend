@@ -11,7 +11,7 @@ import { usePagedList } from "../lib/usePagedList";
 import { useFitCount } from "../lib/useFitCount";
 import { useBoxSize } from "../lib/useBoxSize";
 import { fitRows } from "../lib/fitRows";
-import { useSkipReasons } from "../api/useSkipReasons";
+import { useInspectionReasons } from "../api/useInspectionReasons";
 import { useCrossCheckOwners } from "../api/useCrossCheckOwners";
 import { formatElapsed } from "../lib/time";
 import { T } from "../lib/tokens";
@@ -182,7 +182,7 @@ export default function StatusBoard({
         .map((c) => c.inspectionId as number),
     [byEquipment],
   );
-  const skipReasons = useSkipReasons(skippedIds);
+  const skipReasons = useInspectionReasons(skippedIds);
 
   // 끝난 차수의 순회검사자 이름은 스냅샷에 없다 — 배정 목록에서 메운다.
   const crossOwners = useCrossCheckOwners();

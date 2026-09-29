@@ -7,15 +7,17 @@ import { getInspectionDetail, inspectionKeys } from "../../inspection/api";
 const MAX_LOOKUPS = 24;
 
 /**
- * 건너뛴 시점의 사유.
+ * 자주검사에 적힌 사유 (자주검사 id → 사유).
  *
- * 목록 API(GET /inspection/all)는 사유를 내려주지 않는다 — 상세(GET /inspection/{id})
- * 를 건너뛴 칸에 대해서만 한 번씩 받아 온다. 건너뜀 기록은 더 바뀌지 않으므로 한 번
- * 받으면 다시 받지 않는다(staleTime 무한).
+ * 건너뜀과 미완료가 같은 필드(incompleteReason)를 쓴다 — 목록 API(GET /inspection/all)
+ * 는 이 값을 내려주지 않아, 사유가 필요한 칸에 대해서만 상세(GET /inspection/{id})를
+ * 한 번씩 받아 온다. 종결된 기록은 더 바뀌지 않으므로 한 번 받으면 다시 받지 않는다.
  *
  * 사유가 비어 있으면 지도에 넣지 않는다 — 호출부는 "사유 없음"으로 그린다.
  */
-export function useSkipReasons(inspectionIds: number[]): Map<number, string> {
+export function useInspectionReasons(
+  inspectionIds: number[],
+): Map<number, string> {
   const ids = useMemo(
     () => inspectionIds.slice(0, MAX_LOOKUPS),
     [inspectionIds],

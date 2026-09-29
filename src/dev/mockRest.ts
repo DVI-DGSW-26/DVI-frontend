@@ -149,11 +149,14 @@ const DIM_SETS: Record<number, DimSpec[]> = {
 };
 
 /**
- * 건너뛴 시점의 사유 (자주검사 id → 사유).
- * 서버는 상세(GET /inspection/{id})의 incompleteReason 으로 돌려준다고 보고 맞춰 둔다.
+ * 자주검사에 적힌 사유 (자주검사 id → 사유).
+ * 건너뜀과 미완료가 같은 필드(incompleteReason)를 쓴다.
+ *   2021 건너뜀 / 2033 미완료(결재 대기) / 2050 미완료 승인
  */
-const SKIP_REASONS: Record<number, string> = {
+const INSPECTION_REASONS: Record<number, string> = {
   2021: "금형 교체로 라인 정지",
+  2033: "압출 1호기 모터 고장으로 측정 불가",
+  2050: "정전으로 초품 측정 누락 — 사유 인정",
 };
 
 const FALLBACK: DimSpec[] = [
@@ -204,7 +207,7 @@ export function detailFor(inspectionId: number, filled: number): InspectionDetai
     results,
     appearanceResult: inspectionId % 3 === 0 ? "NG" : "OK",
     status: "DRAFT",
-    incompleteReason: SKIP_REASONS[inspectionId] ?? null,
+    incompleteReason: INSPECTION_REASONS[inspectionId] ?? null,
     createdAt: "",
     updatedAt: item.updatedAt,
   };

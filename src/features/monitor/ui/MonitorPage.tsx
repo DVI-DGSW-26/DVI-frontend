@@ -97,8 +97,13 @@ const PAGES: PageDef[] = [
       const n = stream.quality?.defects.length ?? 0;
       return n > 0 ? { count: n, tone: "alert" } : null;
     },
-    render: ({ stream, now }) => (
-      <QualityBoard board={stream.quality} now={now} />
+    render: ({ stream, now, today }) => (
+      <QualityBoard
+        board={stream.quality}
+        snapshot={stream.snapshot}
+        today={today}
+        now={now}
+      />
     ),
   },
   {
