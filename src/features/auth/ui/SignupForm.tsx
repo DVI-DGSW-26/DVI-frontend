@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import { signup, AuthError, type SignupRole } from "../api";
 import SignupFormWeb from "./SignupForm.web";
@@ -26,16 +27,17 @@ export default function Signup() {
   const [name, setName] = useState("");
   const [department, setDepartment] = useState("");
 
+  const { t } = useTranslation("auth");
   const isMobile = useMediaQuery("(max-width: 767px)");
   const navigate = useNavigate();
 
   const handleSubmit = async () => {
     if (password !== confirmPassword) {
-      alert("비밀번호가 일치하지 않습니다.");
+      alert(t("signup.passwordMismatch"));
       return;
     }
     if (department !== "PRODUCTION" && department !== "QUALITY") {
-      alert("부서를 선택해주세요.");
+      alert(t("signup.selectDepartment"));
       return;
     }
 
@@ -48,14 +50,14 @@ export default function Signup() {
 
     try {
       await signup(payload);
-      alert("관리자 승인 요청이 전송되었습니다.");
+      alert(t("signup.approvalRequested"));
       navigate("/login");
     } catch (err) {
       console.error("signup failed", { payload, err });
       if (err instanceof AuthError) {
         alert(err.message);
       } else {
-        alert("요청 중 오류가 발생했습니다. 다시 시도해주세요.");
+        alert(t("signup.error"));
       }
     }
   };

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Icon } from "@iconify/react";
 import { AxiosError } from "axios";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useDeleteReport, useReportDetail } from "../api";
 import type { DeleteReportErrorData } from "../api";
 import type {
@@ -10,7 +11,7 @@ import type {
   ReportResultItem,
 } from "../api/types";
 import { downloadReportPdf } from "../lib/downloadReportPdf";
-import { resolveShift, SHIFT_LABEL } from "../lib/shift";
+import { resolveShift } from "../lib/shift";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import { formatTolerance } from "../../inspection/lib/format";
 import { judgeMeasurement } from "../../inspection/lib/judgment";
@@ -81,6 +82,7 @@ const InfoCell = ({ label, value }: { label: string; value: string }) => (
 );
 
 const JudgeBadge = ({ value }: { value: JudgeResult }) => {
+  const { t } = useTranslation("report");
   const isPass = value === "PASS";
   return (
     <span
@@ -95,12 +97,13 @@ const JudgeBadge = ({ value }: { value: JudgeResult }) => {
         width={12}
         height={12}
       />
-      {isPass ? "합격" : "불합격"}
+      {isPass ? t("result.pass") : t("result.fail")}
     </span>
   );
 };
 
 const AppearanceBadge = ({ value }: { value: AppearanceResult | null }) => {
+  const { t } = useTranslation("report");
   if (value === "OK") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-[#DCFCE7] px-2.5 py-1 text-xs font-semibold text-[#15803D]">
@@ -119,7 +122,7 @@ const AppearanceBadge = ({ value }: { value: AppearanceResult | null }) => {
   }
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-[#F5F5F5] px-2.5 py-1 text-xs font-medium text-[#A8A8A8]">
-      미입력
+      {t("detail.notEntered")}
     </span>
   );
 };
@@ -135,6 +138,7 @@ const MeasureCard = ({
   imageUrl: string | null | undefined;
   onOpenPhotos: () => void;
 }) => {
+  const { t } = useTranslation("report");
   const within = isWithinTolerance(item, measuredValue);
   const valueColor =
     within === null
@@ -153,7 +157,7 @@ const MeasureCard = ({
         {imageUrl ? (
           <img
             src={toBackendImageUrl(imageUrl)}
-            alt={`DIM ${item.dimNo} 측정 사진`}
+            alt={t("detail.measurePhotoAlt", { dimNo: item.dimNo })}
             className="h-full w-full object-cover"
           />
         ) : (
@@ -170,7 +174,10 @@ const MeasureCard = ({
           <JudgeBadge value={item.result} />
         </div>
         <div className="text-xs text-[#A8A8A8]">
-          기준 {item.standardValue} ({formatTolerance(item.toleranceUpper, item.toleranceLower)})
+          {t("measurements.standardWithTolerance", {
+            value: item.standardValue,
+            tolerance: formatTolerance(item.toleranceUpper, item.toleranceLower),
+          })}
         </div>
         <div className={`text-base font-semibold ${valueColor}`}>
           {formatMeasured(measuredValue)}
@@ -181,6 +188,7 @@ const MeasureCard = ({
 };
 
 const AdminReportDetailPageMobile = () => {
+  const { t } = useTranslation("report");
   const { reportId } = useParams<{ reportId: string }>();
   const processLabelOf = useProcessLabel();
   const navigate = useNavigate();
@@ -219,15 +227,15 @@ const AdminReportDetailPageMobile = () => {
         const code = (err.response?.data as DeleteReportErrorData | undefined)
           ?.code;
         if (code === "ACCESS_DENIED" || status === 403) {
-          setToast("삭제 권한이 없습니다.");
+          setToast(t("detail.deleteNoPermission"));
           return;
         }
         if (code === "REPORT_NOT_FOUND" || status === 404) {
-          setToast("이미 삭제된 보고서입니다.");
+          setToast(t("detail.deleteAlreadyDeleted"));
           return;
         }
       }
-      setToast("보고서를 삭제하지 못했습니다.");
+      setToast(t("detail.deleteFailed"));
     }
   };
 
@@ -235,7 +243,7 @@ const AdminReportDetailPageMobile = () => {
     return (
       <div className="flex min-h-full flex-col bg-[#F5F5F5] px-4 pb-21 pt-5">
         <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
-          잘못된 보고서 ID 입니다.
+          {t("detail.invalidId")}
         </p>
       </div>
     );
@@ -245,7 +253,7 @@ const AdminReportDetailPageMobile = () => {
     return (
       <div className="flex min-h-full flex-col bg-[#F5F5F5] px-4 pb-21 pt-5">
         <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-          불러오는 중...
+          {t("detail.loading")}
         </p>
       </div>
     );
@@ -255,7 +263,7 @@ const AdminReportDetailPageMobile = () => {
     return (
       <div className="flex min-h-full flex-col bg-[#F5F5F5] px-4 pb-21 pt-5">
         <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
-          보고서를 불러오지 못했습니다.
+          {t("detail.error")}
         </p>
       </div>
     );
@@ -281,7 +289,7 @@ const AdminReportDetailPageMobile = () => {
             // 조기 마감 즉시 발행분은 순회검사·승인을 거치지 않아 승인/반려로 볼 수 없다.
             <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#B45309] px-3 py-1 text-xs font-medium text-white">
               <Icon icon="solar:bolt-circle-bold" width={14} height={14} />
-              바로 발행
+              {t("detail.directIssue")}
             </span>
           ) : (
             <span
@@ -298,7 +306,7 @@ const AdminReportDetailPageMobile = () => {
                 width={14}
                 height={14}
               />
-              {isPass ? "승인" : "반려"}
+              {isPass ? t("detail.approved") : t("detail.rejected")}
             </span>
           )}
         </div>
@@ -308,15 +316,16 @@ const AdminReportDetailPageMobile = () => {
         <div className="rounded-2xl border border-[#FCD34D] bg-[#FFFBEB] p-4">
           <div className="flex items-center gap-2 text-sm font-semibold text-[#B45309]">
             <Icon icon="solar:danger-triangle-bold" width={18} height={18} />
-            순회검사 없이 바로 발행된 보고서
+            {t("detail.terminatedTitle")}
           </div>
           <p className="mt-1 text-xs text-[#92400E]">
-            품질 문제(금형 교체 등)로 검사가 조기 마감되어, 순회검사·통합관리자
-            승인을 거치지 않고 즉시 발행되었습니다.
+            {t("detail.terminatedDescription")}
           </p>
           {data.terminateReason && (
             <div className="mt-2 rounded-lg bg-white/70 px-3 py-2">
-              <div className="text-xs text-[#92400E]">사유</div>
+              <div className="text-xs text-[#92400E]">
+                {t("detail.terminatedReason")}
+              </div>
               <div className="mt-0.5 whitespace-pre-wrap text-sm text-[#212121]">
                 {data.terminateReason}
               </div>
@@ -325,50 +334,61 @@ const AdminReportDetailPageMobile = () => {
         </div>
       )}
 
-      <Section title="기본 정보">
+      <Section title={t("detail.basicInfo")}>
         <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
-          <InfoCell label="공정" value={processLabel} />
-          <InfoCell label="설비" value={data.equipmentName} />
+          <InfoCell label={t("detail.process")} value={processLabel} />
+          <InfoCell label={t("detail.equipment")} value={data.equipmentName} />
           <InfoCell
-            label="검사일자"
+            label={t("detail.inspectionDate")}
             value={data.targetDate ? data.targetDate.slice(0, 10) : "—"}
           />
-          <InfoCell label="검사 차수" value={data.inspectionLabel || "—"} />
+          <InfoCell
+            label={t("detail.inspectionRound")}
+            value={data.inspectionLabel || "—"}
+          />
           {/* 판정 불가하면(초품 검사 시각·슬롯 타입 모두 불충분) 아예 숨긴다. */}
-          {shift && <InfoCell label="근무조" value={SHIFT_LABEL[shift]} />}
-          <InfoCell label="작업자" value={data.productionName} />
-          <InfoCell label="검사자" value={data.qualityName} />
+          {shift && (
+            <InfoCell label={t("detail.shift")} value={t(`shift.${shift}`)} />
+          )}
+          <InfoCell label={t("detail.worker")} value={data.productionName} />
+          <InfoCell label={t("detail.inspector")} value={data.qualityName} />
         </dl>
       </Section>
 
       {data.stages && data.stages.length > 0 && (
-        <Section title="차수별 검사 정보">
+        <Section title={t("detail.stagesTitle")}>
           <ReportStagesSection stages={data.stages} shift={shift} variant="mobile" />
         </Section>
       )}
 
-      <Section title="도면">
+      <Section title={t("detail.sketchTitle")}>
         <div className="flex aspect-4/3 w-full items-center justify-center overflow-hidden rounded-xl bg-[#F5F5F5]">
           {data.sketchUrl ? (
             <img
               src={toBackendImageUrl(data.sketchUrl)}
-              alt={`${data.reportNumber} 스케치`}
+              alt={t("detail.sketchAlt", { reportNumber: data.reportNumber })}
               className="h-full w-full object-contain"
             />
           ) : (
-            <span className="text-sm text-[#A8A8A8]">스케치 없음</span>
+            <span className="text-sm text-[#A8A8A8]">
+              {t("detail.sketchEmpty")}
+            </span>
           )}
         </div>
       </Section>
 
-      <Section title="외관 검사">
+      <Section title={t("detail.appearanceTitle")}>
         <ul className="flex flex-col divide-y divide-[#E5E7EB]">
           <li className="flex items-center justify-between py-3 first:pt-0">
-            <span className="text-sm text-[#212121]">자주검사 외관</span>
+            <span className="text-sm text-[#212121]">
+              {t("detail.selfAppearance")}
+            </span>
             <AppearanceBadge value={data.productionAppearanceResult} />
           </li>
           <li className="flex items-center justify-between py-3 last:pb-0">
-            <span className="text-sm text-[#212121]">순회검사 외관</span>
+            <span className="text-sm text-[#212121]">
+              {t("detail.patrolAppearance")}
+            </span>
             <AppearanceBadge value={data.qualityAppearanceResult} />
           </li>
         </ul>
@@ -377,7 +397,7 @@ const AdminReportDetailPageMobile = () => {
       {/* 차수별 측정값이 오면 dim x 초·중·종 하나로, 아니면 기존 자주/순회 2섹션으로. */}
       {hasStageMeasurements(data.results) ? (
         <Section
-          title="측정값"
+          title={t("detail.measurementsTitle")}
           trailing={
             <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
               {data.inspectionLabel || "—"}
@@ -402,12 +422,11 @@ const AdminReportDetailPageMobile = () => {
               같은 DIM 이 반복되는데 행마다 어느 차수인지 알 방법이 없다. */}
           {hasDuplicateDimNo(data.results) && (
             <p className="rounded-xl border border-[#FED7AA] bg-[#FFF7ED] px-4 py-3 text-xs text-[#9A3412]">
-              같은 DIM 번호가 여러 번 표시됩니다. 차수(초·중·종) 구분 정보가 없어
-              어느 행이 어느 차수인지 표시할 수 없습니다.
+              {t("detail.duplicateDimNotice")}
             </p>
           )}
           <Section
-            title="자주검사"
+            title={t("detail.selfSection")}
             trailing={
               <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
                 {data.inspectionLabel || "—"}
@@ -416,7 +435,7 @@ const AdminReportDetailPageMobile = () => {
           >
             {data.results.length === 0 ? (
               <p className="rounded-xl bg-[#F5F5F5] px-4 py-6 text-center text-xs text-[#A8A8A8]">
-                측정 데이터 없음
+                {t("detail.noMeasureData")}
               </p>
             ) : (
               <ul className="flex flex-col gap-2">
@@ -434,7 +453,7 @@ const AdminReportDetailPageMobile = () => {
           </Section>
 
           <Section
-            title="순회검사"
+            title={t("detail.patrolSection")}
             trailing={
               <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
                 {data.inspectionLabel || "—"}
@@ -443,7 +462,7 @@ const AdminReportDetailPageMobile = () => {
           >
             {data.results.length === 0 ? (
               <p className="rounded-xl bg-[#F5F5F5] px-4 py-6 text-center text-xs text-[#A8A8A8]">
-                측정 데이터 없음
+                {t("detail.noMeasureData")}
               </p>
             ) : (
               <ul className="flex flex-col gap-2">
@@ -468,7 +487,7 @@ const AdminReportDetailPageMobile = () => {
         disabled={downloading}
         className="mt-1 flex h-12 w-full items-center justify-center rounded-2xl bg-[#931B82] text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
       >
-        {downloading ? "준비 중..." : "PDF"}
+        {downloading ? t("detail.preparing") : "PDF"}
       </button>
 
       {isAdmin && (
@@ -479,7 +498,7 @@ const AdminReportDetailPageMobile = () => {
           className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-[#FCA5A5] bg-white text-base font-semibold text-[#DC2626] transition-colors hover:bg-[#FEF2F2] disabled:opacity-50"
         >
           <Icon icon="solar:trash-bin-trash-bold" width={18} height={18} />
-          검사 삭제
+          {t("detail.deleteButton")}
         </button>
       )}
 

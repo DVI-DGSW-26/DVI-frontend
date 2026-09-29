@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Icon } from "@iconify/react";
 import Logo from "../../../assets/Logo.svg";
 import Button from "../../../components/shared/Button";
@@ -12,6 +13,7 @@ export default function LoginFormMobile({
   setPassword,
   onSubmit,
 }: LoginFormProps) {
+  const { t } = useTranslation("auth");
   const [showPassword, setShowPassword] = useState(false);
   // 기본값 true — 체크 해제 시에만 sessionStorage 로 저장 (브라우저 종료 시 로그아웃).
   const [keepLoggedIn, setKeepLoggedIn] = useState(true);
@@ -33,7 +35,7 @@ export default function LoginFormMobile({
       </div>
 
       <input
-        placeholder="아이디를 입력하세요."
+        placeholder={t("fields.idPlaceholder")}
         value={username}
         onChange={(e) => setUsername(e.target.value)}
         style={{
@@ -55,7 +57,7 @@ export default function LoginFormMobile({
         }}
       >
         <input
-          placeholder="비밀번호를 입력하세요."
+          placeholder={t("fields.passwordPlaceholder")}
           type={showPassword ? "text" : "password"}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -84,7 +86,7 @@ export default function LoginFormMobile({
           onChange={(e) => setKeepLoggedIn(e.target.checked)}
           className="w-4 h-4 rounded border-[#A8A8A8] accent-[#931B82] cursor-pointer"
         />
-        <span className="text-sm text-[#A8A8A8]">로그인 유지</span>
+        <span className="text-sm text-[#A8A8A8]">{t("login.keepLoggedIn")}</span>
       </label>
 
       <div
@@ -95,19 +97,19 @@ export default function LoginFormMobile({
           width: "calc(100% - 60px)",
         }}
       >
-        <Button type="submit">로그인</Button>
+        <Button type="submit">{t("login.submit")}</Button>
       </div>
 
       <div
         className="absolute flex flex-row gap-1 text-sm left-1/2 -translate-x-1/2"
         style={{ top: "635px" }}
       >
-        <span className="text-[#A8A8A8]">계정이 없으신가요?</span>
+        <span className="text-[#A8A8A8]">{t("login.noAccount")}</span>
         <span
           className="text-[#931B82] cursor-pointer"
           onClick={() => navigate("/signup")}
         >
-          신규 회원 가입
+          {t("login.signupLinkMobile")}
         </span>
       </div>
     </form>

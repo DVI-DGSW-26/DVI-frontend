@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Icon } from "@iconify/react";
 import type { MyInspection } from "../type/types";
 import { getStatusBadge } from "../lib/inspectionStatus";
@@ -31,6 +32,7 @@ export default function OrderCard({
   isRestarting,
 }: Props) {
   const navigate = useNavigate();
+  const { t } = useTranslation("myInspection");
   const badge = getStatusBadge(inspection.status);
   const canDelete =
     !!onRequestDelete &&
@@ -108,7 +110,9 @@ export default function OrderCard({
             </div>
             {inspection.createdAt && (
               <div className="mt-0.5 truncate text-xs text-[#A8A8A8]">
-                작업일: {formatWorkDay(inspection.createdAt)}
+                {t("orderCard.workDate", {
+                  date: formatWorkDay(inspection.createdAt),
+                })}
               </div>
             )}
           </div>
@@ -116,7 +120,7 @@ export default function OrderCard({
             className={`inline-flex shrink-0 items-center gap-1 text-xs font-medium ${badge.text}`}
           >
             <span className={`h-1.5 w-1.5 rounded-full ${badge.dot}`} />
-            {badge.label}
+            {t(badge.label, { defaultValue: badge.label })}
           </span>
         </button>
 
@@ -125,7 +129,7 @@ export default function OrderCard({
             <button
               type="button"
               onClick={handleMenuToggle}
-              aria-label="메뉴 열기"
+              aria-label={t("orderCard.openMenu")}
               className="flex h-8 w-8 items-center justify-center rounded-md text-[#6B7280] hover:bg-[#F3F4F6]"
             >
               <Icon icon="solar:menu-dots-bold" width={20} height={20} />
@@ -138,7 +142,7 @@ export default function OrderCard({
                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[#DC2626] hover:bg-[#FEF2F2]"
                 >
                   <Icon icon="solar:trash-bin-trash-bold" width={16} height={16} />
-                  삭제
+                  {t("orderCard.delete")}
                 </button>
               </div>
             )}
@@ -157,7 +161,7 @@ export default function OrderCard({
                   height={14}
                   className="text-[#931B82]"
                 />
-                <span>다음:</span>
+                <span>{t("orderCard.next")}</span>
                 <span className="font-medium text-[#212121]">{nextType}</span>
               </div>
               <button
@@ -166,7 +170,9 @@ export default function OrderCard({
                 disabled={isStartingNext}
                 className="mt-2 h-10 w-full rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
               >
-                {isStartingNext ? "시작 중..." : "다음 시점 시작"}
+                {isStartingNext
+                  ? t("orderCard.starting")
+                  : t("orderCard.startNext")}
               </button>
             </div>
           )}
@@ -177,7 +183,7 @@ export default function OrderCard({
               disabled={isRestarting}
               className="h-10 w-full rounded-md border border-[#931B82] bg-white text-sm font-semibold text-[#931B82] transition-colors hover:bg-[#F3E8F7] disabled:opacity-60"
             >
-              {isRestarting ? "시작 중..." : "다시 검사 시작"}
+              {isRestarting ? t("orderCard.starting") : t("orderCard.restart")}
             </button>
           )}
         </div>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Icon } from "@iconify/react";
 import type { InspectionSlot } from "../type/types";
 import { formatSlotTime } from "../lib/format";
@@ -23,75 +24,75 @@ interface Props {
 const STATUS_META: Record<
   SlotStatus,
   {
-    badge: { icon: string; label: string; color: string } | null;
-    actionLabel: string;
+    badge: { icon: string; labelKey: string; color: string } | null;
+    actionLabelKey: string;
     disabled: boolean;
     dim: boolean;
   }
 > = {
   NONE: {
     badge: null,
-    actionLabel: "검사 시작",
+    actionLabelKey: "slot.action.start",
     disabled: false,
     dim: false,
   },
   DRAFT: {
     badge: {
       icon: "solar:clock-circle-bold",
-      label: "작성 중",
+      labelKey: "slot.status.draft",
       color: "text-[#3B82F6]",
     },
-    actionLabel: "이어하기",
+    actionLabelKey: "slot.action.resume",
     disabled: false,
     dim: false,
   },
   COMPLETED: {
     badge: {
       icon: "solar:check-circle-bold",
-      label: "완료",
+      labelKey: "slot.status.completed",
       color: "text-[#22C55E]",
     },
-    actionLabel: "",
+    actionLabelKey: "",
     disabled: true,
     dim: true,
   },
   INCOMPLETE: {
     badge: {
       icon: "solar:pause-circle-bold",
-      label: "검토 대기",
+      labelKey: "slot.status.reviewPending",
       color: "text-[#F59E0B]",
     },
-    actionLabel: "",
+    actionLabelKey: "",
     disabled: true,
     dim: true,
   },
   INCOMPLETE_APPROVED: {
     badge: {
       icon: "solar:check-square-bold",
-      label: "미완료 승인됨",
+      labelKey: "slot.status.incompleteApproved",
       color: "text-[#6B7280]",
     },
-    actionLabel: "",
+    actionLabelKey: "",
     disabled: true,
     dim: true,
   },
   SKIPPED: {
     badge: {
       icon: "solar:skip-next-bold",
-      label: "건너뜀",
+      labelKey: "slot.status.skipped",
       color: "text-[#6B7280]",
     },
-    actionLabel: "",
+    actionLabelKey: "",
     disabled: true,
     dim: true,
   },
   LOCKED: {
     badge: {
       icon: "solar:lock-keyhole-bold",
-      label: "이전 시점 완료 필요",
+      labelKey: "slot.status.locked",
       color: "text-[#9CA3AF]",
     },
-    actionLabel: "",
+    actionLabelKey: "",
     disabled: true,
     dim: true,
   },
@@ -102,6 +103,7 @@ const STATUS_META: Record<
 const CAN_SKIP: SlotStatus[] = ["NONE", "DRAFT"];
 
 export default function SlotItem({ slot, status, onTap, onSkip }: Props) {
+  const { t } = useTranslation("inspection");
   const meta = STATUS_META[status];
   const canSkip = !!onSkip && CAN_SKIP.includes(status);
 
@@ -174,7 +176,7 @@ export default function SlotItem({ slot, status, onTap, onSkip }: Props) {
             <ShiftBadge shift={slot.shift} compact />
           </div>
           <div className="text-xs text-[#6B7280]">
-            {formatSlotTime(slot.time) || "시각 미지정"}
+            {formatSlotTime(slot.time) || t("slot.timeUnset")}
           </div>
         </div>
 
@@ -183,13 +185,13 @@ export default function SlotItem({ slot, status, onTap, onSkip }: Props) {
             className={`inline-flex shrink-0 items-center gap-1 text-xs font-medium ${meta.badge.color}`}
           >
             <Icon icon={meta.badge.icon} width={16} height={16} />
-            {meta.badge.label}
+            {t(meta.badge.labelKey)}
           </span>
         )}
 
-        {!meta.disabled && meta.actionLabel && (
+        {!meta.disabled && meta.actionLabelKey && (
           <span className="ml-1 inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[#931B82]">
-            {meta.actionLabel}
+            {t(meta.actionLabelKey)}
             <Icon icon="solar:arrow-right-linear" width={14} height={14} />
           </span>
         )}
@@ -200,7 +202,7 @@ export default function SlotItem({ slot, status, onTap, onSkip }: Props) {
           <button
             type="button"
             onClick={handleMenuToggle}
-            aria-label="메뉴 열기"
+            aria-label={t("slot.openMenu")}
             className="flex h-8 w-8 items-center justify-center rounded-md text-[#6B7280] hover:bg-[#F3F4F6]"
           >
             <Icon icon="solar:menu-dots-bold" width={20} height={20} />
@@ -218,7 +220,7 @@ export default function SlotItem({ slot, status, onTap, onSkip }: Props) {
                   height={16}
                   className="text-[#6B7280]"
                 />
-                건너뛰기
+                {t("slot.skip")}
               </button>
             </div>
           )}

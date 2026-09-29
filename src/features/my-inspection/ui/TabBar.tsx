@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { TABS } from "../lib/inspectionStatus";
 import type { Tab } from "../lib/inspectionStatus";
 
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function TabBar({ tab, counts, onChange }: Props) {
+  const { t: translate } = useTranslation("myInspection");
   return (
     <nav className="sticky top-0 z-10 flex bg-white">
       {TABS.map((t) => {
@@ -23,7 +25,7 @@ export default function TabBar({ tab, counts, onChange }: Props) {
                 : "border-transparent text-[#A8A8A8]"
             }`}
           >
-            {t.label} {counts[t.key]}
+            {translate(t.label)} {counts[t.key]}
           </button>
         );
       })}

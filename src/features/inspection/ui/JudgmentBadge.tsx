@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Icon } from "@iconify/react";
 import type { Judgment } from "../lib/judgment";
 
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function JudgmentBadge({ judgment, compact = false }: Props) {
+  const { t } = useTranslation("inspection");
   if (judgment == null) return null;
   const pass = judgment === "pass";
   const size = compact ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs";
@@ -24,7 +26,7 @@ export default function JudgmentBadge({ judgment, compact = false }: Props) {
         width={compact ? 12 : 14}
         height={compact ? 12 : 14}
       />
-      {pass ? "합격" : "불합격"}
+      {pass ? t("judgment.pass") : t("judgment.fail")}
     </span>
   );
 }

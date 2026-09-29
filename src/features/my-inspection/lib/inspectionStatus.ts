@@ -5,21 +5,23 @@ import type { MyInspection } from "../type/types";
 // INCOMPLETE 탭은 status === "INCOMPLETE" || "INCOMPLETE_APPROVED" 둘 다 포함.
 export type Tab = "ALL" | "IN_PROGRESS" | "COMPLETED" | "INCOMPLETE";
 
+// label 은 myInspection 네임스페이스의 i18n 키 — 렌더링하는 쪽에서 t(label) 로 변환.
 export const TABS: { key: Tab; label: string }[] = [
-  { key: "ALL", label: "전체" },
-  { key: "IN_PROGRESS", label: "진행 중" },
-  { key: "COMPLETED", label: "완료" },
-  { key: "INCOMPLETE", label: "미완료" },
+  { key: "ALL", label: "tabs.all" },
+  { key: "IN_PROGRESS", label: "tabs.inProgress" },
+  { key: "COMPLETED", label: "tabs.completed" },
+  { key: "INCOMPLETE", label: "tabs.incomplete" },
 ];
 
 // 누적되는 리스트 정리를 위한 날짜 필터. "TODAY"가 기본 — 하루 지난 완료 건은 숨김.
 // 미완료(INCOMPLETE/INCOMPLETE_APPROVED) 는 사용자 요구상 항상 노출.
 export type DateFilter = "TODAY" | "WEEK" | "ALL";
 
+// label 은 myInspection 네임스페이스의 i18n 키 — 렌더링하는 쪽에서 t(label) 로 변환.
 export const DATE_FILTERS: { key: DateFilter; label: string }[] = [
-  { key: "TODAY", label: "오늘" },
-  { key: "WEEK", label: "이번주" },
-  { key: "ALL", label: "전체" },
+  { key: "TODAY", label: "dateFilters.today" },
+  { key: "WEEK", label: "dateFilters.week" },
+  { key: "ALL", label: "dateFilters.all" },
 ];
 
 // 작업일 키("YYYY-MM-DD")끼리는 사전순 비교가 곧 날짜 비교라, 주 시작만 키로 구하면 된다.
@@ -62,24 +64,26 @@ export function isWithinDateFilter(
 }
 
 export interface StatusBadge {
+  /** myInspection 네임스페이스의 i18n 키. 미지의 status 면 raw status 문자열이 그대로 담김 —
+   *  렌더링하는 쪽에서 t(label, { defaultValue: label }) 로 변환한다. */
   label: string;
   text: string;
   dot: string;
 }
 
 export const STATUS_BADGE: Record<string, StatusBadge> = {
-  PENDING: { label: "대기", text: "text-[#F59E0B]", dot: "bg-[#F59E0B]" },
-  IN_PROGRESS: { label: "진행 중", text: "text-[#3B82F6]", dot: "bg-[#3B82F6]" },
-  DRAFT: { label: "진행 중", text: "text-[#3B82F6]", dot: "bg-[#3B82F6]" },
-  COMPLETED: { label: "완료", text: "text-[#22C55E]", dot: "bg-[#22C55E]" },
-  INCOMPLETE: { label: "검토 대기", text: "text-[#F59E0B]", dot: "bg-[#F59E0B]" },
+  PENDING: { label: "status.pending", text: "text-[#F59E0B]", dot: "bg-[#F59E0B]" },
+  IN_PROGRESS: { label: "status.inProgress", text: "text-[#3B82F6]", dot: "bg-[#3B82F6]" },
+  DRAFT: { label: "status.inProgress", text: "text-[#3B82F6]", dot: "bg-[#3B82F6]" },
+  COMPLETED: { label: "status.completed", text: "text-[#22C55E]", dot: "bg-[#22C55E]" },
+  INCOMPLETE: { label: "status.pendingReview", text: "text-[#F59E0B]", dot: "bg-[#F59E0B]" },
   INCOMPLETE_APPROVED: {
-    label: "미완료 승인됨",
+    label: "status.incompleteApproved",
     text: "text-[#6B7280]",
     dot: "bg-[#9CA3AF]",
   },
   SKIPPED: {
-    label: "건너뜀",
+    label: "status.skipped",
     text: "text-[#6B7280]",
     dot: "bg-[#9CA3AF]",
   },

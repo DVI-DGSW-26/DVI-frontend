@@ -1,5 +1,6 @@
 import { useEffect, useMemo, type ReactNode } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../auth/AuthContext";
 import { useMyInspectionList } from "../../my-inspection/api";
 import type { MyInspection } from "../../my-inspection/type/types";
@@ -18,6 +19,7 @@ interface DetailLocationState {
 }
 
 export default function InspectionDetailPage() {
+  const { t } = useTranslation("inspection");
   const processLabel = useProcessLabel();
   const navigate = useNavigate();
   const location = useLocation();
@@ -52,21 +54,21 @@ export default function InspectionDetailPage() {
     if (myInspectionsQuery.isLoading) {
       return (
         <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
-          불러오는 중...
+          {t("common.loading")}
         </div>
       );
     }
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
         <div className="text-sm font-medium text-[#212121]">
-          검사 정보를 찾을 수 없습니다.
+          {t("common.notFound")}
         </div>
         <button
           type="button"
           onClick={() => navigate("/")}
           className="mt-4 h-10 rounded-md bg-[#931B82] px-4 text-sm font-medium text-white hover:bg-[#6A0F5D]"
         >
-          홈으로 가기
+          {t("common.goHome")}
         </button>
       </div>
     );
@@ -89,20 +91,29 @@ export default function InspectionDetailPage() {
         </div>
 
         <dl className="mt-3 grid grid-cols-1 gap-1.5 text-xs">
-          <InfoRow label="설비" value={inspection.equipment.name} />
           <InfoRow
-            label="공정"
+            label={t("detail.fields.equipment")}
+            value={inspection.equipment.name}
+          />
+          <InfoRow
+            label={t("detail.fields.process")}
             value={`${processLabel(inspection.product.process)} (${inspection.product.process})`}
           />
-          <InfoRow label="고객사" value={inspection.customer.name} />
           <InfoRow
-            label="검사 차수"
+            label={t("detail.fields.customer")}
+            value={inspection.customer.name}
+          />
+          <InfoRow
+            label={t("detail.fields.round")}
             value={`${inspection.typeLabel} (${inspection.type})`}
             suffix={<ShiftBadge shift={inspection.shift} compact />}
           />
-          <InfoRow label="작업자" value={user?.name ?? "-"} />
+          <InfoRow label={t("detail.fields.worker")} value={user?.name ?? "-"} />
           {state.qualityName && (
-            <InfoRow label="품질 담당자" value={state.qualityName} />
+            <InfoRow
+              label={t("detail.fields.qualityManager")}
+              value={state.qualityName}
+            />
           )}
         </dl>
       </section>
@@ -110,21 +121,23 @@ export default function InspectionDetailPage() {
       <section className="px-4 pt-4">
         <SketchImage
           src={inspection.product.sketchUrl}
-          alt={`${inspection.product.name} 스케치`}
+          alt={t("detail.sketchAlt", { name: inspection.product.name })}
         />
       </section>
 
       <section className="flex-1 px-4 pt-4">
         <div className="mb-2 flex items-baseline justify-between">
-          <h3 className="text-sm font-semibold text-[#212121]">측정 항목</h3>
+          <h3 className="text-sm font-semibold text-[#212121]">
+            {t("detail.measureItems")}
+          </h3>
           <span className="text-xs text-[#6B7280]">
-            총 {sortedDims.length}개
+            {t("detail.totalCount", { n: sortedDims.length })}
           </span>
         </div>
 
         {sortedDims.length === 0 ? (
           <div className="rounded-xl border border-gray-200 bg-white py-6 text-center text-xs text-[#A8A8A8]">
-            등록된 측정 항목이 없습니다.
+            {t("detail.noItems")}
           </div>
         ) : (
           <ul className="flex flex-col gap-2">
@@ -143,13 +156,17 @@ export default function InspectionDetailPage() {
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                   <div className="rounded-md bg-[#F9FAFB] px-3 py-2">
-                    <div className="text-[#6B7280]">기준값</div>
+                    <div className="text-[#6B7280]">
+                      {t("detail.standardValue")}
+                    </div>
                     <div className="mt-0.5 text-sm font-semibold text-[#212121]">
                       {dim.standardValue}
                     </div>
                   </div>
                   <div className="rounded-md bg-[#F9FAFB] px-3 py-2">
-                    <div className="text-[#6B7280]">허용 오차</div>
+                    <div className="text-[#6B7280]">
+                      {t("detail.tolerance")}
+                    </div>
                     <div className="mt-0.5 text-sm font-semibold text-[#212121]">
                       {formatTolerance(dim.toleranceUpper, dim.toleranceLower)}
                     </div>
@@ -167,7 +184,7 @@ export default function InspectionDetailPage() {
           onClick={handleStart}
           className="h-12 w-full rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D]"
         >
-          측정 시작
+          {t("detail.startMeasure")}
         </button>
       </div>
     </div>

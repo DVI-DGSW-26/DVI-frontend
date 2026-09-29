@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
 import { useAuth } from "../../auth/AuthContext";
@@ -51,6 +53,7 @@ interface SkipTarget {
 // "이어서 할 일" 후보를 즉시 계산하기 위해 includeFinished=true 로 받음.
 export default function ProductionHomePage() {
   const navigate = useNavigate();
+  const { t } = useTranslation("myInspection");
   const { user } = useAuth();
 
   const inspectionsQuery = useMyInspectionList({ includeFinished: true });
@@ -180,16 +183,16 @@ export default function ProductionHomePage() {
       if (err instanceof AxiosError) {
         const code = (err.response?.data as { code?: string } | undefined)?.code;
         if (code === "INSPECTION_NOT_REOPENABLE") {
-          setToast("재오픈할 수 없는 상태입니다.");
+          setToast(t("toast.notReopenable"));
         } else if (code === "INSPECTION_HAS_CROSS_CHECK") {
-          setToast("순회검사가 시작되어 더 이상 수정할 수 없습니다.");
+          setToast(t("toast.hasCrossCheck"));
         } else if (code === "NOT_OWNER") {
-          setToast("본인이 한 검사만 재오픈할 수 있습니다.");
+          setToast(t("toast.reopenNotOwner"));
         } else {
-          setToast("재오픈에 실패했습니다.");
+          setToast(t("toast.reopenFailed"));
         }
       } else {
-        setToast("재오픈에 실패했습니다.");
+        setToast(t("toast.reopenFailed"));
       }
     } finally {
       setPendingReopenId(null);
@@ -199,7 +202,7 @@ export default function ProductionHomePage() {
   const handleAskSkipDraft = (inspection: MyInspection) => {
     const orderId = resolveOrderId(inspection);
     if (orderId == null) {
-      setToast("작업지시를 찾을 수 없어 건너뛸 수 없습니다.");
+      setToast(t("toast.orderNotFoundSkip"));
       return;
     }
     setSkipTarget({
@@ -213,7 +216,7 @@ export default function ProductionHomePage() {
   const handleAskSkipNext = (previous: MyInspection, nextType: string) => {
     const orderId = resolveOrderId(previous);
     if (orderId == null) {
-      setToast("작업지시를 찾을 수 없어 건너뛸 수 없습니다.");
+      setToast(t("toast.orderNotFoundSkip"));
       return;
     }
     setSkipTarget({
@@ -244,7 +247,7 @@ export default function ProductionHomePage() {
         ...(reason ? { reason } : {}),
       });
       setSkipTarget(null);
-      setToast(`${target.label} 시점을 건너뛰었습니다.`);
+      setToast(t("toast.skipped", { label: target.label }));
     } catch (err) {
       setSkipTarget(null);
       setToast(skipErrorMessage(err));
@@ -267,7 +270,7 @@ export default function ProductionHomePage() {
       });
     } catch (err) {
       setTerminateTarget(null);
-      setToast(terminateErrorMessage(err));
+      setToast(terminateErrorMessage(err, t));
     }
   };
 
@@ -285,16 +288,16 @@ export default function ProductionHomePage() {
           | undefined;
         const code = data?.code;
         if (code === "NO_NEXT_SLOT") {
-          setToast("마지막 시점입니다.");
+          setToast(t("toast.lastSlot"));
         } else if (code === "PREVIOUS_INSPECTION_NOT_COMPLETED") {
-          setToast("이전 검사를 먼저 완료해주세요.");
+          setToast(t("toast.previousNotCompleted"));
         } else if (code === "INSPECTION_ALREADY_EXISTS") {
-          setToast("이미 시작된 시점입니다.");
+          setToast(t("toast.slotAlreadyStarted"));
         } else {
-          setToast(data?.message ?? "다음 시점을 시작하지 못했습니다.");
+          setToast(data?.message ?? t("toast.startNextFailed"));
         }
       } else {
-        setToast("다음 시점을 시작하지 못했습니다.");
+        setToast(t("toast.startNextFailed"));
       }
     } finally {
       setPendingPrevId(null);
@@ -305,7 +308,7 @@ export default function ProductionHomePage() {
     <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-20">
       <div className="px-4 pt-4">
         <h1 className="text-lg font-semibold text-[#212121]">
-          안녕하세요, {user?.name ?? ""}님
+          {t("home.greeting", { name: user?.name ?? "" })}
         </h1>
 
         {latestDraft ? (
@@ -318,7 +321,7 @@ export default function ProductionHomePage() {
               >
                 <div className="min-w-0">
                   <div className="text-xs font-medium uppercase tracking-wide text-[#F3E8FF]">
-                    이어 작업하기
+                    {t("home.resumeWork")}
                   </div>
                   <div className="mt-1 wrap-break-word text-base font-semibold text-white">
                     {latestDraft.product.name}
@@ -340,7 +343,7 @@ export default function ProductionHomePage() {
                 onClick={() => handleAskSkipDraft(latestDraft)}
                 className="absolute right-2 top-2 rounded-md bg-white/15 px-2 py-1 text-[11px] font-medium text-white transition-colors hover:bg-white/25"
               >
-                건너뛰기
+                {t("home.skip")}
               </button>
             </div>
 
@@ -351,10 +354,10 @@ export default function ProductionHomePage() {
             >
               <div className="min-w-0">
                 <div className="text-xs font-medium text-[#6B7280]">
-                  새 검사 시작
+                  {t("home.newInspection")}
                 </div>
                 <div className="mt-0.5 text-sm text-[#212121]">
-                  배정된 검사 지시에서 시작
+                  {t("home.startFromAssigned")}
                 </div>
               </div>
               <Icon
@@ -374,13 +377,13 @@ export default function ProductionHomePage() {
           >
             <div className="min-w-0">
               <div className="text-xs font-medium uppercase tracking-wide text-[#F3E8FF]">
-                새 검사 시작
+                {t("home.newInspection")}
               </div>
               <div className="mt-1 truncate text-base font-semibold text-white">
-                배정된 검사 지시에서 시작하기
+                {t("home.startFromAssignedLong")}
               </div>
               <div className="mt-0.5 truncate text-xs text-[#F3E8FF]/90">
-                검사 지시 → 시점 선택
+                {t("home.orderThenSlot")}
               </div>
             </div>
             <Icon
@@ -397,9 +400,11 @@ export default function ProductionHomePage() {
       {draftInspections.length > 0 && (
         <section className="px-4 pt-6">
           <div className="mb-2 flex items-baseline justify-between">
-            <h2 className="text-sm font-semibold text-[#212121]">진행중 검사</h2>
+            <h2 className="text-sm font-semibold text-[#212121]">
+              {t("home.inProgressSection")}
+            </h2>
             <span className="text-xs font-medium text-[#931B82]">
-              {draftInspections.length}건
+              {t("home.count", { n: draftInspections.length })}
             </span>
           </div>
 
@@ -418,7 +423,7 @@ export default function ProductionHomePage() {
                   </div>
                   {i.createdAt && (
                     <div className="mt-0.5 truncate text-xs text-[#A8A8A8]">
-                      시작일: {formatDate(i.createdAt)}
+                      {t("home.startedAt", { date: formatDate(i.createdAt) })}
                     </div>
                   )}
                 </div>
@@ -427,7 +432,7 @@ export default function ProductionHomePage() {
                   onClick={() => handleResume(i)}
                   className="mt-3 h-10 w-full rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D]"
                 >
-                  이어서 하기
+                  {t("home.resume")}
                 </button>
                 {isTerminableInspection(i) && (
                   <TerminateButton
@@ -454,11 +459,10 @@ export default function ProductionHomePage() {
             />
             <div className="min-w-0">
               <div className="text-sm font-semibold text-[#92400E]">
-                오늘 배정된 검사지시가 없습니다
+                {t("home.noOrdersTitle")}
               </div>
               <p className="mt-0.5 text-xs text-[#B45309]">
-                검사는 배정된 작업지시에서만 시작할 수 있습니다. 생산 관리자에게
-                작업지시 배정을 요청해주세요.
+                {t("home.noOrdersDesc")}
               </p>
             </div>
           </div>
@@ -470,10 +474,10 @@ export default function ProductionHomePage() {
         <section className="px-4 pt-6">
           <div className="mb-2 flex items-baseline justify-between">
             <h2 className="text-sm font-semibold text-[#212121]">
-              오늘 할당된 검사
+              {t("home.todaysOrdersSection")}
             </h2>
             <span className="text-xs font-medium text-[#931B82]">
-              {todaysOrders.length}건
+              {t("home.count", { n: todaysOrders.length })}
             </span>
           </div>
 
@@ -498,7 +502,7 @@ export default function ProductionHomePage() {
                     </div>
                   </div>
                   <span className="flex shrink-0 items-center gap-0.5 text-xs font-medium text-[#931B82]">
-                    검사 시작
+                    {t("home.startInspection")}
                     <Icon
                       icon="solar:arrow-right-linear"
                       width={14}
@@ -516,7 +520,7 @@ export default function ProductionHomePage() {
       {latestCompleted && (
         <section className="px-4 pt-6">
           <h2 className="mb-2 text-lg font-semibold text-[#525050]">
-            가장 최근에 한 검사 바로 이어하기
+            {t("home.latestSection")}
           </h2>
           <LatestCompletedCard
             previous={latestCompleted.previous}
@@ -535,10 +539,10 @@ export default function ProductionHomePage() {
         <section className="px-4 pt-4">
           <div className="mb-2 flex items-baseline justify-between">
             <h2 className="text-sm font-semibold text-[#212121]">
-              이어서 할 일
+              {t("home.nextTodoSection")}
             </h2>
             <span className="text-xs font-medium text-[#931B82]">
-              {nextEligible.length}건
+              {t("home.count", { n: nextEligible.length })}
             </span>
           </div>
 
@@ -564,7 +568,9 @@ export default function ProductionHomePage() {
                       </div>
                       {previous.createdAt && (
                         <div className="mt-0.5 truncate text-xs text-[#A8A8A8]">
-                          시작일: {formatDate(previous.createdAt)}
+                          {t("home.startedAt", {
+                            date: formatDate(previous.createdAt),
+                          })}
                         </div>
                       )}
                     </div>
@@ -583,11 +589,13 @@ export default function ProductionHomePage() {
                       className="text-[#22C55E]"
                     />
                     <span>
-                      {previous.typeLabel || previous.type} 완료
+                      {t("home.typeCompleted", {
+                        type: previous.typeLabel || previous.type,
+                      })}
                     </span>
                     <span className="text-[#D1D5DB]">›</span>
                     <span className="font-medium text-[#931B82]">
-                      {nextLabel} 시작
+                      {t("home.typeStart", { type: nextLabel })}
                     </span>
                   </div>
                   <div className="mt-3 flex gap-2">
@@ -597,7 +605,7 @@ export default function ProductionHomePage() {
                       disabled={startNextMutation.isPending}
                       className="h-10 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
                     >
-                      {isPending ? "시작 중..." : "다음 시점 시작"}
+                      {isPending ? t("home.starting") : t("home.startNext")}
                     </button>
                     <button
                       type="button"
@@ -605,7 +613,7 @@ export default function ProductionHomePage() {
                       disabled={startNextMutation.isPending}
                       className="h-10 shrink-0 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-[#6B7280] transition-colors hover:bg-gray-50 disabled:opacity-50"
                     >
-                      건너뛰기
+                      {t("home.skip")}
                     </button>
                   </div>
                   {isTerminableInspection(previous) && (
@@ -626,10 +634,12 @@ export default function ProductionHomePage() {
         <section className="px-4 pt-4">
           <div className="mb-2 flex items-baseline justify-between">
             <h2 className="text-sm font-semibold text-[#212121]">
-              미완료 검사
+              {t("home.incompleteSection")}
             </h2>
             <span className="text-xs font-medium text-[#F59E0B]">
-              {incompleteInspections.length}건 검토 대기
+              {t("home.pendingReviewCount", {
+                n: incompleteInspections.length,
+              })}
             </span>
           </div>
 
@@ -664,7 +674,7 @@ export default function ProductionHomePage() {
                       <span
                         className={`h-1.5 w-1.5 rounded-full ${badge.dot}`}
                       />
-                      {badge.label}
+                      {t(badge.label, { defaultValue: badge.label })}
                     </span>
                   </button>
                 </li>
@@ -679,10 +689,10 @@ export default function ProductionHomePage() {
         <section className="px-4 pt-4">
           <div className="mb-2 flex items-baseline justify-between">
             <h2 className="text-sm font-semibold text-[#212121]">
-              재측정 해야하는 검사
+              {t("home.remeasureSection")}
             </h2>
             <span className="text-xs font-medium text-[#6B7280]">
-              {reopenableInspections.length}건
+              {t("home.count", { n: reopenableInspections.length })}
             </span>
           </div>
 
@@ -703,7 +713,7 @@ export default function ProductionHomePage() {
                         {i.equipment.name} · {i.typeLabel}
                       </div>
                       <div className="mt-0.5 text-xs text-[#6B7280]">
-                        미완료 승인됨
+                        {t("home.incompleteApproved")}
                       </div>
                     </div>
                   </div>
@@ -713,7 +723,7 @@ export default function ProductionHomePage() {
                     disabled={pendingReopenId !== null}
                     className="mt-3 h-10 w-full rounded-md border border-[#931B82] bg-white text-sm font-semibold text-[#931B82] transition-colors hover:bg-[#F3E8F7] disabled:opacity-50"
                   >
-                    {isReopening ? "준비 중..." : "재측정하기"}
+                    {isReopening ? t("home.preparing") : t("home.remeasure")}
                   </button>
                 </li>
               );
@@ -751,15 +761,18 @@ export default function ProductionHomePage() {
 }
 
 // 마감은 진행중(DRAFT)인 본인 검사에만 허용된다 — 서버가 거부한 이유를 그대로 알린다.
-function terminateErrorMessage(err: unknown): string {
-  const fallback = "마감하지 못했습니다.";
+function terminateErrorMessage(
+  err: unknown,
+  t: TFunction<"myInspection">,
+): string {
+  const fallback = t("toast.terminateFailed");
   if (!(err instanceof AxiosError)) return fallback;
   const data = err.response?.data as ApiErrorData | undefined;
   switch (data?.code) {
     case "INSPECTION_ALREADY_FINISHED":
-      return "이미 끝난 차수는 마감할 수 없습니다. 진행중인 검사에서 마감해주세요.";
+      return t("toast.terminateAlreadyFinished");
     case "NOT_ASSIGNED_PRODUCTION":
-      return "본인이 맡은 검사만 마감할 수 있습니다.";
+      return t("toast.terminateNotOwner");
     default:
       return data?.message ?? fallback;
   }
@@ -776,6 +789,7 @@ function TerminateButton({
   onClick: () => void;
   disabled: boolean;
 }) {
+  const { t } = useTranslation("myInspection");
   return (
     <button
       type="button"
@@ -783,7 +797,7 @@ function TerminateButton({
       disabled={disabled}
       className="mt-2 h-10 w-full rounded-md border border-[#B45309] bg-white text-sm font-medium text-[#B45309] transition-colors hover:bg-[#FFFBEB] disabled:opacity-50"
     >
-      품질 문제로 마감
+      {t("home.terminateForQuality")}
     </button>
   );
 }

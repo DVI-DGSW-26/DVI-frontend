@@ -1,3 +1,4 @@
+import i18n from "../../../lib/i18n";
 
 export interface CropArea {
   x: number;
@@ -42,7 +43,9 @@ export async function getCroppedBlob(
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) =>
-        blob ? resolve(blob) : reject(new Error("Blob 변환에 실패했습니다.")),
+        blob
+          ? resolve(blob)
+          : reject(new Error(i18n.t("inspection:crop.blobConvertFailed"))),
       "image/jpeg",
       0.92,
     );

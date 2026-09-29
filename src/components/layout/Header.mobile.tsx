@@ -1,40 +1,44 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import { useUnreadCount } from "../../features/notification/api";
 import { useAuth } from "../../features/auth/AuthContext";
 import { runHeaderBackHandler } from "../../lib/headerBack";
 
-const ROUTE_TITLES: Record<string, string> = {
-  "/": "홈",
-  "/reports": "검사보고서",
-  "/approval-management": "승인관리",
-  "/qm-reports": "보고서",
-  "/inspections": "현황",
-  "/scan": "품질검사시스템",
-  "/products": "제품관리",
-  "/equipment": "설비관리",
-  "/customers": "고객사 관리",
-  "/processes": "공정관리",
-  "/cross-checks": "순회검사 현황",
-  "/my-page": "마이페이지",
+// layout 네임스페이스 titles.* / tabs.* 키
+const ROUTE_TITLE_KEYS: Record<string, string> = {
+  "/": "titles.home",
+  "/reports": "tabs.reports",
+  "/approval-management": "tabs.approvalManagement",
+  "/qm-reports": "tabs.qmReports",
+  "/inspections": "titles.inspections",
+  "/scan": "titles.scan",
+  "/products": "tabs.products",
+  "/equipment": "tabs.equipment",
+  "/customers": "tabs.customers",
+  "/processes": "tabs.processes",
+  "/cross-checks": "tabs.crossChecks",
+  "/my-page": "tabs.myPage",
 };
 
 const HeaderMobile = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation("layout");
   const { data: unreadCount = 0 } = useUnreadCount();
 
-  const title =
+  const titleKey =
     pathname === "/" && user?.role === "ADMIN"
-      ? "대시보드"
+      ? "tabs.dashboard"
       : /^\/inspection\/\d+\/measure$/.test(pathname)
-        ? "품질 검사 시스템"
+        ? "titles.inspectionMeasure"
         : /^\/cross-check\/\d+\/measure$/.test(pathname)
-          ? "순회 검사 시스템"
+          ? "titles.crossCheckMeasure"
           : pathname.startsWith("/inspection/")
-            ? "측정 항목 확인"
-            : (ROUTE_TITLES[pathname] ?? "");
+            ? "titles.inspectionDetail"
+            : ROUTE_TITLE_KEYS[pathname];
+  const title = titleKey ? t(titleKey) : "";
 
   const hasUnread = unreadCount > 0;
   const isNotificationsPage = pathname === "/notifications";
@@ -53,7 +57,7 @@ const HeaderMobile = () => {
       <button
         type="button"
         onClick={handleBack}
-        aria-label="뒤로가기"
+        aria-label={t("back")}
         className="absolute left-4 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center text-[#212121]"
       >
         <Icon icon="solar:alt-arrow-left-linear" width={24} height={24} />
@@ -65,7 +69,7 @@ const HeaderMobile = () => {
         <button
           type="button"
           onClick={() => navigate("/notifications")}
-          aria-label="알림"
+          aria-label={t("notifications")}
           className="absolute right-4 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center text-[#212121]"
         >
           <Icon icon="solar:bell-linear" width={22} height={22} />

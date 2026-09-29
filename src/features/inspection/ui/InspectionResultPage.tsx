@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
 import {
@@ -32,6 +34,8 @@ interface ResultLocationState {
   inspectorName?: string;
 }
 
+// 사유 값은 백엔드로 그대로 전송·저장되므로 한국어 원문을 유지한다.
+// 화면 표시는 REASON_LABEL_KEYS 로 번역한다.
 const REASON_OPTIONS = [
   "설비고장/수리",
   "치수불량",
@@ -41,9 +45,19 @@ const REASON_OPTIONS = [
   "기타",
 ];
 
+const REASON_LABEL_KEYS: Record<string, string> = {
+  "설비고장/수리": "result.reasons.equipmentFailure",
+  치수불량: "result.reasons.dimensionDefect",
+  외관불량: "result.reasons.appearanceDefect",
+  소재부족: "result.reasons.materialShortage",
+  모델교환: "result.reasons.modelChange",
+  기타: "result.reasons.other",
+};
+
 const OTHER_REASON = "기타";
 
 export default function InspectionResultPage() {
+  const { t } = useTranslation("inspection");
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams<{ inspectionId: string }>();
@@ -198,7 +212,7 @@ export default function InspectionResultPage() {
   if (needsFallback && detailQuery.isLoading) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
-        결과를 불러오는 중...
+        {t("result.loading")}
       </div>
     );
   }
@@ -207,17 +221,17 @@ export default function InspectionResultPage() {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
         <div className="text-sm font-medium text-[#212121]">
-          결과 데이터가 없습니다.
+          {t("result.noData")}
         </div>
         <p className="mt-1 text-xs text-[#6B7280]">
-          측정 화면에서 검사를 시작해주세요.
+          {t("result.startFromMeasure")}
         </p>
         <button
           type="button"
           onClick={() => navigate("/", { replace: true })}
           className="mt-4 h-10 rounded-md bg-[#931B82] px-4 text-sm font-medium text-white hover:bg-[#6A0F5D]"
         >
-          홈으로 가기
+          {t("common.goHome")}
         </button>
       </div>
     );
@@ -236,7 +250,7 @@ export default function InspectionResultPage() {
       {
         onError: (err) => {
           setAppearance(previous);
-          setToast(toErrorMessage(err));
+          setToast(toErrorMessage(err, t));
         },
       },
     );
@@ -253,11 +267,11 @@ export default function InspectionResultPage() {
         ...(trimmedNote ? { note: trimmedNote } : {}),
       });
       await completeMut.mutateAsync();
-      setToast("검사가 완료되었습니다");
+      setToast(t("result.completedToast"));
       // 자동 홈 이동 대신 "다음 시점 시작" / "홈으로" 선택 UI 노출.
       setPostSubmitMode("complete");
     } catch (err) {
-      setToast(toErrorMessage(err));
+      setToast(toErrorMessage(err, t));
     }
   };
 
@@ -267,11 +281,11 @@ export default function InspectionResultPage() {
       { reason: finalReason },
       {
         onSuccess: () => {
-          setToast("QUALITY_ADMIN 검토 대기 중입니다");
+          setToast(t("result.incompleteToast"));
           setPostSubmitMode("incomplete");
         },
         onError: (err) => {
-          setToast(toErrorMessage(err));
+          setToast(toErrorMessage(err, t));
         },
       },
     );
@@ -291,16 +305,16 @@ export default function InspectionResultPage() {
           | undefined;
         const code = data?.code;
         if (code === "NO_NEXT_SLOT") {
-          setToast("마지막 시점입니다.");
+          setToast(t("result.errors.lastSlot"));
         } else if (code === "PREVIOUS_INSPECTION_NOT_COMPLETED") {
-          setToast("이전 검사를 먼저 완료해주세요.");
+          setToast(t("result.errors.previousNotCompleted"));
         } else if (code === "INSPECTION_ALREADY_EXISTS") {
-          setToast("이미 시작된 시점입니다.");
+          setToast(t("result.errors.alreadyStarted"));
         } else {
-          setToast(data?.message ?? "다음 시점을 시작하지 못했습니다.");
+          setToast(data?.message ?? t("result.errors.startNextFailed"));
         }
       } else {
-        setToast("다음 시점을 시작하지 못했습니다.");
+        setToast(t("result.errors.startNextFailed"));
       }
     }
   };
@@ -315,16 +329,16 @@ export default function InspectionResultPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-28">
       <section className="border-b border-gray-200 bg-white px-4 py-4">
-        <InfoRow label="기계명" value={equipmentName} />
+        <InfoRow label={t("measure.machineName")} value={equipmentName} />
         <div className="mt-2 grid grid-cols-2 gap-2">
-          <Stat label="제품명" value={productName} />
-          <Stat label="담당자" value={inspectorName} />
+          <Stat label={t("measure.productName")} value={productName} />
+          <Stat label={t("measure.manager")} value={inspectorName} />
         </div>
       </section>
 
       <section className="flex-1 px-4 pt-4">
         <h2 className="mb-3 text-sm font-semibold text-[#212121]">
-          측정 결과
+          {t("result.title")}
         </h2>
         <ul className="flex flex-col gap-3">
           {results.map((r, idx) => (
@@ -344,10 +358,12 @@ export default function InspectionResultPage() {
         </ul>
 
         <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4">
-          <div className="text-xs font-medium text-[#6B7280]">외관 검사</div>
+          <div className="text-xs font-medium text-[#6B7280]">
+            {t("result.appearance")}
+          </div>
           <div
             role="radiogroup"
-            aria-label="외관 검사 결과"
+            aria-label={t("result.appearanceAria")}
             className="mt-2 grid grid-cols-2 gap-2"
           >
             {(["OK", "NG"] as const).map((opt) => {
@@ -371,7 +387,7 @@ export default function InspectionResultPage() {
                       : "border-gray-300 bg-white text-[#6B7280] hover:bg-gray-50"
                   }`}
                 >
-                  {isOk ? "OK (합격)" : "NG (불합격)"}
+                  {isOk ? t("judgment.okPass") : t("judgment.ngFail")}
                 </button>
               );
             })}
@@ -383,17 +399,16 @@ export default function InspectionResultPage() {
             htmlFor="inspection-note"
             className="block text-xs font-medium text-[#6B7280]"
           >
-            비고 (선택)
+            {t("result.noteLabel")}
           </label>
           <p className="mt-0.5 text-[11px] text-[#9CA3AF]">
-            설비 이상이나 측정 특이사항을 적어두면 보고서 비고란에 그대로
-            표시됩니다.
+            {t("result.noteHint")}
           </p>
           <textarea
             id="inspection-note"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="예: 게이지 교체 직후 측정"
+            placeholder={t("result.notePlaceholder")}
             disabled={isBusy}
             rows={3}
             maxLength={500}
@@ -407,7 +422,7 @@ export default function InspectionResultPage() {
               htmlFor="incomplete-reason"
               className="block text-xs font-medium text-[#6B7280]"
             >
-              미완료 사유
+              {t("result.incompleteReason")}
             </label>
             <select
               id="incomplete-reason"
@@ -417,11 +432,11 @@ export default function InspectionResultPage() {
               className="mt-1 h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
             >
               <option value="" disabled>
-                사유를 선택해주세요
+                {t("result.selectReason")}
               </option>
               {REASON_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>
-                  {opt}
+                  {REASON_LABEL_KEYS[opt] ? t(REASON_LABEL_KEYS[opt]) : opt}
                 </option>
               ))}
             </select>
@@ -430,7 +445,7 @@ export default function InspectionResultPage() {
               <textarea
                 value={customReason}
                 onChange={(e) => setCustomReason(e.target.value)}
-                placeholder="사유를 입력해주세요"
+                placeholder={t("result.customReasonPlaceholder")}
                 disabled={isBusy}
                 rows={3}
                 className="mt-2 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
@@ -452,8 +467,8 @@ export default function InspectionResultPage() {
                 className="h-12 w-full rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
               >
                 {startNextMut.isPending
-                  ? "시작 중..."
-                  : `다음 시점 시작 (${nextType})`}
+                  ? t("result.startingNext")
+                  : t("result.startNext", { type: nextType })}
               </button>
             )}
             <button
@@ -465,7 +480,7 @@ export default function InspectionResultPage() {
                   : "bg-[#931B82] text-white hover:bg-[#6A0F5D]"
               }`}
             >
-              홈으로
+              {t("result.home")}
             </button>
           </div>
         ) : hasSkipped ? (
@@ -475,7 +490,9 @@ export default function InspectionResultPage() {
             disabled={!canSubmitIncomplete || isBusy}
             className="h-12 w-full rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
           >
-            {incompleteMut.isPending ? "처리 중..." : "미완료 처리"}
+            {incompleteMut.isPending
+              ? t("result.processing")
+              : t("result.incompleteSubmit")}
           </button>
         ) : (
           <button
@@ -485,8 +502,8 @@ export default function InspectionResultPage() {
             className="h-12 w-full rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
           >
             {saveMut.isPending || completeMut.isPending
-              ? "처리 중..."
-              : "검사 완료"}
+              ? t("result.processing")
+              : t("result.completeSubmit")}
           </button>
         )}
       </div>
@@ -508,9 +525,10 @@ function StepResultCard({
   // 검사 완료 전에만 전달됨 — 해당 항목을 측정 페이지에서 다시 측정.
   onRetake?: () => void;
 }) {
+  const { t } = useTranslation("inspection");
   const isPassFail = result.valueType === "PASS_FAIL";
   const dimText = isPassFail
-    ? "OK/NG 판정 항목"
+    ? t("judgment.passFailItem")
     : formatStandardWithTolerance(
         result.standardValue,
         result.toleranceUpper,
@@ -550,7 +568,9 @@ function StepResultCard({
         // PASS_FAIL 항목 — 사진·측정값 없이 OK/NG 만 표시.
         result.passFailResult ? (
           <div className="mt-3 flex items-baseline justify-between rounded-lg bg-[#F9FAFB] px-3 py-2">
-            <span className="text-xs text-[#6B7280]">판정</span>
+            <span className="text-xs text-[#6B7280]">
+              {t("judgment.label")}
+            </span>
             <span
               className={`text-base font-semibold ${
                 result.passFailResult === "OK"
@@ -563,7 +583,7 @@ function StepResultCard({
           </div>
         ) : (
           <div className="mt-3 rounded-lg border border-dashed border-[#D1D5DB] bg-[#F3F4F6] px-3 py-4 text-center text-sm text-[#6B7280]">
-            미판정
+            {t("judgment.notJudged")}
           </div>
         )
       ) : result.status === "completed" ? (
@@ -572,20 +592,26 @@ function StepResultCard({
             <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-[#F9FAFB]">
               <img
                 src={toBackendImageUrl(result.imageUrl)}
-                alt={`${dimDisplayName(result)} 측정 사진`}
+                alt={t("result.measurePhotoAlt", {
+                  name: dimDisplayName(result),
+                })}
                 className="block aspect-square w-full object-contain"
               />
             </div>
           )}
           <div className="mt-3 flex items-baseline justify-between rounded-lg bg-[#F9FAFB] px-3 py-2">
-            <span className="text-xs text-[#6B7280]">측정값</span>
+            <span className="text-xs text-[#6B7280]">
+              {t("input.measuredValue")}
+            </span>
             <span className="text-base font-semibold text-[#212121]">
               {result.measuredValue ?? "-"}
             </span>
           </div>
           {isMachining && result.passFailResult && (
             <div className="mt-2 flex items-baseline justify-between rounded-lg bg-[#F9FAFB] px-3 py-2">
-              <span className="text-xs text-[#6B7280]">판정 (가공)</span>
+              <span className="text-xs text-[#6B7280]">
+                {t("judgment.machining")}
+              </span>
               <span
                 className={`text-base font-semibold ${
                   result.passFailResult === "OK"
@@ -606,7 +632,9 @@ function StepResultCard({
             height={36}
             className="text-[#9CA3AF]"
           />
-          <span className="mt-2 text-sm font-medium">사진 촬영 불가</span>
+          <span className="mt-2 text-sm font-medium">
+            {t("result.photoUnavailable")}
+          </span>
         </div>
       )}
       {onRetake && (
@@ -616,7 +644,7 @@ function StepResultCard({
           className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-[#931B82] bg-white text-sm font-semibold text-[#931B82] transition-colors hover:bg-[#F3E8FF]"
         >
           <Icon icon="solar:camera-linear" width={16} height={16} />
-          다시 측정
+          {t("result.retakeItem")}
         </button>
       )}
     </div>
@@ -645,15 +673,16 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function toErrorMessage(err: unknown): string {
+function toErrorMessage(err: unknown, t: TFunction<"inspection">): string {
   if (err instanceof AxiosError) {
     const data = err.response?.data as ApiErrorData | undefined;
     const code = data?.code;
-    if (code === "RESULTS_NOT_COMPLETE") return "미입력 측정값이 있습니다";
+    if (code === "RESULTS_NOT_COMPLETE")
+      return t("result.errors.resultsNotComplete");
     if (code === "APPEARANCE_REQUIRED")
-      return "외관 검사 결과를 선택해주세요.";
-    return data?.message ?? "요청 처리 중 오류가 발생했습니다.";
+      return t("result.errors.appearanceRequired");
+    return data?.message ?? t("common.errors.requestFailed");
   }
   if (err instanceof Error) return err.message;
-  return "알 수 없는 오류가 발생했습니다.";
+  return t("common.errors.unknown");
 }

@@ -1,10 +1,12 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../features/auth/AuthContext";
 import type { Role } from "../../features/auth/api";
 
 type TabItem = {
-  label: string;
+  // layout 네임스페이스 tabs.* 키
+  labelKey: string;
   to: string;
   icon: string;
   roles: Role[];
@@ -14,16 +16,16 @@ type TabItem = {
 };
 
 const TABS: TabItem[] = [
-  { label: "대시보드", to: "/", icon: "flowbite:home-solid", roles: ["ADMIN"] },
-  { label: "검사보고서", to: "/reports", icon: "basil:document-solid", roles: ["ADMIN"] },
+  { labelKey: "dashboard", to: "/", icon: "flowbite:home-solid", roles: ["ADMIN"] },
+  { labelKey: "reports", to: "/reports", icon: "basil:document-solid", roles: ["ADMIN"] },
 
-  { label: "승인관리", to: "/approval-management", icon: "fluent:shield-task-48-filled", roles: ["QUALITY_ADMIN", "ADMIN"] },
-  { label: "보고서", to: "/qm-reports", icon: "basil:document-solid", roles: ["QUALITY_ADMIN"] },
+  { labelKey: "approvalManagement", to: "/approval-management", icon: "fluent:shield-task-48-filled", roles: ["QUALITY_ADMIN", "ADMIN"] },
+  { labelKey: "qmReports", to: "/qm-reports", icon: "basil:document-solid", roles: ["QUALITY_ADMIN"] },
 
-  { label: "홈", to: "/", icon: "flowbite:home-solid", roles: ["PRODUCTION"], iconSize: 34 },
-  { label: "검사이력", to: "/inspections", icon: "icon-park-outline:big-clock", roles: ["PRODUCTION"] },
+  { labelKey: "home", to: "/", icon: "flowbite:home-solid", roles: ["PRODUCTION"], iconSize: 34 },
+  { labelKey: "inspectionHistory", to: "/inspections", icon: "icon-park-outline:big-clock", roles: ["PRODUCTION"] },
   {
-    label: "스캔",
+    labelKey: "scan",
     to: "/scan",
     icon: "carbon:scan-alt",
     roles: ["PRODUCTION"],
@@ -32,24 +34,25 @@ const TABS: TabItem[] = [
       p === "/scan" || p.startsWith("/inspection/"),
   },
 
-  { label: "홈", to: "/", icon: "flowbite:home-solid", roles: ["QUALITY"], iconSize: 34 },
-  { label: "순회검사 현황", to: "/cross-checks", icon: "icon-park-outline:big-clock", roles: ["QUALITY", "ADMIN"] },
-  { label: "순회검사 결재", to: "/cross-check-approval", icon: "mdi:shield-check-outline", roles: ["QUALITY_ADMIN", "ADMIN"] },
+  { labelKey: "home", to: "/", icon: "flowbite:home-solid", roles: ["QUALITY"], iconSize: 34 },
+  { labelKey: "crossChecks", to: "/cross-checks", icon: "icon-park-outline:big-clock", roles: ["QUALITY", "ADMIN"] },
+  { labelKey: "crossCheckApproval", to: "/cross-check-approval", icon: "mdi:shield-check-outline", roles: ["QUALITY_ADMIN", "ADMIN"] },
 
-  { label: "자주검사 관리", to: "/admin-inspections", icon: "mdi:clipboard-remove-outline", roles: ["ADMIN"] },
-  { label: "제품관리", to: "/products", icon: "mdi:cube", roles: ["ADMIN", "QUALITY_ADMIN"] },
-  { label: "설비관리", to: "/equipment", icon: "mdi:factory", roles: ["ADMIN", "QUALITY_ADMIN"] },
-  { label: "고객사 관리", to: "/customers", icon: "mdi:office-building", roles: ["ADMIN", "QUALITY_ADMIN"] },
-  { label: "공정관리", to: "/processes", icon: "mdi:cog-transfer-outline", roles: ["ADMIN", "QUALITY_ADMIN"] },
+  { labelKey: "adminInspections", to: "/admin-inspections", icon: "mdi:clipboard-remove-outline", roles: ["ADMIN"] },
+  { labelKey: "products", to: "/products", icon: "mdi:cube", roles: ["ADMIN", "QUALITY_ADMIN"] },
+  { labelKey: "equipment", to: "/equipment", icon: "mdi:factory", roles: ["ADMIN", "QUALITY_ADMIN"] },
+  { labelKey: "customers", to: "/customers", icon: "mdi:office-building", roles: ["ADMIN", "QUALITY_ADMIN"] },
+  { labelKey: "processes", to: "/processes", icon: "mdi:cog-transfer-outline", roles: ["ADMIN", "QUALITY_ADMIN"] },
 
-  { label: "검사지시", to: "/inspection-orders", icon: "mdi:clipboard-text-outline", roles: ["PRODUCTION_MANAGER"], iconSize: 34 },
-  { label: "내 검사지시", to: "/my-orders", icon: "mdi:clipboard-list-outline", roles: ["PRODUCTION"] },
+  { labelKey: "inspectionOrders", to: "/inspection-orders", icon: "mdi:clipboard-text-outline", roles: ["PRODUCTION_MANAGER"], iconSize: 34 },
+  { labelKey: "myOrders", to: "/my-orders", icon: "mdi:clipboard-list-outline", roles: ["PRODUCTION"] },
 
-  { label: "마이페이지", to: "/my-page", icon: "mdi:account-circle", roles: ["ADMIN", "QUALITY_ADMIN", "PRODUCTION", "PRODUCTION_MANAGER", "QUALITY"] },
+  { labelKey: "myPage", to: "/my-page", icon: "mdi:account-circle", roles: ["ADMIN", "QUALITY_ADMIN", "PRODUCTION", "PRODUCTION_MANAGER", "QUALITY"] },
 ];
 
 const TabBarMobile = () => {
   const { user } = useAuth();
+  const { t } = useTranslation("layout");
   const location = useLocation();
 
   const visibleTabs = user
@@ -62,10 +65,10 @@ const TabBarMobile = () => {
         const customActive = tab.activeMatch?.(location.pathname);
         return (
           <NavLink
-            key={`${tab.label}-${tab.to}`}
+            key={`${tab.labelKey}-${tab.to}`}
             to={tab.to}
             end
-            aria-label={tab.label}
+            aria-label={t(`tabs.${tab.labelKey}`)}
             className={({ isActive: navActive }) => {
               const isActive = customActive ?? navActive;
               return `flex flex-1 items-center justify-center transition-colors ${

@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from "react-i18next";
 import { Icon } from "@iconify/react";
 
 interface Props {
@@ -9,8 +10,8 @@ interface Props {
 
 interface Example {
   key: string;
-  title: string;
-  note: string;
+  titleKey: string;
+  noteKey: string;
   ok: boolean;
   // LCD 박스가 프레임에서 차지하는 크기 (비율 시각화용) + 글자 크기.
   w: string;
@@ -21,8 +22,8 @@ interface Example {
 const EXAMPLES: Example[] = [
   {
     key: "good",
-    title: "좋은 예",
-    note: "LCD 25~50% · 정확도 거의 100%",
+    titleKey: "modals.captureGuide.examples.good.title",
+    noteKey: "modals.captureGuide.examples.good.note",
     ok: true,
     w: "64%",
     h: "34%",
@@ -30,8 +31,8 @@ const EXAMPLES: Example[] = [
   },
   {
     key: "near",
-    title: "너무 가까이",
-    note: "LCD 가득 · 자주 깨짐",
+    titleKey: "modals.captureGuide.examples.near.title",
+    noteKey: "modals.captureGuide.examples.near.note",
     ok: false,
     w: "94%",
     h: "56%",
@@ -39,8 +40,8 @@ const EXAMPLES: Example[] = [
   },
   {
     key: "far",
-    title: "너무 멀리",
-    note: "LCD 5% 미만 · 검출 실패",
+    titleKey: "modals.captureGuide.examples.far.title",
+    noteKey: "modals.captureGuide.examples.far.note",
     ok: false,
     w: "26%",
     h: "15%",
@@ -51,6 +52,7 @@ const EXAMPLES: Example[] = [
 // 측정값(캘리퍼 LCD) 촬영 가이드 — 좋은 예 / 나쁜 예를 목업으로 보여준다.
 // 실제 샘플 사진 대신 LCD 비율을 일러스트로 표현해 적정 거리를 직관적으로 안내.
 export default function CaptureGuideModal({ open, onClose, onStart }: Props) {
+  const { t } = useTranslation("inspection");
   if (!open) return null;
 
   return (
@@ -65,11 +67,14 @@ export default function CaptureGuideModal({ open, onClose, onStart }: Props) {
         className="w-full max-w-md rounded-t-2xl bg-white p-5 sm:rounded-2xl"
       >
         <h3 className="text-base font-semibold text-[#212121]">
-          측정값(LCD) 촬영 팁
+          {t("modals.captureGuide.title")}
         </h3>
         <p className="mt-1 text-xs leading-relaxed text-[#6B7280]">
-          LCD가 사진의 <b className="text-[#212121]">25~50%</b>를 차지하는
-          적당한 거리에서 찍어주세요. 인식 정확도가 크게 올라갑니다.
+          <Trans
+            t={t}
+            i18nKey="modals.captureGuide.description"
+            components={{ b: <b className="text-[#212121]" /> }}
+          />
         </p>
 
         <div className="mt-4 grid grid-cols-3 gap-2">
@@ -100,10 +105,10 @@ export default function CaptureGuideModal({ open, onClose, onStart }: Props) {
                   ex.ok ? "text-[#15803D]" : "text-[#B91C1C]"
                 }`}
               >
-                {ex.title}
+                {t(ex.titleKey)}
               </div>
               <div className="text-center text-[10px] leading-tight text-[#6B7280]">
-                {ex.note}
+                {t(ex.noteKey)}
               </div>
             </div>
           ))}
@@ -115,14 +120,14 @@ export default function CaptureGuideModal({ open, onClose, onStart }: Props) {
             onClick={onClose}
             className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB]"
           >
-            닫기
+            {t("modals.captureGuide.close")}
           </button>
           <button
             type="button"
             onClick={onStart}
             className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white hover:bg-[#6A0F5D]"
           >
-            촬영하기
+            {t("modals.captureGuide.start")}
           </button>
         </div>
       </div>

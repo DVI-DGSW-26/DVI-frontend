@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import { AuthError } from "../api";
 import { useAuth } from "../AuthContext";
@@ -21,6 +22,7 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
+  const { t } = useTranslation("auth");
   const isMobile = useMediaQuery("(max-width: 767px)");
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -40,7 +42,7 @@ export default function Login() {
         alert(err.message);
       } else {
         console.error("[login] failed:", err);
-        alert("로그인 중 오류가 발생했습니다. 다시 시도해주세요.");
+        alert(t("login.error"));
       }
     }
   };

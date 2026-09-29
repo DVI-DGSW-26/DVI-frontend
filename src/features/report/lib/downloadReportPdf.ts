@@ -1,3 +1,4 @@
+import i18n from "i18next";
 import type {
   AppearanceResult,
   JudgeResult,
@@ -464,11 +465,11 @@ function buildHtml(detail: ReportDetail): string {
 export async function downloadReportPdf(reportId: number): Promise<void> {
   const w = window.open("", "_blank");
   if (!w) {
-    alert("팝업이 차단되어 PDF를 열 수 없습니다. 팝업 허용 후 다시 시도하세요.");
+    alert(i18n.t("report:pdf.popupBlocked"));
     return;
   }
   w.document.write(
-    `<!doctype html><html><body style="font-family:sans-serif;padding:24px;color:#6B7280">보고서를 불러오는 중...</body></html>`,
+    `<!doctype html><html><body style="font-family:sans-serif;padding:24px;color:#6B7280">${i18n.t("report:pdf.loading")}</body></html>`,
   );
   try {
     const detail = await getReportDetail(reportId);
@@ -478,6 +479,6 @@ export async function downloadReportPdf(reportId: number): Promise<void> {
     w.focus();
   } catch {
     w.close();
-    alert("보고서를 불러오지 못했습니다.");
+    alert(i18n.t("report:pdf.loadFailed"));
   }
 }
