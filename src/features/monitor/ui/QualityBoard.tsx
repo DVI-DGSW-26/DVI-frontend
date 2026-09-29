@@ -64,7 +64,7 @@ const DEFECT_ROW_HEIGHT = 88;
  * 조치 한 줄 높이(px).
  * 사유가 이 줄의 알맹이다 — 두 줄까지 접히게 잡아 둔다.
  */
-const ACTION_ROW_HEIGHT = 124;
+const ACTION_ROW_HEIGHT = 128;
 
 export default function QualityBoard({
   board,
@@ -227,7 +227,7 @@ export default function QualityBoard({
 
       {/* 오른쪽 열은 "무슨 유형이 몰리나"와 "어떻게 조치했나"를 맡는다 — 목록만큼
           중요한 정보라 폭을 넉넉히 준다. */}
-      <main className="grid min-h-0 flex-1 grid-cols-[1fr_27rem] gap-4 px-6 pb-6">
+      <main className="grid min-h-0 flex-1 grid-cols-[1fr_32rem] gap-4 px-6 pb-6">
         <Card>
           <CardHead
             title="불량 항목"
@@ -407,7 +407,7 @@ function TypeBreakdown({
   return (
     <Card>
       <CardHead title="불량 유형" />
-      <div className="flex flex-col gap-4 px-6 pb-6">
+      <div className="flex flex-col gap-4 px-6 pb-5">
         {types.map((t) => {
           const s = defectStyle(t);
           const n = counts[t];
@@ -415,7 +415,7 @@ function TypeBreakdown({
             <div key={t} className="flex items-center gap-3">
               <span
                 aria-hidden
-                className="flex size-9 shrink-0 items-center justify-center rounded text-xl font-bold"
+                className="flex size-11 shrink-0 items-center justify-center rounded-md text-2xl font-bold"
                 style={{
                   backgroundColor: n > 0 ? T.error[700] : T.neutral.sub,
                   color: n > 0 ? T.neutral.white : T.neutral.muted,
@@ -423,18 +423,18 @@ function TypeBreakdown({
               >
                 {s.mark}
               </span>
-              <span className="w-28 shrink-0 text-xl">{s.name}</span>
+              <span className="w-32 shrink-0 text-2xl">{s.name}</span>
               <span className="min-w-0 flex-1">
                 <Meter
                   value={n}
                   total={total}
                   color={n > 0 ? T.error[700] : T.neutral.border}
                   width="100%"
-                  height={12}
+                  height={16}
                 />
               </span>
               <span
-                className="w-10 shrink-0 text-right text-3xl font-bold tabular-nums"
+                className="w-12 shrink-0 text-right text-4xl font-bold tabular-nums"
                 style={{ color: n > 0 ? T.error[700] : T.neutral.muted }}
               >
                 {n}
@@ -480,10 +480,13 @@ const ACTION_STYLE: Record<
   ActionKind,
   { label: string; bg: string; note: string }
 > = {
+  // 조기종료는 결재를 거치지 않는다 — 작업자가 실행하는 즉시 그 지점까지 묶어
+  // 보고서가 발행되고, 재검사용 새 초품이 새 작업지시로 자동 생성된다.
+  // 품질·관리자에게는 정보성 알림만 간다.
   TERMINATED: {
     label: "조기종료",
     bg: T.error[700],
-    note: "검사 중단",
+    note: "보고서 발행 · 재검사 시작",
   },
   INCOMPLETE: {
     label: "미완료",
@@ -531,7 +534,7 @@ function ActionCard({ items, now }: { items: ActionItem[]; now: Date }) {
             return (
               <div
                 key={item.key}
-                className="flex flex-col justify-center gap-1 overflow-hidden"
+                className="flex flex-col justify-center gap-1.5 overflow-hidden"
                 style={{
                   height: ACTION_ROW_HEIGHT,
                   borderTop: `1px solid ${T.neutral.border}`,
@@ -539,23 +542,23 @@ function ActionCard({ items, now }: { items: ActionItem[]; now: Date }) {
               >
                 <div className="flex items-center gap-2">
                   <span
-                    className="shrink-0 rounded px-2 py-0.5 text-base font-bold"
+                    className="shrink-0 rounded-md px-2.5 py-1 text-lg font-bold"
                     style={{ backgroundColor: s.bg, color: T.neutral.white }}
                   >
                     {s.label}
                   </span>
-                  <span className="truncate text-xl font-bold">
+                  <span className="truncate text-2xl font-bold">
                     {item.productName}
                   </span>
                   <span
-                    className="shrink-0 text-base"
+                    className="shrink-0 text-lg"
                     style={{ color: T.inkSub }}
                   >
                     {item.equipmentName}
                   </span>
                   {item.at && (
                     <span
-                      className="ml-auto shrink-0 text-sm tabular-nums"
+                      className="ml-auto shrink-0 text-base tabular-nums"
                       style={{ color: T.neutral.muted }}
                     >
                       {formatElapsed(item.at, now)}
@@ -564,12 +567,12 @@ function ActionCard({ items, now }: { items: ActionItem[]; now: Date }) {
                 </div>
                 {/* 사유가 이 줄의 알맹이다 — 무슨 일이 있었는지가 여기 적힌다. */}
                 <div
-                  className="line-clamp-2 text-lg leading-snug font-bold"
+                  className="line-clamp-2 text-xl leading-snug font-bold"
                   title={item.reason ?? undefined}
                 >
                   {item.reason ?? "사유 없음"}
                 </div>
-                <div className="flex items-baseline gap-2 text-base">
+                <div className="flex items-baseline gap-2 text-lg">
                   <span style={{ color: T.inkSub }}>{item.person}</span>
                   {/* 그래서 지금 어떻게 됐는지 — 조치의 결말. */}
                   <span className="font-bold" style={{ color: s.bg }}>
