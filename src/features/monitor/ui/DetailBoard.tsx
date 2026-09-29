@@ -43,7 +43,7 @@ import type { MonitorInspection, MonitorSnapshot } from "../type/types";
 /** 대기열 한 줄 높이(px) — 한 페이지에 몇 줄 들어가는지 이 값으로 나눠 구한다. */
 const QUEUE_ROW_HEIGHT = 76;
 /** 측정 항목 한 줄 높이(px). 고정이어야 페이지 계산이 맞는다. */
-const DIM_ROW_HEIGHT = 72;
+const DIM_ROW_HEIGHT = 78;
 /** 한 검사를 보여주는 시간. 항목을 눈으로 훑을 만큼은 머문다. */
 const ITEM_INTERVAL_MS = 12_000;
 
@@ -370,8 +370,9 @@ function Sep() {
 /* ── 측정 항목 한 줄 ───────────────────────────────────────── */
 
 // 열 너비를 상수 하나로 묶어 제목줄과 값줄이 어긋나지 않게 한다.
+// 측정값과 눈금이 이 줄의 주인공이다. 나머지 열은 최소로 두고 남는 폭을 둘에 준다.
 const DIM_GRID =
-  "3rem minmax(7rem, 1fr) 11rem 9rem minmax(11rem, 1.3fr) 4.5rem";
+  "3rem minmax(6rem, 0.85fr) 9rem 9.5rem minmax(13rem, 1.6fr) 4.5rem";
 
 function DimColumns() {
   return (
@@ -412,16 +413,16 @@ function DimRow({
         gridTemplateColumns: DIM_GRID,
         height: DIM_ROW_HEIGHT,
         borderTop: `1px solid ${T.neutral.border}`,
-        // 불량 줄은 바탕째 물들이고 왼쪽에 굵은 선을 세운다 — 항목 여덟 줄 중 하나가
-        // 빨간 것을 벽 끝에서도 찾을 수 있어야 한다.
-        backgroundColor: ng ? T.error[100] : undefined,
-        boxShadow: ng ? `inset 4px 0 0 ${T.error[700]}` : undefined,
+        // 불량 줄은 왼쪽에 굵은 선을 세워 표시한다 — 바탕째 물들이면 눈금의 이탈
+        // 구간(같은 연빨강)이 줄 배경에 묻혀, 정작 봐야 할 "어디까지가 허용인지"가
+        // 사라진다. 줄은 빨간 레일과 빨간 측정값·NG 칩으로 충분히 눈에 띈다.
+        boxShadow: ng ? `inset 6px 0 0 ${T.error[700]}` : undefined,
       }}
     >
       <span
         className="flex size-8 items-center justify-center rounded-full text-base font-bold tabular-nums"
         style={{
-          marginLeft: ng ? 8 : 0,
+          marginLeft: ng ? 10 : 0,
           backgroundColor: T.neutral.sub,
           color: T.inkSub,
         }}
@@ -439,7 +440,7 @@ function DimRow({
         측정값이 없는 항목은 빈칸으로 두지 않는다 — 기준·공차·측정값이 모두 "–" 인데
         판정만 NG 로 서 있으면 "아무것도 안 찍혔는데 왜 불량이지?"로 읽힌다.
       */}
-      <span className="text-lg tabular-nums" style={{ color: T.inkSub }}>
+      <span className="text-base tabular-nums" style={{ color: T.inkSub }}>
         {passFail
           ? "OK/NG 판정 항목"
           : formatStandardWithTolerance(
@@ -451,20 +452,20 @@ function DimRow({
 
       <span>
         {result.measuredValue == null ? (
-          <span className="text-2xl" style={{ color: T.neutral.muted }}>
+          <span className="text-3xl" style={{ color: T.neutral.muted }}>
             –
           </span>
         ) : (
           <>
             <span
-              className="block text-2xl leading-none font-bold tabular-nums"
+              className="block text-4xl leading-none font-black tabular-nums"
               style={{ color: ng ? T.error[700] : T.neutral.ink }}
             >
               {formatValue(result.measuredValue)}
             </span>
             <span
-              className="text-sm tabular-nums"
-              style={{ color: ng ? T.error[700] : T.neutral.muted }}
+              className="text-base tabular-nums"
+              style={{ color: ng ? T.error[700] : T.inkSub }}
             >
               {formatDeviation(result.measuredValue, result.standardValue)}
             </span>

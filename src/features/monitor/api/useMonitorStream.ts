@@ -2,15 +2,10 @@ import { useEffect, useState } from "react";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { tokenStorage, refreshAccessToken } from "../../auth/api";
 import { apiBase } from "../../../lib/apiServer";
-import {
-  getMonitorQuality,
-  getMonitorSchedule,
-  getMonitorSnapshot,
-} from "./monitorApi";
+import { getMonitorQuality, getMonitorSnapshot } from "./monitorApi";
 import type {
   MonitorConnection,
   MonitorQualityBoard,
-  MonitorScheduleBoard,
   MonitorSnapshot,
 } from "../type/types";
 
@@ -38,7 +33,6 @@ const sleep = (ms: number, signal: AbortSignal) =>
 export interface MonitorBoardTimes {
   snapshot: Date | null;
   quality: Date | null;
-  schedule: Date | null;
 }
 
 export interface MonitorStream {
@@ -46,8 +40,6 @@ export interface MonitorStream {
   snapshot: MonitorSnapshot | null;
   /** 페이지3 품질·불량 보드 (event: quality). */
   quality: MonitorQualityBoard | null;
-  /** 페이지4 진행·지연 보드 (event: schedule). */
-  schedule: MonitorScheduleBoard | null;
   connection: MonitorConnection;
   /**
    * 보드별 마지막 갱신 시각. 이벤트는 내용이 바뀔 때만 나가므로 보드마다 다르다 —
@@ -62,7 +54,6 @@ export interface MonitorStream {
 const NO_TIMES: MonitorBoardTimes = {
   snapshot: null,
   quality: null,
-  schedule: null,
 };
 
 /**
@@ -70,10 +61,11 @@ const NO_TIMES: MonitorBoardTimes = {
  *
  * - 브라우저 기본 EventSource 는 Authorization 헤더를 못 실어 사용 불가 →
  *   fetch 기반 SSE 로 접속한다.
- * - 페이지 구분은 이벤트 이름(snapshot/quality/schedule)이다. 페이지를 넘길 때
+ * - 페이지 구분은 이벤트 이름(snapshot/quality)이다. schedule 이벤트도 오지만
+ *   진행·지연 보드를 접으면서 더 쓰지 않는다 — 모르는 이벤트는 조용히 흘린다. 페이지를 넘길 때
  *   새로 연결하지 않는다 — 보이지 않는 페이지의 데이터도 계속 최신으로 들고 있어야
  *   탭 배지(불량 N건·지연 N칸)가 맞고, 넘어간 순간 이미 그려져 있다.
- * - 접속 즉시 서버가 캐싱해 둔 최신값 3종이 한 번에 온다. 앱 기동 직후라 캐시가
+ * - 접속 즉시 서버가 캐싱해 둔 최신값이 한 번에 온다. 앱 기동 직후라 캐시가
  *   아직 없으면 최대 한 주기(5초) 비므로, REST 로 한 번 먼저 채운다.
  * - 이후엔 페이로드가 바뀔 때만 온다. 매 주기 재전송이 아니라 받을 때마다 통째로
  *   갈아끼워도 불필요한 리렌더가 생기지 않는다.
@@ -85,7 +77,6 @@ const NO_TIMES: MonitorBoardTimes = {
 export function useMonitorStream(): MonitorStream {
   const [snapshot, setSnapshot] = useState<MonitorSnapshot | null>(null);
   const [quality, setQuality] = useState<MonitorQualityBoard | null>(null);
-  const [schedule, setSchedule] = useState<MonitorScheduleBoard | null>(null);
   const [connection, setConnection] = useState<MonitorConnection>("connecting");
   const [updatedAt, setUpdatedAt] = useState<MonitorBoardTimes>(NO_TIMES);
 
@@ -106,18 +97,13 @@ export function useMonitorStream(): MonitorStream {
         setQuality(v);
         stamp("quality");
       },
-      schedule: (v: MonitorScheduleBoard) => {
-        setSchedule(v);
-        stamp("schedule");
-      },
     };
 
-    /** 세 보드를 한 번씩 REST 로 받아 채운다. 하나가 실패해도 나머지는 채운다. */
+    /** 두 보드를 한 번씩 REST 로 받아 채운다. 하나가 실패해도 나머지는 채운다. */
     const fetchAll = () =>
       Promise.allSettled([
         getMonitorSnapshot(signal).then(apply.snapshot),
         getMonitorQuality(signal).then(apply.quality),
-        getMonitorSchedule(signal).then(apply.schedule),
       ]);
 
     // 스트림이 첫 값을 주기 전에도 화면이 비어 있지 않도록 REST 로 먼저 채운다.
@@ -174,9 +160,6 @@ export function useMonitorStream(): MonitorStream {
                   case "quality":
                     apply.quality(JSON.parse(ev.data) as MonitorQualityBoard);
                     break;
-                  case "schedule":
-                    apply.schedule(JSON.parse(ev.data) as MonitorScheduleBoard);
-                    break;
                 }
               } catch {
                 // 깨진 프레임 1건 때문에 연결을 끊지는 않는다.
@@ -227,12 +210,12 @@ export function useMonitorStream(): MonitorStream {
   }, []);
 
   const lastEventAt = latest(updatedAt);
-  return { snapshot, quality, schedule, connection, updatedAt, lastEventAt };
+  return { snapshot, quality, connection, updatedAt, lastEventAt };
 }
 
 function latest(times: MonitorBoardTimes): Date | null {
   let best: Date | null = null;
-  for (const t of [times.snapshot, times.quality, times.schedule]) {
+  for (const t of [times.snapshot, times.quality]) {
     if (t && (!best || t > best)) best = t;
   }
   return best;

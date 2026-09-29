@@ -2,9 +2,7 @@
 // 앱 번들에는 들어가지 않는다(빌드 진입점은 index.html 하나뿐, monitor-preview.html 은 dev 전용).
 import type {
   MonitorQualityBoard,
-  MonitorScheduleBoard,
   MonitorSnapshot,
-  MonitorSlotState,
 } from "../features/monitor/type/types";
 
 /** 서버는 오프셋 없는 KST 표기를 내려준다 — 목업도 같은 모양으로 만든다. */
@@ -67,37 +65,4 @@ export const quality: MonitorQualityBoard = {
     { inspectionId: 152, productName: "가이드 바 G-8", equipmentName: "4호기", workerName: W[6], reason: "설비 이상 — 스핀들 진동", at: kstStamp(205) },
   ],
   summary: { inspectionsToday: 46, completedToday: 28, ngInspectionCount: 8, defectItemCount: 12 },
-};
-
-const cell = (
-  slotOrder: number,
-  label: string,
-  time: string | null,
-  state: MonitorSlotState,
-  overdue = false,
-  shift: "DAY" | "NIGHT" = "DAY",
-) => ({ slotOrder, label, time, shift, state, overdue });
-
-export const schedule: MonitorScheduleBoard = {
-  orders: [
-    { orderId: 301, productName: "브라켓 A-2201", equipmentName: "1호기", customerName: "현대모비스", shift: "DAY", doneCount: 2, totalCount: 5,
-      slots: [cell(1, "08:00", "08:00", "DONE"), cell(2, "10:00", "10:00", "DONE"), cell(3, "12:00", "12:00", "IN_PROGRESS", true), cell(4, "14:00", "14:00", "NOT_STARTED"), cell(5, "16:00", "16:00", "NOT_STARTED")] },
-    { orderId: 302, productName: "하우징 커버 HX-9", equipmentName: "3호기", customerName: "만도", shift: "DAY", doneCount: 1, totalCount: 3,
-      slots: [cell(1, "08:00", "08:00", "DONE"), cell(2, "12:00", "12:00", "IN_PROGRESS"), cell(3, "16:00", "16:00", "NOT_STARTED")] },
-    { orderId: 303, productName: "샤프트 B-77", equipmentName: "5호기", customerName: "현대위아", shift: "NIGHT", doneCount: 1, totalCount: 4,
-      slots: [cell(1, "20:00", "20:00", "DONE", false, "NIGHT"), cell(2, "22:00", "22:00", "TERMINATED", false, "NIGHT"), cell(3, "00:00", "00:00", "NOT_STARTED", false, "NIGHT"), cell(4, "02:00", "02:00", "NOT_STARTED", false, "NIGHT")] },
-    { orderId: 304, productName: "리테이너 링 R-12", equipmentName: "2호기", customerName: "LS오토모티브", shift: null, doneCount: 3, totalCount: 3,
-      slots: [cell(1, "초", null, "DONE"), cell(2, "중", null, "DONE"), cell(3, "종", null, "DONE")] },
-    { orderId: 305, productName: "커넥터 하우징 C-3", equipmentName: "7호기", customerName: "현대모비스", shift: "DAY", doneCount: 2, totalCount: 6,
-      slots: [cell(1, "07:00", "07:00", "DONE"), cell(2, "09:00", "09:00", "SKIPPED"), cell(3, "11:00", "11:00", "DONE"), cell(4, "13:00", "13:00", "NOT_STARTED", true), cell(5, "15:00", "15:00", "NOT_STARTED"), cell(6, "17:00", "17:00", "NOT_STARTED")] },
-    { orderId: 306, productName: "플랜지 C-40", equipmentName: "9호기", customerName: "세종공업", shift: "DAY", doneCount: 0, totalCount: 3,
-      slots: [cell(1, "초", null, "INCOMPLETE"), cell(2, "중", null, "IN_PROGRESS"), cell(3, "종", null, "NOT_STARTED")] },
-    { orderId: 307, productName: "가이드 바 G-8", equipmentName: "4호기", customerName: "화신", shift: "DAY", doneCount: 1, totalCount: 4,
-      slots: [cell(1, "08:00", "08:00", "DONE"), cell(2, "11:00", "11:00", "IN_PROGRESS"), cell(3, "14:00", "14:00", "NOT_STARTED"), cell(4, "17:00", "17:00", "NOT_STARTED")] },
-    { orderId: 308, productName: "베어링 캡 BC-2", equipmentName: "6호기", customerName: "만도", shift: "NIGHT", doneCount: 2, totalCount: 4,
-      slots: [cell(1, "19:00", "19:00", "DONE", false, "NIGHT"), cell(2, "21:00", "21:00", "DONE", false, "NIGHT"), cell(3, "23:00", "23:00", "NOT_STARTED", false, "NIGHT"), cell(4, "01:00", "01:00", "NOT_STARTED", false, "NIGHT")] },
-    { orderId: 309, productName: "스페이서 S-5", equipmentName: "8호기", customerName: "덕양산업", shift: null, doneCount: 0, totalCount: 3,
-      slots: [cell(1, "초", null, "IN_PROGRESS"), cell(2, "중", null, "NOT_STARTED"), cell(3, "종", null, "NOT_STARTED")] },
-  ],
-  summary: { orderCount: 9, totalSlots: 35, doneSlots: 12, overdueSlots: 2 },
 };
