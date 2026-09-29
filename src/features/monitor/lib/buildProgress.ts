@@ -83,6 +83,8 @@ export function buildProgressRows(
   inspections: AdminInspection[],
   slotsByProcess: Record<string, InspectionSlot[] | undefined>,
   crossChecks: MonitorCrossCheck[] = [],
+  /** 담당 작업자가 없는 줄의 표시 이름 — 호출부가 번역해서 넘긴다. */
+  unassignedLabel = "미배정",
 ): ProgressRow[] {
   // 진행중 순회검사를 대상 자주검사 id 로 색인한다. 한 검사에 한 건이 정상이지만,
   // 겹쳐 오면 가장 최근 것을 그 칸의 상태로 본다.
@@ -97,7 +99,7 @@ export function buildProgressRows(
   // 작업자·제품·설비가 같으면 한 줄. 같은 조합에 여러 시점 기록이 붙는다.
   const groups = new Map<string, AdminInspection[]>();
   for (const ins of inspections) {
-    const worker = ins.production?.name ?? "미배정";
+    const worker = ins.production?.name ?? unassignedLabel;
     const key = `${worker}|${ins.product.id}|${ins.equipment.id}`;
     const bucket = groups.get(key);
     if (bucket) bucket.push(ins);
@@ -134,7 +136,7 @@ export function buildProgressRows(
 
     rows.push({
       key,
-      workerName: first.production?.name ?? "미배정",
+      workerName: first.production?.name ?? unassignedLabel,
       productName: first.product.name,
       equipmentName: first.equipment.name,
       cells,

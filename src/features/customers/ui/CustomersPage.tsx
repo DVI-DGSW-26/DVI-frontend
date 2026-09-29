@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import { useCustomerList, useDeleteCustomer } from "../api";
 import type { Customer } from "../api";
@@ -11,6 +12,7 @@ function formatDate(iso: string): string {
 }
 
 export default function CustomersPage() {
+  const { t } = useTranslation("customers");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Customer | null>(null);
   const [keyword, setKeyword] = useState("");
@@ -42,24 +44,25 @@ export default function CustomersPage() {
 
   const handleDelete = (customer: Customer) => {
     if (isDeleting) return;
-    if (!window.confirm(`'${customer.name}' 고객사를 삭제할까요?`)) return;
+    if (!window.confirm(t("page.deleteConfirm", { name: customer.name })))
+      return;
     remove(customer.id, {
-      onError: () => alert("삭제 중 오류가 발생했습니다."),
+      onError: () => alert(t("page.deleteError")),
     });
   };
 
   return (
     <div className="flex flex-col gap-4 p-4 pb-20 md:p-6 md:pb-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">고객사관리</h1>
+        <h1 className="text-xl font-semibold">{t("page.title")}</h1>
         <button
           type="button"
           onClick={openCreate}
           className="flex items-center gap-1.5 rounded-lg bg-[#931B82] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D] md:px-4"
         >
           <Icon icon="mdi:plus" width={18} height={18} />
-          <span className="hidden sm:inline">고객사 등록</span>
-          <span className="sm:hidden">등록</span>
+          <span className="hidden sm:inline">{t("page.register")}</span>
+          <span className="sm:hidden">{t("page.registerShort")}</span>
         </button>
       </div>
 
@@ -68,10 +71,12 @@ export default function CustomersPage() {
           <Icon icon="mdi:domain" width={22} height={22} />
         </div>
         <div className="min-w-0">
-          <div className="text-xs text-[#6B7280]">전체 고객사</div>
+          <div className="text-xs text-[#6B7280]">{t("page.total")}</div>
           <div className="text-lg font-semibold text-[#212121] md:text-xl">
             {customers.length}
-            <span className="ml-0.5 text-xs font-normal text-[#6B7280]">곳</span>
+            <span className="ml-0.5 text-xs font-normal text-[#6B7280]">
+              {t("page.totalUnit")}
+            </span>
           </div>
         </div>
       </div>
@@ -87,7 +92,7 @@ export default function CustomersPage() {
           type="search"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
-          placeholder="고객사명 검색"
+          placeholder={t("page.searchPlaceholder")}
           className="h-10 w-full rounded-lg border border-gray-200 bg-white pl-9 pr-3 text-sm focus:border-[#931B82] focus:outline-none"
         />
       </div>
@@ -127,36 +132,43 @@ interface ListProps {
 }
 
 function DesktopTable({ items, isLoading, isError, isDeleting, onEdit, onDelete }: ListProps) {
+  const { t } = useTranslation(["customers", "common"]);
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
       <table className="w-full text-sm">
         <thead className="bg-[#F3E8F7] text-[#6B7280]">
           <tr>
-            <th className="px-4 py-3 text-left font-medium">고객사명</th>
-            <th className="px-4 py-3 text-left font-medium">등록일</th>
-            <th className="px-4 py-3 text-left font-medium">수정일</th>
-            <th className="px-4 py-3 text-right font-medium">관리</th>
+            <th className="px-4 py-3 text-left font-medium">{t("list.name")}</th>
+            <th className="px-4 py-3 text-left font-medium">
+              {t("list.createdAt")}
+            </th>
+            <th className="px-4 py-3 text-left font-medium">
+              {t("list.updatedAt")}
+            </th>
+            <th className="px-4 py-3 text-right font-medium">
+              {t("list.manage")}
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 text-[#212121]">
           {isLoading && (
             <tr>
               <td colSpan={4} className="px-4 py-10 text-center text-[#A8A8A8]">
-                불러오는 중...
+                {t("common:status.loading")}
               </td>
             </tr>
           )}
           {isError && (
             <tr>
               <td colSpan={4} className="px-4 py-10 text-center text-[#EF4444]">
-                목록을 불러오지 못했습니다.
+                {t("list.loadError")}
               </td>
             </tr>
           )}
           {!isLoading && !isError && items.length === 0 && (
             <tr>
               <td colSpan={4} className="px-4 py-10 text-center text-[#A8A8A8]">
-                해당 조건의 고객사가 없습니다.
+                {t("list.empty")}
               </td>
             </tr>
           )}
@@ -174,7 +186,7 @@ function DesktopTable({ items, isLoading, isError, isDeleting, onEdit, onDelete 
                   <button
                     type="button"
                     onClick={() => onEdit(item)}
-                    aria-label="수정"
+                    aria-label={t("common:actions.edit")}
                     className="rounded p-1.5 text-[#6B7280] transition-colors hover:bg-[#F3E8F7] hover:text-[#931B82]"
                   >
                     <Icon icon="mdi:pencil-outline" width={18} height={18} />
@@ -183,7 +195,7 @@ function DesktopTable({ items, isLoading, isError, isDeleting, onEdit, onDelete 
                     type="button"
                     onClick={() => onDelete(item)}
                     disabled={isDeleting}
-                    aria-label="삭제"
+                    aria-label={t("common:actions.delete")}
                     className="rounded p-1.5 text-[#6B7280] transition-colors hover:bg-[#FEE2E2] hover:text-[#EF4444] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <Icon icon="mdi:trash-can-outline" width={18} height={18} />
@@ -199,24 +211,25 @@ function DesktopTable({ items, isLoading, isError, isDeleting, onEdit, onDelete 
 }
 
 function MobileList({ items, isLoading, isError, isDeleting, onEdit, onDelete }: ListProps) {
+  const { t } = useTranslation(["customers", "common"]);
   if (isLoading) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-        불러오는 중...
+        {t("common:status.loading")}
       </div>
     );
   }
   if (isError) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
-        목록을 불러오지 못했습니다.
+        {t("list.loadError")}
       </div>
     );
   }
   if (items.length === 0) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-        해당 조건의 고객사가 없습니다.
+        {t("list.empty")}
       </div>
     );
   }
@@ -234,7 +247,7 @@ function MobileList({ items, isLoading, isError, isDeleting, onEdit, onDelete }:
                 {item.name}
               </div>
               <div className="mt-0.5 text-xs text-[#A8A8A8]">
-                등록 {formatDate(item.createdAt)}
+                {t("list.registeredAt", { date: formatDate(item.createdAt) })}
               </div>
             </div>
           </div>
@@ -246,7 +259,7 @@ function MobileList({ items, isLoading, isError, isDeleting, onEdit, onDelete }:
               className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-[#6B7280] transition-colors hover:bg-[#F3E8F7] hover:text-[#931B82]"
             >
               <Icon icon="mdi:pencil-outline" width={16} height={16} />
-              수정
+              {t("common:actions.edit")}
             </button>
             <button
               type="button"
@@ -255,7 +268,7 @@ function MobileList({ items, isLoading, isError, isDeleting, onEdit, onDelete }:
               className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-[#6B7280] transition-colors hover:bg-[#FEE2E2] hover:text-[#EF4444] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Icon icon="mdi:trash-can-outline" width={16} height={16} />
-              삭제
+              {t("common:actions.delete")}
             </button>
           </div>
         </div>

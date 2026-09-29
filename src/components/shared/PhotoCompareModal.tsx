@@ -1,4 +1,5 @@
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import { toBackendImageUrl } from "../../lib/imageUrl";
 
 interface Props {
@@ -19,6 +20,7 @@ export default function PhotoCompareModal({
   qualityImageUrl,
   onClose,
 }: Props) {
+  const { t } = useTranslation("shared");
   if (!open) return null;
 
   return (
@@ -34,20 +36,30 @@ export default function PhotoCompareModal({
       >
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-base font-semibold text-[#212121]">
-            {dimNo != null ? `DIM ${dimNo} 측정 사진` : "측정 사진"}
+            {dimNo != null
+              ? t("photoCompare.titleWithDim", { n: dimNo })
+              : t("photoCompare.title")}
           </h3>
           <button
             type="button"
             onClick={onClose}
-            aria-label="닫기"
+            aria-label={t("actions.close", { ns: "common" })}
             className="flex h-8 w-8 items-center justify-center rounded-full text-[#6B7280] hover:bg-[#F3F4F6]"
           >
             <Icon icon="solar:close-circle-linear" width={22} height={22} />
           </button>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <PhotoColumn label="자주검사" url={productionImageUrl} dimNo={dimNo} />
-          <PhotoColumn label="순회검사" url={qualityImageUrl} dimNo={dimNo} />
+          <PhotoColumn
+            label={t("photoCompare.selfInspection")}
+            url={productionImageUrl}
+            dimNo={dimNo}
+          />
+          <PhotoColumn
+            label={t("photoCompare.patrolInspection")}
+            url={qualityImageUrl}
+            dimNo={dimNo}
+          />
         </div>
       </div>
     </div>
@@ -63,6 +75,7 @@ function PhotoColumn({
   url?: string | null;
   dimNo: number | null;
 }) {
+  const { t } = useTranslation("shared");
   return (
     <div className="flex flex-col gap-1.5">
       <span className="text-xs font-medium text-[#6B7280]">{label}</span>
@@ -75,14 +88,16 @@ function PhotoColumn({
         >
           <img
             src={toBackendImageUrl(url)}
-            alt={`DIM ${dimNo ?? ""} ${label} 사진`}
+            alt={t("photoCompare.photoAlt", { dim: dimNo ?? "", label })}
             className="block aspect-square w-full object-contain"
           />
         </a>
       ) : (
         <div className="flex aspect-square w-full flex-col items-center justify-center rounded-lg border border-dashed border-[#D1D5DB] bg-[#F3F4F6] text-[#9CA3AF]">
           <Icon icon="solar:gallery-broken" width={28} height={28} />
-          <span className="mt-1.5 text-xs font-medium">사진 없음</span>
+          <span className="mt-1.5 text-xs font-medium">
+            {t("photoCompare.noPhoto")}
+          </span>
         </div>
       )}
     </div>

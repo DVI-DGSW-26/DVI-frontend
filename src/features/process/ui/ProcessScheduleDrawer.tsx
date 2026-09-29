@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AxiosError } from "axios";
+import { useTranslation } from "react-i18next";
 import {
   useProcessSchedule,
   useUpdateProcessSchedule,
@@ -19,6 +20,7 @@ interface Props {
  * 여기서는 어디서 불러와 어디에 저장할지만 정한다.
  */
 export default function ProcessScheduleDrawer({ open, onClose, process }: Props) {
+  const { t } = useTranslation(["process", "common"]);
   const {
     data: schedule,
     isLoading,
@@ -39,7 +41,7 @@ export default function ProcessScheduleDrawer({ open, onClose, process }: Props)
             err instanceof AxiosError
               ? (err.response?.data as { message?: string } | undefined)?.message
               : undefined;
-          setSaveError(message ?? "스케줄 저장 중 오류가 발생했습니다.");
+          setSaveError(message ?? t("scheduleDrawer.saveError"));
         },
       },
     );
@@ -49,13 +51,17 @@ export default function ProcessScheduleDrawer({ open, onClose, process }: Props)
     <ScheduleDrawer
       open={open}
       onClose={onClose}
-      title={process ? `${process.label} 검사 스케줄` : "검사 스케줄"}
-      subtitle="이 공정의 모든 제품이 이 스케줄로 검사합니다."
+      title={
+        process
+          ? t("scheduleDrawer.title", { name: process.label })
+          : t("scheduleDrawer.titleFallback")
+      }
+      subtitle={t("scheduleDrawer.subtitle")}
       sessionKey={open && schedule ? `${process?.code}:${schedule.id}` : null}
       seed={schedule ?? null}
       isLoading={isLoading}
       isError={isError}
-      submitLabel="저장"
+      submitLabel={t("common:actions.save")}
       isSaving={isPending}
       onSubmit={handleSubmit}
       submitError={saveError}

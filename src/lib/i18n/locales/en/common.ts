@@ -1,10 +1,10 @@
 export default {
   roles: {
     ADMIN: "Administrator",
-    QUALITY_ADMIN: "Quality Manager",
+    QUALITY_ADMIN: "Approval Manager",
     PRODUCTION: "Operator",
     PRODUCTION_MANAGER: "Production Manager",
-    QUALITY: "Quality Inspector",
+    QUALITY: "Patrol Inspector",
   },
   actions: {
     confirm: "Confirm",

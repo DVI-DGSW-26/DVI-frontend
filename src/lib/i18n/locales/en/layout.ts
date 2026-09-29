@@ -8,7 +8,7 @@ export default {
     crossCheckApproval: "Patrol Approval",
     crossChecks: "Patrol Inspections",
     products: "Products",
-    equipment: "Equipment",
+    equipment: "Machines",
     customers: "Customers",
     processes: "Processes",
     inspectionOrders: "Inspection Orders",

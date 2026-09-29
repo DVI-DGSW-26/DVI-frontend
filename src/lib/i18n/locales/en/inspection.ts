@@ -76,18 +76,18 @@ export default {
   },
   detail: {
     fields: {
-      equipment: "Equipment",
+      equipment: "Machine",
       process: "Process",
       customer: "Customer",
       round: "Inspection Round",
       worker: "Worker",
-      qualityManager: "Quality Manager",
+      qualityManager: "Approval Manager",
     },
     sketchAlt: "{{name}} sketch",
     measureItems: "Measurement Items",
     totalCount: "{{n}} total",
     noItems: "No measurement items registered.",
-    standardValue: "Standard value",
+    standardValue: "Nominal value",
     tolerance: "Tolerance",
     startMeasure: "Start Measurement",
   },
@@ -102,7 +102,7 @@ export default {
     manager: "Inspector",
     terminateButton: "Finalize for Quality Issue · Issue Report",
     terminatedNotice:
-      "The report has been issued. Starting re-inspection (First Article).",
+      "The report has been issued. Starting re-inspection (first-off).",
     errors: {
       emptyFile: "The image is empty.",
       invalidExtension: "Only PNG/JPG images can be uploaded.",
@@ -180,12 +180,12 @@ export default {
     appearanceAria: "Appearance inspection result",
     noteLabel: "Remarks (optional)",
     noteHint:
-      "Notes on equipment issues or measurement anomalies will appear in the report remarks as written.",
+      "Notes on machine issues or measurement anomalies will appear in the report remarks as written.",
     notePlaceholder: "e.g. Measured right after gauge replacement",
     incompleteReason: "Incomplete Reason",
     selectReason: "Select a reason",
     reasons: {
-      equipmentFailure: "Equipment failure/repair",
+      equipmentFailure: "Machine failure/repair",
       dimensionDefect: "Dimension defect",
       appearanceDefect: "Appearance defect",
       materialShortage: "Material shortage",
@@ -231,7 +231,7 @@ export default {
       reasonHint:
         "If you note why it was skipped, it will also appear in the report remarks.",
       reasonPlaceholder:
-        "e.g. Line stopped, customer request, equipment maintenance",
+        "e.g. Line stopped, customer request, machine maintenance",
       back: "Back",
       confirm: "Confirm Skip",
       submitting: "Processing...",
@@ -239,10 +239,10 @@ export default {
     terminate: {
       title: "Finalize this inspection due to a quality issue?",
       warning:
-        "Instead of moving to the next round, the rounds so far are bundled and <b>the report is issued immediately</b>. Re-inspection then starts with a new First Article. This cannot be undone.",
+        "Instead of moving to the next round, the rounds so far are bundled and <b>the report is issued immediately</b>. Re-inspection then starts with a new first-off. This cannot be undone.",
       reasonLabel: "Reason (optional)",
       reasonPlaceholder:
-        "e.g. Middle Article dimension defect - die replacement needed",
+        "e.g. In-process dimension defect - die replacement needed",
       cancel: "Cancel",
       submitting: "Finalizing...",
       confirm: "Finalize & Issue Report",

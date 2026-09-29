@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import { useProcessList, useUpdateProcess } from "../api";
 import type { ProcessInfo } from "../api";
@@ -7,26 +8,24 @@ import ProcessFormDrawer from "./ProcessFormDrawer";
 import ProcessScheduleDrawer from "./ProcessScheduleDrawer";
 import { useAllProcessSchedules } from "../../inspection-schedule/api";
 
-// 공정 설정 3개를 목록에서 한눈에 보기 위한 칩.
-const FLAG_CHIPS: { key: keyof ProcessInfo; label: string; style: string }[] = [
+// 공정 설정 3개를 목록에서 한눈에 보기 위한 칩. 라벨은 process:flags.* 에서 가져온다.
+const FLAG_CHIPS: { key: keyof ProcessInfo & string; style: string }[] = [
   {
     key: "hardnessTracked",
-    label: "경도",
     style: "bg-[#FEF3C7] text-[#B45309]",
   },
   {
     key: "bundledReport",
-    label: "묶음보고서",
     style: "bg-[#DBEAFE] text-[#1D4ED8]",
   },
   {
     key: "autoCopyNightCrossCheck",
-    label: "야간자동복사",
     style: "bg-[#E0E7FF] text-[#3730A3]",
   },
 ];
 
 function FlagChips({ process }: { process: ProcessInfo }) {
+  const { t } = useTranslation("process");
   const on = FLAG_CHIPS.filter((f) => process[f.key] === true);
   if (on.length === 0) {
     return <span className="text-xs text-[#A8A8A8]">—</span>;
@@ -35,10 +34,10 @@ function FlagChips({ process }: { process: ProcessInfo }) {
     <div className="flex flex-wrap gap-1">
       {on.map((f) => (
         <span
-          key={f.label}
+          key={f.key}
           className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${f.style}`}
         >
-          {f.label}
+          {t(`flags.${f.key}`)}
         </span>
       ))}
     </div>
@@ -52,13 +51,17 @@ interface ScheduleSummary {
 }
 
 function ScheduleCell({ summary }: { summary: ScheduleSummary | undefined }) {
+  const { t } = useTranslation("process");
   if (!summary) return <span className="text-xs text-[#A8A8A8]">—</span>;
   return (
     <span className="whitespace-nowrap text-xs text-[#6B7280]">
-      {summary.type === "TIME_BASED" ? "시간대별" : "초/중/종"} {summary.count}시점
+      {summary.type === "TIME_BASED"
+        ? t("schedule.timeBased")
+        : t("schedule.stages")}{" "}
+      {t("schedule.slotCount", { n: summary.count })}
       {summary.night > 0 && (
         <span className="ml-1 rounded-full bg-[#E0E7FF] px-1.5 py-0.5 text-[10px] font-medium text-[#3730A3]">
-          야간 {summary.night}
+          {t("schedule.nightCount", { n: summary.night })}
         </span>
       )}
     </span>
@@ -66,6 +69,7 @@ function ScheduleCell({ summary }: { summary: ScheduleSummary | undefined }) {
 }
 
 function ActiveBadge({ isActive }: { isActive: boolean }) {
+  const { t } = useTranslation("process");
   return (
     <span
       className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -74,12 +78,13 @@ function ActiveBadge({ isActive }: { isActive: boolean }) {
           : "bg-[#F3F4F6] text-[#6B7280]"
       }`}
     >
-      {isActive ? "사용 중" : "미사용"}
+      {isActive ? t("status.active") : t("status.inactive")}
     </span>
   );
 }
 
 export default function ProcessesPage() {
+  const { t } = useTranslation("process");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ProcessInfo | null>(null);
   const [showInactive, setShowInactive] = useState(false);
@@ -145,29 +150,27 @@ export default function ProcessesPage() {
     const next = !process.isActive;
     if (
       next === false &&
-      !window.confirm(
-        `'${process.label}' 공정을 미사용으로 바꿀까요?\n제품·설비 등록 선택지에서 숨겨집니다. 기존 데이터는 그대로 유지됩니다.`,
-      )
+      !window.confirm(t("page.deactivateConfirm", { name: process.label }))
     )
       return;
     update(
       { code: process.code, body: { isActive: next } },
-      { onError: () => alert("공정 상태를 바꾸지 못했습니다.") },
+      { onError: () => alert(t("page.toggleError")) },
     );
   };
 
   return (
     <div className="flex flex-col gap-4 p-4 pb-20 md:p-6 md:pb-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">공정관리</h1>
+        <h1 className="text-xl font-semibold">{t("page.title")}</h1>
         <button
           type="button"
           onClick={openCreate}
           className="flex items-center gap-1.5 rounded-lg bg-[#931B82] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D] md:px-4"
         >
           <Icon icon="mdi:plus" width={18} height={18} />
-          <span className="hidden sm:inline">공정 등록</span>
-          <span className="sm:hidden">등록</span>
+          <span className="hidden sm:inline">{t("page.register")}</span>
+          <span className="sm:hidden">{t("page.registerShort")}</span>
         </button>
       </div>
 
@@ -176,11 +179,11 @@ export default function ProcessesPage() {
           <Icon icon="mdi:cog-transfer-outline" width={22} height={22} />
         </div>
         <div className="min-w-0">
-          <div className="text-xs text-[#6B7280]">사용 중인 공정</div>
+          <div className="text-xs text-[#6B7280]">{t("page.activeCount")}</div>
           <div className="text-lg font-semibold text-[#212121] md:text-xl">
             {activeCount}
             <span className="ml-0.5 text-xs font-normal text-[#6B7280]">
-              개 / 전체 {processes.length}개
+              {t("page.activeCountUnit", { n: processes.length })}
             </span>
           </div>
         </div>
@@ -198,7 +201,7 @@ export default function ProcessesPage() {
             type="search"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            placeholder="공정명·코드 검색"
+            placeholder={t("page.searchPlaceholder")}
             className="h-10 w-full rounded-lg border border-gray-200 bg-white pl-9 pr-3 text-sm focus:border-[#931B82] focus:outline-none"
           />
         </div>
@@ -209,7 +212,7 @@ export default function ProcessesPage() {
             onChange={(e) => setShowInactive(e.target.checked)}
             className="h-4 w-4 accent-[#931B82]"
           />
-          미사용 공정도 보기
+          {t("page.showInactive")}
         </label>
       </div>
 
@@ -268,41 +271,52 @@ function DesktopTable({
   onEditSchedule,
   onToggleActive,
 }: ListProps) {
+  const { t } = useTranslation(["process", "common"]);
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
       <table className="w-full min-w-[640px] text-sm">
         <thead className="bg-[#F3E8F7] text-[#6B7280]">
           <tr>
             <th className="whitespace-nowrap px-4 py-3 text-left font-medium">
-              표시명
+              {t("list.label")}
             </th>
-            <th className="px-4 py-3 text-left font-medium">코드</th>
-            <th className="px-4 py-3 text-left font-medium">약칭</th>
-            <th className="px-4 py-3 text-left font-medium">설정</th>
-            <th className="px-4 py-3 text-left font-medium">검사 스케줄</th>
-            <th className="px-4 py-3 text-left font-medium">상태</th>
-            <th className="px-4 py-3 text-right font-medium">관리</th>
+            <th className="px-4 py-3 text-left font-medium">{t("list.code")}</th>
+            <th className="px-4 py-3 text-left font-medium">
+              {t("list.shortCode")}
+            </th>
+            <th className="px-4 py-3 text-left font-medium">
+              {t("list.settings")}
+            </th>
+            <th className="px-4 py-3 text-left font-medium">
+              {t("list.schedule")}
+            </th>
+            <th className="px-4 py-3 text-left font-medium">
+              {t("list.status")}
+            </th>
+            <th className="px-4 py-3 text-right font-medium">
+              {t("list.manage")}
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 text-[#212121]">
           {isLoading && (
             <tr>
               <td colSpan={7} className="px-4 py-10 text-center text-[#A8A8A8]">
-                불러오는 중...
+                {t("common:status.loading")}
               </td>
             </tr>
           )}
           {isError && (
             <tr>
               <td colSpan={7} className="px-4 py-10 text-center text-[#EF4444]">
-                목록을 불러오지 못했습니다.
+                {t("list.loadError")}
               </td>
             </tr>
           )}
           {!isLoading && !isError && items.length === 0 && (
             <tr>
               <td colSpan={7} className="px-4 py-10 text-center text-[#A8A8A8]">
-                해당 조건의 공정이 없습니다.
+                {t("list.empty")}
               </td>
             </tr>
           )}
@@ -343,7 +357,7 @@ function DesktopTable({
                   <button
                     type="button"
                     onClick={() => onEdit(item)}
-                    aria-label="수정"
+                    aria-label={t("common:actions.edit")}
                     className="rounded p-1.5 text-[#6B7280] transition-colors hover:bg-[#F3E8F7] hover:text-[#931B82]"
                   >
                     <Icon icon="mdi:pencil-outline" width={18} height={18} />
@@ -352,7 +366,9 @@ function DesktopTable({
                     type="button"
                     onClick={() => onToggleActive(item)}
                     disabled={isUpdating}
-                    aria-label={item.isActive ? "미사용으로 변경" : "사용으로 변경"}
+                    aria-label={
+                      item.isActive ? t("list.setInactive") : t("list.setActive")
+                    }
                     className="rounded p-1.5 text-[#6B7280] transition-colors hover:bg-[#F3E8F7] hover:text-[#931B82] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <Icon
@@ -385,24 +401,25 @@ function MobileList({
   onEditSchedule,
   onToggleActive,
 }: ListProps) {
+  const { t } = useTranslation(["process", "common"]);
   if (isLoading) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-        불러오는 중...
+        {t("common:status.loading")}
       </div>
     );
   }
   if (isError) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
-        목록을 불러오지 못했습니다.
+        {t("list.loadError")}
       </div>
     );
   }
   if (items.length === 0) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-        해당 조건의 공정이 없습니다.
+        {t("list.empty")}
       </div>
     );
   }
@@ -449,7 +466,7 @@ function MobileList({
               className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-[#6B7280] transition-colors hover:bg-[#F3E8F7] hover:text-[#931B82]"
             >
               <Icon icon="mdi:pencil-outline" width={16} height={16} />
-              수정
+              {t("common:actions.edit")}
             </button>
             <button
               type="button"
@@ -462,7 +479,7 @@ function MobileList({
                 width={16}
                 height={16}
               />
-              {item.isActive ? "미사용" : "사용"}
+              {item.isActive ? t("list.deactivate") : t("list.activate")}
             </button>
           </div>
         </div>

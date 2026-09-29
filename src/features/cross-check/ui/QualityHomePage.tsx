@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
 import { useNavigate } from "react-router-dom";
 import { AxiosError } from "axios";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../auth/AuthContext";
 import { useMarkAsRead, useNotifications } from "../../notification/api";
 import type { NotificationResponse } from "../../notification/api";
@@ -18,6 +19,7 @@ import { countUnprocessed } from "../lib/assigned";
 import { formatDateTime } from "../../../lib/datetime";
 
 const QualityHomePage = () => {
+  const { t } = useTranslation("crossCheck");
   const navigate = useNavigate();
   const { user } = useAuth();
   // 반려 카드는 종결된 cross-check(REJECTED) 도 포함되어야 노출되므로 includeFinished=true.
@@ -76,14 +78,14 @@ const QualityHomePage = () => {
       if (err instanceof AxiosError) {
         const code = (err.response?.data as { code?: string } | undefined)?.code;
         if (code === "CROSS_CHECK_NOT_REJECTED") {
-          setReopenError("이미 재오픈된 검사입니다. 새로고침 후 다시 시도해주세요.");
+          setReopenError(t("home.reopenError.alreadyReopened"));
         } else if (code === "NOT_CHECKER") {
-          setReopenError("본인이 진행한 순회검사만 재오픈할 수 있습니다.");
+          setReopenError(t("home.reopenError.notChecker"));
         } else {
-          setReopenError("재오픈에 실패했습니다. 잠시 후 다시 시도해주세요.");
+          setReopenError(t("home.reopenError.failedRetry"));
         }
       } else {
-        setReopenError("재오픈에 실패했습니다.");
+        setReopenError(t("home.reopenError.failed"));
       }
     } finally {
       setReopeningId(null);
@@ -101,7 +103,7 @@ const QualityHomePage = () => {
   };
 
   const handleRequestDelegation = () => {
-    alert("관리자에게 권한 위임 요청을 전달했습니다. (준비 중)");
+    alert(t("home.delegationRequested"));
   };
 
   return (
@@ -111,7 +113,7 @@ const QualityHomePage = () => {
           {user?.name?.charAt(0) ?? "?"}
         </div>
         <h1 className="text-lg font-bold text-[#212121]">
-          안녕하세요, {user?.name ?? ""}님
+          {t("home.greeting", { name: user?.name ?? "" })}
         </h1>
       </section>
 
@@ -127,12 +129,12 @@ const QualityHomePage = () => {
           />
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-[#212121]">
-              {delegation ? "관리자 권한 위임받음" : "관리자 부재중"}
+              {delegation ? t("home.delegationGranted") : t("home.adminAbsent")}
             </span>
             <span className="text-xs text-[#6B7280]">
               {delegation
-                ? `위임자: ${delegation.delegatorName}`
-                : "권한 위임이 필요해요"}
+                ? t("home.delegator", { name: delegation.delegatorName })
+                : t("home.delegationNeeded")}
             </span>
           </div>
         </div>
@@ -142,7 +144,7 @@ const QualityHomePage = () => {
             onClick={handleRequestDelegation}
             className="rounded-full bg-[#931B82] px-3 py-1.5 text-xs font-medium text-white"
           >
-            권한 요청
+            {t("home.requestDelegation")}
           </button>
         )}
       </section>
@@ -160,13 +162,13 @@ const QualityHomePage = () => {
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="text-xs font-medium text-[#F59E0B]">
-            미처리 순회 검사
+            {t("home.unprocessedTitle")}
           </span>
           <span className="mt-1 text-2xl font-bold text-[#212121]">
-            {pendingCount}건
+            {t("home.unprocessedCount", { n: pendingCount })}
           </span>
           <span className="mt-1 text-xs text-[#6B7280]">
-            즉시 확인이 필요합니다.
+            {t("home.checkImmediately")}
           </span>
         </div>
       </section>
@@ -177,15 +179,17 @@ const QualityHomePage = () => {
         disabled={!latestDraft}
         className="flex h-12 w-full items-center justify-center rounded-2xl bg-[#931B82] text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
       >
-        직전 작업 이어하기
+        {t("home.resumeLastWork")}
       </button>
 
       {rejectedCrossChecks.length > 0 && (
         <section>
           <div className="mb-2 flex items-baseline justify-between">
-            <h2 className="text-sm font-semibold text-[#212121]">반려된 검사</h2>
+            <h2 className="text-sm font-semibold text-[#212121]">
+              {t("home.rejectedTitle")}
+            </h2>
             <span className="text-xs font-medium text-[#B91C1C]">
-              {rejectedCrossChecks.length}건 수정 필요
+              {t("home.rejectedFixCount", { n: rejectedCrossChecks.length })}
             </span>
           </div>
           <ul className="flex flex-col gap-2">
@@ -211,7 +215,7 @@ const QualityHomePage = () => {
                         {cc.equipment.name} · {cc.typeLabel}
                       </div>
                       <div className="mt-0.5 text-xs text-[#B91C1C]">
-                        결재 반려됨 — 수정 후 재제출 필요
+                        {t("home.rejectedNotice")}
                       </div>
                     </div>
                   </div>
@@ -221,7 +225,7 @@ const QualityHomePage = () => {
                     disabled={reopeningId !== null}
                     className="mt-3 h-10 w-full rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
                   >
-                    {isReopening ? "준비 중..." : "수정하기"}
+                    {isReopening ? t("home.preparing") : t("home.fix")}
                   </button>
                 </li>
               );
@@ -236,10 +240,12 @@ const QualityHomePage = () => {
       )}
 
       <section>
-        <h2 className="mb-2 text-sm font-semibold text-[#212121]">최근 알림</h2>
+        <h2 className="mb-2 text-sm font-semibold text-[#212121]">
+          {t("home.recentNotifications")}
+        </h2>
         {recentNotifications.length === 0 ? (
           <p className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-[#A8A8A8]">
-            새 알림이 없습니다.
+            {t("home.noNotifications")}
           </p>
         ) : (
           <ul className="flex flex-col gap-2">

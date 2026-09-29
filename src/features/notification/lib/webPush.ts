@@ -7,6 +7,7 @@
 //
 // 플랫폼 제약 — 아이폰/아이패드는 iOS 16.4 이상 + "홈 화면에 추가"로 설치한
 // PWA 에서만 웹 푸시가 온다. 사파리 탭에서는 애플 정책상 불가하다.
+import i18n from "../../../lib/i18n";
 import { registerPushToken, unregisterPushToken } from "../api/pushTokenApi";
 import {
   requestWebNotificationPermission,
@@ -138,7 +139,9 @@ export async function startWebPush(): Promise<boolean> {
       // 탭이 떠 있는 동안은 브라우저가 알림을 자동 표시하지 않는다. 직접 처리한다.
       onMessage(messaging, (payload) => {
         handler?.({
-          title: payload.notification?.title ?? "새 알림",
+          title:
+            payload.notification?.title ??
+            i18n.t("notification:push.newNotification"),
           body: payload.notification?.body ?? "",
           type:
             typeof payload.data?.type === "string" ? payload.data.type : undefined,

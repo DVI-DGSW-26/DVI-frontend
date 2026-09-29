@@ -1,5 +1,6 @@
 import { useMemo, useState, type KeyboardEvent } from "react";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import CheckboxMultiSelect, {
   type MultiOption,
 } from "../../report/ui/CheckboxMultiSelect";
@@ -13,11 +14,12 @@ import { useProcessOptions } from "../../process";
 
 // 이력 목록은 DRAFT 를 뺀 나머지 상태가 모두 들어온다. 초·중 차수는 개별 결재 없이
 // COMPLETED 로 끝나므로 이게 빠지면 이력의 상당수를 상태로 골라낼 수 없다.
-const STATUS_OPTIONS: MultiOption[] = [
-  { value: "PENDING_APPROVAL", label: "결재 대기" },
-  { value: "COMPLETED", label: "검사 완료" },
-  { value: "APPROVED", label: "승인" },
-  { value: "REJECTED", label: "반려" },
+// 라벨은 i18n — 상태값 → crossCheck 네임스페이스 status.* 키 매핑.
+const STATUS_OPTION_KEYS: { value: string; labelKey: string }[] = [
+  { value: "PENDING_APPROVAL", labelKey: "status.pendingApproval" },
+  { value: "COMPLETED", labelKey: "status.completed" },
+  { value: "APPROVED", labelKey: "status.approved" },
+  { value: "REJECTED", labelKey: "status.rejected" },
 ];
 
 export default function CrossCheckHistoryFilter({
@@ -27,7 +29,17 @@ export default function CrossCheckHistoryFilter({
   items: CrossCheckSummary[];
   onChange: (filter: HistoryFilter) => void;
 }) {
+  const { t } = useTranslation("crossCheck");
   const processOptions = useProcessOptions();
+
+  const statusOptions = useMemo<MultiOption[]>(
+    () =>
+      STATUS_OPTION_KEYS.map(({ value, labelKey }) => ({
+        value,
+        label: t(labelKey),
+      })),
+    [t],
+  );
 
   // 제품 옵션은 내 이력에 등장한 제품들로 구성.
   const productOptions = useMemo<MultiOption[]>(() => {
@@ -67,25 +79,27 @@ export default function CrossCheckHistoryFilter({
 
   const processLabel =
     processes.length === 0
-      ? "공정"
+      ? t("filter.process")
       : processes.length === 1
         ? (processOptions.find((o) => o.value === processes[0])?.label ??
-          "공정")
-        : `공정 ${processes.length}`;
+          t("filter.process"))
+        : t("filter.processN", { n: processes.length });
 
   const productLabel =
     products.length === 0
-      ? "제품"
+      ? t("filter.product")
       : products.length === 1
-        ? (productOptions.find((o) => o.value === products[0])?.label ?? "제품")
-        : `제품 ${products.length}`;
+        ? (productOptions.find((o) => o.value === products[0])?.label ??
+          t("filter.product"))
+        : t("filter.productN", { n: products.length });
 
   const statusLabel =
     statuses.length === 0
-      ? "상태"
+      ? t("filter.status")
       : statuses.length === 1
-        ? (STATUS_OPTIONS.find((o) => o.value === statuses[0])?.label ?? "상태")
-        : `상태 ${statuses.length}`;
+        ? (statusOptions.find((o) => o.value === statuses[0])?.label ??
+          t("filter.status"))
+        : t("filter.statusN", { n: statuses.length });
 
   return (
     <div className="rounded-2xl bg-white p-4 shadow-sm">
@@ -101,7 +115,7 @@ export default function CrossCheckHistoryFilter({
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="제품, 고객사, 자주검사자로 검색"
+          placeholder={t("filter.searchPlaceholder")}
           className="h-10 w-full rounded-full border border-[#E5E7EB] bg-white pl-9 pr-3 text-sm text-[#212121] placeholder:text-[#A8A8A8] focus:border-[#931B82] focus:outline-none"
         />
       </div>
@@ -112,7 +126,7 @@ export default function CrossCheckHistoryFilter({
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            aria-label="날짜 선택"
+            aria-label={t("filter.datePick")}
             className={`h-9 w-36 rounded-full border border-[#931B82] bg-white pl-9 pr-3 text-xs focus:outline-none [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:m-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-datetime-edit]:opacity-0 ${
               date
                 ? "text-[#931B82] [&::-webkit-datetime-edit]:opacity-100"
@@ -127,7 +141,7 @@ export default function CrossCheckHistoryFilter({
           />
           {!date && (
             <span className="pointer-events-none absolute left-9 top-1/2 -translate-y-1/2 text-xs text-[#931B82]">
-              날짜 선택
+              {t("filter.datePick")}
             </span>
           )}
         </div>
@@ -150,7 +164,7 @@ export default function CrossCheckHistoryFilter({
 
         <CheckboxMultiSelect
           label={statusLabel}
-          options={STATUS_OPTIONS}
+          options={statusOptions}
           value={statuses}
           onChange={setStatuses}
           width="w-32"
@@ -162,14 +176,14 @@ export default function CrossCheckHistoryFilter({
             onClick={apply}
             className="h-9 rounded-full bg-[#931B82] px-7 text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D]"
           >
-            적용
+            {t("filter.apply")}
           </button>
           <button
             type="button"
             onClick={reset}
             className="h-9 rounded-full border border-[#931B82] bg-white px-7 text-sm font-medium text-[#931B82] transition-colors hover:bg-[#F3E8F7]"
           >
-            초기화
+            {t("filter.reset")}
           </button>
         </div>
       </div>

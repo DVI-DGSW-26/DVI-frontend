@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import CreateInspectionOrderDrawer from "./CreateInspectionOrderDrawer";
 import {
@@ -11,12 +13,13 @@ import type { InspectionOrder, InspectionOrderStatus } from "../api";
 import { orderWorkers, workerNames } from "../lib/orderWorkers";
 import { kstDateKey } from "../../../lib/datetime";
 
-const STATUS_LABEL: Record<string, string> = {
-  PENDING: "대기",
-  DRAFT: "대기",
-  INCOMPLETE: "진행중",
-  INCOMPLETE_APPROVED: "완료(승인)",
-  COMPLETED: "완료",
+// 상태 코드 → inspectionOrders 네임스페이스 i18n 키
+const STATUS_LABEL_KEY: Record<string, string> = {
+  PENDING: "status.pending",
+  DRAFT: "status.pending",
+  INCOMPLETE: "status.inProgress",
+  INCOMPLETE_APPROVED: "status.completedApproved",
+  COMPLETED: "status.completed",
 };
 
 const STATUS_STYLE: Record<string, string> = {
@@ -31,28 +34,28 @@ type SummaryKey = "DRAFT" | "INCOMPLETE" | "DONE";
 
 const SUMMARY_CARDS: {
   key: SummaryKey;
-  label: string;
+  labelKey: string;
   icon: string;
   iconBg: string;
   iconColor: string;
 }[] = [
   {
     key: "INCOMPLETE",
-    label: "진행중",
+    labelKey: "list.summary.inProgress",
     icon: "mdi:progress-clock",
     iconBg: "bg-[#DBEAFE]",
     iconColor: "text-[#1D4ED8]",
   },
   {
     key: "DRAFT",
-    label: "대기",
+    labelKey: "list.summary.pending",
     icon: "material-symbols:schedule-outline",
     iconBg: "bg-[#FEF3C7]",
     iconColor: "text-[#B45309]",
   },
   {
     key: "DONE",
-    label: "완료",
+    labelKey: "list.summary.done",
     icon: "mdi:check-circle-outline",
     iconBg: "bg-[#DCFCE7]",
     iconColor: "text-[#15803D]",
@@ -66,8 +69,9 @@ function summaryKeyOf(status: InspectionOrderStatus): SummaryKey | null {
   return null;
 }
 
-function statusBadge(status: InspectionOrderStatus) {
-  const label = STATUS_LABEL[status] ?? status;
+function statusBadge(status: InspectionOrderStatus, t: TFunction) {
+  const labelKey = STATUS_LABEL_KEY[status];
+  const label = labelKey ? t(labelKey) : status;
   const style = STATUS_STYLE[status] ?? "bg-[#F3F4F6] text-[#6B7280]";
   return (
     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${style}`}>
@@ -77,6 +81,7 @@ function statusBadge(status: InspectionOrderStatus) {
 }
 
 export default function InspectionOrdersPage() {
+  const { t } = useTranslation("inspectionOrders");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<InspectionOrder | null>(null);
   const [selectedDate, setSelectedDate] = useState("");
@@ -149,31 +154,32 @@ export default function InspectionOrdersPage() {
   const handleCopyYesterday = () => {
     if (isCopying || yesterdayOrders.length === 0) return;
     const confirmed = window.confirm(
-      `어제(${yesterday}) 검사지시 ${yesterdayOrders.length}건을 오늘(${today})로 복제할까요?\n` +
-        `이미 등록된 동일 지시는 건너뜁니다.`,
+      t("list.copyConfirm", { yesterday, n: yesterdayOrders.length, today }),
     );
     if (!confirmed) return;
     copyOrders(
       { orders: yesterdayOrders, targetDate: today },
       {
         onSuccess: (result) => {
-          const parts = [`복제 ${result.created}건`];
-          if (result.duplicated > 0) parts.push(`중복 건너뜀 ${result.duplicated}건`);
-          if (result.failed > 0) parts.push(`실패 ${result.failed}건`);
+          const parts = [t("list.copyResultCreated", { n: result.created })];
+          if (result.duplicated > 0)
+            parts.push(t("list.copyResultDuplicated", { n: result.duplicated }));
+          if (result.failed > 0)
+            parts.push(t("list.copyResultFailed", { n: result.failed }));
           alert(parts.join(" · "));
         },
-        onError: () => alert("복제 중 오류가 발생했습니다."),
+        onError: () => alert(t("list.copyError")),
       },
     );
   };
 
   const handleDelete = (order: InspectionOrder) => {
     if (isDeleting) return;
-    const label = order.product?.name ?? "이 검사지시";
-    if (!window.confirm(`'${label}' 검사지시를 삭제할까요?`)) return;
+    const label = order.product?.name ?? t("list.deleteFallbackName");
+    if (!window.confirm(t("list.deleteConfirm", { name: label }))) return;
     remove(order.id, {
       onError: () => {
-        alert("삭제 중 오류가 발생했습니다.");
+        alert(t("list.deleteError"));
       },
     });
   };
@@ -181,7 +187,7 @@ export default function InspectionOrdersPage() {
   return (
     <div className="flex flex-col gap-4 p-4 pb-20 md:p-6 md:pb-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">검사지시관리</h1>
+        <h1 className="text-xl font-semibold">{t("list.title")}</h1>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -189,8 +195,8 @@ export default function InspectionOrdersPage() {
             disabled={isCopying || yesterdayOrders.length === 0}
             title={
               yesterdayOrders.length === 0
-                ? `어제(${yesterday}) 검사지시가 없습니다`
-                : `어제(${yesterday}) 지시 ${yesterdayOrders.length}건을 오늘로 복제`
+                ? t("list.copyTitleNone", { date: yesterday })
+                : t("list.copyTitle", { date: yesterday, n: yesterdayOrders.length })
             }
             className="flex items-center gap-1.5 rounded-lg border border-[#931B82] px-3 py-2 text-sm font-medium text-[#931B82] transition-colors hover:bg-[#F3E8F7] disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-[#A8A8A8] disabled:hover:bg-transparent md:px-4"
           >
@@ -201,9 +207,9 @@ export default function InspectionOrdersPage() {
               className={isCopying ? "animate-spin" : undefined}
             />
             <span className="hidden sm:inline">
-              {isCopying ? "복제 중..." : "어제 지시 복제"}
+              {isCopying ? t("list.copying") : t("list.copyYesterday")}
             </span>
-            <span className="sm:hidden">복제</span>
+            <span className="sm:hidden">{t("list.copyShort")}</span>
             {yesterdayOrders.length > 0 && !isCopying && (
               <span className="text-xs">({yesterdayOrders.length})</span>
             )}
@@ -214,8 +220,8 @@ export default function InspectionOrdersPage() {
             className="flex items-center gap-1.5 rounded-lg bg-[#931B82] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D] md:px-4"
           >
             <Icon icon="mdi:plus" width={18} height={18} />
-            <span className="hidden sm:inline">검사지시 등록</span>
-            <span className="sm:hidden">등록</span>
+            <span className="hidden sm:inline">{t("list.create")}</span>
+            <span className="sm:hidden">{t("list.createShort")}</span>
           </button>
         </div>
       </div>
@@ -232,10 +238,12 @@ export default function InspectionOrdersPage() {
               <Icon icon={card.icon} width={20} height={20} />
             </div>
             <div className="min-w-0">
-              <div className="text-xs text-[#6B7280]">{card.label}</div>
+              <div className="text-xs text-[#6B7280]">{t(card.labelKey)}</div>
               <div className="text-lg font-semibold text-[#212121] md:text-xl">
                 {counts[card.key]}
-                <span className="ml-0.5 text-xs font-normal text-[#6B7280]">건</span>
+                <span className="ml-0.5 text-xs font-normal text-[#6B7280]">
+                  {t("list.countUnit")}
+                </span>
               </div>
             </div>
           </div>
@@ -248,7 +256,7 @@ export default function InspectionOrdersPage() {
             type="text"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            placeholder="제품·고객사·설비·검사자 검색"
+            placeholder={t("list.searchPlaceholder")}
             className="h-9 w-full rounded-full border border-gray-300 bg-white pl-9 pr-3 text-xs focus:border-[#931B82] focus:outline-none"
           />
           <Icon
@@ -278,7 +286,7 @@ export default function InspectionOrdersPage() {
             onClick={() => setSelectedDate("")}
             className="h-9 rounded-full border border-gray-200 bg-white px-3 text-xs font-medium text-[#6B7280] transition-colors hover:border-[#931B82] hover:text-[#931B82]"
           >
-            초기화
+            {t("list.reset")}
           </button>
         )}
       </div>
@@ -318,39 +326,40 @@ interface ListProps {
 }
 
 function DesktopTable({ orders, isLoading, isError, isDeleting, onEdit, onDelete }: ListProps) {
+  const { t } = useTranslation("inspectionOrders");
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
       <table className="w-full text-sm">
         <thead className="bg-[#F3E8F7] text-[#6B7280]">
           <tr>
-            <th className="px-4 py-3 text-left font-medium">지시일</th>
-            <th className="px-4 py-3 text-left font-medium">제품</th>
-            <th className="px-4 py-3 text-left font-medium">설비</th>
-            <th className="px-4 py-3 text-left font-medium">고객사</th>
-            <th className="px-4 py-3 text-left font-medium">자주검사자</th>
-            <th className="px-4 py-3 text-left font-medium">상태</th>
-            <th className="px-4 py-3 text-right font-medium">관리</th>
+            <th className="px-4 py-3 text-left font-medium">{t("list.table.date")}</th>
+            <th className="px-4 py-3 text-left font-medium">{t("list.table.product")}</th>
+            <th className="px-4 py-3 text-left font-medium">{t("list.table.equipment")}</th>
+            <th className="px-4 py-3 text-left font-medium">{t("list.table.customer")}</th>
+            <th className="px-4 py-3 text-left font-medium">{t("list.table.worker")}</th>
+            <th className="px-4 py-3 text-left font-medium">{t("list.table.status")}</th>
+            <th className="px-4 py-3 text-right font-medium">{t("list.table.manage")}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 text-[#212121]">
           {isLoading && (
             <tr>
               <td colSpan={7} className="px-4 py-10 text-center text-[#A8A8A8]">
-                불러오는 중...
+                {t("list.loading")}
               </td>
             </tr>
           )}
           {isError && (
             <tr>
               <td colSpan={7} className="px-4 py-10 text-center text-[#EF4444]">
-                목록을 불러오지 못했습니다.
+                {t("list.loadError")}
               </td>
             </tr>
           )}
           {!isLoading && !isError && orders.length === 0 && (
             <tr>
               <td colSpan={7} className="px-4 py-10 text-center text-[#A8A8A8]">
-                해당 조건의 검사지시가 없습니다.
+                {t("list.empty")}
               </td>
             </tr>
           )}
@@ -361,13 +370,13 @@ function DesktopTable({ orders, isLoading, isError, isDeleting, onEdit, onDelete
               <td className="px-4 py-3">{order.equipment?.name ?? "-"}</td>
               <td className="px-4 py-3">{order.customer?.name ?? "-"}</td>
               <td className="px-4 py-3">{workerNames(order)}</td>
-              <td className="px-4 py-3">{statusBadge(order.status)}</td>
+              <td className="px-4 py-3">{statusBadge(order.status, t)}</td>
               <td className="px-4 py-3">
                 <div className="flex items-center justify-end gap-1">
                   <button
                     type="button"
                     onClick={() => onEdit(order)}
-                    aria-label="수정"
+                    aria-label={t("common:actions.edit")}
                     className="rounded p-1.5 text-[#6B7280] transition-colors hover:bg-[#F3E8F7] hover:text-[#931B82]"
                   >
                     <Icon icon="mdi:pencil-outline" width={18} height={18} />
@@ -376,7 +385,7 @@ function DesktopTable({ orders, isLoading, isError, isDeleting, onEdit, onDelete
                     type="button"
                     onClick={() => onDelete(order)}
                     disabled={isDeleting}
-                    aria-label="삭제"
+                    aria-label={t("common:actions.delete")}
                     className="rounded p-1.5 text-[#6B7280] transition-colors hover:bg-[#FEE2E2] hover:text-[#EF4444] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <Icon icon="mdi:trash-can-outline" width={18} height={18} />
@@ -392,24 +401,25 @@ function DesktopTable({ orders, isLoading, isError, isDeleting, onEdit, onDelete
 }
 
 function MobileList({ orders, isLoading, isError, isDeleting, onEdit, onDelete }: ListProps) {
+  const { t } = useTranslation("inspectionOrders");
   if (isLoading) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-        불러오는 중...
+        {t("list.loading")}
       </div>
     );
   }
   if (isError) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
-        목록을 불러오지 못했습니다.
+        {t("list.loadError")}
       </div>
     );
   }
   if (orders.length === 0) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-        해당 조건의 검사지시가 없습니다.
+        {t("list.empty")}
       </div>
     );
   }
@@ -430,12 +440,20 @@ function MobileList({ orders, isLoading, isError, isDeleting, onEdit, onDelete }
                 {order.customer?.name ?? "-"} · {order.equipment?.name ?? "-"}
               </div>
             </div>
-            {statusBadge(order.status)}
+            {statusBadge(order.status, t)}
           </div>
 
           <div className="mt-3 grid grid-cols-1 gap-y-1.5 text-xs">
-            <InfoRow icon="mdi:calendar-outline" label="지시일" value={order.targetDate} />
-            <InfoRow icon="mdi:account-hard-hat" label="자주검사자" value={workerNames(order)} />
+            <InfoRow
+              icon="mdi:calendar-outline"
+              label={t("list.table.date")}
+              value={order.targetDate}
+            />
+            <InfoRow
+              icon="mdi:account-hard-hat"
+              label={t("list.table.worker")}
+              value={workerNames(order)}
+            />
           </div>
 
           <div className="mt-3 flex items-center justify-end gap-1 border-t border-gray-100 pt-2">
@@ -445,7 +463,7 @@ function MobileList({ orders, isLoading, isError, isDeleting, onEdit, onDelete }
               className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-[#6B7280] transition-colors hover:bg-[#F3E8F7] hover:text-[#931B82]"
             >
               <Icon icon="mdi:pencil-outline" width={16} height={16} />
-              수정
+              {t("common:actions.edit")}
             </button>
             <button
               type="button"
@@ -454,7 +472,7 @@ function MobileList({ orders, isLoading, isError, isDeleting, onEdit, onDelete }
               className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-[#6B7280] transition-colors hover:bg-[#FEE2E2] hover:text-[#EF4444] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Icon icon="mdi:trash-can-outline" width={16} height={16} />
-              삭제
+              {t("common:actions.delete")}
             </button>
           </div>
         </div>

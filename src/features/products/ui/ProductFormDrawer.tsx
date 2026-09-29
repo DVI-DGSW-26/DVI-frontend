@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import {
   useCreateProduct,
   useProductDetail,
@@ -30,12 +32,20 @@ import {
 } from "../../../lib/uploadImage";
 
 // "시간대별 8시점 (야간 3)" 같은 한 줄 요약. 슬롯이 없으면 null.
-function describeSchedule(schedule: InspectionSchedule | null): string | null {
+function describeSchedule(
+  schedule: InspectionSchedule | null,
+  t: TFunction,
+): string | null {
   const slots = schedule?.slots ?? [];
   if (slots.length === 0) return null;
   const night = slots.filter((s) => s.shift === "NIGHT").length;
-  const kind = schedule?.scheduleType === "TIME_BASED" ? "시간대별" : "초/중/종";
-  return `${kind} ${slots.length}시점${night > 0 ? ` (야간 ${night})` : ""}`;
+  const kind =
+    schedule?.scheduleType === "TIME_BASED"
+      ? t("schedule.kindTimeBased")
+      : t("schedule.kindChoJungJong");
+  return night > 0
+    ? t("schedule.summaryNight", { kind, n: slots.length, night })
+    : t("schedule.summary", { kind, n: slots.length });
 }
 
 interface Props {
@@ -109,6 +119,7 @@ function toNumber(value: string): number | null {
 // 스케치 미리보기 — 주소가 살아있지 않을 때(백엔드 주소 문제 등) 빈 사각형만
 // 남지 않도록 안내를 띄운다. 부모에서 key={src} 로 새 URL 마다 상태를 초기화한다.
 function SketchPreview({ src }: { src: string }) {
+  const { t } = useTranslation("products");
   const resolved = toBackendImageUrl(src) ?? "";
   const [failed, setFailed] = useState(resolved === "");
 
@@ -117,7 +128,7 @@ function SketchPreview({ src }: { src: string }) {
       {!failed && (
         <img
           src={resolved}
-          alt="제품 스케치 미리보기"
+          alt={t("form.sketch.previewAlt")}
           onError={() => setFailed(true)}
           className="h-full w-full object-contain"
         />
@@ -131,7 +142,7 @@ function SketchPreview({ src }: { src: string }) {
             className="text-[#D1D5DB]"
           />
           <span className="text-[11px] leading-tight text-[#9CA3AF]">
-            이미지를 불러올 수 없습니다
+            {t("form.sketch.previewError")}
           </span>
         </div>
       )}
@@ -145,6 +156,7 @@ export default function ProductFormDrawer({
   product,
   customerOptions,
 }: Props) {
+  const { t } = useTranslation(["products", "common"]);
   const isEdit = !!product;
   const productId = product?.id ?? null;
 
@@ -178,8 +190,8 @@ export default function ProductFormDrawer({
   const { data: schedule } = useProcessSchedule(process || null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const scheduleSummary = useMemo(
-    () => describeSchedule(schedule ?? null),
-    [schedule],
+    () => describeSchedule(schedule ?? null, t),
+    [schedule, t],
   );
   // 제품 전용 스케줄이 걸려 있으면 공정 기본이 아니라 이쪽이 실제 적용되는 주기다.
   // 없으면(대부분의 제품) null 이 내려온다 — 조회 실패가 아니다.
@@ -188,8 +200,8 @@ export default function ProductFormDrawer({
   );
   const [productScheduleOpen, setProductScheduleOpen] = useState(false);
   const productScheduleSummary = useMemo(
-    () => describeSchedule(productSchedule ?? null),
-    [productSchedule],
+    () => describeSchedule(productSchedule ?? null, t),
+    [productSchedule, t],
   );
 
   const { mutate: create, isPending: isCreating } = useCreateProduct();
@@ -258,19 +270,18 @@ export default function ProductFormDrawer({
     e.target.value = "";
     if (!file) return;
     if (!isAllowedImageFile(file)) {
-      setSketchError("PNG/JPG 이미지만 등록할 수 있습니다.");
+      setSketchError(t("form.sketch.onlyImage"));
       return;
     }
     if (file.size > MAX_UPLOAD_BYTES) {
-      setSketchError("최대 10MB 이하의 이미지만 등록할 수 있습니다.");
+      setSketchError(t("form.sketch.tooLarge"));
       return;
     }
     setSketchError(null);
     // 저장 버튼과 무관하게 즉시 올리고, 받은 URL 을 sketchUrl 에 담아둔다.
     uploadSketch(file, {
       onSuccess: (url) => setSketchUrl(url),
-      onError: () =>
-        setSketchError("이미지 업로드에 실패했습니다. 다시 시도해주세요."),
+      onError: () => setSketchError(t("form.sketch.uploadFailed")),
     });
   };
 
@@ -306,11 +317,11 @@ export default function ProductFormDrawer({
     e.preventDefault();
     setError(null);
 
-    if (!name.trim()) return setError("제품명을 입력하세요.");
-    if (!code.trim()) return setError("제품 코드를 입력하세요.");
+    if (!name.trim()) return setError(t("form.errors.nameRequired"));
+    if (!code.trim()) return setError(t("form.errors.codeRequired"));
     if (resolvedCustomerId === null)
-      return setError("고객사를 선택하거나 ID를 입력하세요.");
-    if (!process) return setError("공정을 선택하세요.");
+      return setError(t("form.errors.customerRequired"));
+    if (!process) return setError(t("form.errors.processRequired"));
 
     const dimsInput: ProductDimInput[] = [];
     for (let i = 0; i < dims.length; i += 1) {
@@ -339,16 +350,14 @@ export default function ProductFormDrawer({
       const plus = toNumber(d.toleranceUpper);
       const minus = toNumber(d.toleranceLower);
       if (std === null)
-        return setError(`치수 ${i + 1}: 기준값을 입력하세요.`);
+        return setError(t("form.errors.standardRequired", { n: i + 1 }));
       if (plus === null)
-        return setError(`치수 ${i + 1}: 상한 공차를 입력하세요.`);
+        return setError(t("form.errors.upperRequired", { n: i + 1 }));
       if (minus === null)
-        return setError(`치수 ${i + 1}: 하한 공차를 입력하세요.`);
+        return setError(t("form.errors.lowerRequired", { n: i + 1 }));
       // 서버도 TOLERANCE_BOUNDS_INVALID 로 막지만, 저장을 눌러보기 전에 알려준다.
       if (minus > plus)
-        return setError(
-          `치수 ${i + 1}: 하한 공차가 상한보다 큽니다. 부호를 확인해주세요(예: 상한 0.2 / 하한 -0.1).`,
-        );
+        return setError(t("form.errors.toleranceBounds", { n: i + 1 }));
 
       dimsInput.push({
         ...(d.id != null ? { id: d.id } : {}),
@@ -362,14 +371,14 @@ export default function ProductFormDrawer({
     }
 
     if (isUploadingSketch)
-      return setError("스케치 이미지 업로드가 끝난 뒤 저장해주세요.");
+      return setError(t("form.errors.sketchUploading"));
 
     // 신규 등록은 치수 최소 1개 필요 (제품을 만들면서 치수가 없는 건 어색).
     // 수정은 기존 데이터에 치수가 없는 케이스가 있어 허용 — 다른 필드만 수정해서 저장 가능.
     if (!isEdit && dimsInput.length === 0)
-      return setError("치수항목을 최소 1개 이상 입력하세요.");
+      return setError(t("form.errors.dimsRequired"));
     if (dimsInput.length > MAX_DIMS)
-      return setError(`치수항목은 최대 ${MAX_DIMS}개까지 등록 가능합니다.`);
+      return setError(t("form.errors.dimsMax", { n: MAX_DIMS }));
 
     // 수정 모드: 사용자가 dims 를 안 건드렸으면 payload 에 dims 안 넣기.
     // 백엔드가 PATCH 받아 dims 통째 교체할 때 기존 dim 이 검사 결과에 묶여있으면
@@ -398,19 +407,15 @@ export default function ProductFormDrawer({
           // RESOURCE_IN_USE: 검사·보고서가 참조 중인 dim 을 삭제하거나 종류를 바꾸려 할 때.
           // (기준값/공차/이름 등 값 수정은 id 기반 in-place 로 가능. 삭제·종류변경만 거부됨.)
           if (code === "RESOURCE_IN_USE") {
-            setError(
-              "이미 검사·보고서가 참조 중인 치수는 삭제하거나 종류를 바꿀 수 없습니다. 값(기준·공차·이름) 수정만 가능합니다.",
-            );
+            setError(t("form.errors.resourceInUse"));
             return;
           }
           if (code === "TOLERANCE_BOUNDS_INVALID") {
-            setError(
-              "하한 공차가 상한보다 큽니다. 부호를 포함해 입력했는지 확인해주세요.",
-            );
+            setError(t("form.errors.toleranceBoundsServer"));
             return;
           }
           if (code === "PRODUCT_CODE_DUPLICATE") {
-            setError("이미 사용 중인 제품 코드입니다.");
+            setError(t("form.errors.codeDuplicate"));
             return;
           }
           if (data?.message) {
@@ -420,8 +425,8 @@ export default function ProductFormDrawer({
         }
         setError(
           isEdit
-            ? "제품 수정 중 오류가 발생했습니다."
-            : "제품 등록 중 오류가 발생했습니다.",
+            ? t("form.errors.editFailed")
+            : t("form.errors.createFailed"),
         );
       },
     };
@@ -433,14 +438,14 @@ export default function ProductFormDrawer({
     }
   };
 
-  const title = isEdit ? "제품 수정" : "제품 등록";
+  const title = isEdit ? t("form.editTitle") : t("form.createTitle");
   const submitLabel = isEdit
     ? isPending
-      ? "수정 중..."
-      : "수정"
+      ? t("form.submitEditing")
+      : t("form.submitEdit")
     : isPending
-      ? "등록 중..."
-      : "등록";
+      ? t("form.submitCreating")
+      : t("form.submitCreate");
 
   return (
     <>
@@ -465,7 +470,7 @@ export default function ProductFormDrawer({
           <button
             type="button"
             onClick={onClose}
-            aria-label="닫기"
+            aria-label={t("common:actions.close")}
             className="text-[#A8A8A8] transition-colors hover:text-[#212121]"
           >
             <Icon icon="mdi:close" width={22} height={22} />
@@ -474,11 +479,11 @@ export default function ProductFormDrawer({
 
         {isEdit && loadingDetail ? (
           <div className="flex flex-1 items-center justify-center text-sm text-[#A8A8A8]">
-            불러오는 중...
+            {t("common:status.loading")}
           </div>
         ) : isEdit && detailError ? (
           <div className="flex flex-1 items-center justify-center text-sm text-[#EF4444]">
-            제품 정보를 불러오지 못했습니다.
+            {t("form.loadError")}
           </div>
         ) : (
           <form
@@ -487,7 +492,7 @@ export default function ProductFormDrawer({
           >
             <div className="grid grid-cols-2 gap-3">
               <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium text-[#212121]">제품명</span>
+                <span className="text-sm font-medium text-[#212121]">{t("form.name")}</span>
                 <input
                   type="text"
                   value={name}
@@ -497,7 +502,7 @@ export default function ProductFormDrawer({
                 />
               </label>
               <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium text-[#212121]">제품 코드</span>
+                <span className="text-sm font-medium text-[#212121]">{t("form.code")}</span>
                 <input
                   type="text"
                   value={code}
@@ -509,7 +514,7 @@ export default function ProductFormDrawer({
             </div>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-[#212121]">고객사</span>
+              <span className="text-sm font-medium text-[#212121]">{t("form.customer")}</span>
               {customerOptions.length > 0 ? (
                 <select
                   value={customerId}
@@ -520,7 +525,7 @@ export default function ProductFormDrawer({
                   }}
                   className="h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none"
                 >
-                  <option value="">고객사를 선택하세요</option>
+                  <option value="">{t("form.customerPlaceholder")}</option>
                   {customerOptions.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name} (#{c.id})
@@ -536,25 +541,25 @@ export default function ProductFormDrawer({
                     setCustomerIdManual(e.target.value);
                     setCustomerId("");
                   }}
-                  placeholder="고객사 ID"
+                  placeholder={t("form.customerIdPlaceholder")}
                   className="h-11 rounded-lg border border-gray-300 px-3 text-sm focus:border-[#931B82] focus:outline-none"
                 />
               )}
               {customerOptions.length > 0 && customerId !== "" && !customerInOptions && (
                 <span className="text-xs text-[#6B7280]">
-                  선택된 고객사 ID: {customerId}
+                  {t("form.selectedCustomerId", { id: customerId })}
                 </span>
               )}
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-[#212121]">공정</span>
+              <span className="text-sm font-medium text-[#212121]">{t("form.process")}</span>
               <select
                 value={process}
                 onChange={(e) => setProcess(e.target.value as ProcessType | "")}
                 className="h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none"
               >
-                <option value="">공정을 선택하세요</option>
+                <option value="">{t("form.processPlaceholder")}</option>
                 {processOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
@@ -567,10 +572,12 @@ export default function ProductFormDrawer({
             {/* 검사 주기 — 기본은 공정 단위이고, 제품 전용 스케줄을 걸면 그 제품만
                 따로 간다. 어느 쪽이 실제로 적용 중인지 여기서 바로 보이게 한다. */}
             <div className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-[#212121]">검사 주기</span>
+              <span className="text-sm font-medium text-[#212121]">
+                {t("form.schedule.label")}
+              </span>
               {process === "" ? (
                 <p className="rounded-lg border border-dashed border-gray-300 bg-[#FAFAFA] px-3 py-3 text-xs text-[#6B7280]">
-                  공정을 먼저 선택하면 그 공정의 검사 주기가 표시됩니다.
+                  {t("form.schedule.selectProcessFirst")}
                 </p>
               ) : productSchedule ? (
                 <button
@@ -581,19 +588,21 @@ export default function ProductFormDrawer({
                   <span className="min-w-0">
                     <span className="flex items-center gap-1.5">
                       <span className="shrink-0 rounded bg-[#F3E8F7] px-1.5 py-0.5 text-[10px] font-medium text-[#931B82]">
-                        제품 전용
+                        {t("form.schedule.productOnlyBadge")}
                       </span>
                       <span className="truncate text-sm text-[#212121]">
-                        {productScheduleSummary ?? "설정된 시점이 없습니다"}
+                        {productScheduleSummary ?? t("form.schedule.noSlots")}
                       </span>
                     </span>
                     <span className="mt-0.5 block text-[11px] text-[#6B7280]">
-                      이 제품에만 적용됩니다 · {processLabel(process)} 공정 기본은{" "}
-                      {scheduleSummary ?? "없음"}
+                      {t("form.schedule.appliesToProductOnly", {
+                        process: processLabel(process),
+                        base: scheduleSummary ?? t("form.schedule.none"),
+                      })}
                     </span>
                   </span>
                   <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-[#931B82]">
-                    설정
+                    {t("form.schedule.configure")}
                     <Icon icon="mdi:chevron-right" width={14} height={14} />
                   </span>
                 </button>
@@ -606,14 +615,16 @@ export default function ProductFormDrawer({
                   >
                     <span className="min-w-0">
                       <span className="block text-sm text-[#212121]">
-                        {scheduleSummary ?? "설정된 주기가 없습니다"}
+                        {scheduleSummary ?? t("form.schedule.noSchedule")}
                       </span>
                       <span className="mt-0.5 block text-[11px] text-[#6B7280]">
-                        {processLabel(process)} 공정의 모든 제품에 함께 적용됩니다
+                        {t("form.schedule.appliesToAllInProcess", {
+                          process: processLabel(process),
+                        })}
                       </span>
                     </span>
                     <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-[#931B82]">
-                      설정
+                      {t("form.schedule.configure")}
                       <Icon icon="mdi:chevron-right" width={14} height={14} />
                     </span>
                   </button>
@@ -624,7 +635,7 @@ export default function ProductFormDrawer({
                       className="flex items-center gap-1 self-start text-[11px] font-medium text-[#931B82] hover:underline"
                     >
                       <Icon icon="mdi:tag-plus-outline" width={13} height={13} />
-                      이 제품만 다른 주기로 검사하기
+                      {t("form.schedule.customizeThisProduct")}
                     </button>
                   )}
                 </>
@@ -633,7 +644,8 @@ export default function ProductFormDrawer({
 
             <div className="flex flex-col gap-1.5">
               <span className="text-sm font-medium text-[#212121]">
-                스케치 이미지 <span className="text-xs text-[#A8A8A8]">(선택)</span>
+                {t("form.sketch.label")}{" "}
+                <span className="text-xs text-[#A8A8A8]">{t("form.sketch.optional")}</span>
               </span>
               {sketchUrl ? (
                 <div className="flex items-start gap-3">
@@ -651,7 +663,9 @@ export default function ProductFormDrawer({
                         height={14}
                         className={isUploadingSketch ? "animate-spin" : undefined}
                       />
-                      {isUploadingSketch ? "업로드 중..." : "사진 변경"}
+                      {isUploadingSketch
+                        ? t("form.sketch.uploading")
+                        : t("form.sketch.change")}
                     </button>
                     <button
                       type="button"
@@ -663,7 +677,7 @@ export default function ProductFormDrawer({
                       className="flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-[#6B7280] transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <Icon icon="mdi:trash-can-outline" width={14} height={14} />
-                      삭제
+                      {t("common:actions.delete")}
                     </button>
                   </div>
                 </div>
@@ -680,9 +694,11 @@ export default function ProductFormDrawer({
                     height={26}
                     className={isUploadingSketch ? "animate-spin" : undefined}
                   />
-                  {isUploadingSketch ? "업로드 중..." : "사진 선택 / 촬영"}
+                  {isUploadingSketch
+                    ? t("form.sketch.uploading")
+                    : t("form.sketch.pick")}
                   <span className="text-xs font-normal text-[#A8A8A8]">
-                    PNG/JPG · 최대 10MB
+                    {t("form.sketch.hint")}
                   </span>
                 </button>
               )}
@@ -701,7 +717,7 @@ export default function ProductFormDrawer({
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-[#212121]">
-                  검사 항목{" "}
+                  {t("form.dims.label")}{" "}
                   <span className="text-xs text-[#6B7280]">
                     ({dims.length}/{MAX_DIMS})
                   </span>
@@ -714,7 +730,7 @@ export default function ProductFormDrawer({
                     className="flex items-center gap-1 rounded-md border border-[#931B82] px-2 py-1 text-xs font-medium text-[#931B82] transition-colors hover:bg-[#F3E8F7] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <Icon icon="mdi:plus" width={14} height={14} />
-                    치수
+                    {t("form.dims.dim")}
                   </button>
                   <button
                     type="button"
@@ -753,14 +769,14 @@ export default function ProductFormDrawer({
                                 : "bg-[#F3E8F7] text-[#931B82]"
                             }`}
                           >
-                            {isPassFail ? "OK/NG" : "치수"}
+                            {isPassFail ? "OK/NG" : t("form.dims.dim")}
                           </span>
                           #{idx + 1}
                         </span>
                         <button
                           type="button"
                           onClick={() => removeDim(idx)}
-                          aria-label="삭제"
+                          aria-label={t("common:actions.delete")}
                           className="text-[#A8A8A8] transition-colors hover:text-[#EF4444]"
                         >
                           <Icon icon="mdi:close" width={16} height={16} />
@@ -775,33 +791,33 @@ export default function ProductFormDrawer({
                         }
                         placeholder={
                           isPassFail
-                            ? "항목명 (예: 스크래치 여부)"
-                            : "항목명 (예: 바깥지름)"
+                            ? t("form.dims.namePlaceholderPassFail")
+                            : t("form.dims.namePlaceholderNumber")
                         }
                         className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none"
                       />
 
                       {isPassFail ? (
                         <p className="text-[11px] text-[#92400E]">
-                          작업자가 측정 시점에 OK / NG 를 직접 선택합니다. 기준값·공차는 없습니다.
+                          {t("form.dims.passFailHint")}
                         </p>
                       ) : (
                         <div className="grid grid-cols-3 gap-2">
                           <DimNumberInput
-                            label="기준"
+                            label={t("form.dims.standard")}
                             value={d.standardValue}
                             onChange={(v) =>
                               updateDim(idx, { standardValue: v })
                             }
                           />
                           <DimNumberInput
-                            label="상한 공차"
+                            label={t("form.dims.upperTolerance")}
                             placeholder="0.2"
                             value={d.toleranceUpper}
                             onChange={(v) => updateDim(idx, upperPatch(d, v))}
                           />
                           <DimNumberInput
-                            label="하한 공차"
+                            label={t("form.dims.lowerTolerance")}
                             placeholder="-0.2"
                             value={d.toleranceLower}
                             onChange={(v) =>
@@ -831,7 +847,7 @@ export default function ProductFormDrawer({
                 onClick={onClose}
                 className="h-11 flex-1 rounded-lg border border-gray-300 text-sm font-medium text-[#212121] transition-colors hover:bg-gray-50"
               >
-                취소
+                {t("common:actions.cancel")}
               </button>
               <button
                 type="submit"
@@ -856,7 +872,7 @@ export default function ProductFormDrawer({
           open={productScheduleOpen}
           onClose={() => setProductScheduleOpen(false)}
           productId={productId}
-          productName={name.trim() || product?.name || "제품"}
+          productName={name.trim() || product?.name || t("form.productFallback")}
           process={process}
           processLabel={processLabel(process)}
         />

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useIncomplete } from "../model/useIncomplete";
 
 interface IncompleteListProps {
@@ -6,6 +7,7 @@ interface IncompleteListProps {
 }
 
 function IncompleteList({ checked, onToggle }: IncompleteListProps) {
+  const { t } = useTranslation("incomplete");
   const { data: items = [], isLoading, isError } = useIncomplete();
 
   const formatDate = (iso: string) =>
@@ -18,12 +20,12 @@ function IncompleteList({ checked, onToggle }: IncompleteListProps) {
     });
 
   if (isLoading) {
-    return <div className="w-full p-4 text-gray-500">불러오는 중...</div>;
+    return <div className="w-full p-4 text-gray-500">{t("list.loading")}</div>;
   }
 
   if (isError) {
     return (
-      <div className="w-full p-4 text-red-500">목록을 불러오지 못했습니다.</div>
+      <div className="w-full p-4 text-red-500">{t("list.loadError")}</div>
     );
   }
 
@@ -56,7 +58,9 @@ function IncompleteList({ checked, onToggle }: IncompleteListProps) {
               </span>
             </div>
             <span className="text-sm text-gray-500 truncate">
-              신청 : {item.createdAt ? formatDate(item.createdAt) : "-"}
+              {t("list.requestedAt", {
+                date: item.createdAt ? formatDate(item.createdAt) : "-",
+              })}
             </span>
           </div>
           <div className="ml-auto flex flex-row items-center gap-2">

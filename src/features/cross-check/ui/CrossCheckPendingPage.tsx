@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { AxiosError } from "axios";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Icon } from "@iconify/react";
+import { Trans, useTranslation } from "react-i18next";
 import {
   useAssignedCrossChecks,
   useCancelCrossCheck,
@@ -18,12 +19,7 @@ import {
 } from "../../process";
 import { countUnprocessed, isFinished, isTakeoverable } from "../lib/assigned";
 import { toCancelErrorMessage } from "../lib/cancelError";
-import {
-  getStage,
-  needsHardnessInput,
-  STAGE_BADGE,
-  STAGE_LABEL,
-} from "../lib/stage";
+import { getStage, needsHardnessInput, STAGE_BADGE } from "../lib/stage";
 import { formatDate, formatDateTime } from "../../../lib/datetime";
 import {
   TODAY_DATE_FILTER,
@@ -50,24 +46,31 @@ type Tab = "assigned" | "history";
 // 빠뜨리면 끝난 초·중이 폴백에 걸려 "진행 중"으로 계속 남는다(결재 승인해도 안 없어짐).
 const STATUS_BADGE: Record<
   string,
-  { label: string; bg: string; fg: string }
+  { labelKey: string; bg: string; fg: string }
 > = {
-  PENDING_APPROVAL: { label: "결재 대기", bg: "#FEF3C7", fg: "#B45309" },
-  COMPLETED: { label: "검사 완료", bg: "#ECFEFF", fg: "#0E7490" },
-  APPROVED: { label: "승인", bg: "#ECFDF5", fg: "#15803D" },
-  REJECTED: { label: "반려", bg: "#FEF2F2", fg: "#B91C1C" },
-  DRAFT: { label: "진행 중", bg: "#F3F4F6", fg: "#6B7280" },
+  PENDING_APPROVAL: {
+    labelKey: "status.pendingApproval",
+    bg: "#FEF3C7",
+    fg: "#B45309",
+  },
+  COMPLETED: { labelKey: "status.completed", bg: "#ECFEFF", fg: "#0E7490" },
+  APPROVED: { labelKey: "status.approved", bg: "#ECFDF5", fg: "#15803D" },
+  REJECTED: { labelKey: "status.rejected", bg: "#FEF2F2", fg: "#B91C1C" },
+  DRAFT: { labelKey: "status.draft", bg: "#F3F4F6", fg: "#6B7280" },
 };
 
 // 모르는 상태를 특정 배지로 폴백하면(예전엔 DRAFT="진행 중") 틀린 값이 그럴듯하게 보여
-// 알아채기 어렵다. 상태 코드를 그대로 드러내 눈에 띄게 한다.
+// 알아채기 어렵다. 상태 코드를 그대로 드러내 눈에 띄게 한다 (labelKey 빈 값이면
+// 렌더 시 상태 코드를 그대로 표시).
 function statusBadge(status: string) {
   return (
-    STATUS_BADGE[status] ?? { label: status, bg: "#F3F4F6", fg: "#6B7280" }
+    STATUS_BADGE[status] ?? { labelKey: "", bg: "#F3F4F6", fg: "#6B7280" }
   );
 }
 
 const CrossCheckPendingPage = () => {
+  const { t } = useTranslation("crossCheck");
+  const { t: tCommon } = useTranslation("common");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   // 품질시스템현황에서 카운트 카드 클릭 시 ?tab=history|assigned 로 진입.
@@ -102,10 +105,10 @@ const CrossCheckPendingPage = () => {
   const processOptions = useProcessOptions();
   const processFilterLabel =
     processFilter.length === 0
-      ? "전체 공정"
+      ? t("pending.allProcesses")
       : processFilter.length === 1
         ? processLabel(processFilter[0])
-        : `공정 ${processFilter.length}개`;
+        : t("pending.processCount", { n: processFilter.length });
 
   const {
     data: assigned = [],
@@ -250,9 +253,8 @@ const CrossCheckPendingPage = () => {
     } catch (err) {
       const msg =
         err instanceof AxiosError
-          ? err.response?.data?.message ??
-            "이미 다른 담당자가 진행 중이거나 시작에 실패했습니다."
-          : "순회검사 시작에 실패했습니다.";
+          ? err.response?.data?.message ?? t("pending.startFailedTaken")
+          : t("pending.startFailed");
       setToast(msg);
       // 그새 다른 담당자가 선점했을 수 있으니 목록 새로고침.
       void refetchAssigned();
@@ -280,7 +282,7 @@ const CrossCheckPendingPage = () => {
       setCancelTarget(null);
     } catch (err) {
       // 실패해도 모달은 열어둔다 — 사유를 읽고 "닫기"로 측정을 이어갈 수 있게.
-      setCancelError(toCancelErrorMessage(err));
+      setCancelError(toCancelErrorMessage(err, t));
     }
   };
 
@@ -294,7 +296,7 @@ const CrossCheckPendingPage = () => {
       {/* 요약 통계 — 미처리/완료/진행중. 클릭 시 해당 탭으로 이동. */}
       <section className="grid grid-cols-3 gap-2">
         <SummaryStat
-          label="미처리"
+          label={t("pending.statUnprocessed")}
           value={statCounts.pending}
           icon="solar:danger-triangle-bold"
           accent="#931B82"
@@ -302,7 +304,7 @@ const CrossCheckPendingPage = () => {
           onClick={() => setTab("assigned")}
         />
         <SummaryStat
-          label="완료"
+          label={t("pending.statDone")}
           value={statCounts.done}
           icon="solar:check-circle-bold"
           accent="#22C55E"
@@ -310,7 +312,7 @@ const CrossCheckPendingPage = () => {
           onClick={() => setTab("history")}
         />
         <SummaryStat
-          label="진행중"
+          label={t("pending.statInProgress")}
           value={statCounts.draft}
           icon="solar:pen-bold"
           accent="#3B82F6"
@@ -321,19 +323,19 @@ const CrossCheckPendingPage = () => {
 
       <div
         role="tablist"
-        aria-label="순회검사 목록"
+        aria-label={t("pending.tablist")}
         className="grid grid-cols-2 gap-1 rounded-xl bg-white p-1 shadow-sm"
       >
         <TabButton
           active={tab === "assigned"}
           onClick={() => setTab("assigned")}
-          label="할당 대기"
+          label={t("pending.tabAssigned")}
           count={sortedAssigned.length}
         />
         <TabButton
           active={tab === "history"}
           onClick={() => setTab("history")}
-          label="내 결재 이력"
+          label={t("pending.tabHistory")}
           count={history.length}
         />
       </div>
@@ -343,7 +345,7 @@ const CrossCheckPendingPage = () => {
           {draftInProgress.length > 0 && (
             <section className="flex flex-col gap-2">
               <h2 className="text-xs font-semibold text-[#6B7280]">
-                진행 중 (이어하기)
+                {t("pending.inProgressSection")}
               </h2>
               <ul className="flex flex-col gap-3">
                 {draftInProgress.map((cc) => (
@@ -360,9 +362,11 @@ const CrossCheckPendingPage = () => {
           )}
 
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-semibold text-[#6B7280]">새 배정</h2>
+            <h2 className="text-xs font-semibold text-[#6B7280]">
+              {t("pending.newAssignments")}
+            </h2>
             <span className="inline-block rounded-full bg-[#F3F4F6] px-3 py-1 text-xs font-medium text-[#6B7280]">
-              대기시간순
+              {t("pending.sortByWait")}
             </span>
           </div>
 
@@ -384,21 +388,21 @@ const CrossCheckPendingPage = () => {
 
           {isLoading && (
             <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-              불러오는 중...
+              {tCommon("status.loading")}
             </p>
           )}
 
           {isError && (
             <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
-              목록을 불러오지 못했습니다.
+              {t("pending.listError")}
             </p>
           )}
 
           {!isLoading && !isError && sortedAssigned.length === 0 && (
             <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
               {processFilter.length > 0
-                ? "선택한 공정에 새 배정이 없습니다."
-                : "새 배정이 없습니다."}
+                ? t("pending.emptyProcess")
+                : t("pending.emptyAssigned")}
             </p>
           )}
 
@@ -408,8 +412,8 @@ const CrossCheckPendingPage = () => {
             filteredAssigned.length === 0 && (
               <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
                 {isDateFilterActive(assignedFilter)
-                  ? "선택한 기간에 해당하는 검사가 없습니다."
-                  : "새 배정이 없습니다."}
+                  ? t("pending.emptyPeriod")
+                  : t("pending.emptyAssigned")}
               </p>
             )}
 
@@ -451,13 +455,13 @@ const CrossCheckPendingPage = () => {
 
           {historyLoading && (
             <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-              불러오는 중...
+              {tCommon("status.loading")}
             </p>
           )}
 
           {historyError && (
             <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
-              이력을 불러오지 못했습니다.
+              {t("pending.historyError")}
             </p>
           )}
 
@@ -470,10 +474,10 @@ const CrossCheckPendingPage = () => {
                 className="text-[#A8A8A8]"
               />
               <span className="text-sm font-medium text-[#212121]">
-                결재 요청한 내역이 없습니다
+                {t("pending.emptyHistoryTitle")}
               </span>
               <span className="text-xs text-[#6B7280]">
-                순회검사 결재 요청을 보내면 여기에 표시됩니다
+                {t("pending.emptyHistoryHint")}
               </span>
             </div>
           )}
@@ -484,8 +488,8 @@ const CrossCheckPendingPage = () => {
             filteredHistory.length === 0 && (
               <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
                 {isHistoryFilterActive(historyFilter)
-                  ? "조건에 맞는 이력이 없습니다."
-                  : "결재 요청한 내역이 없습니다."}
+                  ? t("pending.emptyHistoryFiltered")
+                  : t("pending.emptyHistory")}
               </p>
             )}
 
@@ -513,18 +517,20 @@ const CrossCheckPendingPage = () => {
             className="w-full max-w-sm rounded-t-2xl bg-white p-5 sm:rounded-2xl"
           >
             <h3 className="text-base font-semibold text-[#212121]">
-              순회검사 취소
+              {t("pending.cancelModal.title")}
             </h3>
             <p className="mt-1 text-xs text-[#6B7280]">
-              <span className="font-semibold text-[#212121]">
-                {cancelTarget.product.name}
-              </span>{" "}
-              · 자주검사자{" "}
-              <span className="font-semibold text-[#212121]">
-                {cancelTarget.production.name}
-              </span>{" "}
-              건의 담당을 해제합니다. 다른 검사자가 이어받을 수 있으며, 입력한
-              측정값은 보존됩니다. (작업자에게 재측정 요청이 가지 않습니다.)
+              <Trans
+                t={t}
+                i18nKey="pending.cancelModal.body"
+                values={{
+                  product: cancelTarget.product.name,
+                  production: cancelTarget.production.name,
+                }}
+                components={{
+                  b: <span className="font-semibold text-[#212121]" />,
+                }}
+              />
             </p>
             {cancelError && (
               <p className="mt-3 rounded-md bg-[#FEF2F2] px-3 py-2 text-xs font-medium text-[#B91C1C]">
@@ -538,7 +544,7 @@ const CrossCheckPendingPage = () => {
                 disabled={cancelMut.isPending}
                 className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-60"
               >
-                닫기
+                {tCommon("actions.close")}
               </button>
               <button
                 type="button"
@@ -546,7 +552,9 @@ const CrossCheckPendingPage = () => {
                 disabled={cancelMut.isPending}
                 className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
               >
-                {cancelMut.isPending ? "취소 중..." : "취소 확정"}
+                {cancelMut.isPending
+                  ? t("pending.cancelModal.canceling")
+                  : t("pending.cancelModal.confirm")}
               </button>
             </div>
           </div>
@@ -633,6 +641,8 @@ function DraftResumeCard({
   onClick: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation("crossCheck");
+  const { t: tCommon } = useTranslation("common");
   const hardnessTracked = useProcessFlag("hardnessTracked");
   // 카드 전체가 "이어하기" 버튼이므로, 취소 버튼은 중첩(button 안 button)이 되지
   // 않도록 형제 요소로 분리하고 relative 컨테이너 위에 얹는다.
@@ -650,18 +660,18 @@ function DraftResumeCard({
               <span
                 className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${STAGE_BADGE[stage]}`}
               >
-                {STAGE_LABEL[stage]}
+                {t(`stage.${stage}`)}
               </span>
             )}
             <span className="wrap-break-word text-base font-bold text-[#212121]">
               {cc.product.name}
             </span>
             <span className="rounded-md bg-[#931B82] px-2 py-0.5 text-[10px] font-semibold text-white">
-              이어하기
+              {t("card.resume")}
             </span>
             {needsHardnessInput(cc, hardnessTracked(cc.product.process)) && (
               <span className="rounded-md bg-[#FEF3C7] px-2 py-0.5 text-[10px] font-semibold text-[#B45309]">
-                경도 입력 필요
+                {t("card.hardnessNeeded")}
               </span>
             )}
           </div>
@@ -677,13 +687,13 @@ function DraftResumeCard({
             </span>
           </div>
           <span className="mt-2 block truncate text-xs text-[#A8A8A8]">
-            검사 차수: {cc.typeLabel}
+            {t("card.roundLine", { label: cc.typeLabel })}
           </span>
           <span className="mt-1 block truncate text-xs text-[#A8A8A8]">
-            설비: {cc.equipment.name}
+            {t("card.equipmentLine", { name: cc.equipment.name })}
           </span>
           <span className="mt-1 block truncate text-xs text-[#A8A8A8]">
-            시작일: {formatDate(cc.createdAt)}
+            {t("card.startDateLine", { date: formatDate(cc.createdAt) })}
           </span>
         </div>
         <Icon
@@ -696,10 +706,10 @@ function DraftResumeCard({
       <button
         type="button"
         onClick={onCancel}
-        aria-label="순회검사 취소"
+        aria-label={t("card.cancelPatrol")}
         className="absolute right-2 top-2 rounded-md border border-[#E5E7EB] bg-white/90 px-2 py-1 text-[11px] font-semibold text-[#6B7280] shadow-sm transition-colors hover:bg-[#F3F4F6]"
       >
-        취소
+        {tCommon("actions.cancel")}
       </button>
     </div>
   );
@@ -712,6 +722,7 @@ function HistoryCard({
   cc: CrossCheckSummary;
   onClick: () => void;
 }) {
+  const { t } = useTranslation("crossCheck");
   const processLabel = useProcessLabel();
   const badge = statusBadge(cc.status);
   const stage = getStage(cc.type, cc.product.process);
@@ -727,7 +738,7 @@ function HistoryCard({
             <span
               className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${STAGE_BADGE[stage]}`}
             >
-              {STAGE_LABEL[stage]}
+              {t(`stage.${stage}`)}
             </span>
           )}
           <span className="wrap-break-word text-base font-semibold text-[#212121]">
@@ -737,20 +748,23 @@ function HistoryCard({
             className="rounded-md px-2 py-0.5 text-xs font-semibold"
             style={{ backgroundColor: badge.bg, color: badge.fg }}
           >
-            {badge.label}
+            {badge.labelKey ? t(badge.labelKey) : cc.status}
           </span>
         </div>
         <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
           <InfoLine
-            label="공정"
+            label={t("label.process")}
             value={processLabel(cc.product.process)}
           />
-          <InfoLine label="설비" value={cc.equipment.name} />
-          <InfoLine label="검사 차수" value={`${cc.typeLabel} (${cc.type})`} />
-          <InfoLine label="시작일" value={formatDate(cc.createdAt)} />
+          <InfoLine label={t("label.equipment")} value={cc.equipment.name} />
+          <InfoLine
+            label={t("label.round")}
+            value={`${cc.typeLabel} (${cc.type})`}
+          />
+          <InfoLine label={t("label.startDate")} value={formatDate(cc.createdAt)} />
           <InfoLine
             className="col-span-2"
-            label="업데이트"
+            label={t("label.updatedAt")}
             value={formatDateTime(cc.updatedAt ?? cc.createdAt)}
           />
         </dl>

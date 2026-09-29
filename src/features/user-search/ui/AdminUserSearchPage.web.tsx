@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import { useUserList } from "../api";
 import { useReportList } from "../../report/api";
-import { DEPARTMENT_LABEL } from "../lib/userLabels";
+import { DEPARTMENT_LABEL_KEY } from "../lib/userLabels";
 import CreateUserModal from "./CreateUserModal";
 import UserCard from "./UserCard";
 
@@ -16,15 +17,16 @@ function todayISO() {
 
 type FilterKey = "ALL" | "PRODUCTION" | "QUALITY" | "ACTIVE" | "INACTIVE";
 
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "ALL", label: "전체" },
-  { key: "PRODUCTION", label: "생산" },
-  { key: "QUALITY", label: "품질" },
-  { key: "ACTIVE", label: "활성" },
-  { key: "INACTIVE", label: "비활성" },
+const FILTERS: { key: FilterKey; labelKey: string }[] = [
+  { key: "ALL", labelKey: "filters.all" },
+  { key: "PRODUCTION", labelKey: "filters.production" },
+  { key: "QUALITY", labelKey: "filters.quality" },
+  { key: "ACTIVE", labelKey: "filters.active" },
+  { key: "INACTIVE", labelKey: "filters.inactive" },
 ];
 
 const AdminUserSearchPageWeb = () => {
+  const { t } = useTranslation("userSearch");
   const { data: users = [], isLoading, isError } = useUserList();
   const { data: reports = [] } = useReportList();
 
@@ -70,13 +72,14 @@ const AdminUserSearchPageWeb = () => {
       if (filter === "INACTIVE" && u.status !== "INACTIVE") return false;
 
       if (kw) {
-        const dept = (DEPARTMENT_LABEL[u.role] ?? "").toLowerCase();
+        const deptKey = DEPARTMENT_LABEL_KEY[u.role];
+        const dept = (deptKey ? t(deptKey) : "").toLowerCase();
         const haystack = `${u.name} ${u.loginId} ${dept}`.toLowerCase();
         if (!haystack.includes(kw)) return false;
       }
       return true;
     });
-  }, [users, appliedKeyword, filter]);
+  }, [users, appliedKeyword, filter, t]);
 
   const handleSearch = () => {
     setAppliedKeyword(keyword);
@@ -105,7 +108,7 @@ const AdminUserSearchPageWeb = () => {
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="이름, 아이디, 부서로 검색"
+              placeholder={t("search.placeholder")}
               className="h-10 w-full rounded-full border border-[#E5E7EB] bg-white pl-9 pr-3 text-sm text-[#212121] placeholder:text-[#A8A8A8] focus:border-[#931B82] focus:outline-none"
             />
           </div>
@@ -114,7 +117,7 @@ const AdminUserSearchPageWeb = () => {
             onClick={handleSearch}
             className="h-10 rounded-full bg-[#931B82] px-6 text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D]"
           >
-            검색
+            {t("actions.search", { ns: "common" })}
           </button>
           <button
             type="button"
@@ -122,7 +125,7 @@ const AdminUserSearchPageWeb = () => {
             className="flex h-10 items-center gap-1 rounded-full border border-[#931B82] bg-white px-4 text-sm font-medium text-[#931B82] transition-colors hover:bg-[#F3E8F7]"
           >
             <Icon icon="mdi:plus" width={16} height={16} />
-            사용자 추가
+            {t("search.addUser")}
           </button>
         </div>
 
@@ -140,7 +143,7 @@ const AdminUserSearchPageWeb = () => {
                     : "border border-[#E5E7EB] bg-white text-[#6B7280] hover:border-[#931B82] hover:text-[#931B82]"
                 }`}
               >
-                {f.label}
+                {t(f.labelKey)}
               </button>
             );
           })}
@@ -149,19 +152,19 @@ const AdminUserSearchPageWeb = () => {
 
       {isLoading && (
         <div className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-          불러오는 중...
+          {t("status.loading", { ns: "common" })}
         </div>
       )}
 
       {isError && (
         <div className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
-          사용자 목록을 불러오지 못했습니다.
+          {t("list.loadFailed")}
         </div>
       )}
 
       {!isLoading && !isError && filtered.length === 0 && (
         <div className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-          조건에 맞는 사용자가 없습니다.
+          {t("list.empty")}
         </div>
       )}
 

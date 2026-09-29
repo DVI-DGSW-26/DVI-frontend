@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import { useCreateCustomer, useUpdateCustomer } from "../api";
 import type { Customer } from "../api";
 
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function CustomerFormDrawer({ open, onClose, customer }: Props) {
+  const { t } = useTranslation(["customers", "common"]);
   const isEdit = !!customer;
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -28,16 +30,12 @@ export default function CustomerFormDrawer({ open, onClose, customer }: Props) {
     e.preventDefault();
     setError(null);
     const trimmed = name.trim();
-    if (!trimmed) return setError("고객사명을 입력하세요.");
+    if (!trimmed) return setError(t("form.nameRequired"));
 
     const handlers = {
       onSuccess: () => onClose(),
       onError: () => {
-        setError(
-          isEdit
-            ? "고객사 수정 중 오류가 발생했습니다."
-            : "고객사 등록 중 오류가 발생했습니다.",
-        );
+        setError(isEdit ? t("form.updateError") : t("form.createError"));
       },
     };
 
@@ -48,14 +46,14 @@ export default function CustomerFormDrawer({ open, onClose, customer }: Props) {
     }
   };
 
-  const title = isEdit ? "고객사 수정" : "고객사 등록";
+  const title = isEdit ? t("form.editTitle") : t("form.createTitle");
   const submitLabel = isEdit
     ? isPending
-      ? "수정 중..."
-      : "수정"
+      ? t("form.submittingUpdate")
+      : t("form.submitUpdate")
     : isPending
-      ? "등록 중..."
-      : "등록";
+      ? t("form.submittingCreate")
+      : t("form.submitCreate");
 
   return (
     <>
@@ -80,7 +78,7 @@ export default function CustomerFormDrawer({ open, onClose, customer }: Props) {
           <button
             type="button"
             onClick={onClose}
-            aria-label="닫기"
+            aria-label={t("common:actions.close")}
             className="text-[#A8A8A8] transition-colors hover:text-[#212121]"
           >
             <Icon icon="mdi:close" width={22} height={22} />
@@ -92,12 +90,14 @@ export default function CustomerFormDrawer({ open, onClose, customer }: Props) {
           className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-5"
         >
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[#212121]">고객사명</span>
+            <span className="text-sm font-medium text-[#212121]">
+              {t("form.name")}
+            </span>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="삼성전자"
+              placeholder={t("form.namePlaceholder")}
               autoFocus
               className="h-11 rounded-lg border border-gray-300 px-3 text-sm focus:border-[#931B82] focus:outline-none"
             />
@@ -115,7 +115,7 @@ export default function CustomerFormDrawer({ open, onClose, customer }: Props) {
               onClick={onClose}
               className="h-11 flex-1 rounded-lg border border-gray-300 text-sm font-medium text-[#212121] transition-colors hover:bg-gray-50"
             >
-              취소
+              {t("common:actions.cancel")}
             </button>
             <button
               type="submit"

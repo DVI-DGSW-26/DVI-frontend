@@ -1,4 +1,5 @@
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import type { Shift } from "../../features/inspection-schedule/api";
 
 interface Props {
@@ -8,14 +9,18 @@ interface Props {
   compact?: boolean;
 }
 
-const STYLE: Record<Shift, { label: string; icon: string; className: string }> = {
+// labelKey 는 shared 네임스페이스의 i18n 키.
+const STYLE: Record<
+  Shift,
+  { labelKey: string; icon: string; className: string }
+> = {
   DAY: {
-    label: "주간",
+    labelKey: "shiftBadge.day",
     icon: "solar:sun-bold",
     className: "bg-[#FEF3C7] text-[#B45309]",
   },
   NIGHT: {
-    label: "야간",
+    labelKey: "shiftBadge.night",
     icon: "solar:moon-bold",
     className: "bg-[#E0E7FF] text-[#3730A3]",
   },
@@ -28,6 +33,7 @@ const STYLE: Record<Shift, { label: string; icon: string; className: string }> =
  * 접두어는 순서를 매기는 내부 값이라 실제 교대와 어긋날 수 있다.
  */
 export default function ShiftBadge({ shift, compact = false }: Props) {
+  const { t } = useTranslation("shared");
   if (!shift) return null;
   const meta = STYLE[shift];
   const size = compact ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-0.5 text-xs";
@@ -36,7 +42,7 @@ export default function ShiftBadge({ shift, compact = false }: Props) {
       className={`inline-flex shrink-0 items-center gap-1 rounded-full font-semibold ${size} ${meta.className}`}
     >
       <Icon icon={meta.icon} width={compact ? 11 : 13} height={compact ? 11 : 13} />
-      {meta.label}
+      {t(meta.labelKey)}
     </span>
   );
 }

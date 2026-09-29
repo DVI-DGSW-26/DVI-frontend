@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
 import Select, { type StylesConfig } from "react-select";
+import { useTranslation } from "react-i18next";
 import { useCreateUser } from "../api";
 import type { Role } from "../../auth/type/types";
 
@@ -16,12 +17,7 @@ interface RoleOption {
   label: string;
 }
 
-const ROLE_OPTIONS: RoleOption[] = [
-  { value: "PRODUCTION", label: "생산 담당자" },
-  { value: "QUALITY", label: "품질 담당자" },
-  { value: "QUALITY_ADMIN", label: "품질 관리자" },
-  { value: "ADMIN", label: "통합 관리자" },
-];
+const ROLE_VALUES: Role[] = ["PRODUCTION", "QUALITY", "QUALITY_ADMIN", "ADMIN"];
 
 const selectStyles: StylesConfig<RoleOption, false> = {
   control: (base, state) => ({
@@ -53,6 +49,7 @@ const selectStyles: StylesConfig<RoleOption, false> = {
 };
 
 export default function CreateUserModal({ open, onClose, onCreated }: Props) {
+  const { t } = useTranslation("userSearch");
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -61,6 +58,11 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const createUserMut = useCreateUser();
+
+  const roleOptions: RoleOption[] = ROLE_VALUES.map((value) => ({
+    value,
+    label: t(`roles.${value}`, { ns: "common" }),
+  }));
 
   const isValid =
     loginId.trim() !== "" &&
@@ -100,9 +102,9 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
     } catch (err) {
       if (err instanceof AxiosError) {
         const data = err.response?.data as { message?: string } | undefined;
-        setError(data?.message ?? "사용자 추가에 실패했습니다.");
+        setError(data?.message ?? t("createModal.createFailed"));
       } else {
-        setError("사용자 추가에 실패했습니다.");
+        setError(t("createModal.createFailed"));
       }
     }
   };
@@ -116,12 +118,14 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
         className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-[#212121]">사용자 추가</h2>
+          <h2 className="text-base font-semibold text-[#212121]">
+            {t("createModal.title")}
+          </h2>
           <button
             type="button"
             onClick={handleClose}
             disabled={createUserMut.isPending}
-            aria-label="닫기"
+            aria-label={t("actions.close", { ns: "common" })}
             className="text-[#6B7280] transition-colors hover:text-[#212121] disabled:opacity-50"
           >
             <Icon icon="mdi:close" width={20} height={20} />
@@ -129,24 +133,24 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
         </div>
 
         <div className="mt-4 flex flex-col gap-3">
-          <Field label="아이디">
+          <Field label={t("createModal.loginId")}>
             <input
               type="text"
               value={loginId}
               onChange={(e) => setLoginId(e.target.value)}
-              placeholder="예: quality01"
+              placeholder={t("createModal.loginIdPlaceholder")}
               autoComplete="off"
               className="h-11 w-full rounded-md border border-[#A8A8A8] bg-white px-3 text-sm text-[#212121] placeholder:text-[#A8A8A8] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82]"
             />
           </Field>
 
-          <Field label="비밀번호">
+          <Field label={t("createModal.password")}>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="비밀번호"
+                placeholder={t("createModal.passwordPlaceholder")}
                 autoComplete="new-password"
                 className="h-11 w-full rounded-md border border-[#A8A8A8] bg-white px-3 pr-10 text-sm text-[#212121] placeholder:text-[#A8A8A8] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82]"
               />
@@ -154,7 +158,11 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-[#A8A8A8] hover:text-[#931B82]"
-                aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보이기"}
+                aria-label={
+                  showPassword
+                    ? t("createModal.hidePassword")
+                    : t("createModal.showPassword")
+                }
               >
                 <Icon
                   icon={showPassword ? "mdi:eye-outline" : "mdi:eye-off-outline"}
@@ -164,22 +172,22 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
             </div>
           </Field>
 
-          <Field label="이름">
+          <Field label={t("createModal.name")}>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="이름"
+              placeholder={t("createModal.namePlaceholder")}
               className="h-11 w-full rounded-md border border-[#A8A8A8] bg-white px-3 text-sm text-[#212121] placeholder:text-[#A8A8A8] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82]"
             />
           </Field>
 
-          <Field label="역할">
+          <Field label={t("createModal.role")}>
             <Select<RoleOption, false>
-              options={ROLE_OPTIONS}
-              value={ROLE_OPTIONS.find((o) => o.value === role) ?? null}
+              options={roleOptions}
+              value={roleOptions.find((o) => o.value === role) ?? null}
               onChange={(opt) => setRole(opt?.value ?? "")}
-              placeholder="역할을 선택해주세요"
+              placeholder={t("createModal.rolePlaceholder")}
               isSearchable={false}
               styles={selectStyles}
             />
@@ -199,14 +207,16 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
             disabled={createUserMut.isPending}
             className="h-10 rounded-md border border-[#E5E7EB] bg-white px-4 text-sm font-medium text-[#6B7280] transition-colors hover:bg-[#F9FAFB] disabled:opacity-50"
           >
-            취소
+            {t("actions.cancel", { ns: "common" })}
           </button>
           <button
             type="submit"
             disabled={!isValid || createUserMut.isPending}
             className="h-10 rounded-md bg-[#931B82] px-4 text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D] disabled:cursor-not-allowed disabled:bg-[#D1D5DB]"
           >
-            {createUserMut.isPending ? "추가 중..." : "추가"}
+            {createUserMut.isPending
+              ? t("createModal.submitting")
+              : t("createModal.submit")}
           </button>
         </div>
       </form>

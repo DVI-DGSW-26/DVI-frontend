@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useMyInspectionOrders } from "../api";
 import type { InspectionOrder, InspectionOrderStatus } from "../api";
 import type { InspectionProcess } from "../../inspection/type/types";
@@ -10,12 +12,13 @@ import ShiftBadge from "../../../components/shared/ShiftBadge";
 // 자주검사자(생산 작업자)가 생산 관리자에게 배정받은 검사 지시 목록 (GET /inspection-order/my).
 // 읽기 전용 — 실제 자주검사 수행은 기존 검사 흐름에서 진행한다.
 
-const STATUS_LABEL: Record<string, string> = {
-  PENDING: "대기",
-  DRAFT: "대기",
-  INCOMPLETE: "진행중",
-  INCOMPLETE_APPROVED: "완료(승인)",
-  COMPLETED: "완료",
+// 상태 코드 → inspectionOrders 네임스페이스 i18n 키
+const STATUS_LABEL_KEY: Record<string, string> = {
+  PENDING: "status.pending",
+  DRAFT: "status.pending",
+  INCOMPLETE: "status.inProgress",
+  INCOMPLETE_APPROVED: "status.completedApproved",
+  COMPLETED: "status.completed",
 };
 
 const STATUS_STYLE: Record<string, string> = {
@@ -26,8 +29,9 @@ const STATUS_STYLE: Record<string, string> = {
   COMPLETED: "bg-[#DCFCE7] text-[#15803D]",
 };
 
-function statusBadge(status: InspectionOrderStatus) {
-  const label = STATUS_LABEL[status] ?? status;
+function statusBadge(status: InspectionOrderStatus, t: TFunction) {
+  const labelKey = STATUS_LABEL_KEY[status];
+  const label = labelKey ? t(labelKey) : status;
   const style = STATUS_STYLE[status] ?? "bg-[#F3F4F6] text-[#6B7280]";
   return (
     <span
@@ -39,6 +43,7 @@ function statusBadge(status: InspectionOrderStatus) {
 }
 
 export default function MyInspectionOrdersPage() {
+  const { t } = useTranslation("inspectionOrders");
   const navigate = useNavigate();
   // 진입 시 기본으로 오늘자 지시만 보여준다(KST 기준). 초기화하면 전체가 보인다.
   const [selectedDate, setSelectedDate] = useState(() => kstDateKey(new Date()));
@@ -65,10 +70,8 @@ export default function MyInspectionOrdersPage() {
   return (
     <div className="flex min-h-dvh flex-col gap-4 bg-[#F5F5F5] p-4 pb-24 md:p-6">
       <div>
-        <h1 className="text-xl font-semibold">내 검사지시</h1>
-        <p className="mt-1 text-xs text-[#6B7280]">
-          배정된 검사 지시를 선택하면 시점을 골라 검사를 시작합니다.
-        </p>
+        <h1 className="text-xl font-semibold">{t("my.title")}</h1>
+        <p className="mt-1 text-xs text-[#6B7280]">{t("my.desc")}</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -92,22 +95,22 @@ export default function MyInspectionOrdersPage() {
             onClick={() => setSelectedDate("")}
             className="h-9 rounded-full border border-gray-200 bg-white px-3 text-xs font-medium text-[#6B7280] transition-colors hover:border-[#931B82] hover:text-[#931B82]"
           >
-            초기화
+            {t("my.reset")}
           </button>
         )}
       </div>
 
       {isLoading ? (
         <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-          불러오는 중...
+          {t("my.loading")}
         </div>
       ) : isError ? (
         <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
-          목록을 불러오지 못했습니다.
+          {t("my.loadError")}
         </div>
       ) : filtered.length === 0 ? (
         <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-          배정된 검사지시가 없습니다.
+          {t("my.empty")}
         </div>
       ) : (
         <div className="flex flex-col gap-2.5">
@@ -131,6 +134,7 @@ function OrderCard({
   order: InspectionOrder;
   onStart: () => void;
 }) {
+  const { t } = useTranslation("inspectionOrders");
   return (
     <button
       type="button"
@@ -148,16 +152,16 @@ function OrderCard({
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           <ShiftBadge shift={order.shift} compact />
-          {statusBadge(order.status)}
+          {statusBadge(order.status, t)}
         </div>
       </div>
 
       <div className="mt-3 flex items-center gap-1.5 text-xs text-[#6B7280]">
         <Icon icon="mdi:calendar-outline" width={14} height={14} className="shrink-0" />
-        <span className="shrink-0">지시일</span>
+        <span className="shrink-0">{t("my.orderDate")}</span>
         <span className="text-[#212121]">{order.targetDate}</span>
         <span className="ml-auto flex items-center gap-0.5 font-medium text-[#931B82]">
-          검사 시작
+          {t("my.start")}
           <Icon icon="solar:arrow-right-linear" width={14} height={14} />
         </span>
       </div>

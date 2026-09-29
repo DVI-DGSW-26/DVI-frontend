@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import { useCreateProcess, useUpdateProcess } from "../api";
 import type { ProcessInfo } from "../api";
 
@@ -12,30 +13,19 @@ interface Props {
 }
 
 // 폼 체크박스로 다루는 공정 설정. 값 하나하나가 화면 동작을 가르므로 무엇이 달라지는지
-// 함께 적어둔다 — 체크박스 이름만 보고는 판단할 수 없다.
-const FLAGS = [
-  {
-    key: "hardnessTracked" as const,
-    label: "경도 추적",
-    hint: "종품 순회검사에서 경도값을 입력받습니다. 결재 승인 시 필수 항목이 됩니다.",
-  },
-  {
-    key: "bundledReport" as const,
-    label: "묶음 보고서",
-    hint: "초·중·종을 한 파일로 묶어 보고서를 발행합니다.",
-  },
-  {
-    key: "autoCopyNightCrossCheck" as const,
-    label: "야간 순회검사 자동 복사",
-    hint: "순회검사자가 없는 야간 작업이라, 자주검사 결과를 순회검사로 자동 복사합니다.",
-  },
-];
+// hint(process:form.flagOptions.*)로 함께 보여준다 — 체크박스 이름만 보고는 판단할 수 없다.
+const FLAG_KEYS = [
+  "hardnessTracked",
+  "bundledReport",
+  "autoCopyNightCrossCheck",
+] as const;
 
 // 약칭은 설비코드·보고서번호(DV-EX-IR-...)에 들어가는 값이라 형식을 지킨다.
 const SHORT_CODE_PATTERN = /^[A-Z0-9]{2,4}$/;
 const CODE_PATTERN = /^[A-Z][A-Z0-9_]*$/;
 
 export default function ProcessFormDrawer({ open, onClose, process }: Props) {
+  const { t } = useTranslation(["process", "common"]);
   const isEdit = !!process;
 
   const [code, setCode] = useState("");
@@ -79,7 +69,7 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
     setError(null);
 
     const trimmedLabel = label.trim();
-    if (!trimmedLabel) return setError("표시명을 입력하세요.");
+    if (!trimmedLabel) return setError(t("form.labelRequired"));
 
     const handlers = {
       onSuccess: () => onClose(),
@@ -90,10 +80,7 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
             ? (err.response?.data as { message?: string } | undefined)?.message
             : undefined;
         setError(
-          message ??
-            (isEdit
-              ? "공정 수정 중 오류가 발생했습니다."
-              : "공정 등록 중 오류가 발생했습니다."),
+          message ?? (isEdit ? t("form.updateError") : t("form.createError")),
         );
       },
     };
@@ -112,12 +99,9 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
 
     const upperCode = code.trim().toUpperCase();
     const upperShort = shortCode.trim().toUpperCase();
-    if (!CODE_PATTERN.test(upperCode))
-      return setError(
-        "코드는 영문 대문자로 시작하고 대문자·숫자·_ 만 사용합니다.",
-      );
+    if (!CODE_PATTERN.test(upperCode)) return setError(t("form.codeInvalid"));
     if (!SHORT_CODE_PATTERN.test(upperShort))
-      return setError("약칭은 영문 대문자·숫자 2~4자로 입력하세요.");
+      return setError(t("form.shortCodeInvalid"));
 
     create(
       { code: upperCode, shortCode: upperShort, label: trimmedLabel, ...flags },
@@ -125,14 +109,14 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
     );
   };
 
-  const title = isEdit ? "공정 수정" : "공정 등록";
+  const title = isEdit ? t("form.editTitle") : t("form.createTitle");
   const submitLabel = isEdit
     ? isPending
-      ? "수정 중..."
-      : "수정"
+      ? t("form.submittingUpdate")
+      : t("form.submitUpdate")
     : isPending
-      ? "등록 중..."
-      : "등록";
+      ? t("form.submittingCreate")
+      : t("form.submitCreate");
 
   return (
     <>
@@ -157,7 +141,7 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
           <button
             type="button"
             onClick={onClose}
-            aria-label="닫기"
+            aria-label={t("common:actions.close")}
             className="text-[#A8A8A8] transition-colors hover:text-[#212121]"
           >
             <Icon icon="mdi:close" width={22} height={22} />
@@ -170,7 +154,9 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
         >
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-[#212121]">코드</span>
+              <span className="text-sm font-medium text-[#212121]">
+                {t("form.code")}
+              </span>
               <input
                 type="text"
                 value={code}
@@ -181,7 +167,9 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-[#212121]">약칭</span>
+              <span className="text-sm font-medium text-[#212121]">
+                {t("form.shortCode")}
+              </span>
               <input
                 type="text"
                 value={shortCode}
@@ -194,43 +182,45 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
             </label>
           </div>
           <p className="-mt-3 text-xs text-[#6B7280]">
-            {isEdit
-              ? "코드와 약칭은 제품·설비·보고서가 참조하고 있어 수정할 수 없습니다."
-              : "등록 후에는 바꿀 수 없습니다. 약칭은 설비코드·보고서번호(DV-IJ-IR-...)에 쓰입니다."}
+            {isEdit ? t("form.codeNoteEdit") : t("form.codeNoteCreate")}
           </p>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[#212121]">표시명</span>
+            <span className="text-sm font-medium text-[#212121]">
+              {t("form.label")}
+            </span>
             <input
               type="text"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              placeholder="사출성형"
+              placeholder={t("form.labelPlaceholder")}
               className="h-11 rounded-lg border border-gray-300 px-3 text-sm focus:border-[#931B82] focus:outline-none"
             />
           </label>
 
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-[#212121]">공정 설정</span>
-            {FLAGS.map((f) => (
+            <span className="text-sm font-medium text-[#212121]">
+              {t("form.settings")}
+            </span>
+            {FLAG_KEYS.map((key) => (
               <label
-                key={f.key}
+                key={key}
                 className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-gray-200 px-3 py-2.5"
               >
                 <input
                   type="checkbox"
-                  checked={flags[f.key]}
+                  checked={flags[key]}
                   onChange={(e) =>
-                    setFlags((prev) => ({ ...prev, [f.key]: e.target.checked }))
+                    setFlags((prev) => ({ ...prev, [key]: e.target.checked }))
                   }
                   className="mt-0.5 h-4 w-4 shrink-0 accent-[#931B82]"
                 />
                 <span className="min-w-0">
                   <span className="block text-sm font-medium text-[#212121]">
-                    {f.label}
+                    {t(`form.flagOptions.${key}.label`)}
                   </span>
                   <span className="mt-0.5 block text-xs text-[#6B7280]">
-                    {f.hint}
+                    {t(`form.flagOptions.${key}.hint`)}
                   </span>
                 </span>
               </label>
@@ -247,11 +237,10 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
               />
               <span className="min-w-0">
                 <span className="block text-sm font-medium text-[#212121]">
-                  사용 중
+                  {t("form.active")}
                 </span>
                 <span className="mt-0.5 block text-xs text-[#6B7280]">
-                  해제하면 제품·설비 등록 선택지에서 숨겨집니다. 이미 이 공정으로
-                  등록된 제품·보고서는 그대로 유지됩니다.
+                  {t("form.activeHint")}
                 </span>
               </span>
             </label>
@@ -269,7 +258,7 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
               onClick={onClose}
               className="h-11 flex-1 rounded-lg border border-gray-300 text-sm font-medium text-[#212121] transition-colors hover:bg-gray-50"
             >
-              취소
+              {t("common:actions.cancel")}
             </button>
             <button
               type="submit"
