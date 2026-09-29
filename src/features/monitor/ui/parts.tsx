@@ -458,18 +458,20 @@ export function Meter({
   total,
   color,
   width = 120,
+  height = 8,
 }: {
   value: number;
   total: number;
   color: string;
   width?: number | string;
+  height?: number;
 }) {
   const ratio = total > 0 ? Math.min(1, Math.max(0, value / total)) : 0;
   return (
     <span
       aria-hidden
       className="inline-block shrink-0 overflow-hidden rounded-full align-middle"
-      style={{ width, height: 8, backgroundColor: T.neutral.border }}
+      style={{ width, height, backgroundColor: T.neutral.border }}
     >
       <span
         className="block h-full rounded-full"

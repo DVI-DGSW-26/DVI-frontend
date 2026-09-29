@@ -56,8 +56,11 @@ function qualityLevel(ngCount: number, rate: number | null): QualityLevel {
 
 /** 불량 한 줄 높이(px) — 한 페이지 줄 수를 이 값으로 나눠 구하므로 실제로 이 높이여야 한다. */
 const DEFECT_ROW_HEIGHT = 88;
-/** 조기종료 한 줄 높이(px). */
-const TERMINATED_ROW_HEIGHT = 76;
+/**
+ * 조기종료 한 줄 높이(px).
+ * 사유가 이 줄의 알맹이다 — 두 줄까지 접히게 잡아 둔다.
+ */
+const TERMINATED_ROW_HEIGHT = 108;
 
 export default function QualityBoard({
   board,
@@ -146,7 +149,9 @@ export default function QualityBoard({
         />
       </div>
 
-      <main className="grid min-h-0 flex-1 grid-cols-[1fr_23rem] gap-4 px-6 pb-6">
+      {/* 오른쪽 열은 "무슨 유형이 몰리나"와 "어떻게 조치했나"를 맡는다 — 목록만큼
+          중요한 정보라 폭을 넉넉히 준다. */}
+      <main className="grid min-h-0 flex-1 grid-cols-[1fr_27rem] gap-4 px-6 pb-6">
         <Card>
           <CardHead
             title="불량 항목"
@@ -326,7 +331,7 @@ function TypeBreakdown({
   return (
     <Card>
       <CardHead title="불량 유형" />
-      <div className="flex flex-col gap-3 px-6 pb-5">
+      <div className="flex flex-col gap-4 px-6 pb-6">
         {types.map((t) => {
           const s = defectStyle(t);
           const n = counts[t];
@@ -334,7 +339,7 @@ function TypeBreakdown({
             <div key={t} className="flex items-center gap-3">
               <span
                 aria-hidden
-                className="flex size-7 shrink-0 items-center justify-center rounded text-base font-bold"
+                className="flex size-9 shrink-0 items-center justify-center rounded text-xl font-bold"
                 style={{
                   backgroundColor: n > 0 ? T.error[700] : T.neutral.sub,
                   color: n > 0 ? T.neutral.white : T.neutral.muted,
@@ -342,17 +347,18 @@ function TypeBreakdown({
               >
                 {s.mark}
               </span>
-              <span className="w-24 shrink-0 text-lg">{s.name}</span>
+              <span className="w-28 shrink-0 text-xl">{s.name}</span>
               <span className="min-w-0 flex-1">
                 <Meter
                   value={n}
                   total={total}
                   color={n > 0 ? T.error[700] : T.neutral.border}
                   width="100%"
+                  height={12}
                 />
               </span>
               <span
-                className="w-8 shrink-0 text-right text-xl font-bold tabular-nums"
+                className="w-10 shrink-0 text-right text-3xl font-bold tabular-nums"
                 style={{ color: n > 0 ? T.error[700] : T.neutral.muted }}
               >
                 {n}
@@ -400,14 +406,14 @@ function TerminatedCard({
           {page.visible.map((t) => (
           <div
             key={`${t.inspectionId}-${t.at}`}
-            className="flex flex-col justify-center overflow-hidden"
+            className="flex flex-col justify-center gap-1 overflow-hidden"
             style={{
               height: TERMINATED_ROW_HEIGHT,
               borderTop: `1px solid ${T.neutral.border}`,
             }}
           >
             <div className="flex items-baseline gap-2">
-              <span className="truncate text-lg font-bold">
+              <span className="truncate text-xl font-bold">
                 {t.productName}
               </span>
               <span
@@ -423,17 +429,19 @@ function TerminatedCard({
                 {formatElapsed(t.at, now)}
               </span>
             </div>
-            <div className="flex items-baseline gap-2">
-              <span className="shrink-0 text-base" style={{ color: T.inkSub }}>
-                {t.workerName}
-              </span>
-              <span
-                className="truncate text-base"
-                style={{ color: T.warning[700] }}
-                title={t.reason ?? undefined}
-              >
-                {t.reason || "사유 없음"}
-              </span>
+            {/*
+              사유가 이 줄에서 가장 중요한 내용이다 — 불량이 났을 때 무엇을 했는지가
+              여기 적힌다. 제품명만큼 크게 두고 두 줄까지 펼친다.
+            */}
+            <div
+              className="line-clamp-2 text-lg leading-snug font-bold"
+              style={{ color: T.warning[700] }}
+              title={t.reason ?? undefined}
+            >
+              {t.reason || "사유 없음"}
+            </div>
+            <div className="text-base" style={{ color: T.inkSub }}>
+              {t.workerName}
             </div>
             </div>
           ))}
