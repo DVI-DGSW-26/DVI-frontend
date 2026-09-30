@@ -14,6 +14,7 @@ import {
   getMe,
   login as loginApi,
   tokenStorage,
+  updateMyLanguage,
 } from "./api";
 import { stopWebPush } from "../notification/lib/webPush";
 import type { PushSession } from "../notification/api/pushTokenApi";
@@ -135,6 +136,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     refresh().finally(() => setLoading(false));
   }, [refresh]);
+
+  // 화면 언어(이 기기에서 고른 값)를 서버에도 맞춘다 — 서버가 보내는 에러·알림 문구가
+  // 그 언어로 온다. 로그인·계정 전환 때 한 번, 그리고 언어를 바꿀 때마다.
+  // 언어가 바뀌면 받아 둔 데이터도 새로 받는다: 서버 문구와 DB 값 번역(dataDictionary)이
+  // 언어에 따라 달라진다.
+  useEffect(() => {
+    if (!user) return;
+    const toServer = (lng: string) => (lng.startsWith("ko") ? "ko" : "en");
+    let sent = user.language ?? null;
+    const sync = async () => {
+      const lang = toServer(i18n.language ?? "ko");
+      if (sent === lang) return;
+      sent = lang;
+      await updateMyLanguage(lang);
+    };
+    // 서버 언어가 바뀐 뒤에 다시 받아야 서버 문구도 새 언어로 온다.
+    const onChange = () => {
+      void sync().then(() => queryClient.invalidateQueries());
+    };
+    void sync();
+    i18n.on("languageChanged", onChange);
+    return () => i18n.off("languageChanged", onChange);
+  }, [user, queryClient]);
 
   const login = useCallback(
     async (body: LoginRequest, persist?: boolean) => {

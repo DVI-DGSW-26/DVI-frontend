@@ -1,12 +1,14 @@
 import i18n from "../../../lib/i18n";
 
+const HANGUL = /[가-힣]/;
+
 /**
  * 알림 제목·본문을 앱 언어로.
  *
- * 서버는 알림을 한국어 문장으로 만들어 보낸다. 영어 화면에서는 알림 종류(type)로
- * 고정 문구를 대신 쓴다 — 제품·설비는 화면이 따로 태그로 보여주므로 본문에서 빠져도
- * 된다. 모르는 종류이거나 한국어 화면이면 서버 문장을 그대로 쓴다.
- * (서버가 알림을 "종류 코드 + 값"으로 바꿔 주면 그 값으로 문장을 만든다.)
+ * 서버는 받는 사람의 언어(PATCH /user/me/language)로 알림 문장을 만들어 보낸다.
+ * 다만 언어를 영어로 바꾸기 전에 만들어진 알림은 한국어로 남아 있다 — 영어 화면에서
+ * 한국어가 섞인 알림만 종류(type)별 고정 문구로 대신 쓴다. 제품·설비는 화면이 따로
+ * 태그로 보여주므로 본문에서 빠져도 된다.
  */
 export function notificationText(n: {
   type?: string | null;
@@ -14,6 +16,9 @@ export function notificationText(n: {
   content: string;
 }): { title: string; content: string } {
   if (i18n.language?.startsWith("ko") || !n.type) {
+    return { title: n.title, content: n.content };
+  }
+  if (!HANGUL.test(n.title) && !HANGUL.test(n.content)) {
     return { title: n.title, content: n.content };
   }
   const key = `types.${n.type}`;
