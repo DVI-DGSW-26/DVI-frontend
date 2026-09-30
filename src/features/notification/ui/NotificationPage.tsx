@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import i18n from "../../../lib/i18n";
 import {
   useMarkAllAsRead,
   useMarkAsRead,
@@ -45,9 +47,12 @@ function getGroupLabel(createdAt: string): string {
   const created = parseServerDate(createdAt);
   const now = new Date();
   const diffDays = Math.floor((startOfDay(now) - startOfDay(created)) / 86_400_000);
-  if (diffDays <= 0) return "오늘";
-  if (diffDays === 1) return "어제";
-  return `${created.getMonth() + 1}월 ${created.getDate()}일`;
+  if (diffDays <= 0) return i18n.t("notification:time.today");
+  if (diffDays === 1) return i18n.t("notification:time.yesterday");
+  return i18n.t("notification:time.monthDay", {
+    month: created.getMonth() + 1,
+    day: created.getDate(),
+  });
 }
 
 function formatTime(createdAt: string): string {
@@ -58,20 +63,30 @@ function formatTime(createdAt: string): string {
   const sameDay = startOfDay(now) === startOfDay(created);
 
   if (sameDay) {
-    if (diffMin < 1) return "방금 전";
-    if (diffMin < 60) return `${diffMin}분 전`;
-    return `${Math.floor(diffMin / 60)}시간 전`;
+    if (diffMin < 1) return i18n.t("notification:time.justNow");
+    if (diffMin < 60) return i18n.t("notification:time.minutesAgo", { n: diffMin });
+    return i18n.t("notification:time.hoursAgo", { n: Math.floor(diffMin / 60) });
   }
 
   const hours = created.getHours();
   const minutes = String(created.getMinutes()).padStart(2, "0");
-  const ampm = hours < 12 ? "오전" : "오후";
+  const ampm =
+    hours < 12
+      ? i18n.t("notification:time.am")
+      : i18n.t("notification:time.pm");
   const h12 = hours % 12 === 0 ? 12 : hours % 12;
-  const dayPrefix =
-    startOfDay(now) - startOfDay(created) === 86_400_000
-      ? "어제 "
-      : `${created.getMonth() + 1}월 ${created.getDate()}일 `;
-  return `${dayPrefix}${ampm} ${h12}:${minutes}`;
+  const time = i18n.t("notification:time.clock", {
+    ampm,
+    h: h12,
+    mm: minutes,
+  });
+  return startOfDay(now) - startOfDay(created) === 86_400_000
+    ? i18n.t("notification:time.yesterdayAt", { time })
+    : i18n.t("notification:time.monthDayAt", {
+        month: created.getMonth() + 1,
+        day: created.getDate(),
+        time,
+      });
 }
 
 function groupByDay(items: NotificationResponse[]) {
@@ -89,6 +104,7 @@ function groupByDay(items: NotificationResponse[]) {
 // (사파리는 제스처 없으면 그냥 거부) 자동 요청 대신 버튼으로 받는다.
 // 이미 허용했거나 거부한 사용자에게는 보이지 않는다.
 function WebNotificationPrompt() {
+  const { t } = useTranslation("notification");
   const [permission, setPermission] = useState<WebNotificationPermission>(
     webNotificationPermission,
   );
@@ -101,11 +117,13 @@ function WebNotificationPrompt() {
         <Icon icon="mdi:bell-ring" width={20} height={20} color="#931B82" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-[#212121]">알림 받기</p>
+        <p className="text-sm font-semibold text-[#212121]">
+          {t("permission.title")}
+        </p>
         <p className="mt-0.5 text-xs text-[#A8A8A8]">
           {isWebPushConfigured
-            ? "허용하면 앱을 닫아둔 동안에도 새 알림을 받습니다."
-            : "허용하면 다른 화면을 보고 있어도 새 알림이 표시됩니다."}
+            ? t("permission.descPush")
+            : t("permission.descTab")}
         </p>
       </div>
       <button
@@ -113,13 +131,14 @@ function WebNotificationPrompt() {
         onClick={async () => setPermission(await enableWebPush())}
         className="shrink-0 rounded-md bg-[#931B82] px-3 py-1.5 text-sm font-medium text-white"
       >
-        허용
+        {t("permission.allow")}
       </button>
     </div>
   );
 }
 
 const NotificationPage = () => {
+  const { t } = useTranslation("notification");
   const navigate = useNavigate();
   const {
     data,
@@ -156,20 +175,24 @@ const NotificationPage = () => {
             disabled={markAllAsRead.isPending || items.length === 0}
             className="text-sm font-medium text-[#931B82] disabled:text-[#A8A8A8] disabled:opacity-50"
           >
-            모두 읽음
+            {t("page.markAllRead")}
           </button>
         </div>
 
         {isLoading && (
-          <p className="py-10 text-center text-sm text-[#A8A8A8]">불러오는 중...</p>
+          <p className="py-10 text-center text-sm text-[#A8A8A8]">
+            {t("status.loading", { ns: "common" })}
+          </p>
         )}
         {isError && (
           <p className="py-10 text-center text-sm text-[#EF4444]">
-            알림을 불러오지 못했습니다.
+            {t("page.loadFailed")}
           </p>
         )}
         {!isLoading && !isError && items.length === 0 && (
-          <p className="py-10 text-center text-sm text-[#A8A8A8]">알림이 없습니다.</p>
+          <p className="py-10 text-center text-sm text-[#A8A8A8]">
+            {t("page.empty")}
+          </p>
         )}
 
         {groups.map((group) => (
@@ -211,12 +234,14 @@ const NotificationPage = () => {
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {item.productName && (
                             <span className="rounded-md bg-[#F3E8FF] px-2 py-0.5 text-[11px] font-medium text-[#931B82]">
-                              제품 · {item.productName}
+                              {t("page.productTag", { name: item.productName })}
                             </span>
                           )}
                           {item.equipmentName && (
                             <span className="rounded-md bg-[#F3F4F6] px-2 py-0.5 text-[11px] font-medium text-[#6B7280]">
-                              설비 · {item.equipmentName}
+                              {t("page.equipmentTag", {
+                                name: item.equipmentName,
+                              })}
                             </span>
                           )}
                         </div>
@@ -236,7 +261,9 @@ const NotificationPage = () => {
             disabled={isFetchingNextPage}
             className="rounded-xl border border-gray-200 bg-white py-3 text-sm font-medium text-[#6B7280] transition-colors hover:border-[#931B82] hover:text-[#931B82] disabled:opacity-50"
           >
-            {isFetchingNextPage ? "불러오는 중..." : "이전 알림 더 보기"}
+            {isFetchingNextPage
+              ? t("status.loading", { ns: "common" })
+              : t("page.loadMore")}
           </button>
         )}
       </div>

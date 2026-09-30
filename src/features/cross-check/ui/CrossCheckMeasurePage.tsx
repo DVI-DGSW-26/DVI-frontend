@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useAuth } from "../../auth/AuthContext";
 import type { ApiErrorData, StepResult } from "../../inspection/type/types";
 import {
@@ -74,6 +76,8 @@ function isWithinTolerance(
 }
 
 export default function CrossCheckMeasurePage() {
+  const { t } = useTranslation("crossCheck");
+  const { t: tCommon } = useTranslation("common");
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams<{ crossCheckId: string }>();
@@ -198,7 +202,7 @@ export default function CrossCheckMeasurePage() {
   if (detailQuery.isLoading || (!detail && !detailQuery.isError)) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
-        불러오는 중...
+        {tCommon("status.loading")}
       </div>
     );
   }
@@ -207,14 +211,14 @@ export default function CrossCheckMeasurePage() {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
         <div className="text-sm font-medium text-[#212121]">
-          순회검사 정보를 찾을 수 없습니다.
+          {t("measure.notFound")}
         </div>
         <button
           type="button"
           onClick={() => navigate("/")}
           className="mt-4 h-10 rounded-md bg-[#931B82] px-4 text-sm font-medium text-white hover:bg-[#6A0F5D]"
         >
-          홈으로 가기
+          {t("goHome")}
         </button>
       </div>
     );
@@ -224,7 +228,7 @@ export default function CrossCheckMeasurePage() {
   if (allDone && !editMode) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
-        결과 화면으로 이동 중...
+        {t("measure.movingToResult")}
       </div>
     );
   }
@@ -350,7 +354,7 @@ export default function CrossCheckMeasurePage() {
     ]);
 
     if (imageRes.status === "rejected") {
-      setToast(toErrorMessage(imageRes.reason));
+      setToast(toErrorMessage(imageRes.reason, t));
       setCroppedBlob(null);
       setPhase("crop");
       setIsPreparing(false);
@@ -421,7 +425,7 @@ export default function CrossCheckMeasurePage() {
 
       advanceToNextStep();
     } catch (err) {
-      setToast(toErrorMessage(err));
+      setToast(toErrorMessage(err, t));
     }
   };
 
@@ -434,7 +438,7 @@ export default function CrossCheckMeasurePage() {
         results: [{ resultId: currentDim.resultId, skipped: true }],
       });
     } catch (err) {
-      setToast(toErrorMessage(err));
+      setToast(toErrorMessage(err, t));
       return;
     }
     const next: StepResult = {
@@ -475,7 +479,7 @@ export default function CrossCheckMeasurePage() {
       // 반려 시 자주검사가 작업자에게 되돌아가고 이 순회검사는 종료됨 → 목록으로.
       navigate("/cross-checks", { replace: true });
     } catch (err) {
-      setToast(toErrorMessage(err));
+      setToast(toErrorMessage(err, t));
     }
   };
 
@@ -489,7 +493,7 @@ export default function CrossCheckMeasurePage() {
       navigate("/cross-checks", { replace: true });
     } catch (err) {
       // 실패해도 모달은 열어둔다 — 사유를 읽고 "닫기"로 측정을 이어갈 수 있게.
-      setCancelError(toCancelErrorMessage(err));
+      setCancelError(toCancelErrorMessage(err, t));
     }
   };
 
@@ -505,7 +509,7 @@ export default function CrossCheckMeasurePage() {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
         <div className="text-sm font-medium text-[#212121]">
-          측정할 항목이 없습니다.
+          {t("measure.noItems")}
         </div>
       </div>
     );
@@ -542,13 +546,13 @@ export default function CrossCheckMeasurePage() {
             />
             <div className="min-w-0">
               <div className="text-xs font-semibold text-[#B91C1C]">
-                이전 결재 반려 사유
+                {t("measure.prevRejectReason")}
               </div>
               <div className="mt-0.5 whitespace-pre-wrap text-sm text-[#212121]">
                 {detail.rejectReason}
               </div>
               <div className="mt-1 text-[11px] text-[#6B7280]">
-                해당 항목을 수정한 뒤 다시 결재 요청해주세요.
+                {t("measure.fixAndResubmit")}
               </div>
             </div>
           </div>
@@ -566,11 +570,10 @@ export default function CrossCheckMeasurePage() {
             />
             <div className="min-w-0 flex-1">
               <div className="text-xs font-semibold text-[#B91C1C]">
-                자주검사 외관 NG
+                {t("measure.productionNg")}
               </div>
               <div className="mt-0.5 text-[11px] text-[#6B7280]">
-                측정 없이 바로 반려할 수 있어요. 반려 시 작업자에게 재측정
-                요청이 전달됩니다.
+                {t("measure.productionNgHint")}
               </div>
             </div>
             <button
@@ -578,7 +581,7 @@ export default function CrossCheckMeasurePage() {
               onClick={() => setShowRejectModal(true)}
               className="h-9 shrink-0 rounded-md bg-[#EF4444] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#DC2626]"
             >
-              바로 반려
+              {t("measure.rejectNow")}
             </button>
           </div>
         </section>
@@ -587,7 +590,7 @@ export default function CrossCheckMeasurePage() {
       <section className="border-b border-gray-200 bg-white px-4 py-4">
         <div className="mb-2 flex items-center justify-between">
           <span className="text-sm font-semibold text-[#212121]">
-            순회검사 측정
+            {t("measure.title")}
           </span>
           <div className="flex items-center gap-2">
             <button
@@ -598,28 +601,31 @@ export default function CrossCheckMeasurePage() {
               }}
               className="h-8 rounded-md border border-[#D1D5DB] px-3 text-xs font-semibold text-[#6B7280] transition-colors hover:bg-[#F3F4F6]"
             >
-              취소
+              {tCommon("actions.cancel")}
             </button>
             <button
               type="button"
               onClick={() => setShowRejectModal(true)}
               className="h-8 rounded-md border border-[#EF4444] px-3 text-xs font-semibold text-[#EF4444] transition-colors hover:bg-[#FEF2F2]"
             >
-              반려
+              {t("measure.reject")}
             </button>
           </div>
         </div>
-        <InfoRow label="기계명" value={detail.equipment.name} />
-        <InfoRow label="검사 차수" value={detail.typeLabel} />
+        <InfoRow label={t("label.machine")} value={detail.equipment.name} />
+        <InfoRow label={t("label.round")} value={detail.typeLabel} />
         <InfoRow
-          label="검사 시작일"
+          label={t("label.inspectionStartDate")}
           value={formatDate(inspectionDetailQuery.data?.createdAt ?? detail.createdAt)}
         />
         <div className="mt-2 flex flex-col gap-2">
-          <Stat label="제품명" value={detail.product.name} />
+          <Stat label={t("label.product")} value={detail.product.name} />
           <div className="grid grid-cols-2 gap-2">
-            <Stat label="자주검사자" value={productionInspectorName} />
-            <Stat label="순회검사자" value={user?.name ?? "-"} />
+            <Stat
+              label={t("label.productionInspector")}
+              value={productionInspectorName}
+            />
+            <Stat label={t("label.patrolInspector")} value={user?.name ?? "-"} />
           </div>
         </div>
       </section>
@@ -660,14 +666,14 @@ export default function CrossCheckMeasurePage() {
       <section className="px-4 pt-4">
         <div className="rounded-xl border border-gray-200 bg-white p-4">
           <div className="text-xs font-medium text-[#6B7280]">
-            자주검사 측정값 (참고)
+            {t("measure.productionRef")}
           </div>
 
           {currentDim.productionImageUrl ? (
             <div className="mt-2 overflow-hidden rounded-lg border border-gray-200 bg-[#F9FAFB]">
               <img
                 src={toBackendImageUrl(currentDim.productionImageUrl)}
-                alt={`DIM ${currentDim.dimNo} 자주검사 사진`}
+                alt={t("measure.productionPhotoAlt", { n: currentDim.dimNo })}
                 className="block aspect-square w-full object-contain"
               />
             </div>
@@ -680,13 +686,15 @@ export default function CrossCheckMeasurePage() {
                 className="text-[#9CA3AF]"
               />
               <span className="mt-2 text-xs font-medium">
-                자주검사 사진 없음
+                {t("measure.noProductionPhoto")}
               </span>
             </div>
           )}
 
           <div className="mt-3 flex items-baseline justify-between rounded-lg bg-[#F9FAFB] px-3 py-2">
-            <span className="text-xs text-[#6B7280]">작업자 측정값</span>
+            <span className="text-xs text-[#6B7280]">
+              {t("measure.workerValue")}
+            </span>
             <span className={`text-base font-semibold ${productionValueColor}`}>
               {currentDim.productionValue ?? "-"}
             </span>
@@ -696,7 +704,7 @@ export default function CrossCheckMeasurePage() {
 
       <section className="flex-1 px-4 pt-4">
         <h3 className="mb-2 text-xs font-medium text-[#6B7280]">
-          순회검사 측정
+          {t("measure.title")}
         </h3>
 
         {phase === "capture" && (
@@ -784,16 +792,15 @@ export default function CrossCheckMeasurePage() {
             className="w-full max-w-sm rounded-t-2xl bg-white p-5 sm:rounded-2xl"
           >
             <h3 className="text-base font-semibold text-[#212121]">
-              순회검사 반려
+              {t("measure.rejectModal.title")}
             </h3>
             <p className="mt-1 text-xs text-[#6B7280]">
-              측정 없이 바로 반려합니다. 자주검사가 작업자에게 되돌아가 재측정을
-              요청합니다.
+              {t("measure.rejectModal.body")}
             </p>
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="반려 사유 (예: DIM1 외관 NG 확인됨)"
+              placeholder={t("measure.rejectModal.placeholder")}
               rows={3}
               disabled={rejectMut.isPending}
               className="mt-3 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
@@ -805,7 +812,7 @@ export default function CrossCheckMeasurePage() {
                 disabled={rejectMut.isPending}
                 className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-60"
               >
-                취소
+                {tCommon("actions.cancel")}
               </button>
               <button
                 type="button"
@@ -813,7 +820,9 @@ export default function CrossCheckMeasurePage() {
                 disabled={rejectMut.isPending || rejectReason.trim() === ""}
                 className="h-11 flex-1 rounded-md bg-[#EF4444] text-sm font-semibold text-white transition-colors hover:bg-[#DC2626] disabled:bg-[#D1D5DB]"
               >
-                {rejectMut.isPending ? "처리 중..." : "반려 확정"}
+                {rejectMut.isPending
+                  ? t("measure.rejectModal.processing")
+                  : t("measure.rejectModal.confirm")}
               </button>
             </div>
           </div>
@@ -832,12 +841,10 @@ export default function CrossCheckMeasurePage() {
             className="w-full max-w-sm rounded-t-2xl bg-white p-5 sm:rounded-2xl"
           >
             <h3 className="text-base font-semibold text-[#212121]">
-              순회검사 취소
+              {t("measure.cancelModal.title")}
             </h3>
             <p className="mt-1 text-xs text-[#6B7280]">
-              자주검사자를 잘못 선택했나요? 취소하면 이 순회검사의 담당이 해제되어
-              다른 검사자가 이어받을 수 있습니다. 입력한 측정값은 보존되며, 반려와
-              달리 작업자에게 재측정 요청이 가지 않습니다.
+              {t("measure.cancelModal.body")}
             </p>
             {cancelError && (
               <p className="mt-3 rounded-md bg-[#FEF2F2] px-3 py-2 text-xs font-medium text-[#B91C1C]">
@@ -851,7 +858,7 @@ export default function CrossCheckMeasurePage() {
                 disabled={cancelMut.isPending}
                 className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-60"
               >
-                닫기
+                {tCommon("actions.close")}
               </button>
               <button
                 type="button"
@@ -859,7 +866,9 @@ export default function CrossCheckMeasurePage() {
                 disabled={cancelMut.isPending}
                 className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
               >
-                {cancelMut.isPending ? "취소 중..." : "취소 확정"}
+                {cancelMut.isPending
+                  ? t("measure.cancelModal.canceling")
+                  : t("measure.cancelModal.confirm")}
               </button>
             </div>
           </div>
@@ -893,11 +902,11 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function toErrorMessage(err: unknown): string {
+function toErrorMessage(err: unknown, t: TFunction<"crossCheck">): string {
   if (err instanceof AxiosError) {
     const data = err.response?.data as ApiErrorData | undefined;
-    return data?.message ?? "요청 처리 중 오류가 발생했습니다.";
+    return data?.message ?? t("errors.requestFailed");
   }
   if (err instanceof Error) return err.message;
-  return "알 수 없는 오류가 발생했습니다.";
+  return t("errors.unknown");
 }

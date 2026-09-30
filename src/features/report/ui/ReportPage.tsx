@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import Select, { type StylesConfig } from "react-select";
 import AdminReportCard from "./AdminReportCard";
 import { useReportList } from "../api";
@@ -69,6 +70,7 @@ const filterSelectStyles: StylesConfig<Option, false> = {
 };
 
 export default function ReportPage() {
+  const { t } = useTranslation("report");
   const { data: reports = [], isLoading, isError } = useReportList();
   const { data: equipment = [] } = useEquipmentList();
   const { data: products = [] } = useProductList();
@@ -180,12 +182,12 @@ export default function ReportPage() {
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="이름으로 검색 (고객사 / 제품 / 설비 / 작업자 / 검사자 / 승인자)"
+              placeholder={t("list.searchPlaceholder")}
               className="h-10 w-full rounded-lg bg-white pl-3 pr-16 text-sm focus:outline-none"
             />
             <button
               type="submit"
-              aria-label="검색"
+              aria-label={t("list.searchButton")}
               className="absolute right-1 top-1 flex h-8 w-12 items-center justify-center rounded-md bg-[#931B82] text-white transition-colors hover:bg-[#6A0F5D]"
             >
               <Icon icon="tabler:search" width={18} height={18} />
@@ -214,7 +216,7 @@ export default function ReportPage() {
               value={draftEquipment}
               onChange={(opt) => setDraftEquipment(opt)}
               options={equipmentOptions}
-              placeholder="설비 전체"
+              placeholder={t("filters.equipmentAll")}
               isClearable
               styles={filterSelectStyles}
             />
@@ -225,7 +227,7 @@ export default function ReportPage() {
               value={draftProduct}
               onChange={(opt) => setDraftProduct(opt)}
               options={productOptions}
-              placeholder="제품 전체"
+              placeholder={t("filters.productAll")}
               isClearable
               styles={filterSelectStyles}
             />
@@ -237,14 +239,14 @@ export default function ReportPage() {
               onClick={handleApply}
               className="h-9 rounded-full bg-[#931B82] px-7 text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D]"
             >
-              적용
+              {t("filters.apply")}
             </button>
             <button
               type="button"
               onClick={handleReset}
               className="h-9 rounded-full border border-[#931B82] bg-white px-7 text-sm font-medium text-[#931B82] transition-colors hover:bg-[#F3E8F7]"
             >
-              초기화
+              {t("filters.reset")}
             </button>
           </div>
         </div>
@@ -252,21 +254,19 @@ export default function ReportPage() {
 
       {isLoading && (
         <div className="rounded-xl border border-[#F0F1F4] bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-          불러오는 중...
+          {t("list.loading")}
         </div>
       )}
 
       {isError && (
         <div className="rounded-xl border border-[#F0F1F4] bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
-          목록을 불러오지 못했습니다.
+          {t("list.error")}
         </div>
       )}
 
       {!isLoading && !isError && filtered.length === 0 && (
         <div className="rounded-xl border border-[#F0F1F4] bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-          {hasAppliedFilter
-            ? "조건에 맞는 보고서가 없습니다."
-            : "발행된 보고서가 없습니다."}
+          {hasAppliedFilter ? t("list.emptyFiltered") : t("list.emptyNoReports")}
         </div>
       )}
 

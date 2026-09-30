@@ -2,6 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
+// i18n 초기화 — 컴포넌트가 useTranslation 을 쓰기 전에 로드돼야 한다
+import './lib/i18n'
 import App from './App.tsx'
 import { installAuthInterceptors } from './features/auth/api'
 import { installInspectionMocks } from './features/inspection/api/mockInterceptor'

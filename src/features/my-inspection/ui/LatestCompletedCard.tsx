@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { MyInspection } from "../type/types";
 
 interface Props {
@@ -17,6 +18,7 @@ export default function LatestCompletedCard({
   onStartNext,
   isStartingNext,
 }: Props) {
+  const { t } = useTranslation("myInspection");
   return (
     <div className="rounded-xl border border-[#931B82]/25 bg-white p-4 shadow-sm ring-1 ring-[#931B82]/10">
       <div className="mt-2 wrap-break-word text-base font-semibold text-[#212121]">
@@ -27,9 +29,15 @@ export default function LatestCompletedCard({
       </div>
 
       <div className="mt-2 flex items-center gap-1.5 text-xs text-[#6B7280]">
-        <span>{previous.typeLabel || previous.type} 완료</span>
+        <span>
+          {t("latestCard.typeCompleted", {
+            type: previous.typeLabel || previous.type,
+          })}
+        </span>
         <span className="text-[#D1D5DB]">›</span>
-        <span className="font-medium text-[#931B82]">{nextType} 시작</span>
+        <span className="font-medium text-[#931B82]">
+          {t("latestCard.typeStart", { type: nextType })}
+        </span>
       </div>
 
       <button
@@ -38,7 +46,7 @@ export default function LatestCompletedCard({
         disabled={isStartingNext}
         className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
       >
-        {isStartingNext ? "시작 중..." : "다음 검사 바로 시작"}
+        {isStartingNext ? t("latestCard.starting") : t("latestCard.startNextNow")}
       </button>
     </div>
   );

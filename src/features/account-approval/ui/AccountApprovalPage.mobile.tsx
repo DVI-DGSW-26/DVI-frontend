@@ -1,12 +1,12 @@
 import { useMemo } from "react";
 import { AxiosError } from "axios";
+import { useTranslation } from "react-i18next";
 import {
   useApprovalUsers,
   useApproveUser,
 } from "../model/useApprovalUsers";
 import {
-  DEPARTMENT_LABEL,
-  ROLE_LABEL,
+  DEPARTMENT_LABEL_KEY,
   STATUS_BADGE,
 } from "../../user-search/lib/userLabels";
 import type { UserDetail } from "../../user-search/api/types";
@@ -24,6 +24,7 @@ function formatDate(iso: string) {
 }
 
 const AccountApprovalPageMobile = () => {
+  const { t } = useTranslation("accountApproval");
   const { data: users = [], isLoading, isError } = useApprovalUsers();
   const { mutate: approve, isPending, variables } = useApproveUser();
 
@@ -55,11 +56,11 @@ const AccountApprovalPageMobile = () => {
           const code = (err.response?.data as { code?: string } | undefined)
             ?.code;
           if (code === "ALREADY_DECIDED") {
-            alert("이미 처리된 계정입니다.");
+            alert(t("page.alreadyDecided"));
             return;
           }
         }
-        alert("처리 중 오류가 발생했습니다.");
+        alert(t("page.approveError"));
       },
     });
   };
@@ -76,7 +77,7 @@ const AccountApprovalPageMobile = () => {
               : "border-transparent text-[#A8A8A8]"
           }`}
         >
-          대기 {pending.length}
+          {t("page.tabPending", { n: pending.length })}
         </button>
         <button
           type="button"
@@ -87,36 +88,40 @@ const AccountApprovalPageMobile = () => {
               : "border-transparent text-[#A8A8A8]"
           }`}
         >
-          완료
+          {t("page.tabCompleted")}
         </button>
       </nav>
 
       <div className="flex flex-col gap-3 px-4">
         {isLoading && (
           <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-            불러오는 중...
+            {t("status.loading", { ns: "common" })}
           </p>
         )}
 
         {isError && (
           <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
-            목록을 불러오지 못했습니다.
+            {t("page.loadFailed")}
           </p>
         )}
 
         {!isLoading && !isError && list.length === 0 && (
           <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
             {tab === "PENDING"
-              ? "대기 중인 가입 요청이 없습니다."
-              : "완료된 가입 요청이 없습니다."}
+              ? t("page.emptyPending")
+              : t("page.emptyCompleted")}
           </p>
         )}
 
         {!isLoading && !isError && list.length > 0 && (
           <ul className="flex flex-col gap-3">
             {list.map((u) => {
-              const dept = DEPARTMENT_LABEL[u.role] ?? "—";
-              const role = ROLE_LABEL[u.role] ?? "—";
+              const deptKey = DEPARTMENT_LABEL_KEY[u.role];
+              const dept = deptKey ? t(deptKey, { ns: "userSearch" }) : "—";
+              const role = t(`roles.${u.role}`, {
+                ns: "common",
+                defaultValue: "—",
+              });
               const badge = STATUS_BADGE[u.status];
               const processing = isPending && variables === u.id;
               const initial = u.name?.charAt(0) ?? "?";
@@ -137,7 +142,9 @@ const AccountApprovalPageMobile = () => {
                       {dept} · {role}
                     </p>
                     <p className="text-xs text-[#A8A8A8]">
-                      신청: {formatDate(u.createdAt)}
+                      {t("page.requestedAt", {
+                        date: formatDate(u.createdAt),
+                      })}
                     </p>
 
                     {/* 반려 버튼은 두지 않는다 — 승인하지 않으면 대기 상태로 남는 것으로 충분. */}
@@ -149,7 +156,9 @@ const AccountApprovalPageMobile = () => {
                           disabled={processing}
                           className="flex-1 rounded-lg bg-[#931B82] py-2 text-sm font-medium text-white disabled:opacity-40"
                         >
-                          {processing ? "처리 중..." : "승인"}
+                          {processing
+                            ? t("page.approving")
+                            : t("page.approve")}
                         </button>
                       </div>
                     ) : (
@@ -162,7 +171,7 @@ const AccountApprovalPageMobile = () => {
                             className="inline-block h-2 w-2 rounded-full"
                             style={{ backgroundColor: badge.color }}
                           />
-                          {badge.label}
+                          {t(badge.labelKey, { ns: "userSearch" })}
                         </span>
                       )
                     )}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { recheckServerNow, useServerStatus } from "../../lib/serverStatus";
 
 /**
@@ -48,6 +49,7 @@ function CheckIcon() {
 const RECOVERED_NOTICE_MS = 4000;
 
 export default function ServerStatusOverlay() {
+  const { t } = useTranslation("shared");
   const { status, probing, nextRetryAt } = useServerStatus();
   const [dismissed, setDismissed] = useState(false);
   const [recovered, setRecovered] = useState(false);
@@ -90,7 +92,7 @@ export default function ServerStatusOverlay() {
       <div className="pointer-events-none fixed inset-x-0 top-0 z-[100] flex justify-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <div className="flex items-center gap-2 rounded-full bg-[#059669] px-4 py-2 text-xs font-semibold text-white shadow-lg">
           <CheckIcon />
-          서버와 다시 연결되었습니다
+          {t("overlay.recovered")}
         </div>
       </div>
     );
@@ -99,9 +101,7 @@ export default function ServerStatusOverlay() {
   if (!disconnected) return null;
 
   const isOffline = status === "offline";
-  const title = isOffline
-    ? "인터넷 연결이 끊어졌습니다"
-    : "서버와 연결이 끊어졌습니다";
+  const title = isOffline ? t("overlay.offlineTitle") : t("overlay.downTitle");
 
   // 팝업을 닫은 상태 — 화면은 쓸 수 있게 두되 경고는 띠로 계속 남긴다.
   if (dismissed) {
@@ -116,7 +116,7 @@ export default function ServerStatusOverlay() {
             <WarningIcon />
           </span>
           {title}
-          <span className="opacity-80">· 자세히</span>
+          <span className="opacity-80">· {t("overlay.details")}</span>
         </button>
       </div>
     );
@@ -142,17 +142,14 @@ export default function ServerStatusOverlay() {
               {title}
             </h2>
             <p className="mt-1 text-xs leading-relaxed text-[#6B7280]">
-              {isOffline
-                ? "기기의 Wi-Fi 또는 데이터 연결을 확인해 주세요. 연결이 돌아오면 자동으로 이어집니다."
-                : "앱이 느린 것이 아니라 서버가 응답하지 않는 상태입니다. 잠시 기다려도 계속되면 관리자에게 서버 상태를 확인해 달라고 알려주세요."}
+              {isOffline ? t("overlay.offlineBody") : t("overlay.downBody")}
             </p>
           </div>
         </div>
 
         <div className="mt-4 rounded-md bg-[#F9FAFB] px-3 py-2.5">
           <p className="text-[11px] leading-relaxed text-[#6B7280]">
-            방금 하던 저장·전송은 서버에 반영되지 않았을 수 있습니다. 연결이
-            복구된 뒤 해당 화면에서 다시 시도해 주세요.
+            {t("overlay.pendingNotice")}
           </p>
         </div>
 
@@ -162,7 +159,7 @@ export default function ServerStatusOverlay() {
             onClick={() => setDismissed(true)}
             className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB]"
           >
-            닫고 화면 보기
+            {t("overlay.dismiss")}
           </button>
           <button
             type="button"
@@ -170,16 +167,18 @@ export default function ServerStatusOverlay() {
             disabled={probing}
             className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
           >
-            {probing ? "확인 중..." : "다시 시도"}
+            {probing
+              ? t("overlay.checking")
+              : t("actions.retry", { ns: "common" })}
           </button>
         </div>
 
         <p className="mt-3 text-center text-[11px] text-[#9CA3AF]">
           {probing
-            ? "서버 상태를 확인하고 있습니다"
+            ? t("overlay.probing")
             : nextRetryAt != null && secondsLeft != null
-              ? `${secondsLeft}초 후 자동으로 다시 확인합니다`
-              : "연결이 복구되면 이 창은 저절로 사라집니다"}
+              ? t("overlay.autoRetryIn", { n: secondsLeft })
+              : t("overlay.autoClose")}
         </p>
       </div>
     </div>

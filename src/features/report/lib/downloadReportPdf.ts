@@ -1,3 +1,4 @@
+import i18n from "i18next";
 import type {
   AppearanceResult,
   JudgeResult,
@@ -12,7 +13,6 @@ import {
   collectStageColumns,
   findMeasurement,
   hasStageMeasurements,
-  STAGE_LABEL,
   STAGE_ORDER,
   type StageColumn,
 } from "./stageMeasurements";
@@ -20,10 +20,22 @@ import { toBackendImageUrl } from "../../../lib/imageUrl";
 import { formatTolerance } from "../../inspection/lib/format";
 import { formatDateTime, parseServerDate } from "../../../lib/datetime";
 import { formatSlotTime } from "./inspectedTime";
-import { resolveShift, SHIFT_LABEL } from "./shift";
+import { resolveShift } from "./shift";
+
+// 문서 본문도 발행 시점의 앱 언어(한/영)를 따른다. React 밖이라 싱글턴으로 푼다.
+const tr = (key: string, opts?: Record<string, unknown>): string =>
+  i18n.t(`report:${key}`, opts) as string;
 
 function stageTitle(s: { stage: ReportStage; typeLabel: string }): string {
-  return `${STAGE_LABEL[s.stage] ?? ""} ${s.typeLabel ?? ""}`.trim();
+  return `${tr(`stage.${s.stage}`)} ${s.typeLabel ?? ""}`.trim();
+}
+
+// 차수 열 머리글. 화면(ReportMeasurementsSection)과 같은 조합 규칙 — 차수는
+// 번역하고 백엔드 표기(typeLabel)는 그대로, 반복 측정은 "(N회차)" 를 붙인다.
+function columnLabel(c: StageColumn): string {
+  const base = `${tr(`stage.${c.stage}`)} ${c.typeLabel ?? ""}`.trim();
+  if (c.occurrence === 0) return base;
+  return tr("measurements.repeatRun", { label: base, n: c.occurrence + 1 });
 }
 
 function orderedStageInfos(detail: ReportDetail): ReportStageInfo[] {
@@ -47,13 +59,14 @@ function fmtValue(v: number | null | undefined): string {
 
 function judgeBadge(result: JudgeResult): string {
   const isPass = result === "PASS";
-  const label = isPass ? "합격" : "불합격";
+  const label = escapeHtml(tr(isPass ? "result.pass" : "result.fail"));
   const cls = isPass ? "badge pass" : "badge fail";
   return `<span class="${cls}">${label}</span>`;
 }
 
 function appearanceBadge(value: AppearanceResult | null): string {
-  if (!value) return `<span class="badge muted">미입력</span>`;
+  if (!value)
+    return `<span class="badge muted">${escapeHtml(tr("pdfDoc.notEntered"))}</span>`;
   const cls = value === "OK" ? "badge pass" : "badge fail";
   return `<span class="${cls}">${value}</span>`;
 }
@@ -61,7 +74,7 @@ function appearanceBadge(value: AppearanceResult | null): string {
 function imgCell(url: string | null): string {
   const resolved = toBackendImageUrl(url);
   if (!resolved) return "-";
-  return `<img src="${escapeHtml(resolved)}" alt="측정 사진" class="thumb" />`;
+  return `<img src="${escapeHtml(resolved)}" alt="${escapeHtml(tr("pdfDoc.photoAlt"))}" class="thumb" />`;
 }
 
 // 통합 보고서 측정 결과 — dim 1행 x 초·중·종 열. 차수마다 자주/순회 2개 하위 열.
@@ -69,12 +82,17 @@ function stageMeasureTable(detail: ReportDetail): string {
   const columns = collectStageColumns(detail.results);
 
   const topCells =
-    `<th rowspan="2">번호</th><th rowspan="2">기준</th><th rowspan="2">공차</th>` +
+    `<th rowspan="2">${escapeHtml(tr("pdfDoc.table.no"))}</th><th rowspan="2">${escapeHtml(tr("pdfDoc.table.standard"))}</th><th rowspan="2">${escapeHtml(tr("pdfDoc.table.tolerance"))}</th>` +
     columns
-      .map((c) => `<th colspan="2">${escapeHtml(c.label)}</th>`)
+      .map((c) => `<th colspan="2">${escapeHtml(columnLabel(c))}</th>`)
       .join("") +
-    `<th rowspan="2">판정</th>`;
-  const subCells = columns.map(() => `<th>자주</th><th>순회</th>`).join("");
+    `<th rowspan="2">${escapeHtml(tr("pdfDoc.table.judgment"))}</th>`;
+  const subCells = columns
+    .map(
+      () =>
+        `<th>${escapeHtml(tr("pdfDoc.table.self"))}</th><th>${escapeHtml(tr("pdfDoc.table.patrol"))}</th>`,
+    )
+    .join("");
   const colCount = 4 + columns.length * 2;
 
   // 가공(MACHINING)처럼 수치 대신 OK/NG 로 판정하는 항목은 값이 null 이라
@@ -108,11 +126,11 @@ function stageMeasureTable(detail: ReportDetail): string {
     })
     .join("");
 
-  const empty = `<tr><td colspan="${colCount}" style="text-align:center;color:#A8A8A8">측정 데이터 없음</td></tr>`;
+  const empty = `<tr><td colspan="${colCount}" style="text-align:center;color:#A8A8A8">${escapeHtml(tr("pdfDoc.noMeasureData"))}</td></tr>`;
 
   return `
     <section>
-      <h2>측정 결과 (초·중·종)</h2>
+      <h2>${escapeHtml(tr("pdfDoc.measureTitleStages"))}</h2>
       <table>
         <thead>
           <tr>${topCells}</tr>
@@ -127,9 +145,10 @@ function measureTable(detail: ReportDetail): string {
   if (hasStageMeasurements(detail.results)) return stageMeasureTable(detail);
   const isMachining = detail.process === "MACHINING";
 
+  const th = (key: string) => `<th>${escapeHtml(tr(`pdfDoc.table.${key}`))}</th>`;
   const headerCells = isMachining
-    ? `<th>번호</th><th>기준</th><th>공차</th><th>자주값</th><th>자주 OK/NG</th><th>순회값</th><th>순회 OK/NG</th><th>판정</th>`
-    : `<th>번호</th><th>기준</th><th>공차</th><th>자주검사</th><th>순회검사</th><th>판정</th>`;
+    ? th("no") + th("standard") + th("tolerance") + th("selfValue") + th("selfOkNg") + th("patrolValue") + th("patrolOkNg") + th("judgment")
+    : th("no") + th("standard") + th("tolerance") + th("selfInspection") + th("patrolInspection") + th("judgment");
 
   const colCount = isMachining ? 8 : 6;
 
@@ -160,11 +179,11 @@ function measureTable(detail: ReportDetail): string {
     })
     .join("");
 
-  const empty = `<tr><td colspan="${colCount}" style="text-align:center;color:#A8A8A8">측정 데이터 없음</td></tr>`;
+  const empty = `<tr><td colspan="${colCount}" style="text-align:center;color:#A8A8A8">${escapeHtml(tr("pdfDoc.noMeasureData"))}</td></tr>`;
 
   return `
     <section>
-      <h2>측정 결과</h2>
+      <h2>${escapeHtml(tr("pdfDoc.measureTitle"))}</h2>
       <table>
         <thead><tr>${headerCells}</tr></thead>
         <tbody>${rows || empty}</tbody>
@@ -195,16 +214,18 @@ function stagesSection(detail: ReportDetail): string {
     )
     .join("");
 
+  const th = (key: string) =>
+    `<th>${escapeHtml(tr(`pdfDoc.stageHead.${key}`))}</th>`;
   return `
     <section>
-      <h2>차수별 검사 정보</h2>
+      <h2>${escapeHtml(tr("pdfDoc.stagesTitle"))}</h2>
       <table>
         <thead>
           <tr>
-            <th>차수</th><th>검사 시각</th><th>자주검사자</th><th>순회검사자</th>
-            <th>자주 외관</th><th>순회 외관</th>
-            ${hasHardness ? "<th>경도</th>" : ""}
-            <th>비고</th>
+            ${th("round")}${th("inspectedAt")}${th("selfInspector")}${th("patrolInspector")}
+            ${th("selfAppearance")}${th("patrolAppearance")}
+            ${hasHardness ? th("hardness") : ""}
+            ${th("remarks")}
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -221,7 +242,7 @@ function fmtInspected(s: ReportStageInfo): string {
     return formatDateTime(s.inspectedAt);
   }
   const slot = formatSlotTime(s.inspectionTime);
-  if (slot) return `(${slot} 예정)`;
+  if (slot) return tr("stages.scheduled", { time: slot });
   return "-";
 }
 
@@ -244,14 +265,14 @@ function stagePhotoSection(detail: ReportDetail): string {
 
   return `
     <section>
-      <h2>측정 사진 (초·중·종)</h2>
+      <h2>${escapeHtml(tr("pdfDoc.photosTitleStages"))}</h2>
       <table>
         <thead>
           <tr>
-            <th rowspan="2">번호</th>
-            ${columns.map((c: StageColumn) => `<th colspan="2">${escapeHtml(c.label)}</th>`).join("")}
+            <th rowspan="2">${escapeHtml(tr("pdfDoc.table.no"))}</th>
+            ${columns.map((c: StageColumn) => `<th colspan="2">${escapeHtml(columnLabel(c))}</th>`).join("")}
           </tr>
-          <tr>${columns.map(() => `<th>자주</th><th>순회</th>`).join("")}</tr>
+          <tr>${columns.map(() => `<th>${escapeHtml(tr("pdfDoc.table.self"))}</th><th>${escapeHtml(tr("pdfDoc.table.patrol"))}</th>`).join("")}</tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
@@ -273,10 +294,10 @@ function photoSection(detail: ReportDetail): string {
     .join("");
   return `
     <section>
-      <h2>측정 사진</h2>
+      <h2>${escapeHtml(tr("pdfDoc.photosTitle"))}</h2>
       <table>
         <thead>
-          <tr><th>번호</th><th>자주검사</th><th>순회검사</th></tr>
+          <tr><th>${escapeHtml(tr("pdfDoc.table.no"))}</th><th>${escapeHtml(tr("pdfDoc.table.selfInspection"))}</th><th>${escapeHtml(tr("pdfDoc.table.patrolInspection"))}</th></tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
@@ -288,13 +309,13 @@ function appearanceSection(detail: ReportDetail): string {
   if (orderedStageInfos(detail).length > 0) return "";
   return `
     <section>
-      <h2>외관 검사</h2>
+      <h2>${escapeHtml(tr("pdfDoc.appearanceTitle"))}</h2>
       <div class="appearance-row">
-        <span class="appearance-label">자주검사 외관</span>
+        <span class="appearance-label">${escapeHtml(tr("pdfDoc.selfAppearance"))}</span>
         ${appearanceBadge(detail.productionAppearanceResult)}
       </div>
       <div class="appearance-row">
-        <span class="appearance-label">순회검사 외관</span>
+        <span class="appearance-label">${escapeHtml(tr("pdfDoc.patrolAppearance"))}</span>
         ${appearanceBadge(detail.qualityAppearanceResult)}
       </div>
     </section>`;
@@ -306,7 +327,7 @@ function hardnessSection(detail: ReportDetail): string {
   if (!detail.qualityHardnessResult) return "";
   return `
     <section>
-      <h2>경도 검사</h2>
+      <h2>${escapeHtml(tr("pdfDoc.hardnessTitle"))}</h2>
       <div class="text-block">${escapeHtml(detail.qualityHardnessResult)}</div>
     </section>`;
 }
@@ -315,7 +336,7 @@ function remarksSection(detail: ReportDetail): string {
   if (!detail.remarks) return "";
   return `
     <section>
-      <h2>비고</h2>
+      <h2>${escapeHtml(tr("pdfDoc.remarksTitle"))}</h2>
       <div class="text-block pre">${escapeHtml(detail.remarks)}</div>
     </section>`;
 }
@@ -325,8 +346,8 @@ function sketchSection(detail: ReportDetail): string {
   if (!resolved) return "";
   return `
     <section>
-      <h2>도면</h2>
-      <img src="${escapeHtml(resolved)}" alt="제품 스케치" class="sketch" />
+      <h2>${escapeHtml(tr("pdfDoc.sketchTitle"))}</h2>
+      <img src="${escapeHtml(resolved)}" alt="${escapeHtml(tr("pdfDoc.sketchAlt"))}" class="sketch" />
     </section>`;
 }
 
@@ -335,13 +356,17 @@ function sketchSection(detail: ReportDetail): string {
 function inspectionLabelText(detail: ReportDetail): string {
   const stages = orderedStageInfos(detail);
   if (stages.length > 1) {
-    return `${stages.map(stageTitle).join(" · ")} 통합`;
+    return tr("pdfDoc.integrated", {
+      labels: stages.map(stageTitle).join(" · "),
+    });
   }
   // stages 없이 measurements 만 오는 조합도 있다. 이때 단수 label 을 그대로 쓰면
   // 표는 초·중·종인데 머리말만 "종물" 이 되므로 측정값 쪽 차수로 표기를 맞춘다.
   const columns = collectStageColumns(detail.results);
   if (columns.length > 1) {
-    return `${columns.map((c) => c.label).join(" · ")} 통합`;
+    return tr("pdfDoc.integrated", {
+      labels: columns.map(columnLabel).join(" · "),
+    });
   }
   return detail.inspectionLabel;
 }
@@ -350,7 +375,7 @@ function inspectionLabelText(detail: ReportDetail): string {
 function shiftRow(detail: ReportDetail): string {
   const shift = resolveShift(detail);
   if (!shift) return "";
-  return `<div><span class="label">근무조</span> ${escapeHtml(SHIFT_LABEL[shift])}</div>`;
+  return `<div><span class="label">${escapeHtml(tr("pdfDoc.shift"))}</span> ${escapeHtml(tr(`shift.${shift}`))}</div>`;
 }
 
 function buildHtml(detail: ReportDetail): string {
@@ -358,7 +383,7 @@ function buildHtml(detail: ReportDetail): string {
   const wide =
     hasStageMeasurements(detail.results) || orderedStageInfos(detail).length > 1;
   return `<!doctype html>
-<html lang="ko">
+<html lang="${i18n.language.startsWith("ko") ? "ko" : "en"}">
 <head>
 <meta charset="utf-8" />
 <title>${escapeHtml(detail.reportNumber)}</title>
@@ -412,19 +437,19 @@ function buildHtml(detail: ReportDetail): string {
     <h1>${escapeHtml(detail.reportNumber)}</h1>
     ${judgeBadge(detail.result)}
   </div>
-  <div class="muted">발행일 ${escapeHtml(formatDateTime(detail.createdAt))}</div>
+  <div class="muted">${escapeHtml(tr("pdfDoc.issuedAt", { date: formatDateTime(detail.createdAt) }))}</div>
 
   <div class="grid">
-    <div><span class="label">고객사</span> ${escapeHtml(detail.customerName)}</div>
-    <div><span class="label">제품</span> ${escapeHtml(detail.productName)} (${escapeHtml(detail.productCode)})</div>
-    <div><span class="label">공정</span> ${escapeHtml(detail.process)}</div>
-    <div><span class="label">설비</span> ${escapeHtml(detail.equipmentName)}</div>
-    <div><span class="label">검사 차수</span> ${escapeHtml(inspectionLabelText(detail))}</div>
+    <div><span class="label">${escapeHtml(tr("pdfDoc.customer"))}</span> ${escapeHtml(detail.customerName)}</div>
+    <div><span class="label">${escapeHtml(tr("pdfDoc.product"))}</span> ${escapeHtml(detail.productName)} (${escapeHtml(detail.productCode)})</div>
+    <div><span class="label">${escapeHtml(tr("pdfDoc.process"))}</span> ${escapeHtml(detail.process)}</div>
+    <div><span class="label">${escapeHtml(tr("pdfDoc.equipment"))}</span> ${escapeHtml(detail.equipmentName)}</div>
+    <div><span class="label">${escapeHtml(tr("pdfDoc.inspectionRound"))}</span> ${escapeHtml(inspectionLabelText(detail))}</div>
     ${shiftRow(detail)}
-    <div><span class="label">자주검사</span> ${escapeHtml(detail.productionName)}</div>
-    <div><span class="label">순회검사</span> ${escapeHtml(detail.qualityName)}</div>
-    <div><span class="label">승인자</span> ${escapeHtml(detail.approvedByName)}</div>
-    <div><span class="label">대상일</span> ${escapeHtml(detail.targetDate)}</div>
+    <div><span class="label">${escapeHtml(tr("pdfDoc.selfInspection"))}</span> ${escapeHtml(detail.productionName)}</div>
+    <div><span class="label">${escapeHtml(tr("pdfDoc.patrolInspection"))}</span> ${escapeHtml(detail.qualityName)}</div>
+    <div><span class="label">${escapeHtml(tr("pdfDoc.approver"))}</span> ${escapeHtml(detail.approvedByName)}</div>
+    <div><span class="label">${escapeHtml(tr("pdfDoc.targetDate"))}</span> ${escapeHtml(detail.targetDate)}</div>
   </div>
 
   ${sketchSection(detail)}
@@ -435,7 +460,7 @@ function buildHtml(detail: ReportDetail): string {
   ${hardnessSection(detail)}
   ${remarksSection(detail)}
 
-  <div class="footer">브라우저 인쇄 대화상자에서 "PDF로 저장"을 선택하세요.</div>
+  <div class="footer">${escapeHtml(tr("pdfDoc.footerHint"))}</div>
 
   <script>
     // 이미지가 모두 로드된 뒤 인쇄해야 PDF 에 사진이 포함된다.
@@ -464,11 +489,11 @@ function buildHtml(detail: ReportDetail): string {
 export async function downloadReportPdf(reportId: number): Promise<void> {
   const w = window.open("", "_blank");
   if (!w) {
-    alert("팝업이 차단되어 PDF를 열 수 없습니다. 팝업 허용 후 다시 시도하세요.");
+    alert(i18n.t("report:pdf.popupBlocked"));
     return;
   }
   w.document.write(
-    `<!doctype html><html><body style="font-family:sans-serif;padding:24px;color:#6B7280">보고서를 불러오는 중...</body></html>`,
+    `<!doctype html><html><body style="font-family:sans-serif;padding:24px;color:#6B7280">${i18n.t("report:pdf.loading")}</body></html>`,
   );
   try {
     const detail = await getReportDetail(reportId);
@@ -478,6 +503,6 @@ export async function downloadReportPdf(reportId: number): Promise<void> {
     w.focus();
   } catch {
     w.close();
-    alert("보고서를 불러오지 못했습니다.");
+    alert(i18n.t("report:pdf.loadFailed"));
   }
 }

@@ -1,6 +1,8 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import {
   useAdminDeleteInspection,
   useAdminInspectionList,
@@ -16,35 +18,36 @@ import { useViewState } from "../../../lib/viewState";
 
 type StatusTab = "ALL" | "DRAFT" | "COMPLETED" | "INCOMPLETE";
 
-const STATUS_TABS: { key: StatusTab; label: string }[] = [
-  { key: "DRAFT", label: "작성중" },
-  { key: "COMPLETED", label: "완료" },
-  { key: "INCOMPLETE", label: "미완료" },
-  { key: "ALL", label: "전체" },
+// label 은 adminInspection 네임스페이스 i18n 키.
+const STATUS_TABS: { key: StatusTab; labelKey: string }[] = [
+  { key: "DRAFT", labelKey: "tabs.draft" },
+  { key: "COMPLETED", labelKey: "tabs.completed" },
+  { key: "INCOMPLETE", labelKey: "tabs.incomplete" },
+  { key: "ALL", labelKey: "tabs.all" },
 ];
 
 const STATUS_BADGE: Record<
   MyInspectionStatus,
-  { label: string; className: string }
+  { labelKey: string; className: string }
 > = {
   DRAFT: {
-    label: "작성중",
+    labelKey: "status.draft",
     className: "border-[#FDE68A] bg-[#FEF3C7] text-[#B45309]",
   },
   COMPLETED: {
-    label: "완료",
+    labelKey: "status.completed",
     className: "border-[#BBF7D0] bg-[#DCFCE7] text-[#15803D]",
   },
   INCOMPLETE: {
-    label: "미완료",
+    labelKey: "status.incomplete",
     className: "border-[#FECACA] bg-[#FEE2E2] text-[#B91C1C]",
   },
   INCOMPLETE_APPROVED: {
-    label: "미완료(승인)",
+    labelKey: "status.incompleteApproved",
     className: "border-gray-200 bg-[#F3F4F6] text-[#6B7280]",
   },
   SKIPPED: {
-    label: "건너뜀",
+    labelKey: "status.skipped",
     className: "border-gray-200 bg-[#F3F4F6] text-[#9CA3AF]",
   },
 };
@@ -63,22 +66,23 @@ function matchesTab(status: MyInspectionStatus, tab: StatusTab): boolean {
   }
 }
 
-function toDeleteErrorMessage(err: unknown): string {
+function toDeleteErrorMessage(err: unknown, t: TFunction): string {
   if (err instanceof AxiosError) {
     const data = err.response?.data as DeleteInspectionErrorData | undefined;
     switch (data?.code) {
       case "INSPECTION_NOT_DELETABLE":
-        return "작성중(DRAFT) 상태만 삭제할 수 있습니다.";
+        return t("errors.notDeletable");
       case "NOT_OWNER":
-        return "삭제 권한이 없습니다.";
+        return t("errors.notOwner");
       default:
-        return data?.message ?? "삭제 중 오류가 발생했습니다.";
+        return data?.message ?? t("errors.deleteFailed");
     }
   }
-  return "삭제 중 오류가 발생했습니다.";
+  return t("errors.deleteFailed");
 }
 
 export default function AdminInspectionListPage() {
+  const { t } = useTranslation("adminInspection");
   // 보던 탭은 뒤로가기로 돌아왔을 때 그대로여야 한다.
   const [tab, setTab] = useViewState<StatusTab>("tab", "DRAFT");
   const [deleteTarget, setDeleteTarget] = useState<AdminInspection | null>(null);
@@ -113,10 +117,10 @@ export default function AdminInspectionListPage() {
     if (!deleteTarget) return;
     try {
       await deleteMutation.mutateAsync(deleteTarget.inspectionId);
-      setToast("검사를 삭제했습니다.");
+      setToast(t("page.deleted"));
       setDeleteTarget(null);
     } catch (err) {
-      setToast(toDeleteErrorMessage(err));
+      setToast(toDeleteErrorMessage(err, t));
       setDeleteTarget(null);
     }
   };
@@ -124,50 +128,45 @@ export default function AdminInspectionListPage() {
   return (
     <div className="flex flex-col gap-4 p-4 pb-20 md:p-6 md:pb-6">
       <div>
-        <h1 className="text-xl font-semibold">자주검사 관리</h1>
-        <p className="mt-1 text-xs text-[#6B7280]">
-          불필요하거나 잘못 시작된 자주검사를 삭제합니다. 작성중(DRAFT) 상태만
-          삭제할 수 있습니다.
-        </p>
+        <h1 className="text-xl font-semibold">{t("page.title")}</h1>
+        <p className="mt-1 text-xs text-[#6B7280]">{t("page.desc")}</p>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {STATUS_TABS.map((t) => (
+        {STATUS_TABS.map((tabItem) => (
           <button
-            key={t.key}
+            key={tabItem.key}
             type="button"
-            onClick={() => setTab(t.key)}
+            onClick={() => setTab(tabItem.key)}
             className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-              tab === t.key
+              tab === tabItem.key
                 ? "bg-[#931B82] text-white"
                 : "border border-gray-200 bg-white text-[#6B7280] hover:bg-gray-50"
             }`}
           >
-            {t.label} ({counts[t.key]})
+            {t(tabItem.labelKey)} ({counts[tabItem.key]})
           </button>
         ))}
       </div>
 
       {listQuery.isLoading ? (
         <div className="flex min-h-40 items-center justify-center text-xs text-[#A8A8A8]">
-          불러오는 중...
+          {t("common:status.loading")}
         </div>
       ) : listQuery.isError ? (
         <div className="flex min-h-40 flex-col items-center justify-center gap-2 text-center">
-          <span className="text-sm text-[#EF4444]">
-            목록을 불러오지 못했습니다.
-          </span>
+          <span className="text-sm text-[#EF4444]">{t("page.loadError")}</span>
           <button
             type="button"
             onClick={() => listQuery.refetch()}
             className="h-9 rounded-md border border-gray-200 px-3 text-xs font-medium text-[#6B7280] hover:bg-gray-50"
           >
-            다시 시도
+            {t("common:actions.retry")}
           </button>
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex min-h-40 items-center justify-center text-xs text-[#A8A8A8]">
-          해당 상태의 검사가 없습니다.
+          {t("page.empty")}
         </div>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -190,18 +189,18 @@ export default function AdminInspectionListPage() {
                     <span
                       className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${badge.className}`}
                     >
-                      {badge.label}
+                      {t(badge.labelKey)}
                     </span>
                   </div>
                   <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-[#6B7280] sm:grid-cols-3">
                     <Meta
-                      label="차수"
+                      label={t("meta.round")}
                       value={`${item.typeLabel} (${item.type})`}
                       suffix={<ShiftBadge shift={item.shift} compact />}
                     />
-                    <Meta label="작성자" value={item.production?.name ?? "-"} />
-                    <Meta label="설비" value={item.equipment.name} />
-                    <Meta label="시작일" value={formatDate(item.createdAt)} />
+                    <Meta label={t("meta.writer")} value={item.production?.name ?? "-"} />
+                    <Meta label={t("meta.equipment")} value={item.equipment.name} />
+                    <Meta label={t("meta.startDate")} value={formatDate(item.createdAt)} />
                   </dl>
                 </div>
                 <button
@@ -210,13 +209,13 @@ export default function AdminInspectionListPage() {
                   disabled={!deletable || deleteMutation.isPending}
                   title={
                     deletable
-                      ? "삭제"
-                      : "작성중(DRAFT) 상태만 삭제할 수 있습니다."
+                      ? t("common:actions.delete")
+                      : t("page.deleteDisabledTitle")
                   }
                   className="flex shrink-0 items-center gap-1 rounded-md border border-[#EF4444] px-3 py-1.5 text-xs font-medium text-[#EF4444] transition-colors hover:bg-[#FEF2F2] disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-[#D1D5DB] disabled:hover:bg-transparent"
                 >
                   <Icon icon="solar:trash-bin-trash-linear" width={14} height={14} />
-                  삭제
+                  {t("common:actions.delete")}
                 </button>
               </li>
             );

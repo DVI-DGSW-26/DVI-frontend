@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import {
   useCreateInspectionOrder,
   useEquipmentList,
@@ -43,10 +44,10 @@ function resolveManagerWorkType(user: User | null): WorkType | null {
 // (서버는 요청 1건당 교대 1개만 받는다).
 type ShiftChoice = Shift | "BOTH";
 
-const SHIFT_CHOICES: { value: ShiftChoice; label: string }[] = [
-  { value: "DAY", label: "주간" },
-  { value: "NIGHT", label: "야간" },
-  { value: "BOTH", label: "둘 다" },
+const SHIFT_CHOICES: { value: ShiftChoice; labelKey: string }[] = [
+  { value: "DAY", labelKey: "drawer.shiftDay" },
+  { value: "NIGHT", labelKey: "drawer.shiftNight" },
+  { value: "BOTH", labelKey: "drawer.shiftBoth" },
 ];
 
 function todayISO() {
@@ -62,6 +63,7 @@ export default function CreateInspectionOrderDrawer({
   onClose,
   order,
 }: Props) {
+  const { t } = useTranslation("inspectionOrders");
   const isEdit = !!order;
   const [targetDate, setTargetDate] = useState(todayISO);
   const [equipmentId, setEquipmentId] = useState<number | "">("");
@@ -183,7 +185,7 @@ export default function CreateInspectionOrderDrawer({
         {
           onSuccess: () => onClose(),
           onError: (err: unknown) =>
-            alert(serverMessageOf(err) ?? "검사지시 수정 중 오류가 발생했습니다."),
+            alert(serverMessageOf(err) ?? t("drawer.updateError")),
         },
       );
       return;
@@ -201,8 +203,13 @@ export default function CreateInspectionOrderDrawer({
       try {
         await createAsync({ ...base, ...(shift ? { shift } : {}) });
       } catch (err) {
-        const label = shift === "NIGHT" ? "야간" : shift === "DAY" ? "주간" : "";
-        const reason = serverMessageOf(err) ?? "등록 중 오류가 발생했습니다.";
+        const label =
+          shift === "NIGHT"
+            ? t("drawer.shiftNight")
+            : shift === "DAY"
+              ? t("drawer.shiftDay")
+              : "";
+        const reason = serverMessageOf(err) ?? t("drawer.createError");
         failed.push(label ? `${label}: ${reason}` : reason);
       }
     }
@@ -213,18 +220,18 @@ export default function CreateInspectionOrderDrawer({
     }
     // 둘 중 하나만 실패하면 성공한 지시는 그대로 두고, 무엇이 왜 실패했는지 알린다.
     const madeCount = shifts.length - failed.length;
-    const prefix = madeCount > 0 ? `${madeCount}건은 등록됐습니다.` : "";
+    const prefix = madeCount > 0 ? t("drawer.partialCreated", { n: madeCount }) : "";
     alert([prefix, ...failed].filter(Boolean).join("\n"));
   };
 
-  const title = isEdit ? "검사지시 수정" : "검사지시 등록";
+  const title = isEdit ? t("drawer.editTitle") : t("drawer.createTitle");
   const submitLabel = isEdit
     ? isPending
-      ? "수정 중..."
-      : "수정"
+      ? t("drawer.submitEditing")
+      : t("drawer.submitEdit")
     : isPending
-      ? "등록 중..."
-      : "등록";
+      ? t("drawer.submitCreating")
+      : t("drawer.submitCreate");
 
   return (
     <>
@@ -249,7 +256,7 @@ export default function CreateInspectionOrderDrawer({
           <button
             type="button"
             onClick={onClose}
-            aria-label="닫기"
+            aria-label={t("common:actions.close")}
             className="text-[#A8A8A8] transition-colors hover:text-[#212121]"
           >
             <Icon icon="mdi:close" width={22} height={22} />
@@ -261,7 +268,7 @@ export default function CreateInspectionOrderDrawer({
           className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-5"
         >
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[#212121]">지시 날짜</span>
+            <span className="text-sm font-medium text-[#212121]">{t("drawer.date")}</span>
             <input
               type="date"
               value={targetDate}
@@ -272,7 +279,7 @@ export default function CreateInspectionOrderDrawer({
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[#212121]">설비 선택</span>
+            <span className="text-sm font-medium text-[#212121]">{t("drawer.equipment")}</span>
             <select
               value={equipmentId}
               onChange={(e) => {
@@ -290,7 +297,7 @@ export default function CreateInspectionOrderDrawer({
               className="h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none disabled:bg-gray-50"
             >
               <option value="">
-                {loadingEquipment ? "불러오는 중..." : "설비를 선택하세요"}
+                {loadingEquipment ? t("drawer.loading") : t("drawer.equipmentPlaceholder")}
               </option>
               {selectableEquipment.map((item) => (
                 <option key={item.id} value={item.id}>
@@ -301,7 +308,7 @@ export default function CreateInspectionOrderDrawer({
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[#212121]">제품 선택</span>
+            <span className="text-sm font-medium text-[#212121]">{t("drawer.product")}</span>
             <select
               value={productId}
               onChange={(e) =>
@@ -313,10 +320,10 @@ export default function CreateInspectionOrderDrawer({
             >
               <option value="">
                 {equipmentId === ""
-                  ? "설비를 먼저 선택하세요"
+                  ? t("drawer.productSelectEquipmentFirst")
                   : loadingProducts
-                    ? "불러오는 중..."
-                    : "제품을 선택하세요"}
+                    ? t("drawer.loading")
+                    : t("drawer.productPlaceholder")}
               </option>
               {selectableProducts.map((item) => (
                 <option key={item.id} value={item.id}>
@@ -327,7 +334,7 @@ export default function CreateInspectionOrderDrawer({
           </label>
           {needsShiftChoice && (
             <div className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-[#212121]">교대</span>
+              <span className="text-sm font-medium text-[#212121]">{t("drawer.shift")}</span>
               <div className="grid grid-cols-3 gap-2">
                 {SHIFT_CHOICES.map((opt) => {
                   const selected = shiftChoice === opt.value;
@@ -342,37 +349,37 @@ export default function CreateInspectionOrderDrawer({
                           : "border-gray-300 bg-white text-[#6B7280] hover:bg-gray-50"
                       }`}
                     >
-                      {opt.label}
+                      {t(opt.labelKey)}
                     </button>
                   );
                 })}
               </div>
               <span className="text-xs text-[#6B7280]">
                 {shiftChoice === "BOTH"
-                  ? "주간·야간 지시를 각각 1건씩, 총 2건 등록합니다."
-                  : "이 제품은 주간·야간 스케줄이 모두 있어 교대를 골라야 합니다."}
+                  ? t("drawer.shiftBothDesc")
+                  : t("drawer.shiftChoiceDesc")}
               </span>
             </div>
           )}
 
           <fieldset className="flex flex-col gap-1.5">
             <legend className="text-sm font-medium text-[#212121]">
-              자주검사 작업자 (생산부)
+              {t("drawer.workers")}
             </legend>
             <p className="text-xs text-[#6B7280]">
-              공동 작업자는 여러 명 선택할 수 있습니다.
+              {t("drawer.workersDesc")}
               {workerIds.length > 0 && (
                 <span className="ml-1 font-medium text-[#931B82]">
-                  {workerIds.length}명 선택됨
+                  {t("drawer.workersSelected", { n: workerIds.length })}
                 </span>
               )}
             </p>
             <div className="max-h-56 overflow-y-auto rounded-lg border border-gray-300">
               {loadingProduction ? (
-                <p className="px-3 py-4 text-sm text-[#A8A8A8]">불러오는 중...</p>
+                <p className="px-3 py-4 text-sm text-[#A8A8A8]">{t("drawer.loading")}</p>
               ) : assignableWorkers.length === 0 ? (
                 <p className="px-3 py-4 text-sm text-[#A8A8A8]">
-                  배정 가능한 작업자가 없습니다.
+                  {t("drawer.noWorkers")}
                 </p>
               ) : (
                 <ul className="divide-y divide-gray-100">
@@ -412,7 +419,7 @@ export default function CreateInspectionOrderDrawer({
               onClick={onClose}
               className="h-11 flex-1 rounded-lg border border-gray-300 text-sm font-medium text-[#212121] transition-colors hover:bg-gray-50"
             >
-              취소
+              {t("common:actions.cancel")}
             </button>
             <button
               type="submit"

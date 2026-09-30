@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { judgeMeasurement } from "../../inspection/lib/judgment";
 import JudgmentBadge from "../../inspection/ui/JudgmentBadge";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
@@ -42,6 +43,7 @@ export default function CrossCheckInputPhase({
   onGoNext,
   onSubmit,
 }: Props) {
+  const { t } = useTranslation("crossCheck");
   const [imageSrc, setImageSrc] = useState<string>("");
   useEffect(() => {
     if (blob) {
@@ -84,23 +86,23 @@ export default function CrossCheckInputPhase({
   const submitDisabled = !isValid || isSaving || isPreparing;
 
   const buttonLabel = isPreparing
-    ? "OCR 인식 중..."
+    ? t("input.ocrRunning")
     : isSaving
-      ? "저장 중..."
+      ? t("input.saving")
       : isLastDim
-        ? "완료"
-        : "저장 후 다음";
+        ? t("input.done")
+        : t("input.saveAndNext");
 
   const hint = isPreparing
-    ? { text: "OCR로 측정값을 인식하는 중입니다…", tone: "info" as const }
+    ? { text: t("input.hintOcrRunning"), tone: "info" as const }
     : autoFilled && suggestedValue
       ? {
-          text: "OCR로 자동 입력됨 — 필요하면 수정해주세요.",
+          text: t("input.hintOcrFilled"),
           tone: "ok" as const,
         }
       : autoFilled
         ? {
-            text: "측정값을 인식하지 못했어요. LCD가 또렷이 보이게 다시 찍거나 직접 입력해주세요.",
+            text: t("input.hintOcrFailed"),
             tone: "warn" as const,
           }
         : null;
@@ -118,7 +120,7 @@ export default function CrossCheckInputPhase({
         <div className="flex items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-[#F9FAFB]">
           <img
             src={imageSrc}
-            alt="크롭된 측정 부위"
+            alt={t("input.croppedAlt")}
             className="block max-h-40 w-auto object-contain"
           />
         </div>
@@ -127,7 +129,7 @@ export default function CrossCheckInputPhase({
       <div className="rounded-xl border border-gray-200 bg-white p-4">
         <div className="flex items-center justify-between gap-2">
           <label className="block text-xs font-medium text-[#6B7280]">
-            측정값
+            {t("input.measuredValue")}
           </label>
           <JudgmentBadge judgment={judgment} compact />
         </div>
@@ -137,7 +139,7 @@ export default function CrossCheckInputPhase({
           step="any"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder={isPreparing ? "OCR 인식 중..." : ""}
+          placeholder={isPreparing ? t("input.ocrRunning") : ""}
           disabled={inputDisabled}
           className="mt-1 h-11 w-full rounded-md border border-gray-300 px-3 text-base text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
         />
@@ -152,7 +154,7 @@ export default function CrossCheckInputPhase({
             disabled={isSaving || isPreparing}
             className="h-11 rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold text-[#6B7280] disabled:opacity-60"
           >
-            이전
+            {t("input.prev")}
           </button>
         )}
         <button
@@ -161,7 +163,7 @@ export default function CrossCheckInputPhase({
           disabled={isSaving || isPreparing}
           className="h-11 flex-1 rounded-md border border-gray-300 bg-white text-sm font-semibold text-[#212121] disabled:opacity-60"
         >
-          {blob ? "다시 촬영" : "사진 촬영"}
+          {blob ? t("input.retake") : t("input.takePhoto")}
         </button>
         {onGoNext && (
           <button
@@ -170,7 +172,7 @@ export default function CrossCheckInputPhase({
             disabled={isSaving || isPreparing}
             className="h-11 rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold text-[#6B7280] disabled:opacity-60"
           >
-            다음
+            {t("input.next")}
           </button>
         )}
         <button

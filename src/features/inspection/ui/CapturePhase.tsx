@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Icon } from "@iconify/react";
 import {
   isAllowedImageFile,
@@ -48,6 +49,7 @@ export default function CapturePhase({
   onGoNext,
   onMeasureWithoutPhoto,
 }: Props) {
+  const { t } = useTranslation("inspection");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -115,11 +117,11 @@ export default function CapturePhase({
           setIsCameraOpen(false);
           const name = (err as DOMException)?.name;
           if (name === "NotAllowedError" || name === "SecurityError") {
-            onError("카메라 권한이 필요합니다. 브라우저 권한을 허용해주세요.");
+            onError(t("capture.errors.cameraPermission"));
           } else if (name === "NotFoundError") {
             fileInputRef.current?.click();
           } else {
-            onError("카메라를 열 수 없습니다.");
+            onError(t("capture.errors.cameraOpenFailed"));
           }
         }
       })
@@ -134,7 +136,7 @@ export default function CapturePhase({
         streamRef.current = null;
       }
     };
-  }, [isCameraOpen, onError]);
+  }, [isCameraOpen, onError, t]);
 
   const handleOpenCamera = () => {
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -176,7 +178,7 @@ export default function CapturePhase({
   const handleTakePhoto = async () => {
     const video = videoRef.current;
     if (!video || !video.videoWidth || !video.videoHeight) {
-      onError("카메라 준비 중입니다. 잠시 후 다시 시도해주세요.");
+      onError(t("capture.errors.cameraPreparing"));
       return;
     }
     const canvas = document.createElement("canvas");
@@ -184,7 +186,7 @@ export default function CapturePhase({
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
     if (!ctx) {
-      onError("이미지를 생성할 수 없습니다.");
+      onError(t("capture.errors.imageCreateFailed"));
       return;
     }
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -192,11 +194,11 @@ export default function CapturePhase({
       canvas.toBlob(resolve, "image/jpeg", 0.92),
     );
     if (!blob) {
-      onError("이미지 변환에 실패했습니다.");
+      onError(t("capture.errors.imageConvertFailed"));
       return;
     }
     if (blob.size > MAX_UPLOAD_BYTES) {
-      onError("최대 10MB 이하의 이미지만 업로드할 수 있습니다.");
+      onError(t("capture.errors.maxSize"));
       return;
     }
     const file = new File([blob], `capture-${Date.now()}.jpg`, {
@@ -212,21 +214,19 @@ export default function CapturePhase({
     if (!file) return;
     if (!isAllowedImageFile(file)) {
       onError(
-        `PNG/JPG 이미지만 업로드할 수 있습니다. (현재: ${file.type || "unknown"})`,
+        t("capture.errors.invalidFileType", { type: file.type || "unknown" }),
       );
       return;
     }
     if (file.size > MAX_UPLOAD_BYTES) {
-      onError("최대 10MB 이하의 이미지만 업로드할 수 있습니다.");
+      onError(t("capture.errors.maxSize"));
       return;
     }
     // 저해상도 사진은 OCR 인식이 어려워 미리 거른다. (크기 확인 실패 시엔 통과)
     try {
       const { width, height } = await readImageSize(file);
       if (width < MIN_OCR_DIMENSION || height < MIN_OCR_DIMENSION) {
-        onError(
-          "사진 해상도가 낮아 측정값 인식이 어려워요. 측정값이 또렷이 보이게 더 가까이서 다시 찍어주세요.",
-        );
+        onError(t("capture.errors.lowResolution"));
         return;
       }
     } catch {
@@ -246,16 +246,16 @@ export default function CapturePhase({
         />
         <div className="text-center">
           <div className="text-sm font-medium text-[#212121]">
-            측정 부위를 촬영해주세요
+            {t("capture.prompt")}
           </div>
-          <p className="mt-1 text-xs text-[#6B7280]">PNG/JPG · 최대 10MB</p>
+          <p className="mt-1 text-xs text-[#6B7280]">{t("capture.fileHint")}</p>
         </div>
         <button
           type="button"
           onClick={handleCaptureClick}
           className="h-11 rounded-md bg-[#931B82] px-6 text-sm font-semibold text-white hover:bg-[#6A0F5D]"
         >
-          사진 촬영
+          {t("capture.captureButton")}
         </button>
         <button
           type="button"
@@ -263,7 +263,7 @@ export default function CapturePhase({
           className="inline-flex items-center gap-1 text-xs font-medium text-[#931B82] hover:underline"
         >
           <Icon icon="solar:question-circle-linear" width={14} height={14} />
-          촬영 예시 보기
+          {t("capture.guideLink")}
         </button>
         <input
           ref={fileInputRef}
@@ -281,7 +281,7 @@ export default function CapturePhase({
             onClick={onGoBack}
             className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F3F4F6]"
           >
-            이전 단계
+            {t("capture.prevStep")}
           </button>
         )}
         <button
@@ -289,7 +289,7 @@ export default function CapturePhase({
           onClick={onSkip}
           className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-[#F9FAFB] text-sm font-medium text-[#6B7280] hover:bg-[#F3F4F6]"
         >
-          이 항목 건너뛰기
+          {t("capture.skipItem")}
         </button>
         {onGoNext && (
           <button
@@ -297,7 +297,7 @@ export default function CapturePhase({
             onClick={onGoNext}
             className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F3F4F6]"
           >
-            다음 단계
+            {t("capture.nextStep")}
           </button>
         )}
       </div>
@@ -308,7 +308,7 @@ export default function CapturePhase({
           onClick={onMeasureWithoutPhoto}
           className="h-11 w-full rounded-md border border-[#931B82] bg-white text-sm font-medium text-[#931B82] hover:bg-[#F3E8FF]"
         >
-          사진 없이 측정값 입력
+          {t("capture.withoutPhoto")}
         </button>
       )}
 
@@ -324,7 +324,7 @@ export default function CapturePhase({
             />
             {isStarting && (
               <div className="absolute inset-0 flex items-center justify-center text-sm text-white">
-                카메라 여는 중...
+                {t("capture.cameraOpening")}
               </div>
             )}
             {/* OCR 정확도 가이드 — 바깥을 어둡게 깔고 가운데 박스만 또렷하게.
@@ -345,7 +345,7 @@ export default function CapturePhase({
                   className="absolute w-full px-6 text-center text-sm font-medium text-white"
                   style={{ top: "70%" }}
                 >
-                  LCD(측정값)를 박스 안에 가득 차게 맞춰주세요
+                  {t("capture.frameGuide")}
                 </p>
               </div>
             )}
@@ -356,14 +356,14 @@ export default function CapturePhase({
               onClick={handleCloseCamera}
               className="h-11 rounded-md bg-white/10 px-4 text-sm font-medium text-white"
             >
-              취소
+              {t("capture.cancel")}
             </button>
             <button
               type="button"
               onClick={handleTakePhoto}
               disabled={isStarting}
               className="h-16 w-16 rounded-full border-4 border-white bg-white disabled:opacity-50"
-              aria-label="촬영"
+              aria-label={t("capture.shutter")}
             />
             <div className="w-15" />
           </div>

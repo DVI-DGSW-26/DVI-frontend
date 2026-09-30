@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { Icon } from "@iconify/react";
 
 interface Props {
@@ -16,6 +17,7 @@ export default function TerminateInspectionModal({
   onCancel,
   onConfirm,
 }: Props) {
+  const { t } = useTranslation("inspection");
   const [reason, setReason] = useState("");
 
   if (!open) return null;
@@ -44,11 +46,14 @@ export default function TerminateInspectionModal({
           </div>
           <div className="min-w-0 flex-1">
             <h3 className="text-base font-semibold text-[#212121]">
-              품질 문제로 검사를 마감할까요?
+              {t("modals.terminate.title")}
             </h3>
             <p className="mt-1 text-xs text-[#6B7280]">
-              다음 차수로 넘어가지 않고 여기까지 묶어 <b>보고서가 즉시 발행</b>
-              됩니다. 이후 재검사는 새 초품으로 시작됩니다. 되돌릴 수 없습니다.
+              <Trans
+                t={t}
+                i18nKey="modals.terminate.warning"
+                components={{ b: <b /> }}
+              />
             </p>
           </div>
         </div>
@@ -58,13 +63,13 @@ export default function TerminateInspectionModal({
             htmlFor="terminate-reason"
             className="text-xs font-medium text-[#6B7280]"
           >
-            사유 (선택)
+            {t("modals.terminate.reasonLabel")}
           </label>
           <textarea
             id="terminate-reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="예: 중품 치수 불량 - 금형 교체 필요"
+            placeholder={t("modals.terminate.reasonPlaceholder")}
             rows={3}
             disabled={isSubmitting}
             className="mt-1 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
@@ -78,7 +83,7 @@ export default function TerminateInspectionModal({
             disabled={isSubmitting}
             className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-60"
           >
-            취소
+            {t("modals.terminate.cancel")}
           </button>
           <button
             type="button"
@@ -86,7 +91,9 @@ export default function TerminateInspectionModal({
             disabled={isSubmitting}
             className="h-11 flex-1 rounded-md bg-[#B45309] text-sm font-semibold text-white hover:bg-[#92400E] disabled:bg-[#D1D5DB]"
           >
-            {isSubmitting ? "마감 중..." : "마감·보고서 발행"}
+            {isSubmitting
+              ? t("modals.terminate.submitting")
+              : t("modals.terminate.confirm")}
           </button>
         </div>
       </div>

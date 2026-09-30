@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Icon } from "@iconify/react";
 import Select, { type StylesConfig } from "react-select";
 import Logo from "../../../assets/Logo.svg";
@@ -7,11 +8,6 @@ import Button from "../../../components/shared/Button";
 import type { SignupFormProps } from "./SignupForm";
 
 type DepartmentOption = { value: string; label: string };
-
-const departmentOptions: DepartmentOption[] = [
-  { value: "QUALITY", label: "품질" },
-  { value: "PRODUCTION", label: "생산" }
-];
 
 const selectStyles: StylesConfig<DepartmentOption, false> = {
   control: (base) => ({
@@ -41,9 +37,15 @@ export default function SignupFormMobile({
   setDepartment,
   onSubmit,
 }: SignupFormProps) {
+  const { t } = useTranslation("auth");
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
+
+  const departmentOptions: DepartmentOption[] = [
+    { value: "QUALITY", label: t("signup.departments.QUALITY") },
+    { value: "PRODUCTION", label: t("signup.departments.PRODUCTION") },
+  ];
 
   const handleBack = () => {
     if (step === 1) navigate(-1);
@@ -73,7 +75,7 @@ export default function SignupFormMobile({
           onClick={handleBack}
           className="absolute text-[#212121]"
           style={{ left: "39px", top: "69px" }}
-          aria-label="뒤로"
+          aria-label={t("signup.back")}
         >
           <Icon icon="ic:round-arrow-back-ios" width="24" />
         </button>
@@ -85,20 +87,20 @@ export default function SignupFormMobile({
             className="absolute text-xl font-bold leading-snug text-[#212121]"
             style={{ left: "48px", top: "139px" }}
           >
-            아이디와 비밀번호를
+            {t("signup.step1TitleLine1")}
             <br />
-            입력해주세요.
+            {t("signup.step1TitleLine2")}
           </h1>
 
           <input
-            placeholder="아이디를 입력하세요."
+            placeholder={t("fields.idPlaceholder")}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             style={{ ...inputBaseStyle, top: "344px" }}
             className={inputClass}
           />
           <input
-            placeholder="비밀번호를 입력하세요."
+            placeholder={t("fields.passwordPlaceholder")}
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -115,7 +117,7 @@ export default function SignupFormMobile({
             }}
           >
             <input
-              placeholder="비밀번호를 재입력하세요."
+              placeholder={t("fields.passwordConfirmPlaceholder")}
               type={showConfirmPassword ? "text" : "password"}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
@@ -126,7 +128,11 @@ export default function SignupFormMobile({
               type="button"
               onClick={() => setShowConfirmPassword((v) => !v)}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-[#A8A8A8]"
-              aria-label={showConfirmPassword ? "비밀번호 숨기기" : "비밀번호 보이기"}
+              aria-label={
+                showConfirmPassword
+                  ? t("fields.hidePassword")
+                  : t("fields.showPassword")
+              }
             >
               <Icon
                 icon={showConfirmPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"}
@@ -144,7 +150,7 @@ export default function SignupFormMobile({
             }}
           >
             <Button onClick={() => setStep(2)} disabled={!step1Valid}>
-              다음
+              {t("signup.next")}
             </Button>
           </div>
         </>
@@ -156,13 +162,13 @@ export default function SignupFormMobile({
             className="absolute text-xl font-bold leading-snug text-[#212121]"
             style={{ left: "48px", top: "139px" }}
           >
-            이름과 부서를
+            {t("signup.step2TitleLine1")}
             <br />
-            입력해주세요.
+            {t("signup.step2TitleLine2")}
           </h1>
 
           <input
-            placeholder="이름을 입력하세요."
+            placeholder={t("fields.namePlaceholder")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             style={{ ...inputBaseStyle, top: "344px" }}
@@ -177,7 +183,7 @@ export default function SignupFormMobile({
             }}
           >
             <Select<DepartmentOption, false>
-              placeholder="부서를 선택하세요."
+              placeholder={t("fields.departmentPlaceholder")}
               options={departmentOptions}
               value={departmentOptions.find((o) => o.value === department)}
               onChange={(selected) => setDepartment(selected?.value ?? "")}
@@ -194,7 +200,7 @@ export default function SignupFormMobile({
             }}
           >
             <Button onClick={() => setStep(3)} disabled={!step2Valid}>
-              다음
+              {t("signup.next")}
             </Button>
           </div>
         </>
@@ -218,7 +224,7 @@ export default function SignupFormMobile({
               width: "calc(100% - 48px)",
             }}
           >
-            <Button onClick={onSubmit}>관리자 승인 요청</Button>
+            <Button onClick={onSubmit}>{t("signup.requestApproval")}</Button>
           </div>
         </>
       )}

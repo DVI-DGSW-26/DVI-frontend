@@ -1,10 +1,12 @@
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import type {
   AppearanceResult,
   ReportStage,
   ReportStageInfo,
 } from "../api/types";
 // 초 → 중 → 종 고정 순서. 백엔드가 stages 를 어떤 순서로 주든 성적서 읽는 순서로 맞춘다.
-import { STAGE_LABEL, STAGE_ORDER } from "../lib/stageMeasurements";
+import { STAGE_ORDER } from "../lib/stageMeasurements";
 import { formatSlotTime } from "../lib/inspectedTime";
 import { formatShortDateTime } from "../../../lib/datetime";
 import ShiftBadge from "../../../components/shared/ShiftBadge";
@@ -18,12 +20,12 @@ const STAGE_BADGE: Record<ReportStage, string> = {
 
 // 실제 검사 시각(inspectedAt) 우선. 없으면 예정 슬롯(inspectionTime)으로 폴백하되
 // 슬롯값은 "실제로 언제 쟀는지"가 아니므로 괄호로 구분해 표시한다.
-function formatInspected(stage: ReportStageInfo): string {
+function formatInspected(stage: ReportStageInfo, t: TFunction): string {
   // 서버 시각은 오프셋 없는 KST 라 new Date() 로 바로 파싱하면 기기 시간대에 끌려간다.
   const inspected = formatShortDateTime(stage.inspectedAt);
   if (inspected) return inspected;
   const slot = formatSlotTime(stage.inspectionTime);
-  if (slot) return `(${slot} 예정)`;
+  if (slot) return t("stages.scheduled", { time: slot });
   return "—";
 }
 
@@ -38,6 +40,7 @@ function AppearanceMark({ value }: { value: AppearanceResult | null }) {
 }
 
 function StageBadge({ stage, label }: { stage: ReportStage; label: string }) {
+  const { t } = useTranslation("report");
   return (
     <span className="inline-flex items-center gap-1.5">
       <span
@@ -45,7 +48,7 @@ function StageBadge({ stage, label }: { stage: ReportStage; label: string }) {
           STAGE_BADGE[stage] ?? "border-[#E5E7EB] bg-[#F5F5F5] text-[#6B7280]"
         }`}
       >
-        {STAGE_LABEL[stage] ?? "?"}
+        {t(`stage.${stage}`, "?")}
       </span>
       <span className="text-[#212121]">{label}</span>
     </span>
@@ -69,6 +72,7 @@ export default function ReportStagesSection({
   /** 보고서 전체의 근무조 — 차수에 shift 가 없을 때의 폴백. */
   shift?: WorkShift | null;
 }) {
+  const { t } = useTranslation("report");
   if (!stages || stages.length === 0) return null;
 
   const ordered = [...stages].sort(
@@ -95,22 +99,25 @@ export default function ReportStagesSection({
                 {mixedShift && <ShiftBadge shift={stageShifts[idx]} compact />}
               </span>
               <span className="text-xs text-[#6B7280]">
-                {formatInspected(s)}
+                {formatInspected(s, t)}
               </span>
             </div>
             <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-              <Field label="작업자" value={s.productionName} />
-              <Field label="검사자" value={s.qualityName} />
+              <Field label={t("stages.worker")} value={s.productionName} />
+              <Field label={t("stages.inspector")} value={s.qualityName} />
               <Field
-                label="자주 외관"
+                label={t("stages.selfAppearance")}
                 value={<AppearanceMark value={s.productionAppearanceResult} />}
               />
               <Field
-                label="순회 외관"
+                label={t("stages.patrolAppearance")}
                 value={<AppearanceMark value={s.qualityAppearanceResult} />}
               />
               {s.qualityHardnessResult && (
-                <Field label="경도" value={s.qualityHardnessResult} />
+                <Field
+                  label={t("stages.hardness")}
+                  value={s.qualityHardnessResult}
+                />
               )}
             </dl>
             {s.remarks && (
@@ -129,14 +136,20 @@ export default function ReportStagesSection({
       <table className="w-full min-w-[720px] text-sm">
         <thead>
           <tr className="border-b border-[#E5E7EB] text-left text-xs text-[#A8A8A8]">
-            <th className="pb-2 pr-3 font-medium">차수</th>
-            <th className="pb-2 pr-3 font-medium">검사 시각</th>
-            <th className="pb-2 pr-3 font-medium">작업자</th>
-            <th className="pb-2 pr-3 font-medium">검사자</th>
-            <th className="pb-2 pr-3 font-medium">자주 외관</th>
-            <th className="pb-2 pr-3 font-medium">순회 외관</th>
-            {hasHardness && <th className="pb-2 pr-3 font-medium">경도</th>}
-            <th className="pb-2 font-medium">비고</th>
+            <th className="pb-2 pr-3 font-medium">{t("stages.round")}</th>
+            <th className="pb-2 pr-3 font-medium">{t("stages.inspectedAt")}</th>
+            <th className="pb-2 pr-3 font-medium">{t("stages.worker")}</th>
+            <th className="pb-2 pr-3 font-medium">{t("stages.inspector")}</th>
+            <th className="pb-2 pr-3 font-medium">
+              {t("stages.selfAppearance")}
+            </th>
+            <th className="pb-2 pr-3 font-medium">
+              {t("stages.patrolAppearance")}
+            </th>
+            {hasHardness && (
+              <th className="pb-2 pr-3 font-medium">{t("stages.hardness")}</th>
+            )}
+            <th className="pb-2 font-medium">{t("stages.remarks")}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[#F0F0F0]">
@@ -148,7 +161,9 @@ export default function ReportStagesSection({
                   {mixedShift && <ShiftBadge shift={stageShifts[idx]} compact />}
                 </span>
               </td>
-              <td className="py-3 pr-3 text-[#212121]">{formatInspected(s)}</td>
+              <td className="py-3 pr-3 text-[#212121]">
+                {formatInspected(s, t)}
+              </td>
               <td className="py-3 pr-3 text-[#212121]">
                 {s.productionName || "—"}
               </td>

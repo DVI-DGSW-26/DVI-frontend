@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import { MAX_SLOTS } from "../api";
 import type {
   InspectionSchedule,
@@ -54,23 +55,10 @@ interface SlotDraft {
   nextDay: boolean;
 }
 
-const SCHEDULE_TYPES: { value: ScheduleType; label: string; hint: string }[] = [
-  {
-    value: "CHO_JUNG_JONG",
-    label: "초/중/종",
-    hint: "정해진 시각 없이 초·중·종 순서로 진행합니다. 시각은 비워두면 됩니다.",
-  },
-  {
-    value: "TIME_BASED",
-    label: "시간대별",
-    hint: "정해진 시각마다 검사합니다. 각 슬롯에 시각을 넣어주세요.",
-  },
-];
+// 라벨·힌트는 i18n 리소스(inspectionSchedule:drawer.types / drawer.shifts)에서 값 기준으로 찾는다.
+const SCHEDULE_TYPES: ScheduleType[] = ["CHO_JUNG_JONG", "TIME_BASED"];
 
-const SHIFTS: { value: Shift; label: string }[] = [
-  { value: "DAY", label: "주간" },
-  { value: "NIGHT", label: "야간" },
-];
+const SHIFTS: Shift[] = ["DAY", "NIGHT"];
 
 // "HH:mm:ss" 또는 "HH:mm" → <input type="time"> 이 쓰는 "HH:mm".
 function toTimeInput(value: string | null): string {
@@ -94,6 +82,7 @@ export default function ScheduleDrawer({
   submitError,
   secondaryAction,
 }: Props) {
+  const { t } = useTranslation(["inspectionSchedule", "common"]);
   const [scheduleType, setScheduleType] = useState<ScheduleType>("CHO_JUNG_JONG");
   const [slots, setSlots] = useState<SlotDraft[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -151,15 +140,16 @@ export default function ScheduleDrawer({
     e.preventDefault();
     setError(null);
 
-    if (slots.length === 0) return setError("슬롯을 최소 1개 이상 등록하세요.");
+    if (slots.length === 0) return setError(t("drawer.errors.minSlots"));
     if (slots.length > MAX_SLOTS)
-      return setError(`슬롯은 최대 ${MAX_SLOTS}개까지 등록할 수 있습니다.`);
+      return setError(t("drawer.errors.maxSlots", { n: MAX_SLOTS }));
 
     const body: ScheduleSlotInput[] = [];
     for (let i = 0; i < slots.length; i += 1) {
       const s = slots[i];
       const label = s.label.trim();
-      if (!label) return setError(`${i + 1}번째 슬롯의 이름을 입력하세요.`);
+      if (!label)
+        return setError(t("drawer.errors.slotNameRequired", { n: i + 1 }));
       body.push({
         label,
         shift: s.shift,
@@ -201,7 +191,7 @@ export default function ScheduleDrawer({
           <button
             type="button"
             onClick={onClose}
-            aria-label="닫기"
+            aria-label={t("common:actions.close")}
             className="text-[#A8A8A8] transition-colors hover:text-[#212121]"
           >
             <Icon icon="mdi:close" width={22} height={22} />
@@ -210,11 +200,11 @@ export default function ScheduleDrawer({
 
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center text-sm text-[#A8A8A8]">
-            불러오는 중...
+            {t("common:status.loading")}
           </div>
         ) : isError ? (
           <div className="flex flex-1 items-center justify-center text-sm text-[#EF4444]">
-            스케줄을 불러오지 못했습니다.
+            {t("drawer.loadError")}
           </div>
         ) : (
           <form
@@ -225,39 +215,41 @@ export default function ScheduleDrawer({
 
             <div className="flex flex-col gap-2">
               <span className="text-sm font-medium text-[#212121]">
-                스케줄 종류
+                {t("drawer.typeLabel")}
               </span>
               <div className="grid grid-cols-2 gap-2">
-                {SCHEDULE_TYPES.map((opt) => {
-                  const selected = scheduleType === opt.value;
+                {SCHEDULE_TYPES.map((value) => {
+                  const selected = scheduleType === value;
                   return (
                     <button
-                      key={opt.value}
+                      key={value}
                       type="button"
-                      onClick={() => setScheduleType(opt.value)}
+                      onClick={() => setScheduleType(value)}
                       className={`h-10 rounded-lg border text-sm font-medium transition-colors ${
                         selected
                           ? "border-[#931B82] bg-[#931B82] text-white"
                           : "border-gray-300 bg-white text-[#6B7280] hover:bg-gray-50"
                       }`}
                     >
-                      {opt.label}
+                      {t(`drawer.types.${value}.label`)}
                     </button>
                   );
                 })}
               </div>
               <p className="text-[11px] text-[#6B7280]">
-                {SCHEDULE_TYPES.find((t) => t.value === scheduleType)?.hint}
+                {t(`drawer.types.${scheduleType}.hint`)}
               </p>
             </div>
 
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-[#212121]">
-                  검사 시점{" "}
+                  {t("drawer.slotsLabel")}{" "}
                   <span className="text-xs text-[#6B7280]">
                     ({slots.length}/{MAX_SLOTS}
-                    {nightCount > 0 ? ` · 야간 ${nightCount}` : ""})
+                    {nightCount > 0
+                      ? ` · ${t("drawer.nightCount", { n: nightCount })}`
+                      : ""})
                   </span>
                 </span>
                 <button
@@ -267,13 +259,13 @@ export default function ScheduleDrawer({
                   className="flex items-center gap-1 rounded-md border border-[#931B82] px-2 py-1 text-xs font-medium text-[#931B82] transition-colors hover:bg-[#F3E8F7] disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <Icon icon="mdi:plus" width={14} height={14} />
-                  시점 추가
+                  {t("drawer.addSlot")}
                 </button>
               </div>
 
               {slots.length === 0 && (
                 <p className="rounded-lg border border-dashed border-gray-300 bg-[#FAFAFA] px-3 py-6 text-center text-xs text-[#6B7280]">
-                  등록된 시점이 없습니다. "시점 추가" 로 만들어주세요.
+                  {t("drawer.emptySlots")}
                 </p>
               )}
 
@@ -290,7 +282,11 @@ export default function ScheduleDrawer({
                       type="text"
                       value={slot.label}
                       onChange={(e) => patchSlot(idx, { label: e.target.value })}
-                      placeholder={slot.shift === "NIGHT" ? "야간초" : "초"}
+                      placeholder={
+                        slot.shift === "NIGHT"
+                          ? t("drawer.slotPlaceholderNight")
+                          : t("drawer.slotPlaceholderDay")
+                      }
                       className="h-9 min-w-0 flex-1 rounded-md border border-gray-300 px-2.5 text-sm focus:border-[#931B82] focus:outline-none"
                     />
                     <div className="flex shrink-0 items-center">
@@ -298,7 +294,7 @@ export default function ScheduleDrawer({
                         type="button"
                         onClick={() => moveSlot(idx, -1)}
                         disabled={idx === 0}
-                        aria-label="위로"
+                        aria-label={t("drawer.moveUp")}
                         className="rounded p-1 text-[#6B7280] hover:bg-[#F3F4F6] disabled:opacity-30"
                       >
                         <Icon icon="mdi:chevron-up" width={16} height={16} />
@@ -307,7 +303,7 @@ export default function ScheduleDrawer({
                         type="button"
                         onClick={() => moveSlot(idx, 1)}
                         disabled={idx === slots.length - 1}
-                        aria-label="아래로"
+                        aria-label={t("drawer.moveDown")}
                         className="rounded p-1 text-[#6B7280] hover:bg-[#F3F4F6] disabled:opacity-30"
                       >
                         <Icon icon="mdi:chevron-down" width={16} height={16} />
@@ -315,7 +311,7 @@ export default function ScheduleDrawer({
                       <button
                         type="button"
                         onClick={() => removeSlot(idx)}
-                        aria-label="삭제"
+                        aria-label={t("common:actions.delete")}
                         className="rounded p-1 text-[#6B7280] hover:bg-[#FEE2E2] hover:text-[#EF4444]"
                       >
                         <Icon icon="mdi:trash-can-outline" width={16} height={16} />
@@ -325,20 +321,20 @@ export default function ScheduleDrawer({
 
                   <div className="flex flex-wrap items-center gap-2 pl-8">
                     <div className="flex overflow-hidden rounded-md border border-gray-300">
-                      {SHIFTS.map((s) => (
+                      {SHIFTS.map((shift) => (
                         <button
-                          key={s.value}
+                          key={shift}
                           type="button"
-                          onClick={() => patchSlot(idx, { shift: s.value })}
+                          onClick={() => patchSlot(idx, { shift })}
                           className={`h-8 px-3 text-xs font-medium transition-colors ${
-                            slot.shift === s.value
-                              ? s.value === "NIGHT"
+                            slot.shift === shift
+                              ? shift === "NIGHT"
                                 ? "bg-[#3730A3] text-white"
                                 : "bg-[#B45309] text-white"
                               : "bg-white text-[#6B7280] hover:bg-gray-50"
                           }`}
                         >
-                          {s.label}
+                          {t(`drawer.shifts.${shift}`)}
                         </button>
                       ))}
                     </div>
@@ -359,14 +355,14 @@ export default function ScheduleDrawer({
                         }
                         className="h-3.5 w-3.5 accent-[#931B82]"
                       />
-                      자정 넘김(다음날)
+                      {t("drawer.nextDay")}
                     </label>
                   </div>
                 </div>
               ))}
 
               <p className="text-[11px] text-[#6B7280]">
-                순회검사 자동 복사·경도 입력 여부는 공정 설정에서 자동으로 정해집니다.
+                {t("drawer.autoNote")}
               </p>
             </div>
 
@@ -383,14 +379,14 @@ export default function ScheduleDrawer({
                   onClick={onClose}
                   className="h-11 flex-1 rounded-lg border border-gray-300 text-sm font-medium text-[#212121] transition-colors hover:bg-gray-50"
                 >
-                  취소
+                  {t("common:actions.cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
                   className="h-11 flex-1 rounded-lg bg-[#931B82] text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D] disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  {isSaving ? "저장 중..." : submitLabel}
+                  {isSaving ? t("drawer.saving") : submitLabel}
                 </button>
               </div>
               {secondaryAction}

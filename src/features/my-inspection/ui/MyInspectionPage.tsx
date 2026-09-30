@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
 import {
@@ -50,6 +51,7 @@ function filterByTab(inspections: MyInspection[], tab: Tab): MyInspection[] {
 
 export default function MyInspectionPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation("myInspection");
   // 검사 상세를 보고 뒤로 돌아와도 보던 탭·기간 그대로.
   const [tab, setTab] = useViewState<Tab>("tab", "ALL");
   const [deleteTarget, setDeleteTarget] = useState<MyInspection | null>(null);
@@ -145,16 +147,16 @@ export default function MyInspectionPage() {
           | undefined;
         const code = data?.code;
         if (code === "NO_NEXT_SLOT") {
-          setToast("마지막 시점입니다.");
+          setToast(t("toast.lastSlot"));
         } else if (code === "PREVIOUS_INSPECTION_NOT_COMPLETED") {
-          setToast("이전 검사를 먼저 완료해주세요.");
+          setToast(t("toast.previousNotCompleted"));
         } else if (code === "INSPECTION_ALREADY_EXISTS") {
-          setToast("이미 시작된 시점입니다.");
+          setToast(t("toast.slotAlreadyStarted"));
         } else {
-          setToast(data?.message ?? "다음 시점을 시작하지 못했습니다.");
+          setToast(data?.message ?? t("toast.startNextFailed"));
         }
       } else {
-        setToast("다음 시점을 시작하지 못했습니다.");
+        setToast(t("toast.startNextFailed"));
       }
     } finally {
       setPendingNextPrevId(null);
@@ -166,7 +168,7 @@ export default function MyInspectionPage() {
     // 검사 시작은 작업지시 기준이라 orderId 가 없으면 다시 시작할 수 없다.
     const orderId = inspection.orderId;
     if (orderId == null) {
-      setToast("작업지시 정보가 없어 다시 시작할 수 없습니다.");
+      setToast(t("toast.restartNoOrder"));
       return;
     }
     setPendingRestartId(inspection.inspectionId);
@@ -183,8 +185,8 @@ export default function MyInspectionPage() {
       const msg =
         err instanceof AxiosError
           ? ((err.response?.data as { message?: string } | undefined)
-              ?.message ?? "다시 검사를 시작하지 못했습니다.")
-          : "다시 검사를 시작하지 못했습니다.";
+              ?.message ?? t("toast.restartFailed"))
+          : t("toast.restartFailed");
       setToast(msg);
     } finally {
       setPendingRestartId(null);
@@ -200,7 +202,7 @@ export default function MyInspectionPage() {
     try {
       await deleteMutation.mutateAsync(deleteTarget.inspectionId);
       setDeleteTarget(null);
-      setToast("검사가 삭제되었습니다.");
+      setToast(t("toast.deleted"));
     } catch (err) {
       if (err instanceof AxiosError) {
         const data = err.response?.data as
@@ -210,16 +212,16 @@ export default function MyInspectionPage() {
         const status = err.response?.status;
         setDeleteTarget(null);
         if (code === "INSPECTION_NOT_DELETABLE" || status === 400) {
-          setToast("이미 처리된 검사는 삭제할 수 없습니다.");
+          setToast(t("toast.notDeletable"));
           return;
         }
         if (code === "NOT_OWNER" || status === 403) {
-          setToast("본인이 시작한 검사만 삭제할 수 있습니다.");
+          setToast(t("toast.deleteNotOwner"));
           return;
         }
       }
       setDeleteTarget(null);
-      setToast("검사를 삭제하지 못했습니다.");
+      setToast(t("toast.deleteFailed"));
     }
   };
 
@@ -244,13 +246,13 @@ export default function MyInspectionPage() {
                     : "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"
                 }`}
               >
-                {f.label}
+                {t(f.label)}
               </button>
             );
           })}
           {dateFilter !== "ALL" && (
             <span className="ml-1 text-[10px] text-[#9CA3AF]">
-              미완료는 항상 표시
+              {t("history.incompleteAlwaysShown")}
             </span>
           )}
         </div>
@@ -277,15 +279,13 @@ export default function MyInspectionPage() {
           </div>
         )}
         {inspectionsQuery.isLoading ? (
-          <EmptyState label="불러오는 중..." />
+          <EmptyState label={t("history.loading")} />
         ) : inspectionsQuery.isError ? (
-          <EmptyState label="목록을 불러오지 못했습니다." error />
+          <EmptyState label={t("history.loadFailed")} error />
         ) : entries.length === 0 ? (
           <EmptyState
             label={
-              tab === "ALL"
-                ? "검사가 없습니다."
-                : "해당 조건의 검사가 없습니다."
+              tab === "ALL" ? t("history.empty") : t("history.emptyFiltered")
             }
           />
         ) : (
@@ -316,11 +316,13 @@ export default function MyInspectionPage() {
       <button
         type="button"
         onClick={() => navigate("/my-orders")}
-        aria-label="새 검사 시작"
+        aria-label={t("history.newInspection")}
         className="fixed bottom-24 right-4 z-20 flex h-14 items-center gap-2 rounded-full bg-[#931B82] pl-4 pr-5 text-white shadow-lg ring-1 ring-[#6A0F5D]/40 transition-colors hover:bg-[#6A0F5D]"
       >
         <Icon icon="solar:add-circle-bold" width={22} height={22} />
-        <span className="text-sm font-semibold">검사 시작</span>
+        <span className="text-sm font-semibold">
+          {t("history.startInspection")}
+        </span>
       </button>
 
       <DeleteInspectionModal

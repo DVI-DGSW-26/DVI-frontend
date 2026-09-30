@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import authBackground from "../../../assets/authBackground.png";
 import authLogo from "../../../assets/authLogo.svg";
 import Logo from "../../../assets/Logo.svg";
@@ -6,11 +7,6 @@ import Button from "../../../components/shared/Button";
 import type { SignupFormProps } from "./SignupForm";
 
 type DepartmentOption = { value: string; label: string };
-
-const departmentOptions: DepartmentOption[] = [
-  { value: "PRODUCTION", label: "생산" },
-  { value: "QUALITY", label: "품질" },
-];
 
 const selectStyles: StylesConfig<DepartmentOption, false> = {
   control: (base) => ({
@@ -49,6 +45,13 @@ export default function SignupFormWeb({
   setDepartment,
   onSubmit,
 }: SignupFormProps) {
+  const { t } = useTranslation("auth");
+
+  const departmentOptions: DepartmentOption[] = [
+    { value: "PRODUCTION", label: t("signup.departments.PRODUCTION") },
+    { value: "QUALITY", label: t("signup.departments.QUALITY") },
+  ];
+
   return (
     <div className="flex h-dvh w-full">
       {/* 왼쪽 고정 이미지 */}
@@ -77,14 +80,14 @@ export default function SignupFormWeb({
           </div>
           <div className="flex flex-col gap-3">
             <input
-              placeholder="아이디를 입력하세요."
+              placeholder={t("fields.idPlaceholder")}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               style={{ paddingLeft: "13px" }}
               className="w-full border border-[#A8A8A8] rounded-lg h-12 xl:h-15 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
             />
             <input
-              placeholder="비밀번호를 입력하세요."
+              placeholder={t("fields.passwordPlaceholder")}
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -92,7 +95,7 @@ export default function SignupFormWeb({
               className="w-full border border-[#A8A8A8] rounded-lg h-12 xl:h-15 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
             />
             <input
-              placeholder="비밀번호를 재입력하세요."
+              placeholder={t("fields.passwordConfirmPlaceholder")}
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
@@ -101,7 +104,7 @@ export default function SignupFormWeb({
             />
             <div className="flex gap-4">
               <input
-                placeholder="이름을 입력하세요."
+                placeholder={t("fields.namePlaceholder")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 style={{ paddingLeft: "13px" }}
@@ -109,7 +112,7 @@ export default function SignupFormWeb({
               />
               <div className="w-1/2">
                 <Select<DepartmentOption, false>
-                  placeholder="부서를 선택하세요."
+                  placeholder={t("fields.departmentPlaceholder")}
                   options={departmentOptions}
                   value={departmentOptions.find((o) => o.value === department)}
                   onChange={(selected) => setDepartment(selected?.value ?? "")}
@@ -118,7 +121,7 @@ export default function SignupFormWeb({
               </div>
             </div>
             <div style={{ marginTop: "35px" }}>
-              <Button onClick={onSubmit}>회원가입</Button>
+              <Button onClick={onSubmit}>{t("signup.submit")}</Button>
             </div>
           </div>
         </div>

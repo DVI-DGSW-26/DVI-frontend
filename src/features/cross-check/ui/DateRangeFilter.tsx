@@ -1,11 +1,13 @@
+import { useTranslation } from "react-i18next";
 import type { DateFilterValue, DatePreset } from "../lib/dateFilter";
 
-const PRESETS: { key: DatePreset; label: string }[] = [
-  { key: "all", label: "전체" },
-  { key: "today", label: "오늘" },
-  { key: "7d", label: "최근 7일" },
-  { key: "30d", label: "최근 30일" },
-  { key: "custom", label: "직접 선택" },
+// 프리셋 라벨은 i18n — crossCheck 네임스페이스의 filter.presets.* 키.
+const PRESETS: { key: DatePreset; labelKey: string }[] = [
+  { key: "all", labelKey: "filter.presets.all" },
+  { key: "today", labelKey: "filter.presets.today" },
+  { key: "7d", labelKey: "filter.presets.last7" },
+  { key: "30d", labelKey: "filter.presets.last30" },
+  { key: "custom", labelKey: "filter.presets.custom" },
 ];
 
 interface Props {
@@ -15,6 +17,7 @@ interface Props {
 
 // 검사 일시 기준 날짜 필터 바. 프리셋 칩 + "직접 선택" 시 시작/종료일 입력.
 export default function DateRangeFilter({ value, onChange }: Props) {
+  const { t } = useTranslation("crossCheck");
   return (
     <div className="flex flex-col gap-2 rounded-2xl bg-white p-3 shadow-sm">
       <div className="flex flex-wrap gap-1.5">
@@ -31,7 +34,7 @@ export default function DateRangeFilter({ value, onChange }: Props) {
                   : "border border-gray-200 bg-white text-[#6B7280] hover:bg-[#F9FAFB]"
               }`}
             >
-              {p.label}
+              {t(p.labelKey)}
             </button>
           );
         })}

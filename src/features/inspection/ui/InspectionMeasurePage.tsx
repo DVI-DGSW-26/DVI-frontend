@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { AxiosError } from "axios";
 import { useAuth } from "../../auth/AuthContext";
 import {
@@ -99,6 +101,7 @@ function toStepResult(item: MeasureItem): StepResult {
 }
 
 export default function InspectionMeasurePage() {
+  const { t } = useTranslation("inspection");
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams<{ inspectionId: string }>();
@@ -271,9 +274,9 @@ export default function InspectionMeasurePage() {
     const s = (location.state ?? {}) as MeasureLocationState;
     if (s.terminatedNotice && !terminatedNoticeShown.current) {
       terminatedNoticeShown.current = true;
-      setToast("보고서가 발행되었습니다. 재검사(초품)를 시작합니다.");
+      setToast(t("measure.terminatedNotice"));
     }
-  }, [location.state]);
+  }, [location.state, t]);
 
   const handleTerminate = async (reason: string) => {
     try {
@@ -289,7 +292,7 @@ export default function InspectionMeasurePage() {
       });
     } catch (err) {
       setShowTerminate(false);
-      setToast(toErrorMessage(err));
+      setToast(toErrorMessage(err, t));
     }
   };
 
@@ -354,7 +357,7 @@ export default function InspectionMeasurePage() {
   if (detailQuery.isLoading || (!detail && !detailQuery.isError)) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
-        불러오는 중...
+        {t("common.loading")}
       </div>
     );
   }
@@ -363,14 +366,14 @@ export default function InspectionMeasurePage() {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
         <div className="text-sm font-medium text-[#212121]">
-          검사 정보를 찾을 수 없습니다.
+          {t("common.notFound")}
         </div>
         <button
           type="button"
           onClick={() => navigate("/")}
           className="mt-4 h-10 rounded-md bg-[#931B82] px-4 text-sm font-medium text-white hover:bg-[#6A0F5D]"
         >
-          홈으로 가기
+          {t("common.goHome")}
         </button>
       </div>
     );
@@ -380,7 +383,7 @@ export default function InspectionMeasurePage() {
   if (allDone && !editMode) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
-        결과 화면으로 이동 중...
+        {t("measure.movingToResult")}
       </div>
     );
   }
@@ -411,7 +414,7 @@ export default function InspectionMeasurePage() {
     });
     return (
       <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
-        측정 항목을 불러오는 중...
+        {t("measure.loadingItems")}
       </div>
     );
   }
@@ -545,7 +548,7 @@ export default function InspectionMeasurePage() {
     );
 
     if (imageRes.status === "rejected") {
-      setToast(toErrorMessage(imageRes.reason));
+      setToast(toErrorMessage(imageRes.reason, t));
       setCroppedBlob(null);
       setPhase("crop");
       setIsPreparing(false);
@@ -617,7 +620,7 @@ export default function InspectionMeasurePage() {
 
       advanceToNextStep();
     } catch (err) {
-      setToast(toErrorMessage(err));
+      setToast(toErrorMessage(err, t));
     }
   };
 
@@ -665,7 +668,7 @@ export default function InspectionMeasurePage() {
 
       advanceToNextStep();
     } catch (err) {
-      setToast(toErrorMessage(err));
+      setToast(toErrorMessage(err, t));
     }
   };
 
@@ -710,7 +713,7 @@ export default function InspectionMeasurePage() {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
         <div className="text-sm font-medium text-[#212121]">
-          측정할 항목이 없습니다.
+          {t("measure.noItems")}
         </div>
       </div>
     );
@@ -731,19 +734,22 @@ export default function InspectionMeasurePage() {
   return (
     <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-24">
       <section className="border-b border-gray-200 bg-white px-4 py-4">
-        <InfoRow label="기계명" value={info.equipment.name} />
-        <InfoRow label="검사 차수" value={info.typeLabel || "-"} />
-        <InfoRow label="검사 시작일" value={formatDate(info.createdAt)} />
+        <InfoRow label={t("measure.machineName")} value={info.equipment.name} />
+        <InfoRow label={t("measure.round")} value={info.typeLabel || "-"} />
+        <InfoRow
+          label={t("measure.startDate")}
+          value={formatDate(info.createdAt)}
+        />
         <div className="mt-2 grid grid-cols-2 gap-2">
-          <Stat label="제품명" value={info.product.name} />
-          <Stat label="담당자" value={user?.name ?? "-"} />
+          <Stat label={t("measure.productName")} value={info.product.name} />
+          <Stat label={t("measure.manager")} value={user?.name ?? "-"} />
         </div>
         <button
           type="button"
           onClick={() => setShowTerminate(true)}
           className="mt-3 w-full rounded-md border border-[#B45309] px-3 py-2 text-xs font-medium text-[#B45309] transition-colors hover:bg-[#FFFBEB]"
         >
-          품질 문제로 마감 · 보고서 발행
+          {t("measure.terminateButton")}
         </button>
       </section>
 
@@ -770,7 +776,7 @@ export default function InspectionMeasurePage() {
             </span>
             <span className="text-sm font-medium text-[#212121]">
               {currentDim.valueType === "PASS_FAIL"
-                ? "OK/NG 판정 항목"
+                ? t("judgment.passFailItem")
                 : dimDisplayName(currentDim)}
             </span>
           </div>
@@ -919,23 +925,23 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function toErrorMessage(err: unknown): string {
+function toErrorMessage(err: unknown, t: TFunction<"inspection">): string {
   if (err instanceof AxiosError) {
     const data = err.response?.data as ApiErrorData | undefined;
     const code = data?.code;
     switch (code) {
       case "EMPTY_FILE":
-        return "이미지가 비어있습니다.";
+        return t("measure.errors.emptyFile");
       case "INVALID_EXTENSION":
-        return "PNG/JPG 이미지만 업로드할 수 있습니다.";
+        return t("measure.errors.invalidExtension");
       case "UPLOAD_FAILED":
-        return "이미지 업로드에 실패했습니다.";
+        return t("measure.errors.uploadFailed");
       case "RESULTS_NOT_COMPLETE":
-        return "미입력 측정값이 있어 검사를 완료할 수 없습니다.";
+        return t("measure.errors.resultsNotComplete");
       default:
-        return data?.message ?? "요청 처리 중 오류가 발생했습니다.";
+        return data?.message ?? t("common.errors.requestFailed");
     }
   }
   if (err instanceof Error) return err.message;
-  return "알 수 없는 오류가 발생했습니다.";
+  return t("common.errors.unknown");
 }

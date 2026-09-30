@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import { useCreateEquipment, useUpdateEquipment } from "../api";
 import type { Equipment, ProcessType } from "../api";
 import { useProcessOptions } from "../../process";
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function EquipmentFormDrawer({ open, onClose, equipment }: Props) {
+  const { t } = useTranslation(["equipment", "common"]);
   const isEdit = !!equipment;
   const [name, setName] = useState("");
   const [process, setProcess] = useState<ProcessType | "">("");
@@ -37,8 +39,8 @@ export default function EquipmentFormDrawer({ open, onClose, equipment }: Props)
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!name.trim()) return setError("설비명을 입력하세요.");
-    if (!process) return setError("공정을 선택하세요.");
+    if (!name.trim()) return setError(t("form.errors.nameRequired"));
+    if (!process) return setError(t("form.errors.processRequired"));
 
     const body = { name: name.trim(), process: process as ProcessType };
     const handlers = {
@@ -46,8 +48,8 @@ export default function EquipmentFormDrawer({ open, onClose, equipment }: Props)
       onError: () => {
         setError(
           isEdit
-            ? "설비 수정 중 오류가 발생했습니다."
-            : "설비 등록 중 오류가 발생했습니다.",
+            ? t("form.errors.editFailed")
+            : t("form.errors.createFailed"),
         );
       },
     };
@@ -59,14 +61,14 @@ export default function EquipmentFormDrawer({ open, onClose, equipment }: Props)
     }
   };
 
-  const title = isEdit ? "설비 수정" : "설비 등록";
+  const title = isEdit ? t("form.editTitle") : t("form.createTitle");
   const submitLabel = isEdit
     ? isPending
-      ? "수정 중..."
-      : "수정"
+      ? t("form.submitEditing")
+      : t("form.submitEdit")
     : isPending
-      ? "등록 중..."
-      : "등록";
+      ? t("form.submitCreating")
+      : t("form.submitCreate");
 
   return (
     <>
@@ -91,7 +93,7 @@ export default function EquipmentFormDrawer({ open, onClose, equipment }: Props)
           <button
             type="button"
             onClick={onClose}
-            aria-label="닫기"
+            aria-label={t("common:actions.close")}
             className="text-[#A8A8A8] transition-colors hover:text-[#212121]"
           >
             <Icon icon="mdi:close" width={22} height={22} />
@@ -103,24 +105,24 @@ export default function EquipmentFormDrawer({ open, onClose, equipment }: Props)
           className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-5"
         >
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[#212121]">설비명</span>
+            <span className="text-sm font-medium text-[#212121]">{t("form.name")}</span>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="압출 1호기"
+              placeholder={t("form.namePlaceholder")}
               className="h-11 rounded-lg border border-gray-300 px-3 text-sm focus:border-[#931B82] focus:outline-none"
             />
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[#212121]">공정</span>
+            <span className="text-sm font-medium text-[#212121]">{t("form.process")}</span>
             <select
               value={process}
               onChange={(e) => setProcess(e.target.value as ProcessType | "")}
               className="h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none"
             >
-              <option value="">공정을 선택하세요</option>
+              <option value="">{t("form.processPlaceholder")}</option>
               {processOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
@@ -141,7 +143,7 @@ export default function EquipmentFormDrawer({ open, onClose, equipment }: Props)
               onClick={onClose}
               className="h-11 flex-1 rounded-lg border border-gray-300 text-sm font-medium text-[#212121] transition-colors hover:bg-gray-50"
             >
-              취소
+              {t("common:actions.cancel")}
             </button>
             <button
               type="submit"

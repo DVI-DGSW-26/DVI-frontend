@@ -1,19 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { Icon } from "@iconify/react";
 import { AxiosError } from "axios";
 import { useAuth } from "../AuthContext";
 import { changeMyPassword } from "../api";
 import type { UserStatus } from "../api";
-import { canSwitchAccounts, ROLE_LABEL } from "../constants";
+import { canSwitchAccounts } from "../constants";
 import AccountSwitcher from "./AccountSwitcher";
 import Toast from "../../inspection/ui/Toast";
-
-const STATUS_LABEL: Record<UserStatus, string> = {
-  ACTIVE: "활성",
-  PENDING: "승인 대기",
-  INACTIVE: "비활성",
-};
+import type { Lang } from "../../../lib/i18n";
 
 const STATUS_STYLE: Record<UserStatus, string> = {
   ACTIVE: "bg-[#DCFCE7] text-[#15803D]",
@@ -22,6 +19,7 @@ const STATUS_STYLE: Record<UserStatus, string> = {
 };
 
 export default function MyPage() {
+  const { t, i18n } = useTranslation(["auth", "common"]);
   const { user, accounts, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -35,8 +33,8 @@ export default function MyPage() {
     // 계정만 살아남으면 그 세션으로 몰래 들어갈 수 있으므로 함께 정리한다.
     const message =
       accounts.length > 1
-        ? `로그아웃 하시겠습니까?\n저장된 ${accounts.length}개 계정이 모두 해제됩니다.`
-        : "로그아웃 하시겠습니까?";
+        ? t("myPage.logoutConfirmMulti", { n: accounts.length })
+        : t("myPage.logoutConfirm");
     if (!window.confirm(message)) return;
     logout();
     navigate("/login", { replace: true });
@@ -45,7 +43,7 @@ export default function MyPage() {
   if (!user) {
     return (
       <div className="flex min-h-full items-center justify-center px-4 py-8 text-sm text-[#6B7280]">
-        사용자 정보를 불러올 수 없습니다.
+        {t("myPage.loadError")}
       </div>
     );
   }
@@ -63,30 +61,53 @@ export default function MyPage() {
             {user.name}
           </div>
           <div className="mt-0.5 truncate text-sm text-[#6B7280]">
-            {ROLE_LABEL[user.role]}
+            {t(`roles.${user.role}`, { ns: "common" })}
           </div>
         </div>
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white">
         <h2 className="border-b border-gray-100 px-5 py-3 text-sm font-semibold text-[#212121]">
-          계정 정보
+          {t("myPage.accountInfo")}
         </h2>
         <dl className="divide-y divide-gray-100 px-5">
-          <InfoRow label="아이디" value={user.loginId} />
-          <InfoRow label="이름" value={user.name} />
-          <InfoRow label="역할" value={ROLE_LABEL[user.role]} />
+          <InfoRow label={t("myPage.id")} value={user.loginId} />
+          <InfoRow label={t("myPage.name")} value={user.name} />
           <InfoRow
-            label="상태"
+            label={t("myPage.role")}
+            value={t(`roles.${user.role}`, { ns: "common" })}
+          />
+          <InfoRow
+            label={t("myPage.statusLabel")}
             value={
               <span
                 className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[user.status]}`}
               >
-                {STATUS_LABEL[user.status]}
+                {t(`myPage.status.${user.status}`)}
               </span>
             }
           />
         </dl>
+      </section>
+
+      <section className="rounded-2xl border border-gray-200 bg-white">
+        <h2 className="border-b border-gray-100 px-5 py-3 text-sm font-semibold text-[#212121]">
+          {t("myPage.language")}
+        </h2>
+        <div className="flex gap-2 px-5 py-4">
+          <LanguageButton
+            lang="ko"
+            label="한국어"
+            active={i18n.resolvedLanguage !== "en"}
+            onSelect={(lang) => i18n.changeLanguage(lang)}
+          />
+          <LanguageButton
+            lang="en"
+            label="English"
+            active={i18n.resolvedLanguage === "en"}
+            onSelect={(lang) => i18n.changeLanguage(lang)}
+          />
+        </div>
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white">
@@ -96,7 +117,7 @@ export default function MyPage() {
           aria-expanded={pwOpen}
           className="flex w-full items-center justify-between border-b border-gray-100 px-5 py-3 text-left text-sm font-semibold text-[#212121]"
         >
-          <span>비밀번호 변경</span>
+          <span>{t("myPage.password.title")}</span>
           <Icon
             icon={pwOpen ? "mdi:chevron-up" : "mdi:chevron-down"}
             width={18}
@@ -118,7 +139,7 @@ export default function MyPage() {
       {showSwitcher && (
         <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
           <h2 className="border-b border-gray-100 px-5 py-3 text-sm font-semibold text-[#212121]">
-            계정 전환
+            {t("myPage.accountSwitch")}
           </h2>
           <AccountSwitcher />
         </section>
@@ -131,12 +152,39 @@ export default function MyPage() {
           className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#EF4444] text-sm font-semibold text-white transition-colors hover:bg-[#DC2626]"
         >
           <Icon icon="mdi:logout" width={18} height={18} />
-          로그아웃
+          {t("myPage.logout")}
         </button>
       </section>
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
+  );
+}
+
+function LanguageButton({
+  lang,
+  label,
+  active,
+  onSelect,
+}: {
+  lang: Lang;
+  label: string;
+  active: boolean;
+  onSelect: (lang: Lang) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(lang)}
+      aria-pressed={active}
+      className={`h-10 flex-1 rounded-lg border text-sm font-medium transition-colors ${
+        active
+          ? "border-[#931B82] bg-[#F3E8F7] text-[#931B82]"
+          : "border-gray-200 bg-white text-[#6B7280] hover:bg-[#FAF5FB]"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -147,6 +195,7 @@ function ChangePasswordForm({
   onDone: (msg: string) => void;
   onError: (msg: string) => void;
 }) {
+  const { t } = useTranslation("auth");
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -169,9 +218,9 @@ function ChangePasswordForm({
       setCurrent("");
       setNext("");
       setConfirm("");
-      onDone("비밀번호가 변경되었습니다");
+      onDone(t("myPage.password.changed"));
     } catch (err) {
-      onError(toErrorMessage(err));
+      onError(toErrorMessage(err, t));
     } finally {
       setIsSubmitting(false);
     }
@@ -181,7 +230,7 @@ function ChangePasswordForm({
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 px-5 py-4">
       <Field
         id="current-password"
-        label="현재 비밀번호"
+        label={t("myPage.password.current")}
         value={current}
         onChange={setCurrent}
         disabled={isSubmitting}
@@ -189,7 +238,7 @@ function ChangePasswordForm({
       />
       <Field
         id="new-password"
-        label="새 비밀번호 (6자 이상)"
+        label={t("myPage.password.new")}
         value={next}
         onChange={setNext}
         disabled={isSubmitting}
@@ -198,13 +247,13 @@ function ChangePasswordForm({
           next.length === 0
             ? undefined
             : !longEnough
-              ? { text: "6자 이상이어야 합니다.", tone: "warn" }
+              ? { text: t("myPage.password.tooShort"), tone: "warn" }
               : undefined
         }
       />
       <Field
         id="confirm-password"
-        label="새 비밀번호 확인"
+        label={t("myPage.password.confirm")}
         value={confirm}
         onChange={setConfirm}
         disabled={isSubmitting}
@@ -213,8 +262,8 @@ function ChangePasswordForm({
           confirm.length === 0
             ? undefined
             : !matches
-              ? { text: "비밀번호가 일치하지 않습니다.", tone: "warn" }
-              : { text: "일치합니다.", tone: "ok" }
+              ? { text: t("myPage.password.mismatch"), tone: "warn" }
+              : { text: t("myPage.password.match"), tone: "ok" }
         }
       />
 
@@ -223,7 +272,9 @@ function ChangePasswordForm({
         disabled={!canSubmit}
         className="mt-1 h-11 rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
       >
-        {isSubmitting ? "변경 중..." : "비밀번호 변경"}
+        {isSubmitting
+          ? t("myPage.password.submitting")
+          : t("myPage.password.submit")}
       </button>
     </form>
   );
@@ -293,16 +344,18 @@ function InfoRow({
   );
 }
 
-function toErrorMessage(err: unknown): string {
+function toErrorMessage(err: unknown, t: TFunction<"auth">): string {
   if (err instanceof AxiosError) {
     const data = err.response?.data as
       | { code?: string; message?: string }
       | undefined;
     const code = data?.code;
-    if (code === "PASSWORD_MISMATCH") return "현재 비밀번호가 일치하지 않습니다.";
-    if (code === "PASSWORD_TOO_SHORT") return "새 비밀번호는 6자 이상이어야 합니다.";
-    return data?.message ?? "비밀번호 변경 중 오류가 발생했습니다.";
+    if (code === "PASSWORD_MISMATCH")
+      return t("myPage.password.errorCurrentMismatch");
+    if (code === "PASSWORD_TOO_SHORT")
+      return t("myPage.password.errorTooShort");
+    return data?.message ?? t("myPage.password.errorGeneric");
   }
   if (err instanceof Error) return err.message;
-  return "알 수 없는 오류가 발생했습니다.";
+  return t("myPage.password.errorUnknown");
 }

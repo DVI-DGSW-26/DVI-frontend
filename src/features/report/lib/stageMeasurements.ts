@@ -34,6 +34,8 @@ export interface StageColumn {
   stage: ReportStage;
   /** 표 머리글. 같은 차수가 반복되면 "(2회차)" 를 붙여 구분한다. */
   label: string;
+  /** 백엔드가 내려준 차수 표기(예: "1차"). 화면에서 i18n 조합용으로 쓴다. */
+  typeLabel: string;
   /** 같은 dim 안에서 이 type 이 몇 번째로 나온 측정인지 (0-base). */
   occurrence: number;
 }
@@ -68,6 +70,7 @@ export function collectStageColumns(
         type: m.type,
         stage: m.stage,
         label: occurrence === 0 ? base : `${base} (${occurrence + 1}회차)`,
+        typeLabel: m.typeLabel ?? "",
         occurrence,
       });
     }

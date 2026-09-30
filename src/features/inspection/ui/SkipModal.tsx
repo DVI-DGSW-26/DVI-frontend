@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Icon } from "@iconify/react";
 
 interface Props {
@@ -18,6 +19,7 @@ export default function SkipModal({
   onCancel,
   onConfirm,
 }: Props) {
+  const { t } = useTranslation("inspection");
   const [step, setStep] = useState<Step>("confirm");
   const [reason, setReason] = useState("");
 
@@ -60,10 +62,10 @@ export default function SkipModal({
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="text-base font-semibold text-[#212121]">
-                  {slotLabel} 시점을 건너뛸까요?
+                  {t("modals.skip.title", { label: slotLabel })}
                 </h3>
                 <p className="mt-1 text-xs text-[#6B7280]">
-                  건너뛴 시점은 측정할 수 없으며 되돌릴 수 없습니다.
+                  {t("modals.skip.warning")}
                 </p>
               </div>
             </div>
@@ -73,29 +75,29 @@ export default function SkipModal({
                 onClick={onCancel}
                 className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB]"
               >
-                취소
+                {t("modals.skip.cancel")}
               </button>
               <button
                 type="button"
                 onClick={() => setStep("reason")}
                 className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white hover:bg-[#6A0F5D]"
               >
-                건너뛰기
+                {t("modals.skip.skip")}
               </button>
             </div>
           </>
         ) : (
           <>
             <h3 className="text-base font-semibold text-[#212121]">
-              사유 (선택)
+              {t("modals.skip.reasonTitle")}
             </h3>
             <p className="mt-1 text-xs text-[#6B7280]">
-              건너뛴 이유를 적어두면 보고서 비고에 함께 표시됩니다.
+              {t("modals.skip.reasonHint")}
             </p>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="예: 라인 정지, 고객사 요청, 설비 점검 중"
+              placeholder={t("modals.skip.reasonPlaceholder")}
               maxLength={200}
               rows={3}
               disabled={isSubmitting}
@@ -108,7 +110,7 @@ export default function SkipModal({
                 disabled={isSubmitting}
                 className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-60"
               >
-                뒤로
+                {t("modals.skip.back")}
               </button>
               <button
                 type="button"
@@ -116,7 +118,9 @@ export default function SkipModal({
                 disabled={isSubmitting}
                 className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
               >
-                {isSubmitting ? "처리 중..." : "건너뛰기 확정"}
+                {isSubmitting
+                  ? t("modals.skip.submitting")
+                  : t("modals.skip.confirm")}
               </button>
             </div>
           </>

@@ -39,7 +39,8 @@ export function countUnprocessed(items: AssignedInspection[]): number {
 // 배정 목록 카드에 붙는 상태 배지. 색은 결재 목록(CrossCheckApprovalPage)의
 // STATUS_META 와 맞춰 두 화면에서 같은 상태가 같은 색으로 보이게 한다.
 export interface AssignedStatusBadge {
-  label: string;
+  // crossCheck 네임스페이스의 i18n 키 — UI 에서 t(labelKey) 로 표시한다.
+  labelKey: string;
   // 제목 옆 알약 배지용 (배경 + 글자색).
   className: string;
   // 카드 오른쪽 경과시간 자리에 들어가는 텍스트용 (글자색만).
@@ -51,12 +52,12 @@ export const ASSIGNED_STATUS_BADGE: Record<
   AssignedStatusBadge
 > = {
   COMPLETED: {
-    label: "차수 완료",
+    labelKey: "status.roundDone",
     className: "bg-[#ECFEFF] text-[#0E7490]",
     textClassName: "text-[#0E7490]",
   },
   PENDING_APPROVAL: {
-    label: "결재 대기",
+    labelKey: "status.pendingApproval",
     className: "bg-[#FEF3C7] text-[#B45309]",
     textClassName: "text-[#B45309]",
   },

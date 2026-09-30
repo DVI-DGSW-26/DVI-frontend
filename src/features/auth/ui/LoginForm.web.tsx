@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Icon } from "@iconify/react";
 import authBackground from "../../../assets/authBackground.png";
 import authLogo from "../../../assets/authLogo.svg";
@@ -14,6 +15,7 @@ export default function LoginFormWeb({
   setPassword,
   onSubmit,
 }: LoginFormProps) {
+  const { t } = useTranslation("auth");
   const [showPassword, setShowPassword] = useState(false);
   // 기본값 true — 체크 해제 시에만 sessionStorage 로 저장 (브라우저 종료 시 로그아웃).
   const [keepLoggedIn, setKeepLoggedIn] = useState(true);
@@ -53,7 +55,7 @@ export default function LoginFormWeb({
             }}
           >
             <input
-              placeholder="아이디를 입력하세요."
+              placeholder={t("fields.idPlaceholder")}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               style={{ paddingLeft: "13px" }}
@@ -61,7 +63,7 @@ export default function LoginFormWeb({
             />
             <div className="relative">
               <input
-                placeholder="비밀번호를 입력하세요."
+                placeholder={t("fields.passwordPlaceholder")}
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -86,14 +88,14 @@ export default function LoginFormWeb({
                 onChange={(e) => setKeepLoggedIn(e.target.checked)}
                 className="w-4 h-4 rounded border-[#A8A8A8] accent-[#931B82] cursor-pointer"
               />
-              <span className="text-sm text-[#A8A8A8]">로그인 유지</span>
+              <span className="text-sm text-[#A8A8A8]">{t("login.keepLoggedIn")}</span>
             </label>
             <div style={{ marginTop: "35px" }}>
-              <Button type="submit">로그인</Button>
+              <Button type="submit">{t("login.submit")}</Button>
             </div>
             <div className="flex flex-row justify-center gap-1 mt-5 text-sm">
-              <span className="text-[#A8A8A8]">계정이 없으신가요?</span>
-              <span className="text-[#931B82] cursor-pointer" onClick={() => navigate("/signup")}>회원가입 하기</span>
+              <span className="text-[#A8A8A8]">{t("login.noAccount")}</span>
+              <span className="text-[#931B82] cursor-pointer" onClick={() => navigate("/signup")}>{t("login.signupLink")}</span>
             </div>
           </form>
         </div>

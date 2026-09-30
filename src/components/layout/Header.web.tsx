@@ -1,34 +1,36 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import { useUnreadCount } from "../../features/notification/api";
 import { useAuth } from "../../features/auth/AuthContext";
-import {
-  canSwitchAccounts,
-  ROLE_LABEL,
-} from "../../features/auth/constants";
+import { canSwitchAccounts } from "../../features/auth/constants";
 import AccountSwitcher from "../../features/auth/ui/AccountSwitcher";
+import LanguageToggle from "./LanguageToggle";
 
-const ROUTE_TITLES: Record<string, string> = {
-  "/": "대시보드",
-  "/reports": "검사보고서",
-  "/approval-management": "승인관리",
-  "/qm-reports": "보고서",
-  "/products": "제품관리",
-  "/equipment": "설비관리",
-  "/customers": "고객사 관리",
-  "/processes": "공정관리",
-  "/cross-check-approval": "순회검사 결재",
-  "/my-page": "마이페이지",
-  "/notifications": "알림",
+// layout 네임스페이스 titles.* / tabs.* 키
+const ROUTE_TITLE_KEYS: Record<string, string> = {
+  "/": "tabs.dashboard",
+  "/reports": "tabs.reports",
+  "/approval-management": "tabs.approvalManagement",
+  "/qm-reports": "tabs.qmReports",
+  "/products": "tabs.products",
+  "/equipment": "tabs.equipment",
+  "/customers": "tabs.customers",
+  "/processes": "tabs.processes",
+  "/cross-check-approval": "tabs.crossCheckApproval",
+  "/my-page": "tabs.myPage",
+  "/notifications": "titles.notifications",
 };
 
 const HeaderWeb = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user, accounts } = useAuth();
+  const { t } = useTranslation(["layout", "common"]);
   const { data: unreadCount = 0 } = useUnreadCount();
-  const title = ROUTE_TITLES[pathname] ?? "";
+  const titleKey = ROUTE_TITLE_KEYS[pathname];
+  const title = titleKey ? t(`layout:${titleKey}`) : "";
   const hasUnread = unreadCount > 0;
   const isNotificationsPage = pathname === "/notifications";
   // 생산 관리자(PRODUCTION_MANAGER)에게는 알림 기능을 노출하지 않는다.
@@ -60,11 +62,13 @@ const HeaderWeb = () => {
       <h1 className="text-3xl font-bold">{title}</h1>
 
       <div className="ml-auto flex items-center gap-1">
+        <LanguageToggle />
+
         {showBell && !isNotificationsPage && (
           <button
             type="button"
             onClick={() => navigate("/notifications")}
-            aria-label="알림"
+            aria-label={t("layout:notifications")}
             className="relative flex h-10 w-10 items-center justify-center text-[#212121]"
           >
             <Icon icon="solar:bell-linear" width={26} height={26} />
@@ -91,7 +95,7 @@ const HeaderWeb = () => {
                   {user.name}
                 </span>
                 <span className="block text-xs text-[#6B7280]">
-                  {ROLE_LABEL[user.role]}
+                  {t(`common:roles.${user.role}`)}
                 </span>
               </span>
               <Icon
@@ -105,7 +109,7 @@ const HeaderWeb = () => {
             {open && (
               <div className="absolute right-0 top-full z-40 mt-2 w-72 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
                 <p className="border-b border-gray-100 px-4 py-2 text-xs font-semibold text-[#6B7280]">
-                  계정 전환
+                  {t("layout:accountSwitch")}
                 </p>
                 <AccountSwitcher onDone={() => setOpen(false)} />
               </div>
