@@ -1,18 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../auth/AuthContext";
 import { useDashboardStats, usePendingUsers } from "../api";
 import StatCard from "./StatCard";
 
-const ROLE_LABEL: Record<string, string> = {
-  ADMIN: "통합 관리자",
-  QUALITY_ADMIN: "품질 관리자",
-  QUALITY: "품질 담당자",
-  PRODUCTION: "생산 작업자",
-  PRODUCTION_MANAGER: "생산 관리자",
-};
-
 const DashboardPageMobile = () => {
+  const { t } = useTranslation("dashboard");
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: stats } = useDashboardStats();
@@ -24,10 +18,13 @@ const DashboardPageMobile = () => {
     <div className="flex min-h-full flex-col gap-5 bg-[#F5F5F5] px-4 pb-21 pt-5">
       <header>
         <h1 className="text-2xl font-bold text-[#212121]">
-          안녕하세요, {user?.name ?? "관리자"}님
+          {t("greeting", { name: user?.name ?? t("defaultUserName") })}
         </h1>
         <p className="mt-1 text-sm text-[#6B7280]">
-          {ROLE_LABEL[user?.role ?? ""] ?? "통합 관리자"}
+          {t(`roles.${user?.role ?? "ADMIN"}`, {
+            ns: "common",
+            defaultValue: t("roles.ADMIN", { ns: "common" }),
+          })}
         </p>
       </header>
 
@@ -35,31 +32,31 @@ const DashboardPageMobile = () => {
         <StatCard
           variant="mobile"
           icon="basil:document-solid"
-          label="승인 대기"
+          label={t("stats.pendingApproval")}
           value={stats?.pendingUserCount}
           showDot
         />
         <StatCard
           variant="mobile"
           icon="mdi:people"
-          label="전체 사용자"
+          label={t("stats.totalUsers")}
           value={stats?.totalUserCount}
         />
         <StatCard
           variant="mobile"
           icon="mdi:calendar-clock"
-          label="오늘 접속"
+          label={t("stats.loggedInToday")}
           value={stats?.loggedInTodayCount}
         />
       </section>
 
       <section>
         <h2 className="mb-3 text-base font-bold text-[#212121]">
-          최근 승인 대기
+          {t("pendingUsers.recentTitle")}
         </h2>
         {previewPending.length === 0 ? (
           <p className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-[#A8A8A8]">
-            대기 중인 가입 요청이 없습니다.
+            {t("pendingUsers.empty")}
           </p>
         ) : (
           <ul className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
@@ -85,7 +82,7 @@ const DashboardPageMobile = () => {
         onClick={() => navigate("/approval")}
         className="mt-auto w-full rounded-xl bg-[#931B82] py-4 text-base font-semibold text-white transition-opacity hover:opacity-90"
       >
-        바로 승인하기
+        {t("pendingUsers.approveNow")}
       </button>
     </div>
   );

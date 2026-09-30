@@ -1,24 +1,25 @@
 import { useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import { useUserList } from "../api";
 import {
-  DEPARTMENT_LABEL,
-  ROLE_LABEL,
+  DEPARTMENT_LABEL_KEY,
   STATUS_BADGE,
 } from "../lib/userLabels";
 import CreateUserModal from "./CreateUserModal";
 
 type FilterKey = "ALL" | "PRODUCTION" | "QUALITY" | "ACTIVE" | "INACTIVE";
 
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "ALL", label: "전체" },
-  { key: "PRODUCTION", label: "생산" },
-  { key: "QUALITY", label: "품질" },
-  { key: "ACTIVE", label: "활성" },
-  { key: "INACTIVE", label: "비활성" },
+const FILTERS: { key: FilterKey; labelKey: string }[] = [
+  { key: "ALL", labelKey: "filters.all" },
+  { key: "PRODUCTION", labelKey: "filters.production" },
+  { key: "QUALITY", labelKey: "filters.quality" },
+  { key: "ACTIVE", labelKey: "filters.active" },
+  { key: "INACTIVE", labelKey: "filters.inactive" },
 ];
 
 const AdminUserSearchPageMobile = () => {
+  const { t } = useTranslation("userSearch");
   const { data: users = [], isLoading, isError } = useUserList();
 
   const [keyword, setKeyword] = useState("");
@@ -39,13 +40,14 @@ const AdminUserSearchPageMobile = () => {
       if (filter === "INACTIVE" && u.status !== "INACTIVE") return false;
 
       if (kw) {
-        const dept = (DEPARTMENT_LABEL[u.role] ?? "").toLowerCase();
+        const deptKey = DEPARTMENT_LABEL_KEY[u.role];
+        const dept = (deptKey ? t(deptKey) : "").toLowerCase();
         const haystack = `${u.name} ${u.loginId} ${dept}`.toLowerCase();
         if (!haystack.includes(kw)) return false;
       }
       return true;
     });
-  }, [users, keyword, filter]);
+  }, [users, keyword, filter, t]);
 
   return (
     <div className="flex min-h-full flex-col gap-5 bg-[#F5F5F5] px-4 pb-21 pt-5">
@@ -61,14 +63,14 @@ const AdminUserSearchPageMobile = () => {
             type="text"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            placeholder="이름, 아이디, 부서로 검색"
+            placeholder={t("search.placeholder")}
             className="h-12 w-full rounded-2xl border border-[#931B82] bg-white pl-11 pr-4 text-sm text-[#212121] placeholder:text-[#A8A8A8] focus:outline-none"
           />
         </div>
         <button
           type="button"
           onClick={() => setCreateOpen(true)}
-          aria-label="사용자 추가"
+          aria-label={t("search.addUser")}
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#931B82] text-white transition-colors hover:bg-[#6A0F5D]"
         >
           <Icon icon="mdi:plus" width={22} height={22} />
@@ -89,7 +91,7 @@ const AdminUserSearchPageMobile = () => {
                   : "border-[#E5E7EB] bg-white text-[#6B7280]"
               }`}
             >
-              {f.label}
+              {t(f.labelKey)}
             </button>
           );
         })}
@@ -97,19 +99,19 @@ const AdminUserSearchPageMobile = () => {
 
       {isLoading && (
         <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-          불러오는 중...
+          {t("status.loading", { ns: "common" })}
         </p>
       )}
 
       {isError && (
         <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
-          사용자 목록을 불러오지 못했습니다.
+          {t("list.loadFailed")}
         </p>
       )}
 
       {!isLoading && !isError && filtered.length === 0 && (
         <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-          조건에 맞는 사용자가 없습니다.
+          {t("list.empty")}
         </p>
       )}
 
@@ -119,8 +121,12 @@ const AdminUserSearchPageMobile = () => {
         <ul className="flex flex-col gap-3">
           {filtered.map((u) => {
             const badge = STATUS_BADGE[u.status];
-            const roleLabel = ROLE_LABEL[u.role] ?? "—";
-            const deptLabel = DEPARTMENT_LABEL[u.role] ?? "—";
+            const roleLabel = t(`roles.${u.role}`, {
+              ns: "common",
+              defaultValue: "—",
+            });
+            const deptKey = DEPARTMENT_LABEL_KEY[u.role];
+            const deptLabel = deptKey ? t(deptKey) : "—";
             return (
               <li key={u.id}>
                 <button
@@ -148,7 +154,7 @@ const AdminUserSearchPageMobile = () => {
                           className="inline-block h-2 w-2 rounded-full"
                           style={{ backgroundColor: badge.color }}
                         />
-                        {badge.label}
+                        {t(badge.labelKey)}
                       </span>
                     )}
                     <Icon

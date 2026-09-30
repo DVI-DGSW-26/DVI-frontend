@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Icon } from "@iconify/react";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 
@@ -13,6 +14,7 @@ export default function SketchImage({ src, alt }: Props) {
 }
 
 function SketchImageInner({ src, alt }: Props) {
+  const { t } = useTranslation("inspection");
   const [status, setStatus] = useState<"loading" | "loaded" | "error">(
     src ? "loading" : "error",
   );
@@ -52,7 +54,7 @@ function SketchImageInner({ src, alt }: Props) {
               className="text-[#D1D5DB]"
             />
             <span className="text-xs text-[#9CA3AF]">
-              스케치 이미지를 불러올 수 없습니다
+              {t("sketch.loadError")}
             </span>
           </div>
         )}

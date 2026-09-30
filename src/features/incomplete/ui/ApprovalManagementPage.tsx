@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { AxiosError } from "axios";
+import { useTranslation } from "react-i18next";
 import IncompleteList from "./incompleteList";
 import { useIncompleteDecision } from "../model/useIncompleteDecision";
 
 function ApprovalManagementPage() {
+  const { t } = useTranslation("incomplete");
   const [checked, setChecked] = useState<Set<number>>(new Set());
   const { mutate, isPending } = useIncompleteDecision();
 
@@ -34,11 +36,11 @@ function ApprovalManagementPage() {
               err.response?.data as { code?: string } | undefined
             )?.code;
             if (code === "NOT_INCOMPLETE_STATUS") {
-              alert("미완료 상태가 아닌 검사가 포함되어 있습니다.");
+              alert(t("page.notIncompleteError"));
               return;
             }
           }
-          alert("처리 중 오류가 발생했습니다.");
+          alert(t("page.genericError"));
         },
       },
     );
@@ -46,7 +48,7 @@ function ApprovalManagementPage() {
 
   return (
     <div className="flex flex-col gap-4 p-6">
-      <h1 className="text-xl font-semibold">승인관리</h1>
+      <h1 className="text-xl font-semibold">{t("page.title")}</h1>
 
       <IncompleteList checked={checked} onToggle={toggle} />
 
@@ -57,7 +59,7 @@ function ApprovalManagementPage() {
           disabled={!hasSelection || isPending}
           className="px-5 py-2 rounded-lg bg-[#931B82] text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          승인 {hasSelection && `(${selectedIds.length})`}
+          {t("page.approve")} {hasSelection && `(${selectedIds.length})`}
         </button>
       </div>
     </div>

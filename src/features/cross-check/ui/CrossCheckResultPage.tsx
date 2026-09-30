@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
+import { Trans, useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useAuth } from "../../auth/AuthContext";
 import { useProcessFlag } from "../../process";
 import type { ApiErrorData, StepResult } from "../../inspection/type/types";
@@ -17,7 +19,7 @@ import {
 } from "../api";
 import type { AppearanceResult } from "../api";
 import { useProductSlots } from "../../inspection/api";
-import { getStage, STAGE_LABEL, STAGE_BADGE } from "../lib/stage";
+import { getStage, STAGE_BADGE } from "../lib/stage";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import { formatDate } from "../../../lib/datetime";
 
@@ -37,6 +39,7 @@ interface ResultMeta {
 }
 
 export default function CrossCheckResultPage() {
+  const { t } = useTranslation("crossCheck");
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams<{ crossCheckId: string }>();
@@ -177,7 +180,7 @@ export default function CrossCheckResultPage() {
   if (needsFallback && detailQuery.isLoading) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
-        결과를 불러오는 중...
+        {t("result.loading")}
       </div>
     );
   }
@@ -186,14 +189,14 @@ export default function CrossCheckResultPage() {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
         <div className="text-sm font-medium text-[#212121]">
-          결과 데이터가 없습니다.
+          {t("result.noData")}
         </div>
         <button
           type="button"
           onClick={() => navigate("/", { replace: true })}
           className="mt-4 h-10 rounded-md bg-[#931B82] px-4 text-sm font-medium text-white hover:bg-[#6A0F5D]"
         >
-          홈으로 가기
+          {t("goHome")}
         </button>
       </div>
     );
@@ -213,10 +216,10 @@ export default function CrossCheckResultPage() {
       });
       // 저장 직후 QUALITY_ADMIN 결재 대기로 전환 (DRAFT → PENDING_APPROVAL).
       await completeMut.mutateAsync();
-      setToast("결재 요청이 전송되었습니다");
+      setToast(t("result.approvalSent"));
       setTimeout(() => navigate("/cross-checks", { replace: true }), 1200);
     } catch (err) {
-      setToast(toErrorMessage(err));
+      setToast(toErrorMessage(err, t));
     }
   };
 
@@ -236,16 +239,16 @@ export default function CrossCheckResultPage() {
         results: [{ resultId: meta.resultId, skipped: false }],
       });
       await detailQuery.refetch();
-      setToast("건너뜀이 해제되었습니다");
+      setToast(t("result.skipCancelled"));
     } catch (err) {
-      setToast(toErrorMessage(err));
+      setToast(toErrorMessage(err, t));
     }
   };
 
   const handleEditMeasuredValue = async (dimNo: number, newValue: number) => {
     const meta = metaByDimNo.get(dimNo);
     if (!meta) {
-      setToast("저장할 수 없습니다. 새로고침 후 다시 시도해주세요.");
+      setToast(t("result.cannotSave"));
       return;
     }
     try {
@@ -259,9 +262,9 @@ export default function CrossCheckResultPage() {
         ],
       });
       setEditedValues((prev) => ({ ...prev, [dimNo]: newValue }));
-      setToast("측정값이 수정되었습니다");
+      setToast(t("result.valueUpdated"));
     } catch (err) {
-      setToast(toErrorMessage(err));
+      setToast(toErrorMessage(err, t));
       throw err;
     }
   };
@@ -275,11 +278,11 @@ export default function CrossCheckResultPage() {
             if (!stage) return null;
             return (
               <div className="mb-2 flex items-center gap-2">
-                <span className="text-xs text-[#6B7280]">검사 차수</span>
+                <span className="text-xs text-[#6B7280]">{t("label.round")}</span>
                 <span
                   className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${STAGE_BADGE[stage]}`}
                 >
-                  {STAGE_LABEL[stage]}
+                  {t(`stage.${stage}`)}
                 </span>
                 {remainingSlotLabels.length > 0 && (
                   <span className="text-xs text-[#A8A8A8]">
@@ -291,20 +294,26 @@ export default function CrossCheckResultPage() {
               </div>
             );
           })()}
-        <InfoRow label="기계명" value={equipmentName} />
+        <InfoRow label={t("label.machine")} value={equipmentName} />
         {detail && (
-          <InfoRow label="검사일자" value={formatDate(detail.createdAt)} />
+          <InfoRow
+            label={t("label.inspectionDate")}
+            value={formatDate(detail.createdAt)}
+          />
         )}
         <div className="mt-2 grid grid-cols-3 gap-2">
-          <Stat label="제품명" value={productName} />
-          <Stat label="자주검사자" value={productionInspectorName} />
-          <Stat label="순회검사자" value={inspectorName} />
+          <Stat label={t("label.product")} value={productName} />
+          <Stat
+            label={t("label.productionInspector")}
+            value={productionInspectorName}
+          />
+          <Stat label={t("label.patrolInspector")} value={inspectorName} />
         </div>
       </section>
 
       <section className="flex-1 px-4 pt-4">
         <h2 className="mb-3 text-sm font-semibold text-[#212121]">
-          순회검사 측정 결과
+          {t("result.title")}
         </h2>
         <ul className="flex flex-col gap-3">
           {results.map((r, idx) => (
@@ -330,10 +339,12 @@ export default function CrossCheckResultPage() {
         </ul>
 
         <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4">
-          <div className="text-xs font-medium text-[#6B7280]">외관 검사</div>
+          <div className="text-xs font-medium text-[#6B7280]">
+            {t("result.appearance")}
+          </div>
           <div
             role="radiogroup"
-            aria-label="외관 검사 결과"
+            aria-label={t("result.appearanceAria")}
             className="mt-2 grid grid-cols-2 gap-2"
           >
             {(["OK", "NG"] as const).map((opt) => {
@@ -355,7 +366,7 @@ export default function CrossCheckResultPage() {
                       : "border-gray-300 bg-white text-[#6B7280] hover:bg-gray-50"
                   }`}
                 >
-                  {isOk ? "OK (합격)" : "NG (불합격)"}
+                  {isOk ? t("result.okPass") : t("result.ngFail")}
                 </button>
               );
             })}
@@ -368,21 +379,23 @@ export default function CrossCheckResultPage() {
               htmlFor="cross-check-hardness"
               className="block text-xs font-medium text-[#6B7280]"
             >
-              경도 측정값 (종품 · 필수)
+              {t("result.hardnessLabel")}
             </label>
             <input
               id="cross-check-hardness"
               type="text"
               value={hardness}
               onChange={(e) => setHardness(e.target.value)}
-              placeholder="예: HV 47.5"
+              placeholder={t("result.hardnessPlaceholder")}
               disabled={saveMut.isPending}
               className="mt-2 h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
             />
             <p className="mt-2 text-[11px] leading-relaxed text-[#6B7280]">
-              경도값은 열처리 완료 후 측정됩니다. 아직 값이 없으면 비워둔 채
-              나갔다가, 열처리 완료 후 <b>'작업 이어하기'</b>로 다시 들어와
-              입력하고 결재 요청하세요.
+              <Trans
+                t={t}
+                i18nKey="result.hardnessHint"
+                components={{ b: <b /> }}
+              />
             </p>
           </div>
         )}
@@ -392,13 +405,13 @@ export default function CrossCheckResultPage() {
             htmlFor="cross-check-note"
             className="block text-xs font-medium text-[#6B7280]"
           >
-            비고 (선택)
+            {t("result.noteLabel")}
           </label>
           <textarea
             id="cross-check-note"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="설비 이상이나 측정 특이사항"
+            placeholder={t("result.notePlaceholder")}
             disabled={saveMut.isPending}
             rows={3}
             maxLength={500}
@@ -408,11 +421,13 @@ export default function CrossCheckResultPage() {
 
         {hasSkipped && (
           <div className="mt-3 rounded-md bg-[#FEF3C7] px-3 py-2 text-xs text-[#92400E]">
-            <div className="font-semibold">건너뛴 항목이 있어요</div>
+            <div className="font-semibold">{t("result.skippedTitle")}</div>
             <div className="mt-0.5 leading-relaxed">
-              본인이 직접 다시 측정하려면 위 카드의 <b>"다시 측정"</b> 버튼을,
-              결재자 판단에 맡기려면 그대로 <b>결재 요청</b> 하세요. 반려되면
-              알림 → 홈에서 다시 수정 가능합니다.
+              <Trans
+                t={t}
+                i18nKey="result.skippedBody"
+                components={{ b: <b /> }}
+              />
             </div>
           </div>
         )}
@@ -426,8 +441,8 @@ export default function CrossCheckResultPage() {
           className="h-12 w-full rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
         >
           {saveMut.isPending || completeMut.isPending
-            ? "처리 중..."
-            : "결재 요청"}
+            ? t("result.processing")
+            : t("result.requestApproval")}
         </button>
       </div>
 
@@ -453,6 +468,8 @@ function StepResultCard({
   // 값을 넣지 않고 건너뜀 표시만 푸는 경우. 건너뜀 항목에만 넘어온다.
   onCancelSkip?: () => void;
 }) {
+  const { t } = useTranslation("crossCheck");
+  const { t: tCommon } = useTranslation("common");
   const dimText = formatStandardWithTolerance(
     result.standardValue,
     result.toleranceUpper,
@@ -509,7 +526,7 @@ function StepResultCard({
             <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-[#F9FAFB]">
               <img
                 src={toBackendImageUrl(result.imageUrl)}
-                alt={`${dimDisplayName(result)} 측정 사진`}
+                alt={t("result.photoAlt", { name: dimDisplayName(result) })}
                 className="block aspect-square w-full object-contain"
               />
             </div>
@@ -517,7 +534,7 @@ function StepResultCard({
           {isEditing ? (
             <div className="mt-3 rounded-lg bg-[#F9FAFB] p-3">
               <label className="block text-xs text-[#6B7280]">
-                측정값 수정
+                {t("result.editValue")}
               </label>
               <input
                 type="number"
@@ -536,7 +553,7 @@ function StepResultCard({
                   disabled={isSaving}
                   className="h-9 flex-1 rounded-md border border-gray-300 bg-white text-xs font-semibold text-[#212121] disabled:opacity-60"
                 >
-                  취소
+                  {tCommon("actions.cancel")}
                 </button>
                 <button
                   type="button"
@@ -544,13 +561,15 @@ function StepResultCard({
                   disabled={!isValid || isSaving}
                   className="h-9 flex-1 rounded-md bg-[#931B82] text-xs font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
                 >
-                  {isSaving ? "저장 중..." : "저장"}
+                  {isSaving ? t("result.saving") : tCommon("actions.save")}
                 </button>
               </div>
             </div>
           ) : (
             <div className="mt-3 flex items-center justify-between rounded-lg bg-[#F9FAFB] px-3 py-2">
-              <span className="text-xs text-[#6B7280]">측정값</span>
+              <span className="text-xs text-[#6B7280]">
+                {t("result.measuredValue")}
+              </span>
               <div className="flex items-center gap-3">
                 <span className="text-base font-semibold text-[#212121]">
                   {result.measuredValue ?? "-"}
@@ -561,7 +580,7 @@ function StepResultCard({
                     onClick={beginEdit}
                     className="rounded-md border border-[#931B82] px-2 py-1 text-xs font-semibold text-[#931B82] hover:bg-[#F3E8FF]"
                   >
-                    수정
+                    {tCommon("actions.edit")}
                   </button>
                 )}
                 {onRetake && (
@@ -571,7 +590,7 @@ function StepResultCard({
                     className="inline-flex items-center gap-1 rounded-md border border-[#931B82] px-2 py-1 text-xs font-semibold text-[#931B82] hover:bg-[#F3E8FF]"
                   >
                     <Icon icon="solar:camera-linear" width={13} height={13} />
-                    다시 측정
+                    {t("result.remeasure")}
                   </button>
                 )}
               </div>
@@ -587,7 +606,9 @@ function StepResultCard({
               height={36}
               className="text-[#9CA3AF]"
             />
-            <span className="mt-2 text-sm font-medium">건너뜀</span>
+            <span className="mt-2 text-sm font-medium">
+              {t("result.skipped")}
+            </span>
           </div>
           {onRetake && (
             <button
@@ -596,7 +617,7 @@ function StepResultCard({
               className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-[#931B82] bg-white text-sm font-semibold text-[#931B82] transition-colors hover:bg-[#F3E8FF]"
             >
               <Icon icon="solar:refresh-linear" width={16} height={16} />
-              다시 측정
+              {t("result.remeasure")}
             </button>
           )}
           {onCancelSkip && (
@@ -605,7 +626,7 @@ function StepResultCard({
               onClick={onCancelSkip}
               className="mt-2 flex h-9 w-full items-center justify-center text-xs font-medium text-[#6B7280] underline underline-offset-2 hover:text-[#374151]"
             >
-              건너뜀 해제
+              {t("result.cancelSkip")}
             </button>
           )}
         </>
@@ -636,15 +657,15 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function toErrorMessage(err: unknown): string {
+function toErrorMessage(err: unknown, t: TFunction<"crossCheck">): string {
   if (err instanceof AxiosError) {
     const data = err.response?.data as ApiErrorData | undefined;
     // 백엔드가 건너뜀 상태를 거부하는 경우 — 사용자가 직접 다시 측정 하도록 안내.
     if (data?.code === "RESULTS_NOT_COMPLETE") {
-      return "건너뛴 항목이 있어 결재 요청이 불가합니다. 카드의 '다시 측정' 버튼으로 채워주세요.";
+      return t("result.errSkipped");
     }
-    return data?.message ?? "요청 처리 중 오류가 발생했습니다.";
+    return data?.message ?? t("errors.requestFailed");
   }
   if (err instanceof Error) return err.message;
-  return "알 수 없는 오류가 발생했습니다.";
+  return t("errors.unknown");
 }

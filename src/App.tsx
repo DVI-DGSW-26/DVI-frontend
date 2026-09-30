@@ -37,6 +37,7 @@ import CrossCheckApprovalDetailPage from "./features/cross-check/ui/CrossCheckAp
 
 import MonitorPage from "./features/monitor/ui/MonitorPage";
 
+import { useTranslation } from "react-i18next";
 import { useAuth } from "./features/auth/AuthContext";
 import { useNotificationAlerts } from "./features/notification/model/useNotificationAlerts";
 import ServerStatusOverlay from "./components/shared/ServerStatusOverlay";
@@ -49,6 +50,7 @@ function NotificationAlerts() {
 }
 
 function HomePage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
 
   if (user?.role === "PRODUCTION") return <ProductionHomePage />;
@@ -58,7 +60,7 @@ function HomePage() {
   if (user?.role === "ADMIN" || user?.role === "TEST") return <DashboardPage />;
   if (user?.role === "QUALITY") return <QualityHomePage />;
 
-  return <div className="p-6">홈</div>;
+  return <div className="p-6">{t("home", { ns: "shared" })}</div>;
 }
 
 function App() {

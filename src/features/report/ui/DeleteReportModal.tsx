@@ -1,4 +1,5 @@
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   open: boolean;
@@ -13,6 +14,7 @@ export default function DeleteReportModal({
   onCancel,
   onConfirm,
 }: Props) {
+  const { t } = useTranslation("report");
   if (!open) return null;
 
   return (
@@ -39,10 +41,10 @@ export default function DeleteReportModal({
           </div>
           <div className="min-w-0 flex-1">
             <h3 className="text-base font-semibold text-[#212121]">
-              이 검사보고서를 삭제하시겠어요?
+              {t("deleteModal.title")}
             </h3>
             <p className="mt-1 text-xs text-[#6B7280]">
-              자주·순회검사 측정값과 사진이 모두 삭제되며 되돌릴 수 없습니다.
+              {t("deleteModal.description")}
             </p>
           </div>
         </div>
@@ -53,7 +55,7 @@ export default function DeleteReportModal({
             disabled={isSubmitting}
             className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-60"
           >
-            취소
+            {t("deleteModal.cancel")}
           </button>
           <button
             type="button"
@@ -61,7 +63,7 @@ export default function DeleteReportModal({
             disabled={isSubmitting}
             className="h-11 flex-1 rounded-md bg-[#DC2626] text-sm font-semibold text-white hover:bg-[#B91C1C] disabled:bg-[#D1D5DB]"
           >
-            {isSubmitting ? "삭제 중..." : "삭제"}
+            {isSubmitting ? t("deleteModal.deleting") : t("deleteModal.confirm")}
           </button>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Icon } from "@iconify/react";
 
 interface Props {
@@ -11,6 +12,7 @@ export default function PullToRefreshIndicator({
   refreshing,
   triggerReady,
 }: Props) {
+  const { t } = useTranslation("myInspection");
   const indicatorHeight = refreshing ? 48 : pullY;
   return (
     <div
@@ -25,13 +27,13 @@ export default function PullToRefreshIndicator({
             width={16}
             height={16}
           />
-          새로고침 중...
+          {t("pull.refreshing")}
         </span>
       ) : pullY > 0 ? (
         triggerReady ? (
-          "놓으면 새로고침"
+          t("pull.release")
         ) : (
-          "당겨서 새로고침"
+          t("pull.pull")
         )
       ) : null}
     </div>

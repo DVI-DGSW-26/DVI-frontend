@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { ReportSummary } from "../api/types";
 import { downloadReportPdf } from "../lib/downloadReportPdf";
-import { resolveSummaryShift, SHIFT_LABEL } from "../lib/shift";
+import { resolveSummaryShift } from "../lib/shift";
 import { formatDate } from "../../../lib/datetime";
 import { useProcessLabel } from "../../process";
 
@@ -20,6 +21,7 @@ interface Props {
 }
 
 const AdminReportCard = ({ report, onClick }: Props) => {
+  const { t } = useTranslation("report");
   const navigate = useNavigate();
   const [downloading, setDownloading] = useState(false);
 
@@ -30,9 +32,15 @@ const AdminReportCard = ({ report, onClick }: Props) => {
   const processLabel = processLabelOf(report.process);
 
   const authorParts = [
-    report.productionName ? `자주 ${report.productionName}` : null,
-    report.qualityName ? `순회 ${report.qualityName}` : null,
-    report.approvedByName ? `승인 ${report.approvedByName}` : null,
+    report.productionName
+      ? t("card.selfInspector", { name: report.productionName })
+      : null,
+    report.qualityName
+      ? t("card.patrolInspector", { name: report.qualityName })
+      : null,
+    report.approvedByName
+      ? t("card.approver", { name: report.approvedByName })
+      : null,
   ].filter(Boolean);
 
   const handleCardClick = () => {
@@ -83,7 +91,7 @@ const AdminReportCard = ({ report, onClick }: Props) => {
                 isPass ? "bg-[#22C55E]" : "bg-[#EF4444]"
               }`}
             />
-            {isPass ? "합격" : "불합격"}
+            {isPass ? t("result.pass") : t("result.fail")}
           </span>
           <button
             type="button"
@@ -125,7 +133,7 @@ const AdminReportCard = ({ report, onClick }: Props) => {
                 shift === "NIGHT" ? "font-medium text-[#4F46E5]" : undefined
               }
             >
-              {SHIFT_LABEL[shift]}
+              {t(`shift.${shift}`)}
             </span>
           </>
         )}

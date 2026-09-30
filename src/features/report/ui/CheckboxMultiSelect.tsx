@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 
 export type MultiOption = { value: string; label: string };
 
@@ -18,6 +19,7 @@ const CheckboxMultiSelect = ({
   onChange,
   width = "w-32",
 }: Props) => {
+  const { t } = useTranslation("report");
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +55,7 @@ const CheckboxMultiSelect = ({
       {open && (
         <div className="absolute left-0 top-10 z-20 max-h-64 w-full min-w-35 overflow-y-auto rounded-xl border border-[#E5E7EB] bg-white py-2 text-xs shadow-lg">
           {options.length === 0 ? (
-            <p className="px-3 py-2 text-[#A8A8A8]">옵션 없음</p>
+            <p className="px-3 py-2 text-[#A8A8A8]">{t("filters.noOptions")}</p>
           ) : (
             options.map((opt) => {
               const checked = value.includes(opt.value);

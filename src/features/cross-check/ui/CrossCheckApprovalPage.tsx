@@ -2,12 +2,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { usePendingCrossChecks, useDeleteCrossCheckById } from "../api";
 import type { CrossCheckSummary } from "../api";
 import { useAuth } from "../../auth/AuthContext";
 import { hasRole } from "../../auth/roles";
 import { useProcessLabel, useProcessOptions } from "../../process";
-import { getStage, STAGE_LABEL, STAGE_BADGE } from "../lib/stage";
+import { getStage, STAGE_BADGE } from "../lib/stage";
 import { useProcessFilter } from "../lib/processFilter";
 import CheckboxMultiSelect from "../../report/ui/CheckboxMultiSelect";
 import { groupByRun, runStatus } from "../lib/runGroup";
@@ -23,19 +25,22 @@ import DeleteInspectionModal from "../../my-inspection/ui/DeleteInspectionModal"
 import Toast from "../../inspection/ui/Toast";
 import { useViewState } from "../../../lib/viewState";
 
-function toDeleteErrorMessage(err: unknown): string {
+function toDeleteErrorMessage(
+  err: unknown,
+  t: TFunction<"crossCheck">,
+): string {
   if (err instanceof AxiosError) {
     const data = err.response?.data as { code?: string; message?: string } | undefined;
     switch (data?.code) {
       case "CROSS_CHECK_ALREADY_FINISHED":
-        return "이미 승인(보고서 발행)된 순회검사는 삭제할 수 없습니다.";
+        return t("approval.deleteError.alreadyApproved");
       case "CROSS_CHECK_NOT_FOUND":
-        return "이미 삭제되었거나 존재하지 않는 순회검사입니다.";
+        return t("approval.deleteError.notFound");
       default:
-        return data?.message ?? "삭제 중 오류가 발생했습니다.";
+        return data?.message ?? t("approval.deleteError.failed");
     }
   }
-  return "삭제 중 오류가 발생했습니다.";
+  return t("approval.deleteError.failed");
 }
 
 // 결재 목록에 섞여 오는 상태별 배지/노출 순서.
@@ -44,13 +49,18 @@ function toDeleteErrorMessage(err: unknown): string {
 // 결재 대기로 오지 않는다 — COMPLETED 를 빠뜨리면 초·중 완료 건이 목록에서 사라진다.
 const STATUS_META: Record<
   string,
-  { label: string; bg: string; fg: string; order: number }
+  { labelKey: string; bg: string; fg: string; order: number }
 > = {
-  PENDING_APPROVAL: { label: "결재 대기", bg: "#FEF3C7", fg: "#B45309", order: 0 },
-  COMPLETED: { label: "검사 완료", bg: "#ECFEFF", fg: "#0E7490", order: 1 },
-  DRAFT: { label: "진행중", bg: "#DBEAFE", fg: "#1D4ED8", order: 2 },
-  REJECTED: { label: "반려", bg: "#FEE2E2", fg: "#B91C1C", order: 3 },
-  APPROVED: { label: "승인", bg: "#DCFCE7", fg: "#15803D", order: 4 },
+  PENDING_APPROVAL: {
+    labelKey: "status.pendingApproval",
+    bg: "#FEF3C7",
+    fg: "#B45309",
+    order: 0,
+  },
+  COMPLETED: { labelKey: "status.completed", bg: "#ECFEFF", fg: "#0E7490", order: 1 },
+  DRAFT: { labelKey: "status.inProgress", bg: "#DBEAFE", fg: "#1D4ED8", order: 2 },
+  REJECTED: { labelKey: "status.rejected", bg: "#FEE2E2", fg: "#B91C1C", order: 3 },
+  APPROVED: { labelKey: "status.approved", bg: "#DCFCE7", fg: "#15803D", order: 4 },
 };
 
 const STATUS_ORDER = Object.keys(STATUS_META).sort(
@@ -63,6 +73,8 @@ function statusRank(status: string): number {
 }
 
 export default function CrossCheckApprovalPage() {
+  const { t } = useTranslation("crossCheck");
+  const { t: tCommon } = useTranslation("common");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   // 알림에서 진입 시 강조할 순회검사 id (?highlight=123).
@@ -163,9 +175,9 @@ export default function CrossCheckApprovalPage() {
     if (!deleteTarget) return;
     try {
       await deleteMut.mutateAsync(deleteTarget.crossCheckId);
-      setToast("순회검사를 삭제했습니다.");
+      setToast(t("approval.deleted"));
     } catch (err) {
-      setToast(toDeleteErrorMessage(err));
+      setToast(toDeleteErrorMessage(err, t));
     } finally {
       setDeleteTarget(null);
     }
@@ -174,13 +186,13 @@ export default function CrossCheckApprovalPage() {
   return (
     <div className="flex flex-col gap-4 p-4 pb-20 md:p-6 md:pb-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">순회검사 결재</h1>
+        <h1 className="text-xl font-semibold">{t("approval.title")}</h1>
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-[#FEF3C7] px-3 py-1 text-xs font-medium text-[#B45309]">
-            결재 대기 {pendingCount}건
+            {t("approval.pendingCount", { n: pendingCount })}
           </span>
           <span className="rounded-full bg-[#DBEAFE] px-3 py-1 text-xs font-medium text-[#1D4ED8]">
-            진행중 {draftCount}건
+            {t("approval.inProgressCount", { n: draftCount })}
           </span>
         </div>
       </div>
@@ -202,13 +214,13 @@ export default function CrossCheckApprovalPage() {
 
       {isLoading && (
         <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-          불러오는 중...
+          {tCommon("status.loading")}
         </p>
       )}
 
       {isError && (
         <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
-          목록을 불러오지 못했습니다.
+          {t("approval.listError")}
         </p>
       )}
 
@@ -216,7 +228,7 @@ export default function CrossCheckApprovalPage() {
       {!isLoading && !isError && sorted.length === 0 && (
         processFilter.length > 0 ? (
           <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
-            선택한 공정에 결재 대기·진행중인 순회검사가 없습니다.
+            {t("approval.emptyFiltered")}
           </p>
         ) : (
           <div className="flex flex-col items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-16 text-center">
@@ -227,10 +239,10 @@ export default function CrossCheckApprovalPage() {
               className="text-[#22C55E]"
             />
             <span className="text-sm font-medium text-[#212121]">
-              결재 대기·진행중인 순회검사가 없습니다
+              {t("approval.emptyTitle")}
             </span>
             <span className="text-xs text-[#6B7280]">
-              품질 담당자가 순회검사를 시작하거나 결재 요청하면 여기에 표시됩니다
+              {t("approval.emptyHint")}
             </span>
           </div>
         )
@@ -239,8 +251,8 @@ export default function CrossCheckApprovalPage() {
       {!isLoading && !isError && sorted.length > 0 && filtered.length === 0 && (
         <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
           {isDateFilterActive(dateFilter)
-            ? "선택한 기간에 해당하는 순회검사가 없습니다."
-            : "결재 대기·진행중인 순회검사가 없습니다"}
+            ? t("approval.emptyPeriod")
+            : t("approval.emptyTitle")}
         </p>
       )}
 
@@ -269,16 +281,16 @@ export default function CrossCheckApprovalPage() {
                     className="ml-auto rounded-full px-2 py-0.5 text-xs font-semibold"
                     style={{ backgroundColor: meta.bg, color: meta.fg }}
                   >
-                    {run.final ? meta.label : "진행중"}
+                    {run.final ? t(meta.labelKey) : t("status.inProgress")}
                   </span>
                   <span className="rounded-full bg-white px-2 py-0.5 text-xs text-[#6B7280]">
-                    {run.items.length}차수
+                    {t("approval.roundsCount", { n: run.items.length })}
                   </span>
                 </div>
 
                 {!run.explicitKey && (
                   <p className="text-[11px] text-[#A8A8A8]">
-                    * 제품·설비·작업일 기준 추정 묶음 (서버 그룹핑 키 미제공)
+                    {t("approval.estimatedGroup")}
                   </p>
                 )}
 
@@ -332,6 +344,8 @@ function ApprovalCard({
   onClick: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation("crossCheck");
+  const { t: tCommon } = useTranslation("common");
   const processLabel = useProcessLabel();
   const meta = STATUS_META[cc.status] ?? STATUS_META.DRAFT;
   const isDraft = cc.status === "DRAFT";
@@ -356,7 +370,7 @@ function ApprovalCard({
               <span
                 className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${STAGE_BADGE[stage]}`}
               >
-                {STAGE_LABEL[stage]}
+                {t(`stage.${stage}`)}
               </span>
             )}
             <span className="text-sm font-semibold text-[#212121]">
@@ -366,20 +380,25 @@ function ApprovalCard({
               className="rounded-md px-2 py-0.5 text-xs font-semibold"
               style={{ backgroundColor: meta.bg, color: meta.fg }}
             >
-              {meta.label}
+              {t(meta.labelKey)}
             </span>
           </div>
           <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
             <InfoLine
-              label="공정"
+              label={t("label.process")}
               value={processLabel(cc.product.process)}
             />
-            <InfoLine label="고객사" value={cc.customer.name} />
-            <InfoLine label="작업자" value={cc.production.name} />
-            <InfoLine label="시작일" value={formatDate(cc.createdAt)} />
+            <InfoLine label={t("label.customer")} value={cc.customer.name} />
+            <InfoLine label={t("label.worker")} value={cc.production.name} />
+            <InfoLine
+              label={t("label.startDate")}
+              value={formatDate(cc.createdAt)}
+            />
             <InfoLine
               className="col-span-2"
-              label={isDraft ? "최근 저장" : "결재 요청"}
+              label={
+                isDraft ? t("label.lastSaved") : t("label.approvalRequested")
+              }
               value={formatDateTime(cc.updatedAt ?? cc.createdAt)}
             />
           </dl>
@@ -391,8 +410,8 @@ function ApprovalCard({
           <button
             type="button"
             onClick={onDelete}
-            title="삭제"
-            aria-label="순회검사 삭제"
+            title={tCommon("actions.delete")}
+            aria-label={t("approval.deleteAria")}
             className="flex items-center justify-center rounded-md p-1.5 text-[#EF4444] transition-colors hover:bg-[#FEF2F2]"
           >
             <Icon icon="solar:trash-bin-trash-linear" width={18} height={18} />

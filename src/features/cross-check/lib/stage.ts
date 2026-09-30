@@ -21,11 +21,8 @@ export function getStage(type: string, process: ProcessType): Stage | null {
   return null;
 }
 
-export const STAGE_LABEL: Record<Stage, string> = {
-  INITIAL: "초",
-  MIDDLE: "중",
-  FINAL: "종",
-};
+// 초/중/종 라벨은 i18n 으로 — UI 에서 t(`stage.${stage}`) (crossCheck 네임스페이스,
+// 키는 Stage 값과 동일: stage.INITIAL / stage.MIDDLE / stage.FINAL) 로 얻는다.
 
 export const STAGE_BADGE: Record<Stage, string> = {
   INITIAL: "border-[#DBEAFE] bg-[#EFF6FF] text-[#1D4ED8]",

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import { formatTolerance } from "../../inspection/lib/format";
 import { judgeMeasurement } from "../../inspection/lib/judgment";
@@ -10,7 +11,6 @@ import type {
 import {
   collectStageColumns,
   findMeasurement,
-  STAGE_LABEL,
   type StageColumn,
 } from "../lib/stageMeasurements";
 
@@ -44,6 +44,12 @@ function formatValue(value: number | null | undefined): string {
 }
 
 function StageChip({ column }: { column: StageColumn }) {
+  const { t } = useTranslation("report");
+  const base = `${t(`stage.${column.stage}`, "")} ${column.typeLabel}`.trim();
+  const label =
+    column.occurrence === 0
+      ? base
+      : t("measurements.repeatRun", { label: base, n: column.occurrence + 1 });
   return (
     <span className="inline-flex items-center gap-1.5">
       <span
@@ -51,9 +57,9 @@ function StageChip({ column }: { column: StageColumn }) {
           STAGE_BADGE[column.stage] ?? "border-[#E5E7EB] bg-[#F5F5F5] text-[#6B7280]"
         }`}
       >
-        {STAGE_LABEL[column.stage] ?? "?"}
+        {t(`stage.${column.stage}`, "?")}
       </span>
-      <span className="text-xs font-medium text-[#212121]">{column.label}</span>
+      <span className="text-xs font-medium text-[#212121]">{label}</span>
     </span>
   );
 }
@@ -113,6 +119,7 @@ function MeasureCell({
   measurement: ReportMeasurement | undefined;
   onOpenPhotos: (m: ReportMeasurement) => void;
 }) {
+  const { t } = useTranslation("report");
   if (!measurement) {
     return <span className="text-sm text-[#D4D4D4]">—</span>;
   }
@@ -127,7 +134,10 @@ function MeasureCell({
         <button
           type="button"
           onClick={() => onOpenPhotos(measurement)}
-          aria-label={`DIM ${item.dimNo} ${measurement.typeLabel} 측정 사진`}
+          aria-label={t("measurements.photoAria", {
+            dimNo: item.dimNo,
+            typeLabel: measurement.typeLabel,
+          })}
           className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#F5F5F5] transition-colors hover:bg-[#F3E8F7]"
         >
           <img
@@ -156,6 +166,7 @@ export default function ReportMeasurementsSection({
   variant: "web" | "mobile";
   onOpenPhotos: (item: ReportResultItem, m: ReportMeasurement) => void;
 }) {
+  const { t } = useTranslation("report");
   const columns = collectStageColumns(results);
   if (columns.length === 0) return null;
 
@@ -172,8 +183,13 @@ export default function ReportMeasurementsSection({
                 DIM {item.dimNo}
               </span>
               <span className="text-xs text-[#A8A8A8]">
-                기준 {item.standardValue} (
-                {formatTolerance(item.toleranceUpper, item.toleranceLower)})
+                {t("measurements.standardWithTolerance", {
+                  value: item.standardValue,
+                  tolerance: formatTolerance(
+                    item.toleranceUpper,
+                    item.toleranceLower,
+                  ),
+                })}
               </span>
             </div>
             <ul className="flex flex-col divide-y divide-[#F0F0F0]">
@@ -203,7 +219,9 @@ export default function ReportMeasurementsSection({
         <thead>
           <tr className="border-b border-[#E5E7EB] text-left text-xs text-[#A8A8A8]">
             <th className="pb-2 pr-3 font-medium">DIM</th>
-            <th className="pb-2 pr-3 font-medium">기준</th>
+            <th className="pb-2 pr-3 font-medium">
+              {t("measurements.standard")}
+            </th>
             {columns.map((c) => (
               <th key={c.key} className="pb-2 pr-3 font-medium">
                 <StageChip column={c} />
@@ -236,9 +254,7 @@ export default function ReportMeasurementsSection({
           ))}
         </tbody>
       </table>
-      <p className="mt-3 text-xs text-[#A8A8A8]">
-        각 칸은 위가 자주검사, 아래가 순회검사 측정값입니다.
-      </p>
+      <p className="mt-3 text-xs text-[#A8A8A8]">{t("measurements.legend")}</p>
     </div>
   );
 }

@@ -1,8 +1,8 @@
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import type { UserDetail } from "../api/types";
 import {
-  DEPARTMENT_LABEL,
-  ROLE_LABEL,
+  DEPARTMENT_LABEL_KEY,
   STATUS_BADGE,
 } from "../lib/userLabels";
 
@@ -16,8 +16,13 @@ interface Props {
 }
 
 const UserCard = ({ user, completedSlots = 0, onClick }: Props) => {
-  const roleLabel = ROLE_LABEL[user.role] ?? "—";
-  const departmentLabel = DEPARTMENT_LABEL[user.role] ?? "—";
+  const { t } = useTranslation("userSearch");
+  const roleLabel = t(`roles.${user.role}`, {
+    ns: "common",
+    defaultValue: "—",
+  });
+  const deptKey = DEPARTMENT_LABEL_KEY[user.role];
+  const departmentLabel = deptKey ? t(deptKey) : "—";
   const badge = STATUS_BADGE[user.status];
   const initial = user.name?.charAt(0) ?? "?";
 
@@ -59,7 +64,7 @@ const UserCard = ({ user, completedSlots = 0, onClick }: Props) => {
                 className="inline-block h-1.5 w-1.5 rounded-full"
                 style={{ backgroundColor: badge.color }}
               />
-              {badge.label}
+              {t(badge.labelKey)}
             </span>
           )}
           <Icon
@@ -80,7 +85,7 @@ const UserCard = ({ user, completedSlots = 0, onClick }: Props) => {
             className="inline-block h-1.5 w-1.5 rounded-full"
             style={{ backgroundColor: user.online ? "#22C55E" : "#A8A8A8" }}
           />
-          {user.online ? "접속 중" : "오프라인"}
+          {user.online ? t("card.online") : t("card.offline")}
         </span>
 
         {showProgress ? (

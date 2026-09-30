@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import {
   useProductSlots,
@@ -17,7 +18,7 @@ import {
   useMyInspectionList,
 } from "../../my-inspection/api";
 import { getRecentInspectionId } from "../lib/recentInspection";
-import { skipErrorMessage, SKIP_DELETE_DRAFT_ERROR } from "../lib/skipError";
+import { skipErrorMessage } from "../lib/skipError";
 import SlotItem, { type SlotStatus } from "./SlotItem";
 import SkipModal from "./SkipModal";
 import Toast from "./Toast";
@@ -38,6 +39,7 @@ interface ToastInfo {
 }
 
 export default function ScanPage() {
+  const { t } = useTranslation("inspection");
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state ?? {}) as ScanLocationState;
@@ -200,54 +202,54 @@ export default function ScanPage() {
         // 정보가 부족하면 inspections 목록 갱신을 안내.
         setToast({
           code: "INSPECTION_ALREADY_EXISTS",
-          message: "이미 시작된 검사입니다. 목록을 새로고침해주세요.",
+          message: t("scan.errors.alreadyExists"),
         });
         return;
       }
       if (code === "PREVIOUS_INSPECTION_NOT_COMPLETED") {
         setToast({
           code: "PREVIOUS_INSPECTION_NOT_COMPLETED",
-          message: "이전 시점을 먼저 완료해주세요.",
+          message: t("scan.errors.previousNotCompleted"),
         });
         return;
       }
       if (status === 403 || code === "NOT_ASSIGNED_PRODUCTION") {
         setToast({
           code: "NOT_ASSIGNED_PRODUCTION",
-          message: "이 작업지시에 배정된 작업자가 아닙니다.",
+          message: t("scan.errors.notAssigned"),
         });
         return;
       }
       if (code === "INSPECTION_ORDER_NOT_FOUND") {
         setToast({
           code: "INSPECTION_ORDER_NOT_FOUND",
-          message: "작업지시를 찾을 수 없습니다. 목록을 새로고침해주세요.",
+          message: t("scan.errors.orderNotFound"),
         });
         return;
       }
       if (code === "INSPECTION_ORDER_ALREADY_FINISHED") {
         setToast({
           code: "INSPECTION_ORDER_ALREADY_FINISHED",
-          message: "이미 마감된 작업지시입니다.",
+          message: t("scan.errors.orderFinished"),
         });
         return;
       }
       if (code === "DIMS_NOT_REGISTERED") {
         setToast({
           code: "DIMS_NOT_REGISTERED",
-          message: "제품에 치수항목이 등록되어 있지 않습니다.",
+          message: t("scan.errors.dimsNotRegistered"),
         });
         return;
       }
       if (status === 400 || code === "INVALID_INSPECTION_TYPE") {
         setToast({
           code: "INVALID_INSPECTION_TYPE",
-          message: "이 제품의 스케줄에 없는 시간대입니다.",
+          message: t("scan.errors.invalidType"),
         });
         return;
       }
     }
-    setToast({ message: "검사를 시작하지 못했습니다." });
+    setToast({ message: t("scan.errors.startFailed") });
   };
 
   const handleSkipRequest = (type: string) => {
@@ -266,7 +268,7 @@ export default function ScanPage() {
           await deleteMutation.mutateAsync(existing.inspectionId);
         } catch {
           setSkipTargetType(null);
-          setToast({ message: SKIP_DELETE_DRAFT_ERROR });
+          setToast({ message: t("skipError.deleteDraftFailed") });
           return;
         }
       }
@@ -283,7 +285,7 @@ export default function ScanPage() {
       });
       setSkipTargetType(null);
       const label = slots.find((s) => s.type === type)?.label ?? type;
-      setToast({ message: `${label} 시점을 건너뛰었습니다.` });
+      setToast({ message: t("scan.skippedToast", { label }) });
     } catch (err) {
       setSkipTargetType(null);
       setToast({ message: skipErrorMessage(err) });
@@ -305,7 +307,7 @@ export default function ScanPage() {
     if (status === "LOCKED") {
       setToast({
         code: "PREVIOUS_INSPECTION_NOT_COMPLETED",
-        message: "이전 시점을 먼저 완료해주세요.",
+        message: t("scan.errors.previousNotCompleted"),
       });
       return;
     }
@@ -321,17 +323,17 @@ export default function ScanPage() {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
         <div className="text-sm font-medium text-[#212121]">
-          검사 지시를 먼저 선택해주세요.
+          {t("scan.noContext.title")}
         </div>
         <p className="mt-1 text-xs text-[#6B7280]">
-          "내 검사지시" 에서 배정된 지시를 선택하면 시간대 선택으로 이동합니다.
+          {t("scan.noContext.hint")}
         </p>
         <button
           type="button"
           onClick={() => navigate("/my-orders", { replace: true })}
           className="mt-4 h-10 rounded-md bg-[#931B82] px-4 text-sm font-medium text-white hover:bg-[#6A0F5D]"
         >
-          내 검사지시로
+          {t("scan.noContext.goToMyOrders")}
         </button>
       </div>
     );
@@ -341,26 +343,23 @@ export default function ScanPage() {
     <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-24">
       <div className="px-4 pt-4">
         <h2 className="text-base font-semibold text-[#212121]">
-          검사 시점 선택
+          {t("scan.title")}
         </h2>
-        <p className="mt-1 text-xs text-[#6B7280]">
-          시작할 시간대를 탭하면 바로 진행됩니다. 작성 중인 항목은 이어하기로
-          연결됩니다.
-        </p>
+        <p className="mt-1 text-xs text-[#6B7280]">{t("scan.subtitle")}</p>
       </div>
 
       <div className="flex-1 px-4 pt-4">
         {slotsQuery.isLoading || myInspectionsQuery.isLoading ? (
           <div className="py-10 text-center text-xs text-[#A8A8A8]">
-            불러오는 중...
+            {t("common.loading")}
           </div>
         ) : slotsQuery.isError ? (
           <div className="py-10 text-center text-xs text-[#EF4444]">
-            시간대를 불러오지 못했습니다.
+            {t("scan.slotsError")}
           </div>
         ) : slots.length === 0 ? (
           <div className="py-10 text-center text-xs text-[#A8A8A8]">
-            가능한 시간대가 없습니다.
+            {t("scan.noSlots")}
           </div>
         ) : (
           <ul className="flex flex-col gap-2">
@@ -379,7 +378,7 @@ export default function ScanPage() {
 
         {startMutation.isPending && pendingType && (
           <div className="mt-4 rounded-lg border border-[#E5E7EB] bg-white p-3 text-center text-xs text-[#6B7280]">
-            검사 시작 중...
+            {t("scan.starting")}
           </div>
         )}
       </div>

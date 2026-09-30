@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { PassFailResult } from "../type/types";
 
 interface Props {
@@ -22,20 +23,27 @@ export default function PassFailPhase({
   onGoNext,
   onSubmit,
 }: Props) {
+  const { t } = useTranslation("inspection");
   const [value, setValue] = useState<PassFailResult | null>(
     () => initialValue ?? null,
   );
 
   const submitDisabled = value == null || isSaving;
-  const buttonLabel = isSaving ? "저장 중..." : isLastDim ? "완료" : "저장 후 다음";
+  const buttonLabel = isSaving
+    ? t("input.saving")
+    : isLastDim
+      ? t("input.done")
+      : t("input.saveAndNext");
 
   return (
     <div className="flex flex-col gap-3">
       <div className="rounded-xl border border-gray-200 bg-white p-4">
-        <span className="block text-xs font-medium text-[#6B7280]">판정</span>
+        <span className="block text-xs font-medium text-[#6B7280]">
+          {t("judgment.label")}
+        </span>
         <div
           role="radiogroup"
-          aria-label="OK/NG 판정"
+          aria-label={t("passFail.ariaLabel")}
           className="mt-2 grid grid-cols-2 gap-2"
         >
           {(["OK", "NG"] as const).map((opt) => {
@@ -57,13 +65,13 @@ export default function PassFailPhase({
                     : "border-gray-300 bg-white text-[#6B7280] hover:bg-gray-50"
                 }`}
               >
-                {isOk ? "OK (합격)" : "NG (불합격)"}
+                {isOk ? t("judgment.okPass") : t("judgment.ngFail")}
               </button>
             );
           })}
         </div>
         <p className="mt-2 text-[11px] text-[#9CA3AF]">
-          이 항목은 사진·측정값 없이 OK/NG 만 선택합니다.
+          {t("passFail.notice")}
         </p>
       </div>
 
@@ -75,7 +83,7 @@ export default function PassFailPhase({
             disabled={isSaving}
             className="h-11 rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold text-[#6B7280] disabled:opacity-60"
           >
-            이전
+            {t("input.prev")}
           </button>
         )}
         {onGoNext && (
@@ -85,7 +93,7 @@ export default function PassFailPhase({
             disabled={isSaving}
             className="h-11 rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold text-[#6B7280] disabled:opacity-60"
           >
-            다음
+            {t("input.next")}
           </button>
         )}
         <button

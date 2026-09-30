@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Icon } from "@iconify/react";
 import { AxiosError } from "axios";
 import { useAuth } from "../AuthContext";
 import { AuthError } from "../api";
-import { ROLE_HOME, ROLE_LABEL } from "../constants";
+import { ROLE_HOME } from "../constants";
 import { SWITCHABLE_ACCOUNTS } from "../switchableAccounts";
 import type { SwitchableAccount } from "../switchableAccounts";
 
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export default function AccountSwitcher({ onDone }: Props) {
+  const { t } = useTranslation(["auth", "common"]);
   const { user, accounts, switchAccount, login } = useAuth();
   const navigate = useNavigate();
   const [busyLoginId, setBusyLoginId] = useState<string | null>(null);
@@ -68,11 +70,17 @@ export default function AccountSwitcher({ onDone }: Props) {
       setError(
         badCredentials
           ? credentials
-            ? `${target.label}(${target.loginId}) 계정 정보가 서버와 맞지 않습니다.`
-            : `${target.label}(${target.loginId}) 로그인이 만료되었습니다. 로그아웃 후 다시 로그인해 주세요.`
+            ? t("accountSwitcher.credentialMismatch", {
+                label: target.label,
+                loginId: target.loginId,
+              })
+            : t("accountSwitcher.sessionExpired", {
+                label: target.label,
+                loginId: target.loginId,
+              })
           : err instanceof AuthError
             ? err.message
-            : "계정 전환에 실패했습니다. 잠시 후 다시 시도해주세요.",
+            : t("accountSwitcher.switchFailed"),
       );
     } finally {
       setBusyLoginId(null);
@@ -117,7 +125,8 @@ export default function AccountSwitcher({ onDone }: Props) {
                     )}
                   </span>
                   <span className="block truncate text-xs text-[#6B7280]">
-                    {ROLE_LABEL[target.role]} · {target.loginId}
+                    {t(`roles.${target.role}`, { ns: "common" })} ·{" "}
+                    {target.loginId}
                   </span>
                 </span>
                 {isBusy ? (

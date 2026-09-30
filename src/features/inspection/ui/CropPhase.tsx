@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import ReactCrop, { type Crop, type PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { getCroppedBlob } from "../lib/cropImage";
@@ -16,6 +17,7 @@ export default function CropPhase({
   onConfirm,
   onError,
 }: Props) {
+  const { t } = useTranslation("inspection");
   const [imageSrc, setImageSrc] = useState<string>("");
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
@@ -65,7 +67,7 @@ export default function CropPhase({
       onConfirm(blob);
     } catch (err) {
       console.error("🟠 CropPhase getCroppedBlob 에러:", err);
-      onError(err instanceof Error ? err.message : "크롭에 실패했습니다.");
+      onError(err instanceof Error ? err.message : t("crop.cropFailed"));
       setConfirming(false);
     }
   };
@@ -93,7 +95,7 @@ export default function CropPhase({
             <img
               ref={imgRef}
               src={imageSrc}
-              alt="크롭 대상"
+              alt={t("crop.imageAlt")}
               onLoad={handleImageLoad}
               className="block max-h-[55vh] w-auto select-none"
               draggable={false}
@@ -103,9 +105,7 @@ export default function CropPhase({
       </div>
 
       <div className="sticky bottom-16 z-20 -mx-4 flex flex-col gap-2 border-t border-gray-200 bg-[#F5F5F5] px-4 pb-3 pt-2 shadow-[0_-2px_8px_rgba(0,0,0,0.04)]">
-        <p className="text-xs text-[#6B7280]">
-          모서리·변 핸들을 드래그해서 측정 부위만 선택해주세요.
-        </p>
+        <p className="text-xs text-[#6B7280]">{t("crop.instruction")}</p>
         <div className="flex gap-2">
           <button
             type="button"
@@ -113,7 +113,7 @@ export default function CropPhase({
             disabled={confirming}
             className="h-11 flex-1 rounded-md border border-gray-300 bg-white text-sm font-semibold text-[#212121] disabled:opacity-60"
           >
-            다시 촬영
+            {t("crop.retake")}
           </button>
           <button
             type="button"
@@ -121,7 +121,7 @@ export default function CropPhase({
             disabled={confirming || !canConfirm}
             className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
           >
-            {confirming ? "처리 중..." : "확인"}
+            {confirming ? t("crop.processing") : t("crop.confirm")}
           </button>
         </div>
       </div>

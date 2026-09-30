@@ -1,8 +1,9 @@
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import type { AssignedInspection } from "../api";
 import { finishedBadge, isTakeoverable } from "../lib/assigned";
 import { elapsedFrom, TONE_COLOR } from "../lib/elapsed";
-import { getStage, STAGE_BADGE, STAGE_LABEL } from "../lib/stage";
+import { getStage, STAGE_BADGE } from "../lib/stage";
 import { formatDate } from "../../../lib/datetime";
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
 }
 
 const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
+  const { t } = useTranslation("crossCheck");
   const elapsed = elapsedFrom(item.completedAt);
   const color = TONE_COLOR[elapsed.tone];
   // 취소(release)로 담당자가 빠진 IN_PROGRESS — 다른 검사자가 이어받기 가능(클릭 O).
@@ -41,7 +43,7 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
             <span
               className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${STAGE_BADGE[stage]}`}
             >
-              {STAGE_LABEL[stage]}
+              {t(`stage.${stage}`)}
             </span>
           )}
           <span className="wrap-break-word text-base font-bold text-[#212121]">
@@ -49,19 +51,19 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
           </span>
           {takeoverable && (
             <span className="shrink-0 rounded-md bg-[#F3E8F7] px-2 py-0.5 text-[10px] font-semibold text-[#931B82]">
-              이어받기
+              {t("card.takeover")}
             </span>
           )}
           {owned && (
             <span className="shrink-0 rounded-md bg-[#FEF3C7] px-2 py-0.5 text-[10px] font-semibold text-[#B45309]">
-              진행 중
+              {t("card.inProgress")}
             </span>
           )}
           {finished && (
             <span
               className={`shrink-0 rounded-md px-2 py-0.5 text-[10px] font-semibold ${finished.className}`}
             >
-              {finished.label}
+              {t(finished.labelKey)}
             </span>
           )}
         </div>
@@ -78,17 +80,17 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
         </div>
         {item.typeLabel && (
           <span className="mt-2 truncate text-xs text-[#A8A8A8]">
-            검사 차수: {item.typeLabel}
+            {t("card.roundLine", { label: item.typeLabel })}
           </span>
         )}
         {item.equipmentName && (
           <span className="mt-1 truncate text-xs text-[#A8A8A8]">
-            공정: {item.equipmentName}
+            {t("card.processLine", { name: item.equipmentName })}
           </span>
         )}
         {item.createdAt && (
           <span className="mt-1 truncate text-xs text-[#A8A8A8]">
-            시작일: {formatDate(item.createdAt)}
+            {t("card.startDateLine", { date: formatDate(item.createdAt) })}
           </span>
         )}
       </div>
@@ -99,11 +101,13 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
           <span
             className={`text-right text-xs font-medium ${finished.textClassName}`}
           >
-            {finished.label}
+            {t(finished.labelKey)}
           </span>
         ) : owned ? (
           <span className="text-right text-xs font-medium text-[#B45309]">
-            {item.ownerName ? `${item.ownerName} 진행 중` : "진행 중"}
+            {item.ownerName
+              ? t("card.ownerInProgress", { name: item.ownerName })
+              : t("card.inProgress")}
           </span>
         ) : (
           <>
@@ -113,7 +117,9 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
             />
             <div className="flex items-center gap-1">
               <span className="text-sm font-bold" style={{ color }}>
-                {elapsed.label}
+                {elapsed.unit === "none"
+                  ? "—"
+                  : t(`elapsed.${elapsed.unit}`, { n: elapsed.n })}
               </span>
               <Icon
                 icon="solar:alt-arrow-right-linear"

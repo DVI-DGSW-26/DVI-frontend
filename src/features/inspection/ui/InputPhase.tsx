@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { judgeMeasurement } from "../lib/judgment";
 import JudgmentBadge from "./JudgmentBadge";
 import type { InspectionProcess, PassFailResult } from "../type/types";
@@ -50,6 +51,7 @@ export default function InputPhase({
   onGoNext,
   onSubmit,
 }: Props) {
+  const { t } = useTranslation("inspection");
   const [imageSrc, setImageSrc] = useState<string>("");
   useEffect(() => {
     // 1) 새로 크롭한 blob 이 있으면 그걸 미리보기.
@@ -117,23 +119,23 @@ export default function InputPhase({
     (isMachining && passFailValue == null);
 
   const buttonLabel = isPreparing
-    ? "OCR 인식 중..."
+    ? t("input.ocrRecognizing")
     : isSaving
-      ? "저장 중..."
+      ? t("input.saving")
       : isLastDim
-        ? "완료"
-        : "저장 후 다음";
+        ? t("input.done")
+        : t("input.saveAndNext");
 
   const hint = isPreparing
-    ? { text: "OCR로 측정값을 인식하는 중입니다…", tone: "info" as const }
+    ? { text: t("input.hintRecognizing"), tone: "info" as const }
     : autoFilled && suggestedValue
       ? {
-          text: "OCR로 자동 입력됨 — 필요하면 수정해주세요.",
+          text: t("input.hintAutoFilled"),
           tone: "ok" as const,
         }
       : autoFilled
         ? {
-            text: "자동 인식 실패, 직접 입력해주세요.",
+            text: t("input.hintAutoFailed"),
             tone: "warn" as const,
           }
         : null;
@@ -165,20 +167,20 @@ export default function InputPhase({
         <div className="flex items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-[#F9FAFB]">
           <img
             src={imageSrc}
-            alt="크롭된 측정 부위"
+            alt={t("input.croppedAlt")}
             className="block max-h-40 w-auto object-contain"
           />
         </div>
       ) : (
         <div className="rounded-xl border border-dashed border-gray-300 bg-[#F9FAFB] px-4 py-6 text-center text-xs text-[#6B7280]">
-          사진 없이 측정값만 입력합니다.
+          {t("input.noPhotoNotice")}
         </div>
       )}
 
       <div className="rounded-xl border border-gray-200 bg-white p-4">
         <div className="flex items-center justify-between gap-2">
           <label className="block text-xs font-medium text-[#6B7280]">
-            측정값
+            {t("input.measuredValue")}
           </label>
           <JudgmentBadge judgment={judgment} compact />
         </div>
@@ -188,7 +190,7 @@ export default function InputPhase({
           step="any"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder={isPreparing ? "OCR 인식 중..." : ""}
+          placeholder={isPreparing ? t("input.ocrRecognizing") : ""}
           disabled={inputDisabled}
           className="mt-1 h-11 w-full rounded-md border border-gray-300 px-3 text-base text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
         />
@@ -200,7 +202,7 @@ export default function InputPhase({
               htmlFor="passfail-select"
               className="block text-xs font-medium text-[#6B7280]"
             >
-              판정 (가공)
+              {t("judgment.machining")}
             </label>
             <select
               id="passfail-select"
@@ -212,13 +214,13 @@ export default function InputPhase({
               className="mt-1 h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
             >
               <option value="" disabled>
-                판정을 선택해주세요
+                {t("input.selectJudgment")}
               </option>
-              <option value="OK">OK (합격)</option>
-              <option value="NG">NG (불합격)</option>
+              <option value="OK">{t("judgment.okPass")}</option>
+              <option value="NG">{t("judgment.ngFail")}</option>
             </select>
             <p className="mt-1 text-[11px] text-[#9CA3AF]">
-              측정값이 기준 범위 안이면 자동으로 OK, 벗어나면 NG 로 설정됩니다. 필요하면 직접 변경하세요.
+              {t("input.autoJudgmentHint")}
             </p>
           </div>
         )}
@@ -232,7 +234,7 @@ export default function InputPhase({
             disabled={isSaving || isPreparing}
             className="h-11 rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold text-[#6B7280] disabled:opacity-60"
           >
-            이전
+            {t("input.prev")}
           </button>
         )}
         <button
@@ -241,7 +243,7 @@ export default function InputPhase({
           disabled={isSaving || isPreparing}
           className="h-11 flex-1 rounded-md border border-gray-300 bg-white text-sm font-semibold text-[#212121] disabled:opacity-60"
         >
-          {blob ? "다시 촬영" : "사진 촬영하기"}
+          {blob ? t("input.retake") : t("input.takePhoto")}
         </button>
         {onGoNext && (
           <button
@@ -250,7 +252,7 @@ export default function InputPhase({
             disabled={isSaving || isPreparing}
             className="h-11 rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold text-[#6B7280] disabled:opacity-60"
           >
-            다음
+            {t("input.next")}
           </button>
         )}
         <button
