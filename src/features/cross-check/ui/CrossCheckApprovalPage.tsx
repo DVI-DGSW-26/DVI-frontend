@@ -89,10 +89,10 @@ export default function CrossCheckApprovalPage() {
   const processLabel = useProcessLabel();
   const processFilterLabel =
     processFilter.length === 0
-      ? "공정"
+      ? t("approval.processFilterAll")
       : processFilter.length === 1
         ? processLabel(processFilter[0])
-        : `공정 ${processFilter.length}개`;
+        : t("approval.processFilterCount", { n: processFilter.length });
   const {
     data: crossChecks = [],
     isLoading,

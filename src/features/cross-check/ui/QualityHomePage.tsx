@@ -21,12 +21,13 @@ import { TODAY_DATE_FILTER, matchesDateFilter } from "../lib/dateFilter";
 import { formatDateTime } from "../../../lib/datetime";
 import CrossCheckCard from "./CrossCheckCard";
 import { slotLabelText } from "../../../lib/slotLabel";
+import { notificationText } from "../../notification/lib/notificationText";
 
 // 홈에는 할 수 있는 검사 중 가장 오래 기다린 몇 건만 — 나머지는 순회검사 현황에서.
 const HOME_ACTIONABLE_LIMIT = 5;
 
 const QualityHomePage = () => {
-  const { t } = useTranslation("crossCheck");
+  const { t, i18n } = useTranslation("crossCheck");
   const navigate = useNavigate();
   const { user } = useAuth();
   // 반려 카드는 종결된 cross-check(REJECTED) 도 포함되어야 노출되므로 includeFinished=true.
@@ -77,9 +78,11 @@ const QualityHomePage = () => {
     } catch (err) {
       setStartError(
         err instanceof AxiosError
-          ? err.response?.data?.message ??
-              "이미 다른 담당자가 진행 중이거나 시작에 실패했습니다."
-          : "순회검사 시작에 실패했습니다.",
+          ? // 서버 message 는 한국어라 영어 화면에서는 쓰지 않는다.
+            (i18n.language.startsWith("ko")
+              ? err.response?.data?.message
+              : undefined) ?? t("home.startTakenOrFailed")
+          : t("home.startFailed"),
       );
     } finally {
       setStartingId(null);
@@ -236,14 +239,14 @@ const QualityHomePage = () => {
         <section>
           <div className="mb-2 flex items-baseline justify-between">
             <h2 className="text-sm font-semibold text-[#212121]">
-              지금 할 수 있는 검사
+              {t("home.actionableTitle")}
             </h2>
             <button
               type="button"
               onClick={() => navigate("/cross-checks")}
               className="text-xs font-medium text-[#931B82]"
             >
-              전체 보기
+              {t("home.viewAll")}
             </button>
           </div>
           <ul className="flex flex-col gap-2">
@@ -350,7 +353,7 @@ const QualityHomePage = () => {
                 />
                 <div className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-sm font-medium text-[#212121]">
-                    {n.title}
+                    {notificationText(n).title}
                   </span>
                   <span className="truncate text-xs text-[#A8A8A8]">
                     {formatDateTime(n.createdAt)}

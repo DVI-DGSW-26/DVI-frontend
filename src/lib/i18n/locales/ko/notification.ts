@@ -1,4 +1,19 @@
 export default {
+  // 알림 종류별 고정 문구 — 한국어 화면은 서버 문장을 그대로 쓰므로 영문과 짝만 맞춘다.
+  types: {
+    INSPECTION_COMPLETED: { title: "자주검사 완료", content: "자주검사가 완료되었습니다." },
+    INSPECTION_NG: { title: "자주검사 NG", content: "자주검사에서 NG 가 나왔습니다." },
+    CROSS_CHECK_PENDING_APPROVAL: { title: "순회검사 결재 요청", content: "순회검사 결재가 요청되었습니다." },
+    CROSS_CHECK_APPROVED: { title: "순회검사 승인", content: "순회검사가 승인되었습니다." },
+    CROSS_CHECK_REJECTED: { title: "순회검사 반려", content: "순회검사가 반려되었습니다. 확인 후 다시 요청해 주세요." },
+    INSPECTION_REMINDER: { title: "검사 알림", content: "다음 검사 시간입니다." },
+    INSPECTION_PRODUCTION_OFFLINE: { title: "작업자 미접속", content: "배정된 작업자가 접속해 있지 않습니다." },
+    DELEGATION_GRANTED: { title: "권한 위임", content: "관리자 권한을 위임받았습니다." },
+    DELEGATION_REVOKED: { title: "권한 위임 해제", content: "위임받은 관리자 권한이 해제되었습니다." },
+    INCOMPLETE_REQUESTED: { title: "미완료 승인 요청", content: "미완료 검사에 대한 승인이 요청되었습니다." },
+    INCOMPLETE_APPROVED: { title: "미완료 승인", content: "미완료 검사가 승인되었습니다." },
+    INCOMPLETE_REJECTED: { title: "미완료 반려", content: "미완료 검사 요청이 반려되었습니다." },
+  },
   page: {
     markAllRead: "모두 읽음",
     loadFailed: "알림을 불러오지 못했습니다.",

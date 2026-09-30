@@ -1,6 +1,18 @@
 import { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import i18n from "../../../lib/i18n";
 import { useProcessList } from "../api";
 import type { ProcessInfo } from "../api";
+
+/**
+ * 공정 표시명. 이름은 관리자가 정하는 서버 값(한국어)이라, 영어 화면에서는 기본 공정
+ * 코드만 영어 이름으로 바꾸고 나머지는 서버 이름을 그대로 쓴다.
+ */
+export function processDisplayName(code: string, label: string): string {
+  if (i18n.language?.startsWith("ko")) return label;
+  const key = `names.${code}`;
+  return i18n.exists(key, { ns: "process" }) ? i18n.t(key, { ns: "process" }) : label;
+}
 
 /**
  * 공정 코드 → 표시명 변환기.
@@ -12,12 +24,16 @@ export function useProcessLabel(): (code: string | null | undefined) => string {
   // 비활성 공정도 라벨은 보여줘야 한다. 기존 제품·보고서가 그 공정을 참조하고 있어서,
   // 활성 목록만 쓰면 지난 데이터의 공정명이 코드로 보인다.
   const { data: processes } = useProcessList(true);
+  // 언어가 바뀌면 표시명도 다시 만든다.
+  const { i18n: i18nInstance } = useTranslation();
+  const lang = i18nInstance.language;
 
   const labelByCode = useMemo(() => {
     const map = new Map<string, string>();
-    for (const p of processes ?? []) map.set(p.code, p.label);
+    for (const p of processes ?? []) map.set(p.code, processDisplayName(p.code, p.label));
     return map;
-  }, [processes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [processes, lang]);
 
   return useCallback(
     (code: string | null | undefined) => {
@@ -41,6 +57,8 @@ export interface ProcessOption {
  */
 export function useProcessOptions(extraCodes: string[] = []): ProcessOption[] {
   const { data: all } = useProcessList(true);
+  const { i18n: i18nInstance } = useTranslation();
+  const lang = i18nInstance.language;
 
   // 의존성 비교가 배열 참조로 걸리지 않도록 문자열로 고정.
   const extraKey = extraCodes.join(",");
@@ -50,8 +68,9 @@ export function useProcessOptions(extraCodes: string[] = []): ProcessOption[] {
     const extras = extraKey === "" ? [] : extraKey.split(",");
     return list
       .filter((p) => p.isActive || extras.includes(p.code))
-      .map((p) => ({ value: p.code, label: p.label }));
-  }, [all, extraKey]);
+      .map((p) => ({ value: p.code, label: processDisplayName(p.code, p.label) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [all, extraKey, lang]);
 }
 
 /**

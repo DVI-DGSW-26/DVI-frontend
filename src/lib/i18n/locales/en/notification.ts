@@ -1,4 +1,19 @@
 export default {
+  // 알림 종류별 고정 문구 — 영어 화면에서 서버의 한국어 문장 대신 쓴다.
+  types: {
+    INSPECTION_COMPLETED: { title: "Self-Inspection completed", content: "A Self-Inspection has been completed." },
+    INSPECTION_NG: { title: "Self-Inspection NG", content: "An NG result was found in a Self-Inspection." },
+    CROSS_CHECK_PENDING_APPROVAL: { title: "Patrol Inspection awaiting approval", content: "A Patrol Inspection has been submitted for approval." },
+    CROSS_CHECK_APPROVED: { title: "Patrol Inspection approved", content: "Your Patrol Inspection has been approved." },
+    CROSS_CHECK_REJECTED: { title: "Patrol Inspection rejected", content: "Your Patrol Inspection was rejected. Please review and resubmit." },
+    INSPECTION_REMINDER: { title: "Inspection reminder", content: "It is time for the next inspection." },
+    INSPECTION_PRODUCTION_OFFLINE: { title: "Operator offline", content: "The assigned operator is offline." },
+    DELEGATION_GRANTED: { title: "Authority delegated", content: "Manager authority has been delegated to you." },
+    DELEGATION_REVOKED: { title: "Delegation revoked", content: "The delegated manager authority has been revoked." },
+    INCOMPLETE_REQUESTED: { title: "Incomplete approval requested", content: "Approval has been requested for an incomplete inspection." },
+    INCOMPLETE_APPROVED: { title: "Incomplete approved", content: "The incomplete inspection has been approved." },
+    INCOMPLETE_REJECTED: { title: "Incomplete rejected", content: "The incomplete inspection request was rejected." },
+  },
   page: {
     markAllRead: "Mark all as read",
     loadFailed: "Failed to load notifications.",

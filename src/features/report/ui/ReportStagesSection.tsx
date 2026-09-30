@@ -11,6 +11,7 @@ import { formatSlotTime } from "../lib/inspectedTime";
 import { formatShortDateTime } from "../../../lib/datetime";
 import ShiftBadge from "../../../components/shared/ShiftBadge";
 import { resolveStageShift, type WorkShift } from "../lib/shift";
+import { slotLabelText } from "../../../lib/slotLabel";
 
 const STAGE_BADGE: Record<ReportStage, string> = {
   INITIAL: "border-[#DBEAFE] bg-[#EFF6FF] text-[#1D4ED8]",
@@ -41,6 +42,9 @@ function AppearanceMark({ value }: { value: AppearanceResult | null }) {
 
 function StageBadge({ stage, label }: { stage: ReportStage; label: string }) {
   const { t } = useTranslation("report");
+  const stageName = t(`stage.${stage}`, "?");
+  // 라벨이 차수 이름과 같으면("초" 차수에 라벨도 "초") 한 번만 쓴다.
+  const text = slotLabelText(label);
   return (
     <span className="inline-flex items-center gap-1.5">
       <span
@@ -48,9 +52,9 @@ function StageBadge({ stage, label }: { stage: ReportStage; label: string }) {
           STAGE_BADGE[stage] ?? "border-[#E5E7EB] bg-[#F5F5F5] text-[#6B7280]"
         }`}
       >
-        {t(`stage.${stage}`, "?")}
+        {stageName}
       </span>
-      <span className="text-[#212121]">{label}</span>
+      {text !== stageName && <span className="text-[#212121]">{text}</span>}
     </span>
   );
 }

@@ -22,6 +22,7 @@ import { useProductSlots } from "../../inspection/api";
 import { getStage, STAGE_BADGE } from "../lib/stage";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import { formatDate } from "../../../lib/datetime";
+import { slotLabelText } from "../../../lib/slotLabel";
 
 interface ResultLocationState {
   results?: StepResult[];
@@ -165,7 +166,7 @@ export default function CrossCheckResultPage() {
     if (!slots?.length || !detail) return [];
     const currentIdx = slots.findIndex((s) => s.type === detail.type);
     if (currentIdx < 0) return [];
-    return slots.slice(currentIdx + 1).map((s) => s.label);
+    return slots.slice(currentIdx + 1).map((s) => slotLabelText(s.label));
   }, [slotsQuery.data, detail]);
 
   // 경도값은 경도 추적 공정이라도 결재요청 시점엔 선택. 초품검사 등 아직 측정하지
@@ -231,7 +232,7 @@ export default function CrossCheckResultPage() {
   const handleCancelSkip = async (dimNo: number) => {
     const meta = metaByDimNo.get(dimNo);
     if (!meta) {
-      setToast("해제할 수 없습니다. 새로고침 후 다시 시도해주세요.");
+      setToast(t("result.cancelSkipUnavailable"));
       return;
     }
     try {
@@ -286,7 +287,9 @@ export default function CrossCheckResultPage() {
                 </span>
                 {remainingSlotLabels.length > 0 && (
                   <span className="text-xs text-[#A8A8A8]">
-                    남은 차수 {remainingSlotLabels.join(" · ")}
+                    {t("result.remainingSlots", {
+                      labels: remainingSlotLabels.join(" · "),
+                    })}
                   </span>
                 )}
                 {/* 결재가 언제 막히는지는 확인되지 않았다. 승인 조건을 단정하는

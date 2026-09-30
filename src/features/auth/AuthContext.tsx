@@ -19,6 +19,7 @@ import { stopWebPush } from "../notification/lib/webPush";
 import type { PushSession } from "../notification/api/pushTokenApi";
 import { clearViewState } from "../../lib/viewState";
 import { currentApiServer, type ApiServer } from "../../lib/apiServer";
+import i18n from "../../lib/i18n";
 import type { LoginRequest, StoredAccount, TokenData, User } from "./api";
 
 // 지금 올라가 있는 세션 — 푸시 해제를 보낼 곳. 세션을 바꾸거나 지우기 "전에"
@@ -45,14 +46,12 @@ function isTestAccountOnProd(role: string | undefined): boolean {
   return role === "TEST" && currentApiServer() === "prod";
 }
 
-const TEST_ACCOUNT_RELOGIN_MESSAGE =
-  "테스트 계정은 테스트 서버로 다시 로그인해야 합니다. 로그인해 주세요.";
+const authError = (key: string, opts?: Record<string, unknown>) =>
+  i18n.t(`errors.${key}`, { ns: "auth", ...opts });
 
 function assertTokens(tokens: TokenData | undefined): TokenData {
   if (!tokens?.accessToken) {
-    throw new Error(
-      "로그인 응답에 accessToken 이 없습니다. 백엔드 응답 형태를 확인해주세요.",
-    );
+    throw new Error(authError("noAccessToken"));
   }
   return tokens;
 }
@@ -156,7 +155,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           tokens = assertTokens(await loginApi(body, server));
         } catch (err) {
           if (err instanceof AuthError) {
-            throw new AuthError(err.code, `테스트 서버 로그인 실패: ${err.message}`);
+            throw new AuthError(
+              err.code,
+              authError("testServerLoginFailed", { message: err.message }),
+            );
           }
           throw err;
         }
@@ -189,18 +191,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (target?.role === "TEST" && (target.server ?? "prod") === "prod") {
         accountStorage.remove(loginId);
         setAccounts(accountStorage.list());
-        throw new AuthError("UNKNOWN", TEST_ACCOUNT_RELOGIN_MESSAGE);
+        throw new AuthError("UNKNOWN", authError("testRelogin"));
       }
       // 저장된 계정마다 발급 서버가 기록돼 있어, 올리는 순간 요청 기준 주소도
       // 그 서버로 바뀐다.
       if (!accountStorage.activate(loginId)) {
-        throw new Error("저장된 계정이 아닙니다.");
+        throw new Error(authError("notSavedAccount"));
       }
       try {
         const me = await getMe();
         if (isTestAccountOnProd(me.role)) {
           accountStorage.remove(loginId);
-          throw new AuthError("UNKNOWN", TEST_ACCOUNT_RELOGIN_MESSAGE);
+          throw new AuthError("UNKNOWN", authError("testRelogin"));
         }
         accountStorage.upsert(me);
         releasePushIfServerChanged(previousPush);

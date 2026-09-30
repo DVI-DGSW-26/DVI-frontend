@@ -1,4 +1,12 @@
 export default {
+  // 기본 공정 코드의 표시명 — 한국어 화면은 서버 이름을 그대로 쓴다(영문과 짝만 맞춤).
+  names: {
+    EXTRUSION: "압출",
+    AL_CUTTING: "AL절단",
+    ST_CUTTING: "ST절단",
+    MACHINING: "가공",
+    PRESS: "프레스",
+  },
   page: {
     title: "공정관리",
     register: "공정 등록",

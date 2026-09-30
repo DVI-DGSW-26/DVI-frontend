@@ -1,5 +1,6 @@
 import axios from "axios";
 import { apiBase } from "./apiServer";
+import i18n from "./i18n";
 
 // 응답 제한 시간. 예전엔 무제한이라 서버가 죽으면 요청이 영원히 떠 있었고,
 // 화면이 "그냥 느린 것" 처럼 보여 사용자가 원인을 알 수 없었다. 여기서 끊어야
@@ -34,4 +35,20 @@ export const http = axios.create({
 http.interceptors.request.use((config) => {
   if (!config.baseURL) config.baseURL = apiBase();
   return config;
+});
+
+// 서버 오류 message 는 한국어 문장이다. 영어 화면에서는 떼어 내 — 화면마다
+// `message ?? t(...)` 로 자기 번역 문구를 쓰게 한다. 문구 내용으로 분기하는 코드는 없다.
+// (서버가 오류 코드를 보강해 주면 코드별 번역으로 바꾼다.)
+http.interceptors.response.use(undefined, (err) => {
+  const data = err?.response?.data;
+  if (
+    data &&
+    typeof data === "object" &&
+    "message" in data &&
+    !i18n.language?.startsWith("ko")
+  ) {
+    delete (data as { message?: unknown }).message;
+  }
+  return Promise.reject(err);
 });

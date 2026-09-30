@@ -28,5 +28,6 @@ export default {
     FINAL: "Last-off",
     night: "Night {{label}}",
     nightOnly: "Night",
+    round: "Round {{n}}",
   },
 } as const;

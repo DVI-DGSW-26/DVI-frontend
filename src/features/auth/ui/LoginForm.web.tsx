@@ -15,7 +15,7 @@ export default function LoginFormWeb({
   setPassword,
   onSubmit,
 }: LoginFormProps) {
-  const { t } = useTranslation("auth");
+  const { t, i18n } = useTranslation("auth");
   const [showPassword, setShowPassword] = useState(false);
   // 기본값 true — 체크 해제 시에만 sessionStorage 로 저장 (브라우저 종료 시 로그아웃).
   const [keepLoggedIn, setKeepLoggedIn] = useState(true);
@@ -32,9 +32,12 @@ export default function LoginFormWeb({
             <span className="text-[40px] xl:text-[46px] text-white font-semibold">A social enterprise that cares about </span>
             <span className="text-[58px] xl:text-[64px] text-white font-black leading-tight">people, technology, and<br/>the environment</span>
           </div>
-          <span className="text-[18px] xl:text-[24px] font-medium text-white">
-            사람, 기술, 환경을 중시하는 사회적 기업
-          </span>
+          {/* 위 영문 문구의 한국어 번역 — 영어 화면에서는 뺀다. */}
+          {i18n.language.startsWith("ko") && (
+            <span className="text-[18px] xl:text-[24px] font-medium text-white">
+              사람, 기술, 환경을 중시하는 사회적 기업
+            </span>
+          )}
         </div>
       </div>
 

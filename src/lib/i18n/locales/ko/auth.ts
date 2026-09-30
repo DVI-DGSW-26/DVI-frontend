@@ -69,6 +69,22 @@ export default {
       errorUnknown: "알 수 없는 오류가 발생했습니다.",
     },
   },
+  // 로그인·회원가입·계정 전환 오류.
+  errors: {
+    connection:
+      "서버에 연결할 수 없습니다. 네트워크 상태를 확인하거나 관리자에게 서버 상태를 문의해 주세요.",
+    invalidInput: "입력값을 확인해주세요.",
+    duplicateId: "이미 존재하는 아이디입니다.",
+    signupFailed: "회원가입 중 오류가 발생했습니다.",
+    invalidCredentials: "아이디 또는 비밀번호가 올바르지 않습니다.",
+    notApproved: "아직 관리자 승인되지 않은 계정입니다.",
+    loginFailed: "로그인 중 오류가 발생했습니다.",
+    testRelogin: "테스트 계정은 테스트 서버로 다시 로그인해야 합니다. 로그인해 주세요.",
+    noAccessToken:
+      "로그인 응답에 accessToken 이 없습니다. 백엔드 응답 형태를 확인해주세요.",
+    testServerLoginFailed: "테스트 서버 로그인 실패: {{message}}",
+    notSavedAccount: "저장된 계정이 아닙니다.",
+  },
   accountSwitcher: {
     credentialMismatch:
       "{{label}}({{loginId}}) 계정 정보가 서버와 맞지 않습니다.",

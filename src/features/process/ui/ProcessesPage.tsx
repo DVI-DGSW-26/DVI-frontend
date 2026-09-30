@@ -8,6 +8,7 @@ import ProcessFormDrawer from "./ProcessFormDrawer";
 import ProcessScheduleDrawer from "./ProcessScheduleDrawer";
 import { useAllProcessSchedules } from "../../inspection-schedule/api";
 import { useViewState } from "../../../lib/viewState";
+import { processDisplayName } from "../lib/processLookup";
 
 // 공정 설정 3개를 목록에서 한눈에 보기 위한 칩. 라벨은 process:flags.* 에서 가져온다.
 const FLAG_CHIPS: { key: keyof ProcessInfo & string; style: string }[] = [
@@ -152,7 +153,7 @@ export default function ProcessesPage() {
     const next = !process.isActive;
     if (
       next === false &&
-      !window.confirm(t("page.deactivateConfirm", { name: process.label }))
+      !window.confirm(t("page.deactivateConfirm", { name: processDisplayName(process.code, process.label) }))
     )
       return;
     update(
@@ -325,7 +326,7 @@ function DesktopTable({
           {items.map((item) => (
             <tr key={item.code} className="hover:bg-gray-50">
               <td className="whitespace-nowrap px-4 py-3 font-medium">
-                {item.label}
+                {processDisplayName(item.code, item.label)}
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-[#6B7280]">
                 {item.code}
@@ -436,7 +437,7 @@ function MobileList({
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <div className="truncate text-base font-semibold text-[#212121]">
-                {item.label}
+                {processDisplayName(item.code, item.label)}
               </div>
               <div className="mt-0.5 truncate text-xs text-[#6B7280]">
                 {item.code} · {item.shortCode}

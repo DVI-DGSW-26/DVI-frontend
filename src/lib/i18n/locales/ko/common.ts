@@ -29,5 +29,6 @@ export default {
     FINAL: "종",
     night: "야간{{label}}",
     nightOnly: "야간",
+    round: "{{n}}차",
   },
 } as const;
