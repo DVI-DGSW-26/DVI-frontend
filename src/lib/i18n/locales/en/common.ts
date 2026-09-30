@@ -5,6 +5,7 @@ export default {
     PRODUCTION: "Operator",
     PRODUCTION_MANAGER: "Production Manager",
     QUALITY: "Patrol Inspector",
+    TEST: "Test",
   },
   actions: {
     confirm: "Confirm",

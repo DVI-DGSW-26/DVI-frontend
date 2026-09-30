@@ -5,6 +5,7 @@ export default {
     PRODUCTION: "생산자",
     PRODUCTION_MANAGER: "생산 관리자",
     QUALITY: "품질 담당자",
+    TEST: "테스트",
   },
   actions: {
     confirm: "확인",

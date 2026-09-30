@@ -29,7 +29,8 @@ export const crossCheckKeys = {
     [...crossCheckKeys.all, "my", { includeFinished, processes }] as const,
   assigned: (processes: string[] = []) =>
     [...crossCheckKeys.all, "assigned", { processes }] as const,
-  pending: () => [...crossCheckKeys.all, "pending"] as const,
+  pending: (processes: string[] = []) =>
+    [...crossCheckKeys.all, "pending", { processes }] as const,
   detail: (crossCheckId: number) =>
     [...crossCheckKeys.all, "detail", crossCheckId] as const,
   delegationMe: () => ["delegation", "me"] as const,
@@ -57,10 +58,10 @@ export function useAssignedCrossChecks(processes: string[] = []) {
   });
 }
 
-export function usePendingCrossChecks() {
+export function usePendingCrossChecks(processes: string[] = []) {
   return useQuery({
-    queryKey: crossCheckKeys.pending(),
-    queryFn: getPendingCrossChecks,
+    queryKey: crossCheckKeys.pending(processes),
+    queryFn: () => getPendingCrossChecks(processes),
     staleTime: 0,
     refetchOnMount: "always",
   });

@@ -8,9 +8,54 @@ import {
 } from "react";
 import { AxiosError } from "axios";
 import { useQueryClient } from "@tanstack/react-query";
-import { accountStorage, getMe, login as loginApi, tokenStorage } from "./api";
+import {
+  AuthError,
+  accountStorage,
+  getMe,
+  login as loginApi,
+  tokenStorage,
+} from "./api";
 import { stopWebPush } from "../notification/lib/webPush";
-import type { LoginRequest, StoredAccount, User } from "./api";
+import type { PushSession } from "../notification/api/pushTokenApi";
+import { clearViewState } from "../../lib/viewState";
+import { currentApiServer, type ApiServer } from "../../lib/apiServer";
+import type { LoginRequest, StoredAccount, TokenData, User } from "./api";
+
+// 지금 올라가 있는 세션 — 푸시 해제를 보낼 곳. 세션을 바꾸거나 지우기 "전에"
+// 잡아 둬야 한다. 바꾼 뒤에 읽으면 새 세션의 토큰·서버가 나온다.
+function currentPushSession(): PushSession | undefined {
+  const accessToken = tokenStorage.getAccess();
+  return accessToken ? { accessToken, server: currentApiServer() } : undefined;
+}
+
+// 운영↔테스트 서버를 넘나들었으면 이전 서버의 푸시 등록을 푼다. 새 서버 등록은
+// 사용자가 바뀌면 useNotificationAlerts 가 알아서 한다. 같은 서버 안에서의 전환은
+// 서버가 토큰 소유자를 새 계정으로 옮겨 주므로 풀 필요가 없다.
+function releasePushIfServerChanged(previous: PushSession | undefined) {
+  if (previous && previous.server !== currentApiServer()) {
+    void stopWebPush(previous);
+  }
+}
+
+// 운영 서버에 붙어 있는 테스트 계정 세션인가. 테스트 계정 전환이 배포되기 전에
+// 로그인해 둔 세션이 그렇다 — 전환은 로그인할 때만 일어나서, 그대로 두면
+// 새로고침해도 운영으로 계속 요청한다. 비밀번호가 없어 dev 로 옮겨 줄 수는 없고,
+// 세션을 버려 다시 로그인하게 한다(로그인이 dev 로 전환해 준다).
+function isTestAccountOnProd(role: string | undefined): boolean {
+  return role === "TEST" && currentApiServer() === "prod";
+}
+
+const TEST_ACCOUNT_RELOGIN_MESSAGE =
+  "테스트 계정은 테스트 서버로 다시 로그인해야 합니다. 로그인해 주세요.";
+
+function assertTokens(tokens: TokenData | undefined): TokenData {
+  if (!tokens?.accessToken) {
+    throw new Error(
+      "로그인 응답에 accessToken 이 없습니다. 백엔드 응답 형태를 확인해주세요.",
+    );
+  }
+  return tokens;
+}
 
 interface AuthContextValue {
   user: User | null;
@@ -40,14 +85,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
   const queryClient = useQueryClient();
 
+  // 지금 세션만 버리고 로그인 화면으로 보낸다. 이 세션이 운영에 등록해 둔 푸시도 푼다.
+  const discardSession = useCallback(() => {
+    void stopWebPush(currentPushSession());
+    tokenStorage.clear();
+    setUser(null);
+    setAccounts(accountStorage.list());
+  }, []);
+
   const refresh = useCallback(async () => {
     if (!tokenStorage.getAccess()) {
       setUser(null);
       setAccounts(accountStorage.list());
       return;
     }
+    // 운영 세션으로 남은 테스트 계정 — 저장해 둔 역할로 알 수 있으면 운영에
+    // 요청을 하나도 보내지 않고 바로 버린다.
+    const activeLoginId = accountStorage.activeLoginId();
+    const storedRole = accountStorage
+      .list()
+      .find((a) => a.loginId === activeLoginId)?.role;
+    if (isTestAccountOnProd(storedRole)) {
+      discardSession();
+      return;
+    }
     try {
       const me = await getMe();
+      // 저장된 역할이 없던(오래된) 세션은 내 정보를 받아 봐야 안다.
+      if (isTestAccountOnProd(me.role)) {
+        discardSession();
+        return;
+      }
       // 저장된 계정의 이름/역할/토큰을 최신 상태로 유지한다.
       accountStorage.upsert(me);
       setUser(me);
@@ -63,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setAccounts(accountStorage.list());
     }
-  }, []);
+  }, [discardSession]);
 
   useEffect(() => {
     refresh().finally(() => setLoading(false));
@@ -71,20 +139,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (body: LoginRequest, persist?: boolean) => {
-      const tokens = await loginApi(body);
-      if (!tokens?.accessToken) {
-        throw new Error(
-          "로그인 응답에 accessToken 이 없습니다. 백엔드 응답 형태를 확인해주세요.",
-        );
+      const previousPush = currentPushSession();
+
+      // 로그인은 항상 운영 서버에서 시작한다. 받은 토큰은 아직 세션에 올리지
+      // 않고, 그 토큰으로 누구인지만 확인한다.
+      let tokens = assertTokens(await loginApi(body, "prod"));
+      let server: ApiServer = "prod";
+      let me = await getMe({ accessToken: tokens.accessToken, server });
+
+      if (me.role === "TEST") {
+        // 테스트 계정 — 백엔드에서 모든 권한을 가져서 운영에서 쓰면 안 된다.
+        // 운영 토큰은 버리고 같은 자격증명으로 dev 서버에 다시 로그인한다.
+        // (운영과 dev 는 JWT 비밀키가 달라 운영 토큰을 dev 에 쓸 수 없다)
+        server = "test";
+        try {
+          tokens = assertTokens(await loginApi(body, server));
+        } catch (err) {
+          if (err instanceof AuthError) {
+            throw new AuthError(err.code, `테스트 서버 로그인 실패: ${err.message}`);
+          }
+          throw err;
+        }
+        me = await getMe({ accessToken: tokens.accessToken, server });
       }
+
       // 아직 누구로 로그인했는지 모르는 구간 — 활성 포인터를 비워야 save() 가
       // "직전 계정"의 저장된 토큰을 새 토큰으로 덮어쓰지 않는다.
       accountStorage.clearActive();
-      tokenStorage.save(tokens, persist);
-      const me = await getMe();
+      tokenStorage.save(tokens, persist, server);
       accountStorage.upsert(me);
+      releasePushIfServerChanged(previousPush);
       // 이전 사용자로 받아둔 캐시가 새 계정 화면에 그대로 뜨는 것을 막는다.
       queryClient.clear();
+      // 목록 화면에 기억해 둔 필터도 같이 버린다 — 앞 사용자가 걸어 둔 조건이다.
+      clearViewState();
       setUser(me);
       setAccounts(accountStorage.list());
       return me;
@@ -95,14 +183,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const switchAccount = useCallback(
     async (loginId: string) => {
       const previous = accountStorage.activeLoginId();
+      const previousPush = currentPushSession();
+      // 운영 토큰으로 저장돼 있는 테스트 계정은 올리지 않고 목록에서 뺀다.
+      const target = accountStorage.list().find((a) => a.loginId === loginId);
+      if (target?.role === "TEST" && (target.server ?? "prod") === "prod") {
+        accountStorage.remove(loginId);
+        setAccounts(accountStorage.list());
+        throw new AuthError("UNKNOWN", TEST_ACCOUNT_RELOGIN_MESSAGE);
+      }
+      // 저장된 계정마다 발급 서버가 기록돼 있어, 올리는 순간 요청 기준 주소도
+      // 그 서버로 바뀐다.
       if (!accountStorage.activate(loginId)) {
         throw new Error("저장된 계정이 아닙니다.");
       }
       try {
         const me = await getMe();
+        if (isTestAccountOnProd(me.role)) {
+          accountStorage.remove(loginId);
+          throw new AuthError("UNKNOWN", TEST_ACCOUNT_RELOGIN_MESSAGE);
+        }
         accountStorage.upsert(me);
+        releasePushIfServerChanged(previousPush);
         // 역할마다 보이는 데이터가 다르므로 이전 계정의 캐시는 통째로 버린다.
         queryClient.clear();
+        clearViewState();
         setUser(me);
         setAccounts(accountStorage.list());
         return me;
@@ -118,11 +222,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
-    // 이 기기로 더 이상 푸시가 가지 않도록 해제한다. 토큰을 지우기 전에 시작해야
-    // 인증된 요청으로 나가므로, 직전 accessToken 을 넘겨준다.
-    void stopWebPush(tokenStorage.getAccess() ?? undefined);
+    // 이 기기로 더 이상 푸시가 가지 않도록 해제한다. 세션을 지운 뒤엔 토큰도
+    // 서버(운영/테스트)도 알 수 없으므로, 지우기 전에 보낼 곳을 정해 넘긴다.
+    void stopWebPush(currentPushSession());
     tokenStorage.clearAll();
     queryClient.clear();
+    clearViewState();
     setUser(null);
     setAccounts([]);
   }, [queryClient]);

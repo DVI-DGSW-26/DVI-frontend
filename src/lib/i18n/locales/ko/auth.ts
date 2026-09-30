@@ -73,5 +73,7 @@ export default {
     credentialMismatch:
       "{{label}}({{loginId}}) 계정 정보가 서버와 맞지 않습니다.",
     switchFailed: "계정 전환에 실패했습니다. 잠시 후 다시 시도해주세요.",
+    sessionExpired:
+      "{{label}}({{loginId}}) 로그인이 만료되었습니다. 로그아웃 후 다시 로그인해 주세요.",
   },
 } as const;

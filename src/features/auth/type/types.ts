@@ -21,7 +21,10 @@ export type Role =
   | "QUALITY_ADMIN"
   | "PRODUCTION"
   | "QUALITY"
-  | "PRODUCTION_MANAGER";
+  | "PRODUCTION_MANAGER"
+  // 테스트 계정. 백엔드에서 모든 권한을 가지며, 세션은 항상 dev 서버를 쓴다
+  // (lib/apiServer.ts). 화면에서도 역할 분기를 전부 통과한다(auth/roles.ts).
+  | "TEST";
 
 export type UserStatus = "ACTIVE" | "PENDING" | "INACTIVE";
 

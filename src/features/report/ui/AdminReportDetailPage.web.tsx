@@ -25,6 +25,7 @@ import {
 import DeleteReportModal from "./DeleteReportModal";
 import Toast from "../../inspection/ui/Toast";
 import { useAuth } from "../../auth/AuthContext";
+import { hasRole } from "../../auth/roles";
 import { useProcessLabel } from "../../process";
 
 function formatDateTime(iso: string) {
@@ -199,7 +200,7 @@ const AdminReportDetailPageWeb = () => {
 
   const { data, isLoading, isError } = useReportDetail(id, validId);
   const { user } = useAuth();
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = hasRole(user?.role, ["ADMIN"]);
 
   const deleteReport = useDeleteReport();
   const [confirmDelete, setConfirmDelete] = useState(false);

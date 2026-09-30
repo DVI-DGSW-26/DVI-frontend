@@ -1,5 +1,6 @@
 import { AxiosError } from "axios";
 import { http } from "../../../lib/http";
+import { apiBase, type ApiServer } from "../../../lib/apiServer";
 import { isConnectionError } from "../../../lib/serverStatus";
 import {
   AuthError,
@@ -42,11 +43,16 @@ export async function signup(body: SignupRequest): Promise<void> {
   }
 }
 
-export async function login(body: LoginRequest): Promise<TokenData> {
+/** server 를 주면 그 서버에 로그인한다. 없으면 지금 세션의 서버. */
+export async function login(
+  body: LoginRequest,
+  server?: ApiServer,
+): Promise<TokenData> {
   try {
     const { data } = await http.post<ApiResponse<TokenData>>(
       "/auth/login",
       body,
+      server ? { baseURL: apiBase(server) } : undefined,
     );
     return data.data;
   } catch (err) {

@@ -73,5 +73,7 @@ export default {
     credentialMismatch:
       "The credentials for {{label}} ({{loginId}}) do not match the server.",
     switchFailed: "Failed to switch accounts. Please try again later.",
+    sessionExpired:
+      "The login for {{label}} ({{loginId}}) has expired. Please log out and log in again.",
   },
 } as const;

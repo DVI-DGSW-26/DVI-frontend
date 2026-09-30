@@ -1,6 +1,7 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { useSyncExternalStore } from "react";
 import { http } from "./http";
+import { apiBase } from "./apiServer";
 
 /**
  * 서버 연결 상태 감지.
@@ -146,7 +147,8 @@ async function probeOnce(): Promise<boolean> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
   try {
-    const res = await fetch(`${http.defaults.baseURL ?? ""}${PROBE_PATH}`, {
+    // 지금 세션이 쓰는 서버를 확인한다 — 테스트 계정 세션이면 dev 서버.
+    const res = await fetch(`${apiBase()}${PROBE_PATH}`, {
       method: "GET",
       cache: "no-store",
       signal: controller.signal,

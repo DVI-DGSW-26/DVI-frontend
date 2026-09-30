@@ -7,8 +7,11 @@ import type { TFunction } from "i18next";
 import { usePendingCrossChecks, useDeleteCrossCheckById } from "../api";
 import type { CrossCheckSummary } from "../api";
 import { useAuth } from "../../auth/AuthContext";
-import { useProcessLabel } from "../../process";
+import { hasRole } from "../../auth/roles";
+import { useProcessLabel, useProcessOptions } from "../../process";
 import { getStage, STAGE_BADGE } from "../lib/stage";
+import { useProcessFilter } from "../lib/processFilter";
+import CheckboxMultiSelect from "../../report/ui/CheckboxMultiSelect";
 import { groupByRun, runStatus } from "../lib/runGroup";
 import { formatDate, formatDateTime } from "../../../lib/datetime";
 import {
@@ -20,6 +23,7 @@ import {
 import DateRangeFilter from "./DateRangeFilter";
 import DeleteInspectionModal from "../../my-inspection/ui/DeleteInspectionModal";
 import Toast from "../../inspection/ui/Toast";
+import { useViewState } from "../../../lib/viewState";
 
 function toDeleteErrorMessage(
   err: unknown,
@@ -76,14 +80,29 @@ export default function CrossCheckApprovalPage() {
   // 알림에서 진입 시 강조할 순회검사 id (?highlight=123).
   const highlightId = Number(searchParams.get("highlight")) || null;
   const { user } = useAuth();
+  // 공정 필터는 서버가 걸러 준다(GET /cross-check/pending?process=...).
+  // 선택 상태는 할당 대기 화면과 같은 저장소를 쓴다 — 한 사람이 맡은 공정은
+  // 화면이 바뀌어도 같으므로, 화면마다 다시 고르게 하지 않는다.
+  const [processFilter, setProcessFilter] = useProcessFilter();
+  const processOptions = useProcessOptions();
+  const processLabel = useProcessLabel();
+  const processFilterLabel =
+    processFilter.length === 0
+      ? "공정"
+      : processFilter.length === 1
+        ? processLabel(processFilter[0])
+        : `공정 ${processFilter.length}개`;
   const {
     data: crossChecks = [],
     isLoading,
     isError,
-  } = usePendingCrossChecks();
+  } = usePendingCrossChecks(processFilter);
   // 진입 시 기본으로 오늘자 결재만 보여주고, 필요하면 필터를 넓힐 수 있게 한다.
-  const [dateFilter, setDateFilter] =
-    useState<DateFilterValue>(TODAY_DATE_FILTER);
+  // 결재 상세를 열었다 돌아오면 넓혀 둔 기간이 그대로 유지된다.
+  const [dateFilter, setDateFilter] = useViewState<DateFilterValue>(
+    "dateFilter",
+    TODAY_DATE_FILTER,
+  );
   // 목록에서 바로 삭제 — 확인 모달 대상.
   const [deleteTarget, setDeleteTarget] = useState<CrossCheckSummary | null>(
     null,
@@ -93,8 +112,7 @@ export default function CrossCheckApprovalPage() {
 
   // 관리자(ADMIN/QUALITY_ADMIN)만 삭제. APPROVED(보고서 발행)는 백엔드가 거부하므로
   // 버튼도 숨긴다(결재 목록엔 원래 안 뜨지만 방어).
-  const canDelete =
-    user?.role === "QUALITY_ADMIN" || user?.role === "ADMIN";
+  const canDelete = hasRole(user?.role, ["QUALITY_ADMIN", "ADMIN"]);
 
   // 최근 결재 요청부터 위로 (updatedAt 우선, 없으면 createdAt)
   const sorted = useMemo(
@@ -134,7 +152,8 @@ export default function CrossCheckApprovalPage() {
     });
   }, [filtered]);
 
-  // 상단 요약 카운트 (날짜 필터와 무관하게 전체 기준).
+  // 상단 요약 카운트 (날짜 필터와 무관. 공정 필터는 서버가 걸러 온 목록이라
+  // 공정을 고르면 그 공정 기준 건수가 된다).
   const pendingCount = sorted.filter(
     (c) => c.status === "PENDING_APPROVAL",
   ).length;
@@ -178,9 +197,20 @@ export default function CrossCheckApprovalPage() {
         </div>
       </div>
 
-      {!isLoading && !isError && sorted.length > 0 && (
-        <DateRangeFilter value={dateFilter} onChange={setDateFilter} />
-      )}
+      {/* 공정 필터는 결과가 0건이어도 늘 띄운다 — 목록이 비었다고 필터까지
+          숨기면 고른 공정을 되돌릴 수단이 사라진다. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <CheckboxMultiSelect
+          label={processFilterLabel}
+          options={processOptions}
+          value={processFilter}
+          onChange={setProcessFilter}
+          width="w-36"
+        />
+        {!isLoading && !isError && sorted.length > 0 && (
+          <DateRangeFilter value={dateFilter} onChange={setDateFilter} />
+        )}
+      </div>
 
       {isLoading && (
         <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
@@ -194,21 +224,28 @@ export default function CrossCheckApprovalPage() {
         </p>
       )}
 
+      {/* 공정을 골라서 비어 있는 것과, 정말 아무것도 없는 것을 구분해 알린다. */}
       {!isLoading && !isError && sorted.length === 0 && (
-        <div className="flex flex-col items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-16 text-center">
-          <Icon
-            icon="solar:check-circle-bold"
-            width={40}
-            height={40}
-            className="text-[#22C55E]"
-          />
-          <span className="text-sm font-medium text-[#212121]">
-            {t("approval.emptyTitle")}
-          </span>
-          <span className="text-xs text-[#6B7280]">
-            {t("approval.emptyHint")}
-          </span>
-        </div>
+        processFilter.length > 0 ? (
+          <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+            {t("approval.emptyFiltered")}
+          </p>
+        ) : (
+          <div className="flex flex-col items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-16 text-center">
+            <Icon
+              icon="solar:check-circle-bold"
+              width={40}
+              height={40}
+              className="text-[#22C55E]"
+            />
+            <span className="text-sm font-medium text-[#212121]">
+              {t("approval.emptyTitle")}
+            </span>
+            <span className="text-xs text-[#6B7280]">
+              {t("approval.emptyHint")}
+            </span>
+          </div>
+        )
       )}
 
       {!isLoading && !isError && sorted.length > 0 && filtered.length === 0 && (

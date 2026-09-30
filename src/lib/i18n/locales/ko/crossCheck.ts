@@ -196,6 +196,8 @@ export default {
     measuredValue: "측정값",
     saving: "저장 중...",
     remeasure: "다시 측정",
+    cancelSkip: "건너뜀 해제",
+    skipCancelled: "건너뜀이 해제되었습니다",
     skipped: "건너뜀",
     photoAlt: "{{name}} 측정 사진",
     errSkipped:
@@ -207,6 +209,7 @@ export default {
     inProgressCount: "진행중 {{n}}건",
     listError: "목록을 불러오지 못했습니다.",
     emptyTitle: "결재 대기·진행중인 순회검사가 없습니다",
+    emptyFiltered: "선택한 공정에 결재 대기·진행중인 순회검사가 없습니다.",
     emptyHint: "품질 담당자가 순회검사를 시작하거나 결재 요청하면 여기에 표시됩니다",
     emptyPeriod: "선택한 기간에 해당하는 순회검사가 없습니다.",
     roundsCount: "{{n}}차수",

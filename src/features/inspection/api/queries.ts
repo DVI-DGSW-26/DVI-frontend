@@ -23,6 +23,7 @@ import {
 import type {
   IncompleteRequest,
   InspectionProcess,
+  InspectionSlot,
   SaveResultsRequest,
   TerminateRequest,
 } from "../type/types";
@@ -52,8 +53,9 @@ export const inspectionKeys = {
   all: ["inspection"] as const,
   slots: (process: InspectionProcess) =>
     [...inspectionKeys.all, "slots", process] as const,
-  productSlots: (productId: number) =>
-    [...inspectionKeys.all, "slots", "product", productId] as const,
+  // 같은 제품이라도 작업지시(교대)별로 슬롯이 다르므로 orderId 까지 키에 넣는다.
+  productSlots: (productId: number, orderId?: number) =>
+    [...inspectionKeys.all, "slots", "product", productId, orderId ?? null] as const,
   detail: (inspectionId: number) =>
     [...inspectionKeys.all, "detail", inspectionId] as const,
 };
@@ -71,11 +73,17 @@ export function useInspectionDetail(inspectionId: number | undefined) {
   });
 }
 
-/** 제품 기준 슬롯 — 검사 시작 화면(시점 선택)은 이걸 쓴다. */
-export function useProductSlots(productId: number | null | undefined) {
+/**
+ * 제품 기준 슬롯 — 검사 시작 화면(시점 선택)은 이걸 쓴다.
+ * orderId 를 넘기면 그 작업지시의 교대 슬롯만 온다(주간·야간 지시를 함께 받은 작업자용).
+ */
+export function useProductSlots(
+  productId: number | null | undefined,
+  orderId?: number | null,
+) {
   return useQuery({
-    queryKey: inspectionKeys.productSlots(productId ?? 0),
-    queryFn: () => getProductSlots(productId as number),
+    queryKey: inspectionKeys.productSlots(productId ?? 0, orderId ?? undefined),
+    queryFn: () => getProductSlots(productId as number, orderId ?? undefined),
     enabled: !!productId,
   });
 }
@@ -111,22 +119,31 @@ export function useSlotSequences() {
   });
 
   const seqByProcess = useMemo(() => {
-    const map = new Map<string, string[]>();
+    const map = new Map<string, InspectionSlot[]>();
     codes.forEach((code, i) => {
       const slots = results[i]?.data;
-      if (slots && slots.length > 0) map.set(code, slots.map((s) => s.type));
+      if (slots && slots.length > 0) map.set(code, slots);
     });
     return map;
   }, [codes, results]);
 
+  // 다음 시점은 "같은 교대 안에서만" 찾는다. 공정 슬롯은 주간·야간이 한 줄로
+  // 이어져 있어(초→중→종→야간초→…) 그대로 다음을 집으면 주간 작업지시의 마지막
+  // 시점 뒤에 야간초가 뜨고, 그 작업지시엔 없는 슬롯이라 서버가 400 으로 막는다.
+  // 주/야 판단은 슬롯의 shift 로만 한다 — type(DAY_1 ...) 은 순서용 내부 값이다.
   const getNextSlot = useMemo(
     () =>
       (process: string, currentType: string): string | null => {
         const seq = seqByProcess.get(process);
         if (!seq || seq.length === 0) return null;
-        const idx = seq.indexOf(currentType);
+        const idx = seq.findIndex((s) => s.type === currentType);
         if (idx === -1 || idx === seq.length - 1) return null;
-        return seq[idx + 1];
+        const next = seq[idx + 1];
+        // shift 가 없는 구형 응답이면 예전처럼 바로 다음 슬롯을 쓴다(동작 유지).
+        const currentShift = seq[idx].shift;
+        if (currentShift && next.shift && next.shift !== currentShift)
+          return null;
+        return next.type;
       },
     [seqByProcess],
   );

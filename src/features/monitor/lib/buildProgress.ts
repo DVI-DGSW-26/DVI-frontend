@@ -40,8 +40,15 @@ export const CROSS_CHECK_URGENCY: Record<MonitorCrossCheckStatus, number> = {
 export interface ProgressCell {
   /** 슬롯 코드 (DAY_1 등). */
   type: string;
+  /** 이 시점의 자주검사 id — 기록이 없는 시점(미시작)은 null. 건너뜀 사유 조회에 쓴다. */
+  inspectionId: number | null;
   /** 표시 라벨 — "초/중/종" 또는 "08:00". */
   label: string;
+  /**
+   * 슬롯 예정 시각(HH:mm). 초/중/종처럼 시각이 없는 슬롯은 null —
+   * 비교할 시각이 없으므로 지연 판정 대상이 아니다.
+   */
+  time: string | null;
   status: CellStatus;
   cross: CrossCellStatus;
   /** 이 시점에 걸린 진행중 순회검사 — 검사자·경과처럼 칸에 안 들어가는 정보용. */
@@ -127,7 +134,9 @@ export function buildProgressRows(
       const live = rec ? (liveByInspection.get(rec.inspectionId) ?? null) : null;
       return {
         type: slot.type,
+        inspectionId: rec?.inspectionId ?? null,
         label: slot.label || slot.type,
+        time: slot.time ?? null,
         status,
         cross: crossCellStatus(status, rec?.hasCrossCheck, live),
         crossCheck: live,
@@ -150,7 +159,11 @@ export function buildProgressRows(
         (c) => c.status === "COMPLETED" || c.status === "INCOMPLETE_APPROVED",
       ).length,
       skipped: cells.filter((c) => c.status === "SKIPPED").length,
-      crossChecked: cells.filter((c) => c.cross === "CHECKED").length,
+      // 결재만 남은 시점(승인대기)도 순회검사 자체는 끝났다 — 진행 비율에서는 끝난
+      // 것으로 센다. 화면에서도 완료와 같은 칸으로 그린다.
+      crossChecked: cells.filter(
+        (c) => c.cross === "CHECKED" || c.cross === "PENDING_APPROVAL",
+      ).length,
       crossWaiting: cells.filter((c) => c.cross === "WAITING").length,
       crossLive: cells.filter((c) => c.crossCheck).length,
       crossTarget: cells.filter((c) => c.cross !== "NA").length,

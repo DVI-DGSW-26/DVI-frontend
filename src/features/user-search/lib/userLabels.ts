@@ -10,6 +10,7 @@ export const DEPARTMENT_LABEL_KEY: Record<Role, string> = {
   QUALITY: "departments.quality",
   QUALITY_ADMIN: "departments.quality",
   ADMIN: "departments.admin",
+  TEST: "departments.test",
 };
 
 export interface StatusBadgeStyle {

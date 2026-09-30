@@ -35,12 +35,18 @@ export async function getInspectionSlots(
 /**
  * 제품 하나의 검사 슬롯. 제품이 속한 공정의 스케줄이 그대로 내려온다 —
  * 야간 슬롯(야간초/야간중/야간종)도 여기 포함되므로 검사 시작 화면은 이걸 쓴다.
+ *
+ * orderId 를 주면 그 작업지시의 교대 슬롯만 온다. 안 주면 서버가 "내 최신 작업지시"
+ * 기준으로 고르므로, 주간·야간 지시를 함께 받은 작업자에게 반대 교대 슬롯이 섞인다
+ * (그 슬롯으로 시작하면 서버가 거절). 검사 시작 화면은 항상 orderId 를 보낼 것.
  */
 export async function getProductSlots(
   productId: number,
+  orderId?: number,
 ): Promise<InspectionSlot[]> {
   const { data } = await http.get<InspectionSlotsResponse>(
     `/inspection/slots/product/${productId}`,
+    orderId ? { params: { orderId } } : undefined,
   );
   return data.data ?? [];
 }

@@ -47,10 +47,16 @@ export async function getAssignedCrossChecks(
 }
 
 // QUALITY_ADMIN 이 결재 대기 중인 (PENDING_APPROVAL) 순회검사 목록을 조회.
-// 백엔드 엔드포인트 경로는 가정. 실제 경로 다르면 여기 한 줄만 수정.
-export async function getPendingCrossChecks(): Promise<CrossCheckSummary[]> {
+// 공정 필터는 assigned/my 와 같은 규격이다.
+export async function getPendingCrossChecks(
+  processes?: string[],
+): Promise<CrossCheckSummary[]> {
   const { data } = await http.get<ApiResponse<CrossCheckSummary[]>>(
     "/cross-check/pending",
+    {
+      params: processParam(processes),
+      paramsSerializer: REPEAT_PARAMS,
+    },
   );
   return data.data ?? [];
 }

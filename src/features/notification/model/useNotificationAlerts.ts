@@ -43,6 +43,30 @@ export function useNotificationAlerts(): void {
   // 직전 미확인 수. null 이면 아직 기준값이 없다는 뜻(첫 조회)이라 알림을 띄우지 않는다.
   const previousUnread = useRef<number | null>(null);
 
+  // 알림을 눌러 앱이 새로 켜졌을 때, 주소에 실려 온 재료로 제 위치를 찾아간다.
+  const pushParamsHandled = useRef(false);
+
+  // --- 앱이 꺼진 상태에서 알림을 눌러 들어온 경우 ---
+  // 서비스워커는 type 별 이동 규칙을 모르므로 알림 목록 주소에 재료만 실어 보낸다.
+  // 여기서 그 재료로 규칙을 태워 실제 화면으로 옮긴다.
+  //
+  // 로그인이 끝난 뒤에 움직여야 한다. 그전에 옮기면 RouteGuard 가 로그인 화면으로
+  // 되돌리면서 목적지가 사라진다.
+  useEffect(() => {
+    if (!user || pushParamsHandled.current) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const type = params.get("push_type") ?? undefined;
+    const linkUrl = params.get("push_link") ?? undefined;
+    if (!type && !linkUrl) return;
+
+    pushParamsHandled.current = true;
+    // replace 로 옮겨 쿼리를 남기지 않는다. 남으면 새로고침할 때마다 다시 튄다.
+    navigateRef.current(resolveNotificationLink({ type, linkUrl }), {
+      replace: true,
+    });
+  }, [user]);
+
   // --- FCM 웹 푸시 등록 ---
   // 권한을 새로 묻지는 않는다. 이미 허용한 사용자만 조용히 붙는다.
   // (권한 요청은 알림 페이지의 "알림 받기" 배너가 사용자 조작으로 받는다)

@@ -28,3 +28,47 @@ html, body, #root {
 .ReactCrop * {
   touch-action: none !important;
 }
+/* 공장 벽걸이 모니터(/monitor) 전용.
+   페이지가 스스로 넘어가는 화면이라, 바뀌는 순간을 눈이 따라갈 만큼만 움직이고
+   (monitor-page-in) 다음 전환까지 남은 시간을 탭 아래 선으로 채운다(monitor-dwell). */
+@keyframes monitor-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 목록이 다음 페이지로 넘어갈 때 — 같은 줄의 값이 바뀐 게 아니라 다른 내용으로
+   갈렸다는 걸 알리는 최소한의 움직임. 페이지 전환(monitor-page-in)과 같은 어휘를
+   쓰되 더 짧고 얕게 움직인다. */
+@keyframes monitor-list-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes monitor-dwell {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* 움직임을 줄여 달라고 한 환경에서는 전환 효과를 끈다 — 정보는 그대로 남는다. */
+@media (prefers-reduced-motion: reduce) {
+  [style*="monitor-"],
+  [class*="monitor-"] {
+    animation: none !important;
+  }
+}

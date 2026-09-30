@@ -23,40 +23,114 @@ firebase.initializeApp({
   appId: params.get("appId"),
 });
 
-// 백그라운드 알림 표시는 FCM 이 payload 의 notification(title/body)으로 자동 처리한다.
-// 이 호출은 SDK 가 백그라운드 핸들러를 붙이게 하는 용도다.
-firebase.messaging();
-
-self.addEventListener("install", () => self.skipWaiting());
-self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
-
 // 알림 클릭 → 해당 화면으로 이동.
 //
+// ⚠️ 이 리스너는 firebase.messaging() **앞**에 등록해야 한다.
+// SDK 도 자체 notificationclick 리스너를 붙이는데, 그쪽은 알림을 눌렀을 때
+// 그냥 사이트 첫 화면을 연다. 리스너는 등록된 순서대로 실행되므로 SDK 를
+// 먼저 만들면 그쪽이 창을 선점해 버려서, 무엇을 눌러도 홈으로 가버린다.
+// 먼저 등록하고 stopImmediatePropagation 으로 SDK 핸들러를 막는다.
+//
 // 어디로 보낼지는 type 별 규칙이 필요한데(resolveNotificationLink.ts), 그 로직은
-// 앱 번들 안에 있고 여기서 불러올 수 없다. 그래서
-//   - 열려 있는 창이 있으면 : 그 창에 넘겨 앱이 규칙대로 이동시킨다
-//   - 창이 하나도 없으면    : 알림 목록으로 연다. linkUrl 을 그대로 열면 아직
-//     생성되지 않은 리소스나 권한 밖 경로로 가 빈 화면이 뜨는 타입이 있다.
+// 앱 번들 안에 있고 여기서 불러올 수 없다. 규칙을 여기에 베껴 두면 두 곳이
+// 갈라지므로, 판단은 항상 앱에 맡기고 서비스워커는 재료만 넘긴다.
+//   - 열려 있는 창이 있으면 : 그 창에 postMessage 로 넘긴다
+//   - 창이 하나도 없으면    : 알림 목록 주소에 재료를 쿼리로 실어 연다.
+//                            앱이 부팅하면서 규칙을 태워 제 위치로 옮긴다.
+//
+// linkUrl 을 그대로 열지 않는 이유는, 아직 생성되지 않은 리소스나 권한 밖
+// 경로를 가리키는 타입이 있어서다. 그대로 열면 빈 화면이 뜬다.
 self.addEventListener("notificationclick", (event) => {
+  event.stopImmediatePropagation();
   event.notification.close();
+
+  // 우리가 직접 띄운 알림은 data 에, FCM 이 자동 표시한 알림은 FCM_MSG 안에 들어 있다.
   const data =
     event.notification.data?.FCM_MSG?.data || event.notification.data || {};
 
+  // 앱이 못 읽거나 규칙에 안 걸려도 알림 목록에는 도착하도록 이 주소를 쓴다.
+  const query = new URLSearchParams();
+  if (data.type) query.set("push_type", data.type);
+  if (data.linkUrl) query.set("push_link", data.linkUrl);
+  const target = `/notifications${query.toString() ? `?${query}` : ""}`;
+
   event.waitUntil(
-    self.clients
-      .matchAll({ type: "window", includeUncontrolled: true })
-      .then((clientList) => {
+    (async () => {
+      try {
+        const clientList = await self.clients.matchAll({
+          type: "window",
+          includeUncontrolled: true,
+        });
+
         for (const client of clientList) {
-          if ("focus" in client) {
+          if (!("focus" in client)) continue;
+          try {
             client.postMessage({
               type: "push-notification-click",
               url: data.linkUrl,
               notificationType: data.type,
             });
-            return client.focus();
+            await client.focus();
+            return;
+          } catch (err) {
+            // 창이 있어도 포커스가 거부될 수 있다(숨겨진 창, 다른 프로필 등).
+            // 여기서 그냥 끝내면 아무 일도 안 일어난 것처럼 보이므로,
+            // 다음 창을 시도하고 그마저 없으면 새로 연다.
+            console.warn("[sw] 창 포커스 실패, 다음 후보로 넘어갑니다:", err);
           }
         }
-        return self.clients.openWindow("/notifications");
-      }),
+
+        await self.clients.openWindow(target);
+      } catch (err) {
+        // 여기서 끝나면 클릭이 완전히 무반응이 된다. SDK 기본 동작도 막아둔
+        // 상태라 대신 열어줄 것이 없다. 원인을 남겨 추적할 수 있게 한다.
+        console.warn("[sw] 알림 클릭 처리 실패:", err);
+      }
+    })(),
   );
 });
+
+const messaging = firebase.messaging();
+
+// 백그라운드 수신.
+//
+// payload 에 notification(title/body)이 있으면 브라우저가 알아서 띄워주므로
+// 여기서는 손대지 않는다. 건드리면 같은 알림이 두 번 뜬다.
+//
+// 문제는 data 만 담겨 오는 경우다. 그때는 자동 표시가 일어나지 않아 **아무것도
+// 뜨지 않는다.** 앱이 열려 있을 때는 페이지 쪽 onMessage 가 직접 띄우기 때문에
+// 정상으로 보이고, 앱을 닫았을 때만 조용히 사라진다 — 원인을 찾기 어려운 형태다.
+// 실제로 서버가 안드로이드 대응으로 페이로드 구조를 바꾸면서 이 상태가 됐다.
+//
+// 그래서 payload 형태와 무관하게 뜨도록 직접 표시한다.
+messaging.onBackgroundMessage((payload) => {
+  if (payload.notification) return; // 브라우저가 이미 표시함
+
+  const data = payload.data || {};
+  const title = data.title || "새 알림";
+  const body = data.body || "";
+
+  // 알림마다 다른 tag 를 줘야 여러 건이 쌓인다. 같은 tag 면 뒤엣것이 앞엣것을
+  // 덮어써서, 연달아 온 알림 중 마지막 하나만 남는다.
+  const tag = data.notificationId ? `dvi-${data.notificationId}` : undefined;
+
+  return self.registration.showNotification(title, {
+    body,
+    icon: "/app-icon.png",
+    // 안드로이드 상태바 아이콘. 알파 채널만 쓰여 흰 실루엣으로 그려지므로
+    // 불투명 배경이 있는 이미지를 주면 흰 사각형이 된다. 전용 배지를 쓴다.
+    badge: "/notification-badge.png",
+    tag,
+    // tag 가 있을 때만 유효하다. 없이 주면 크롬이 TypeError 를 던진다.
+    renotify: Boolean(tag),
+    // 진동이 있어야 사용자가 알아챈다. 무음으로 조용히 쌓이는 것을 막는다.
+    vibrate: [200, 100, 200],
+    // 데스크톱에서 자동으로 사라지지 않고 남는다. 안드로이드는 무시한다.
+    requireInteraction: true,
+    // 클릭 처리(notificationclick)가 읽어갈 값. 앱이 type 별 라우팅 규칙을 태운다.
+    data: { linkUrl: data.linkUrl, type: data.type },
+  });
+});
+
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));

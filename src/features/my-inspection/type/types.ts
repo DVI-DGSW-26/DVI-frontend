@@ -49,10 +49,14 @@ export interface MyInspectionDim {
   valueType?: InspectionValueType;
 }
 
-// 신규 명세는 작업자가 검사를 직접 시작하는 흐름. orderId 는 응답에 없을 수 있어 optional.
+// 신규 명세는 작업자가 검사를 직접 시작하는 흐름.
 export interface MyInspection {
   inspectionId: number;
-  orderId?: number;
+  // 이 검사가 속한 작업지시. 자주검사는 작업지시 없이 만들어질 수 없어 항상 들어온다
+  // (백엔드 확인 2026-09-23 — inspections.order_id 는 최초 스키마부터 NOT NULL).
+  // 슬롯 상태·"이어서 할 일" 계산은 날짜가 아니라 이 값으로 묶는다 — 야간 작업이
+  // 자정을 넘겨도 같은 작업지시면 같은 교대 작업분이다.
+  orderId: number;
   type: string;
   typeLabel: string;
   // 주/야 표시는 이 값으로만 한다 (type 은 슬롯 순서용 내부 식별자).

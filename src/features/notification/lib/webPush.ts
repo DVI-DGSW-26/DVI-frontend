@@ -8,7 +8,11 @@
 // 플랫폼 제약 — 아이폰/아이패드는 iOS 16.4 이상 + "홈 화면에 추가"로 설치한
 // PWA 에서만 웹 푸시가 온다. 사파리 탭에서는 애플 정책상 불가하다.
 import i18n from "../../../lib/i18n";
-import { registerPushToken, unregisterPushToken } from "../api/pushTokenApi";
+import {
+  registerPushToken,
+  unregisterPushToken,
+  type PushSession,
+} from "../api/pushTokenApi";
 import {
   requestWebNotificationPermission,
   webNotificationPermission,
@@ -172,24 +176,38 @@ export async function startWebPush(): Promise<boolean> {
 /**
  * 알림 권한을 요청하고 이어서 웹 푸시를 켠다.
  * ⚠️ 반드시 사용자 조작(버튼 클릭) 안에서 호출할 것.
+ *
+ * **권한 결과가 나오는 즉시 반환한다.** 등록(startWebPush)은 기다리지 않는다.
+ * 등록에는 SDK 내려받기, 서비스워커 등록, FCM 토큰 발급(구글 왕복), 서버 등록이
+ * 줄줄이 들어 있어 몇 초가 걸리고, 네트워크가 막히면 끝나지 않을 수도 있다.
+ * 그동안 호출부가 붙잡혀 있으면 "허용" 을 눌러도 배너가 그대로 남아 사용자는
+ * 버튼이 안 먹은 줄 안다.
+ *
+ * 기다리지 않아도 되는 이유는, 등록이 실패해도 폴링 알림으로 떨어질 뿐
+ * 화면이 할 일이 달라지지 않기 때문이다. 성공하면 구독을 통해 알아서 반영된다.
  */
 export async function enableWebPush(): Promise<WebNotificationPermission> {
   const permission = await requestWebNotificationPermission();
-  if (permission === "granted") await startWebPush();
+  if (permission === "granted") void startWebPush();
   return permission;
 }
 
 /**
- * 이 기기를 푸시 대상에서 해제한다. 로그아웃 시 호출.
- * 토큰을 지우기 직전의 accessToken 을 넘겨야 서버 요청이 인증된다.
+ * 이 기기를 푸시 대상에서 해제한다. 로그아웃, 그리고 운영↔테스트 서버를 넘나드는
+ * 계정 전환 때 호출한다.
+ * 세션을 지우거나 바꾸기 직전의 토큰·서버를 넘겨야 제 서버에 인증된 요청이 간다.
+ *
+ * 전환 때는 이어서 startWebPush 가 새 서버에 다시 등록한다. 이 함수는 동기 구간
+ * (active 끄기, 토큰 기억 지우기)을 먼저 끝내므로, 새 세션을 올리기 전에 부르기만
+ * 하면 순서가 꼬이지 않는다.
  */
-export async function stopWebPush(accessToken?: string): Promise<void> {
+export async function stopWebPush(session?: PushSession): Promise<void> {
   setActive(false);
   const token = localStorage.getItem(TOKEN_KEY);
   if (!token) return;
   localStorage.removeItem(TOKEN_KEY);
   try {
-    await unregisterPushToken(token, accessToken);
+    await unregisterPushToken(token, session);
   } catch {
     // 해제 실패로 로그아웃을 막지는 않는다. 같은 기기에 다른 계정이 로그인하면
     // 서버가 토큰 소유자를 덮어쓰므로 잘못 발송될 위험은 제한적이다.

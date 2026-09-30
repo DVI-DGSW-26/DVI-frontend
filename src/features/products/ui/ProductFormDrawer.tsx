@@ -528,7 +528,7 @@ export default function ProductFormDrawer({
                   <option value="">{t("form.customerPlaceholder")}</option>
                   {customerOptions.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.name} (#{c.id})
+                      {c.name}
                     </option>
                   ))}
                 </select>

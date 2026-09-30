@@ -75,8 +75,10 @@ export function refreshAccessToken(): Promise<string> {
 
 export function installAuthInterceptors() {
   http.interceptors.request.use((config) => {
+    // 호출부가 토큰을 직접 실어 보낸 요청(로그인 직후 내 정보 확인, 이전 세션의
+    // 푸시 해제)은 덮어쓰지 않는다.
     const token = tokenStorage.getAccess();
-    if (token) {
+    if (token && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -97,6 +99,7 @@ export function installAuthInterceptors() {
       if (
         error.response?.status === 401 &&
         !original._retry &&
+        !original.skipAuthRefresh &&
         !isAuthFlow
       ) {
         original._retry = true;

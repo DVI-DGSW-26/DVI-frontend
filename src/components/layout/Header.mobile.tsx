@@ -29,7 +29,7 @@ const HeaderMobile = () => {
   const { data: unreadCount = 0 } = useUnreadCount();
 
   const titleKey =
-    pathname === "/" && user?.role === "ADMIN"
+    pathname === "/" && (user?.role === "ADMIN" || user?.role === "TEST")
       ? "tabs.dashboard"
       : /^\/inspection\/\d+\/measure$/.test(pathname)
         ? "titles.inspectionMeasure"

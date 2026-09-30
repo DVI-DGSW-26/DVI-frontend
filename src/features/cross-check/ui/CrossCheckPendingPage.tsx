@@ -17,7 +17,12 @@ import {
   useProcessList,
   useProcessOptions,
 } from "../../process";
-import { countUnprocessed, isFinished, isTakeoverable } from "../lib/assigned";
+import {
+  assignedSortRank,
+  countUnprocessed,
+  isFinished,
+  isTakeoverable,
+} from "../lib/assigned";
 import { toCancelErrorMessage } from "../lib/cancelError";
 import { getStage, needsHardnessInput, STAGE_BADGE } from "../lib/stage";
 import { formatDate, formatDateTime } from "../../../lib/datetime";
@@ -39,6 +44,7 @@ import {
   type HistoryFilter,
 } from "../lib/historyFilter";
 import Toast from "../../inspection/ui/Toast";
+import { useViewState } from "../../../lib/viewState";
 
 type Tab = "assigned" | "history";
 
@@ -75,7 +81,8 @@ const CrossCheckPendingPage = () => {
   const [searchParams] = useSearchParams();
   // 품질시스템현황에서 카운트 카드 클릭 시 ?tab=history|assigned 로 진입.
   const initialTab: Tab = searchParams.get("tab") === "history" ? "history" : "assigned";
-  const [tab, setTab] = useState<Tab>(initialTab);
+  // 뒤로가기로 돌아오면 보던 탭 그대로. 카운트 카드로 새로 들어오면 그 탭부터.
+  const [tab, setTab] = useViewState<Tab>("tab", initialTab);
   const [toast, setToast] = useState<string | null>(null);
   const [startingId, setStartingId] = useState<number | null>(null);
   const processLabel = useProcessLabel();
@@ -93,11 +100,15 @@ const CrossCheckPendingPage = () => {
   const [cancelError, setCancelError] = useState<string | null>(null);
   // 탭별 검사 일시 필터 (할당 대기 / 내 결재 이력 따로 유지).
   // 할당 대기는 진입 시 오늘자 검사만 기본 노출.
-  const [assignedFilter, setAssignedFilter] =
-    useState<DateFilterValue>(TODAY_DATE_FILTER);
+  const [assignedFilter, setAssignedFilter] = useViewState<DateFilterValue>(
+    "assignedFilter",
+    TODAY_DATE_FILTER,
+  );
   // 내 결재 이력은 통합관리자 보고서와 동일한 다중 필터(검색어/날짜/공정/제품/상태).
-  const [historyFilter, setHistoryFilter] =
-    useState<HistoryFilter>(EMPTY_HISTORY_FILTER);
+  const [historyFilter, setHistoryFilter] = useViewState<HistoryFilter>(
+    "historyFilter",
+    EMPTY_HISTORY_FILTER,
+  );
 
   // 공정 필터는 서버에 보내 목록 자체를 좁힌다(빈 배열이면 전체).
   // 선택 상태는 이 기기의 localStorage 에만 남아 새로고침해도 유지된다.
@@ -127,16 +138,19 @@ const CrossCheckPendingPage = () => {
 
   const sortedAssigned = useMemo(
     () =>
+      // 할 수 있는 건 → 남이 진행 중 → 이미 끝난 건 순, 같은 순위 안에서는 대기시간순.
       [...assigned].sort(
         (a, b) =>
+          assignedSortRank(a) - assignedSortRank(b) ||
           elapsedFrom(b.completedAt).minutes -
-          elapsedFrom(a.completedAt).minutes,
+            elapsedFrom(a.completedAt).minutes,
       ),
     [assigned],
   );
 
   // 공정별로 묶는다 — 각 그룹 안에서는 위 대기시간순 정렬 유지.
-  // 섹션 순서는 서버 공정 목록 순서를 따르고, 목록에 없는 공정은 뒤에 붙인다.
+  // 섹션 순서는 할 수 있는 검사가 있는 공정 먼저, 그 안에서는 서버 공정 목록 순서를
+  // 따르고, 목록에 없는 공정은 뒤에 붙인다.
   // 내 순회검사 id 전체 — 새 배정 목록에서 중복/잔상 노출 제외용.
   // (내 진행 건은 "진행 중(이어하기)", 완료 건은 "내 결재 이력"에서 보임)
   // ※ 백엔드 assigned 가 완료(PENDING_APPROVAL 등)된 건도 IN_PROGRESS 로 계속 반환하는
@@ -177,10 +191,13 @@ const CrossCheckPendingPage = () => {
       ...processOrder.filter((p) => map.has(p)),
       ...[...map.keys()].filter((p) => !processOrder.includes(p)),
     ];
-    return ordered.map((process) => ({
-      process,
-      items: map.get(process) ?? [],
-    }));
+    // 할 수 있는 검사가 있는 공정을 위로 — 그룹 안은 이미 순위순이라 첫 카드가 그 공정의
+    // 최우선 순위다. 같은 순위끼리는 서버 공정 목록 순서 유지(sort 는 안정 정렬).
+    return ordered
+      .map((process) => ({ process, items: map.get(process) ?? [] }))
+      .sort(
+        (a, b) => assignedSortRank(a.items[0]) - assignedSortRank(b.items[0]),
+      );
   }, [filteredAssigned, processOrder]);
 
   // 결재 요청 이력: DRAFT 제외 (DRAFT 는 측정 중 — 할당 대기 탭에서 이어하기로 노출)

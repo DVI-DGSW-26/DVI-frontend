@@ -198,6 +198,8 @@ export default {
     measuredValue: "Measured Value",
     saving: "Saving...",
     remeasure: "Re-measure",
+    cancelSkip: "Undo skip",
+    skipCancelled: "Skip has been undone",
     skipped: "Skipped",
     photoAlt: "{{name}} measurement photo",
     errSkipped:
@@ -209,6 +211,7 @@ export default {
     inProgressCount: "In progress {{n}}",
     listError: "Failed to load the list.",
     emptyTitle: "No patrol inspections pending approval or in progress",
+    emptyFiltered: "No patrol inspections pending approval or in progress for the selected processes.",
     emptyHint:
       "They will appear here when a quality inspector starts a patrol inspection or requests approval",
     emptyPeriod: "No patrol inspections in the selected period.",

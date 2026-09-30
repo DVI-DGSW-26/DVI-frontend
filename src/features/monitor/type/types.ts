@@ -70,3 +70,59 @@ export type MonitorConnection =
   | "polling"
   /** 스트림·폴링 모두 실패 — 화면이 멈춰 있다는 뜻이라 눈에 띄게 표시해야 한다. */
   | "down";
+
+/* ── 품질·불량 보드 (event: quality / GET /monitor/quality) ────────
+ *
+ * 승인된 보고서가 아니라 살아있는 검사값을 서버가 직접 판정한 결과다 — 결재 전
+ * 진행중 검사의 불량도 여기서 먼저 보인다. 보고서 기준 최종 합불과는 별개.
+ */
+
+/**
+ * 불량 종류. 종류마다 채워지는 필드가 다르다:
+ *   DIMENSION   치수 공차 이탈 — dimName · measuredValue · allowedRange 전부 있음
+ *   APPEARANCE  외관 NG        — 셋 다 null
+ *   PASS_FAIL   OK/NG 항목의 NG — dimName 만 있음
+ */
+export type MonitorDefectType = "DIMENSION" | "APPEARANCE" | "PASS_FAIL";
+
+export interface MonitorDefect {
+  inspectionId: number;
+  productName: string;
+  equipmentName: string;
+  workerName: string;
+  /** 슬롯 라벨 — "초/중/종" 또는 "08:00". */
+  slotLabel: string;
+  defectType: MonitorDefectType;
+  dimName: string | null;
+  /** 측정값. 서버가 문자열로 내려준다(숫자로 와도 되도록 호출부에서 느슨히 읽는다). */
+  measuredValue: string | null;
+  /** 허용 범위 문자열 "9.90 ~ 10.10" (기준+하한 ~ 기준+상한). */
+  allowedRange: string | null;
+  /** 감지 시각(마지막 갱신). 오프셋 없는 KST 표기 — parseServerDate 로 읽는다. */
+  detectedAt: string;
+}
+
+/** 품질 문제로 조기종료된 검사. */
+export interface MonitorTerminated {
+  inspectionId: number;
+  productName: string;
+  equipmentName: string;
+  workerName: string;
+  reason: string | null;
+  at: string;
+}
+
+export interface MonitorQualitySummary {
+  inspectionsToday: number;
+  completedToday: number;
+  /** 불량이 하나라도 잡힌 검사 수 — 불량률의 분자. */
+  ngInspectionCount: number;
+  /** 불량 항목 총 수. 한 검사에 여러 건이 잡힐 수 있어 위 수보다 크다. */
+  defectItemCount: number;
+}
+
+export interface MonitorQualityBoard {
+  defects: MonitorDefect[];
+  terminated: MonitorTerminated[];
+  summary: MonitorQualitySummary;
+}
