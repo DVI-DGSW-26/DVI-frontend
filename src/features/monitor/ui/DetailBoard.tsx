@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useMonitorInspectionDetail } from "../api/useMonitorInspectionDetail";
 import {
   dimDisplayName,
@@ -14,6 +15,7 @@ import { useFitCount } from "../lib/useFitCount";
 import { formatElapsed } from "../lib/time";
 import { bandOf, formatDeviation, formatValue } from "../lib/tolerance";
 import { T } from "../lib/tokens";
+import { slotText } from "../lib/slotText";
 import {
   Avatar,
   Card,
@@ -54,6 +56,7 @@ export default function DetailBoard({
   snapshot: MonitorSnapshot | null;
   now: Date;
 }) {
+  const { t } = useTranslation("monitor");
   const items = snapshot?.inProgressInspections ?? [];
 
   // 한 페이지에 한 건 — 페이지 넘김 장치를 그대로 "다음 검사로"에 쓴다.
@@ -80,7 +83,7 @@ export default function DetailBoard({
     // 몇 건 들어가는지"를 재는 시점을 놓쳐 한 건만 그려진 채로 굳는다.
     <div className="grid min-h-0 flex-1 grid-cols-[22rem_1fr] gap-4 px-6 pt-5 pb-6">
       <Card>
-        <CardHead title="진행중 검사" count={items.length} />
+        <CardHead title={t("detail.queueTitle")} count={items.length} />
         <div ref={queueRef} className="min-h-0 flex-1 overflow-hidden px-4">
           {/* 지금 보고 있는 건이 목록 밖으로 밀려나지 않도록 그 건이 든 쪽을 보여준다. */}
           {items
@@ -99,7 +102,7 @@ export default function DetailBoard({
               className="flex h-full items-center justify-center text-lg"
               style={{ color: T.neutral.muted }}
             >
-              진행중 검사 없음
+              {t("detail.queueEmpty")}
             </div>
           )}
         </div>
@@ -111,7 +114,7 @@ export default function DetailBoard({
             backgroundColor: T.neutral.sub,
           }}
         >
-          <Pager pager={queue} label="검사" />
+          <Pager pager={queue} label={t("detail.pagerLabel")} />
         </div>
       </Card>
 
@@ -121,8 +124,8 @@ export default function DetailBoard({
         <Card>
           <Empty
             icon="solar:ruler-cross-pen-linear"
-            text="지금 진행중인 자주검사가 없습니다"
-            hint="검사가 시작되면 측정값이 여기에 바로 올라옵니다"
+            text={t("detail.emptyText")}
+            hint={t("detail.emptyHint")}
           />
         </Card>
       )}
@@ -157,12 +160,16 @@ function QueueRow({
   now: Date;
   onSelect: () => void;
 }) {
+  const { t } = useTranslation("monitor");
   return (
     <button
       type="button"
       onClick={onSelect}
       aria-current={active ? "true" : undefined}
-      title={`${item.productName} · ${item.equipmentName} 측정값 보기`}
+      title={t("detail.viewTitle", {
+        product: item.productName,
+        equipment: item.equipmentName,
+      })}
       className="flex w-full cursor-pointer items-center gap-3 overflow-hidden rounded-lg px-3 text-left hover:bg-neutral-100"
       style={{
         height: QUEUE_ROW_HEIGHT - 8,
@@ -183,7 +190,7 @@ function QueueRow({
               color: active ? T.neutral.white : T.inkSub,
             }}
           >
-            {item.slotLabel || item.type}
+            {item.slotLabel ? slotText(item.slotLabel) : item.type}
           </span>
         </div>
         <div className="truncate text-base" style={{ color: T.inkSub }}>
@@ -201,6 +208,7 @@ function QueueRow({
 /* ── 검사 한 건 ───────────────────────────────────────────── */
 
 function DetailCard({ item, now }: { item: MonitorInspection; now: Date }) {
+  const { t } = useTranslation("monitor");
   const { data, isError } = useMonitorInspectionDetail(item.inspectionId);
   // 다음 검사로 넘어간 직후 이전 검사의 측정값이 새 이름표 밑에 잠깐 남지 않도록,
   // 응답의 id 가 지금 보는 검사와 같을 때만 쓴다.
@@ -231,10 +239,10 @@ function DetailCard({ item, now }: { item: MonitorInspection; now: Date }) {
         />
       </Flip>
       <CardHead
-        title="측정 항목"
+        title={t("detail.dimsTitle")}
         count={results.length || undefined}
         pager={page}
-        pagerLabel="측정 항목"
+        pagerLabel={t("detail.dimsTitle")}
       />
       <DimColumns />
       <div ref={rowsRef} className="min-h-0 flex-1 overflow-hidden px-6 pb-2">
@@ -248,16 +256,16 @@ function DetailCard({ item, now }: { item: MonitorInspection; now: Date }) {
           ))}
         </Flip>
         {detail && results.length === 0 && (
-          <Empty text="등록된 측정 항목이 없습니다" />
+          <Empty text={t("detail.noDims")} />
         )}
         {!detail && !isError && (
-          <Empty icon="solar:refresh-linear" text="측정값을 불러오는 중" />
+          <Empty icon="solar:refresh-linear" text={t("detail.loading")} />
         )}
         {!detail && isError && (
           <Empty
             icon="solar:danger-triangle-linear"
-            text="측정값을 불러오지 못했습니다"
-            hint="다음 갱신에서 다시 시도합니다"
+            text={t("detail.loadFailed")}
+            hint={t("detail.retryHint")}
           />
         )}
       </div>
@@ -280,6 +288,7 @@ function DetailHead({
   total: number;
   ng: number;
 }) {
+  const { t } = useTranslation("monitor");
   return (
     <div
       className="flex shrink-0 items-center justify-between gap-6 px-6 pt-5 pb-4"
@@ -289,10 +298,10 @@ function DetailHead({
         <div className="flex items-center gap-3">
           <h2 className="truncate text-3xl font-bold">{item.productName}</h2>
           <Chip bg={T.primary[500]} fg={T.neutral.white} strong>
-            {detail?.typeLabel || item.slotLabel || item.type}
+            {slotText(detail?.typeLabel || item.slotLabel || item.type)}
           </Chip>
           <Chip bg={T.primary[100]} fg={T.primary[700]} strong>
-            ▶ 진행중
+            ▶ {t("detail.inProgress")}
           </Chip>
         </div>
         <div
@@ -309,7 +318,7 @@ function DetailHead({
           </span>
           <Sep />
           <span style={{ color: T.neutral.muted }}>
-            {formatElapsed(item.updatedAt, now)} 갱신
+            {t("detail.updated", { elapsed: formatElapsed(item.updatedAt, now) })}
           </span>
         </div>
       </div>
@@ -318,7 +327,7 @@ function DetailHead({
         {detail?.appearanceResult && (
           <div className="text-center">
             <div className="mb-1 text-base" style={{ color: T.inkSub }}>
-              외관
+              {t("detail.appearance")}
             </div>
             <JudgeChip ok={detail.appearanceResult === "OK"} />
           </div>
@@ -326,7 +335,7 @@ function DetailHead({
         {ng > 0 && (
           <div className="text-center">
             <div className="mb-1 text-base" style={{ color: T.inkSub }}>
-              불량 항목
+              {t("detail.ngItems")}
             </div>
             <div
               className="text-4xl leading-none font-bold tabular-nums"
@@ -338,7 +347,7 @@ function DetailHead({
         )}
         <div>
           <div className="text-base" style={{ color: T.inkSub }}>
-            측정 진행
+            {t("detail.progress")}
           </div>
           <div className="text-4xl leading-none font-bold tabular-nums">
             {measured}
@@ -375,17 +384,18 @@ const DIM_GRID =
   "3rem minmax(6rem, 0.85fr) 9rem 9.5rem minmax(13rem, 1.6fr) 4.5rem";
 
 function DimColumns() {
+  const { t } = useTranslation("monitor");
   return (
     <div
       className="grid shrink-0 items-center gap-x-4 px-6 pb-2 text-base"
       style={{ gridTemplateColumns: DIM_GRID, color: T.neutral.muted }}
     >
-      <span>No</span>
-      <span>항목</span>
-      <span>기준 · 공차</span>
-      <span>측정값</span>
-      <span>허용 범위</span>
-      <span className="text-center">판정</span>
+      <span>{t("detail.col.no")}</span>
+      <span>{t("detail.col.item")}</span>
+      <span>{t("detail.col.standard")}</span>
+      <span>{t("detail.col.measured")}</span>
+      <span>{t("detail.col.range")}</span>
+      <span className="text-center">{t("detail.col.verdict")}</span>
     </div>
   );
 }
@@ -397,6 +407,7 @@ function DimRow({
   result: InspectionDetailResult;
   machining: boolean;
 }) {
+  const { t } = useTranslation("monitor");
   const passFail = (result.valueType ?? "NUMBER") === "PASS_FAIL";
   const verdict = judge(result, machining);
   const ng = verdict === "fail";
@@ -442,7 +453,7 @@ function DimRow({
       */}
       <span className="text-base tabular-nums" style={{ color: T.inkSub }}>
         {passFail
-          ? "OK/NG 판정 항목"
+          ? t("detail.passFailItem")
           : formatStandardWithTolerance(
               result.standardValue,
               result.toleranceUpper,
@@ -483,8 +494,8 @@ function DimRow({
             }}
           >
             {result.passFailResult
-              ? `작업자 판정 ${result.passFailResult}`
-              : "작업자가 OK/NG 를 고르는 항목"}
+              ? t("detail.workerVerdict", { v: result.passFailResult })
+              : t("detail.workerPicks")}
           </span>
         ) : (
           <ToleranceGauge band={band} value={result.measuredValue} />
@@ -494,7 +505,7 @@ function DimRow({
       <span className="flex justify-center">
         {verdict == null ? (
           <Chip bg={T.neutral.sub} fg={T.inkSub} border={T.neutral.border}>
-            대기
+            {t("detail.waiting")}
           </Chip>
         ) : (
           <JudgeChip ok={verdict === "pass"} />

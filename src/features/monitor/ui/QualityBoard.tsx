@@ -1,4 +1,6 @@
 import { useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { parseServerDate } from "../../../lib/datetime";
 import { useTodayInspections } from "../api/useTodayInspections";
 import { useInspectionReasons } from "../api/useInspectionReasons";
@@ -8,6 +10,7 @@ import { useFitCount } from "../lib/useFitCount";
 import { formatElapsed, timeOf } from "../lib/time";
 import { formatValue, parseAllowedRange, toNumber } from "../lib/tolerance";
 import { T } from "../lib/tokens";
+import { slotText } from "../lib/slotText";
 import {
   Card,
   CardHead,
@@ -45,10 +48,11 @@ const NG_RATE_DANGER = 8;
 
 type QualityLevel = "good" | "warn" | "danger";
 
-const LEVEL: Record<QualityLevel, { color: string; text: string }> = {
-  good: { color: T.success[700], text: "이상 없음" },
-  warn: { color: T.warning[700], text: "주의" },
-  danger: { color: T.error[700], text: "위험" },
+// 글자는 monitor:quality.level.<키> 로 번역한다.
+const LEVEL_COLOR: Record<QualityLevel, string> = {
+  good: T.success[700],
+  warn: T.warning[700],
+  danger: T.error[700],
 };
 
 /** 불량이 하나라도 있으면 최소 '주의' — 0 건일 때만 정상이다. */
@@ -79,6 +83,7 @@ export default function QualityBoard({
   today: string;
   now: Date;
 }) {
+  const { t } = useTranslation("monitor");
   const defects = useMemo(() => board?.defects ?? [], [board?.defects]);
   const terminated = useMemo(() => board?.terminated ?? [], [board?.terminated]);
   const summary = board?.summary;
@@ -114,14 +119,14 @@ export default function QualityBoard({
 
   const actions = useMemo<ActionItem[]>(() => {
     const list: ActionItem[] = [
-      ...terminated.map((t) => ({
-        key: `t-${t.inspectionId}-${t.at}`,
+      ...terminated.map((x) => ({
+        key: `t-${x.inspectionId}-${x.at}`,
         kind: "TERMINATED" as const,
-        productName: t.productName,
-        equipmentName: t.equipmentName,
-        person: t.workerName,
-        reason: t.reason,
-        at: t.at,
+        productName: x.productName,
+        equipmentName: x.equipmentName,
+        person: x.workerName,
+        reason: x.reason,
+        at: x.at,
       })),
       ...incomplete.map((i) => ({
         key: `i-${i.inspectionId}`,
@@ -131,7 +136,7 @@ export default function QualityBoard({
             : ("INCOMPLETE" as const),
         productName: i.product.name,
         equipmentName: i.equipment.name,
-        person: i.production?.name ?? "미배정",
+        person: i.production?.name ?? t("worker.unassigned"),
         reason: incompleteReasons.get(i.inspectionId) ?? null,
         at: i.updatedAt ?? null,
       })),
@@ -147,14 +152,14 @@ export default function QualityBoard({
           kind: "CROSS_REJECTED" as const,
           productName: c.productName,
           equipmentName: c.equipmentName,
-          person: c.checkerName ?? "이관 대기",
+          person: c.checkerName ?? t("worker.awaitingTakeover"),
           reason: rejectReasons.get(c.crossCheckId) ?? null,
           at: c.updatedAt,
           note:
             inspection?.status === "DRAFT"
-              ? "작업자 재측정 중"
+              ? t("bar.backToWorker")
               : inspection
-                ? "순회검사자 재작업 필요"
+                ? t("bar.checkerRework")
                 : undefined,
         };
       }),
@@ -168,6 +173,7 @@ export default function QualityBoard({
     inspections,
     incompleteReasons,
     rejectReasons,
+    t,
   ]);
 
   const listRef = useRef<HTMLDivElement>(null);
@@ -204,45 +210,52 @@ export default function QualityBoard({
       {/* 불량 검사 칸을 넓게 잡는다 — 다섯 수 중 관리자가 먼저 봐야 하는 하나다. */}
       <div className="grid shrink-0 grid-cols-[1fr_1fr_1.35fr_1fr_1fr] gap-4 px-6 pt-5 pb-4">
         <StatCard
-          label="오늘 검사"
+          label={t("quality.stats.today")}
           value={summary?.inspectionsToday ?? 0}
-          unit="건"
+          unit={t("quality.unit.count")}
           color={T.neutral.ink}
         />
         <StatCard
-          label="검사 완료"
+          label={t("quality.stats.completed")}
           value={summary?.completedToday ?? 0}
-          unit="건"
+          unit={t("quality.unit.count")}
           color={T.success[700]}
           sub={doneRate == null ? undefined : `${doneRate.toFixed(0)}%`}
         />
         {/* 오늘 품질 상태를 한 칸으로 말한다 — 0 건이면 초록으로 "이상 없음",
             불량률이 임계를 넘는 순간에만 통째로 물들여 시선을 가져온다. */}
         <StatCard
-          label="불량 검사"
+          label={t("quality.stats.ngInspections")}
           tone={level === "danger" ? "alert" : "normal"}
           value={summary?.ngInspectionCount ?? 0}
-          unit="건"
-          color={LEVEL[level].color}
+          unit={t("quality.unit.count")}
+          color={LEVEL_COLOR[level]}
           sub={
             ngRate == null
-              ? LEVEL[level].text
-              : `불량률 ${ngRate.toFixed(1)}% · ${LEVEL[level].text}`
+              ? t(`quality.level.${level}`)
+              : t("quality.stats.ngRate", {
+                  rate: ngRate.toFixed(1),
+                  level: t(`quality.level.${level}`),
+                })
           }
         />
         {/* 한 검사에서 여러 항목이 걸릴 수 있어 위 수보다 크다 — 더해 읽히지 않게 이름을 나눈다. */}
         <StatCard
-          label="불량 항목"
+          label={t("quality.stats.defectItems")}
           value={summary?.defectItemCount ?? defects.length}
-          unit="개"
-          color={LEVEL[level].color}
+          unit={t("quality.unit.items")}
+          color={LEVEL_COLOR[level]}
         />
         <StatCard
-          label="조기종료"
+          label={t("quality.stats.terminated")}
           value={terminated.length}
-          unit="건"
+          unit={t("quality.unit.count")}
           color={terminated.length > 0 ? T.warning[700] : T.inkSub}
-          sub={terminated.length > 0 ? "품질 문제로 중단" : "없음"}
+          sub={
+            terminated.length > 0
+              ? t("quality.stats.terminatedSub")
+              : t("quality.stats.none")
+          }
         />
       </div>
 
@@ -251,13 +264,13 @@ export default function QualityBoard({
       <main className="grid min-h-0 flex-1 grid-cols-[1fr_38rem] gap-4 px-6 pb-6">
         <Card>
           <CardHead
-            title="불량 항목"
+            title={t("quality.defects.title")}
             count={defects.length}
             pager={page}
-            pagerLabel="불량"
+            pagerLabel={t("quality.defects.pagerLabel")}
           >
             <Chip bg={T.neutral.sub} fg={T.inkSub} border={T.neutral.border}>
-              결재 전 진행중 검사도 포함
+              {t("quality.defects.includesDraft")}
             </Chip>
           </CardHead>
           <div ref={listRef} className="min-h-0 flex-1 overflow-hidden px-6">
@@ -274,11 +287,16 @@ export default function QualityBoard({
               <Empty
                 tone="good"
                 icon="solar:shield-check-bold"
-                text="오늘 잡힌 불량이 없습니다"
-                hint="진행중 검사의 값까지 실시간으로 판정하고 있습니다"
+                text={t("quality.defects.emptyText")}
+                hint={t("quality.defects.emptyHint")}
               />
             )}
-            {!board && <Empty icon="solar:refresh-linear" text="불러오는 중" />}
+            {!board && (
+              <Empty
+                icon="solar:refresh-linear"
+                text={t("quality.defects.loading")}
+              />
+            )}
           </div>
         </Card>
 
@@ -294,26 +312,29 @@ export default function QualityBoard({
 /* ── 불량 한 줄 ───────────────────────────────────────────── */
 
 // 세 종류 모두 "불량"이라는 한 가지 뜻이라 색은 하나로 두고, 기호와 이름으로 나눈다.
-const DEFECT_STYLE: Record<
-  MonitorDefectType,
-  { name: string; mark: string; note: string }
-> = {
-  DIMENSION: { name: "치수 이탈", mark: "↔", note: "허용 공차 밖" },
-  APPEARANCE: { name: "외관 NG", mark: "◎", note: "외관 판정에서 NG" },
-  PASS_FAIL: { name: "OK/NG", mark: "✕", note: "OK/NG 항목에서 NG" },
+// 이름·설명은 monitor:quality.defectType.<종류>.name / .note 로 번역한다.
+const DEFECT_MARK: Record<MonitorDefectType, string> = {
+  DIMENSION: "↔",
+  APPEARANCE: "◎",
+  PASS_FAIL: "✕",
 };
 
-const UNKNOWN_DEFECT = { name: "불량", mark: "!", note: "" };
-
-function defectStyle(type: MonitorDefectType) {
-  return DEFECT_STYLE[type] ?? UNKNOWN_DEFECT;
+function defectStyle(type: MonitorDefectType, t: TFunction<"monitor">) {
+  const known = type in DEFECT_MARK;
+  const key = known ? type : "UNKNOWN";
+  return {
+    mark: known ? DEFECT_MARK[type] : "!",
+    name: t(`quality.defectType.${key}.name`),
+    note: t(`quality.defectType.${key}.note`),
+  };
 }
 
 const DEFECT_GRID =
   "minmax(12rem, 1.1fr) 4.5rem 9rem minmax(6rem, 0.7fr) minmax(17rem, 1.2fr) 5rem";
 
 function DefectRow({ defect, now }: { defect: MonitorDefect; now: Date }) {
-  const s = defectStyle(defect.defectType);
+  const { t } = useTranslation("monitor");
+  const s = defectStyle(defect.defectType, t);
   const band = parseAllowedRange(defect.allowedRange);
   const measured = toNumber(defect.measuredValue);
   const at = timeOf(defect.detectedAt);
@@ -344,7 +365,7 @@ function DefectRow({ defect, now }: { defect: MonitorDefect; now: Date }) {
         className="justify-self-start rounded px-2 py-0.5 text-base font-bold"
         style={{ backgroundColor: T.neutral.sub, color: T.inkSub }}
       >
-        {defect.slotLabel}
+        {slotText(defect.slotLabel)}
       </span>
 
       <span
@@ -373,7 +394,7 @@ function DefectRow({ defect, now }: { defect: MonitorDefect; now: Date }) {
           <span className="w-36 shrink-0">
             <span className="flex items-baseline gap-1.5">
               <span className="text-sm" style={{ color: T.inkSub }}>
-                측정
+                {t("quality.defects.measured")}
               </span>
               <span
                 className="text-2xl leading-none font-bold tabular-nums"
@@ -386,7 +407,10 @@ function DefectRow({ defect, now }: { defect: MonitorDefect; now: Date }) {
               className="mt-0.5 block text-sm tabular-nums"
               style={{ color: T.inkSub }}
             >
-              허용 {formatValue(band.min)} ~ {formatValue(band.max)}
+              {t("quality.defects.allowed", {
+                min: formatValue(band.min),
+                max: formatValue(band.max),
+              })}
             </span>
           </span>
           <span className="min-w-0 flex-1">
@@ -430,17 +454,18 @@ function TypeBreakdown({
   counts: Record<MonitorDefectType, number>;
   total: number;
 }) {
+  const { t } = useTranslation("monitor");
   const types: MonitorDefectType[] = ["DIMENSION", "APPEARANCE", "PASS_FAIL"];
   return (
     <Card>
-      <CardHead title="불량 유형" />
+      <CardHead title={t("quality.breakdownTitle")} />
       <div className="grid grid-cols-3 gap-4 px-6 pb-6">
-        {types.map((t) => {
-          const s = defectStyle(t);
-          const n = counts[t];
+        {types.map((type) => {
+          const s = defectStyle(type, t);
+          const n = counts[type];
           const on = n > 0;
           return (
-            <div key={t} className="flex min-w-0 flex-col gap-2">
+            <div key={type} className="flex min-w-0 flex-col gap-2">
               <div className="flex items-center gap-2">
                 <span
                   aria-hidden
@@ -511,35 +536,17 @@ type ActionKind =
 
 // 색은 앱의 상태 색 규칙을 그대로 따른다 — 빨강은 중단, 앰버는 결재 대기,
 // 초록은 종결, 마젠타는 지금 사람이 하는 중.
-const ACTION_STYLE: Record<
-  ActionKind,
-  { label: string; bg: string; note: string }
-> = {
+// 이름·결말 문구는 monitor:quality.actions.kind.<종류>.label / .note 로 번역한다.
+const ACTION_COLOR: Record<ActionKind, string> = {
   // 조기종료는 결재를 거치지 않는다 — 작업자가 실행하는 즉시 그 지점까지 묶어
   // 보고서가 발행되고, 재검사용 새 초품이 새 작업지시로 자동 생성된다.
   // 품질·관리자에게는 정보성 알림만 간다.
-  TERMINATED: {
-    label: "조기종료",
-    bg: T.error[700],
-    note: "보고서 발행 · 재검사 시작",
-  },
-  INCOMPLETE: {
-    label: "미완료",
-    bg: T.warning[700],
-    note: "결재 대기",
-  },
-  INCOMPLETE_APPROVED: {
-    label: "미완료 승인",
-    bg: T.success[700],
-    note: "사유 인정 · 슬롯 종료",
-  },
+  TERMINATED: T.error[700],
+  INCOMPLETE: T.warning[700],
+  INCOMPLETE_APPROVED: T.success[700],
   // 반려는 자주검사가 되돌아갔는지에 따라 다음 차례가 갈린다 — 줄마다 note 로 덮는다.
   // 여기 기본값은 어느 쪽인지 알 수 없을 때(오늘 자주검사 목록에 없을 때)만 쓰인다.
-  CROSS_REJECTED: {
-    label: "순회 반려",
-    bg: T.primary[500],
-    note: "재작업 대기",
-  },
+  CROSS_REJECTED: T.primary[500],
 };
 
 /**
@@ -552,6 +559,7 @@ const ACTION_STYLE: Record<
  * 알 수 있고, 미완료가 반려된 건은 사유까지 지워져 흔적이 남지 않는다.
  */
 function ActionCard({ items, now }: { items: ActionItem[]; now: Date }) {
+  const { t } = useTranslation("monitor");
   const ref = useRef<HTMLDivElement>(null);
   const perPage = useFitCount(ref, ACTION_ROW_HEIGHT);
   const page = usePagedList(items, perPage, PAGE_INTERVAL_MS);
@@ -559,16 +567,17 @@ function ActionCard({ items, now }: { items: ActionItem[]; now: Date }) {
   return (
     <Card>
       <CardHead
-        title="조치 현황"
+        title={t("quality.actions.title")}
         count={items.length || undefined}
         pager={page}
-        pagerLabel="조치"
+        pagerLabel={t("quality.actions.pagerLabel")}
       />
       <div ref={ref} className="min-h-0 flex-1 overflow-hidden px-5">
         <Flip token={page.page}>
           {page.visible.map((item) => {
-            const s = ACTION_STYLE[item.kind];
-            const note = item.note ?? s.note;
+            const bg = ACTION_COLOR[item.kind];
+            const note =
+              item.note ?? t(`quality.actions.kind.${item.kind}.note`);
             return (
               <div
                 key={item.key}
@@ -581,9 +590,9 @@ function ActionCard({ items, now }: { items: ActionItem[]; now: Date }) {
                 <div className="flex items-center gap-2">
                   <span
                     className="shrink-0 rounded-md px-3 py-1 text-xl font-bold"
-                    style={{ backgroundColor: s.bg, color: T.neutral.white }}
+                    style={{ backgroundColor: bg, color: T.neutral.white }}
                   >
-                    {s.label}
+                    {t(`quality.actions.kind.${item.kind}.label`)}
                   </span>
                   <span className="truncate text-3xl font-bold">
                     {item.productName}
@@ -608,12 +617,12 @@ function ActionCard({ items, now }: { items: ActionItem[]; now: Date }) {
                   className="line-clamp-2 text-2xl leading-snug font-bold"
                   title={item.reason ?? undefined}
                 >
-                  {item.reason ?? "사유 없음"}
+                  {item.reason ?? t("quality.actions.noReason")}
                 </div>
                 <div className="flex items-baseline gap-2 text-xl">
                   <span style={{ color: T.inkSub }}>{item.person}</span>
                   {/* 그래서 지금 어떻게 됐는지 — 조치의 결말. */}
-                  <span className="font-bold" style={{ color: s.bg }}>
+                  <span className="font-bold" style={{ color: bg }}>
                     {note}
                   </span>
                 </div>
@@ -626,7 +635,7 @@ function ActionCard({ items, now }: { items: ActionItem[]; now: Date }) {
             className="flex h-full items-center justify-center text-lg"
             style={{ color: T.neutral.muted }}
           >
-            조치가 필요했던 검사 없음
+            {t("quality.actions.empty")}
           </div>
         )}
       </div>

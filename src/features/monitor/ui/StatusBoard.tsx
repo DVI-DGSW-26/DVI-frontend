@@ -1,4 +1,5 @@
 import { useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useAllSlots } from "../api/useAllSlots";
 import { useTodayInspections } from "../api/useTodayInspections";
 import { buildProgressRows } from "../lib/buildProgress";
@@ -20,6 +21,7 @@ import {
   secondsUntilSlot,
 } from "../lib/time";
 import { T } from "../lib/tokens";
+import { slotText } from "../lib/slotText";
 import {
   Avatar,
   Card,
@@ -73,6 +75,7 @@ export default function StatusBoard({
   /** KST 오늘 (yyyy-MM-dd) — 자정을 넘겨도 따라가도록 셸이 계산해 넘겨준다. */
   today: string;
 }) {
+  const { t } = useTranslation("monitor");
   const slotsByProcess = useAllSlots();
   const { data: inspections } = useTodayInspections(today);
 
@@ -84,9 +87,14 @@ export default function StatusBoard({
   const rows = useMemo(
     () =>
       inspections
-        ? buildProgressRows(inspections, slotsByProcess, crossChecks)
+        ? buildProgressRows(
+            inspections,
+            slotsByProcess,
+            crossChecks,
+            t("worker.unassigned"),
+          )
         : [],
-    [inspections, slotsByProcess, crossChecks],
+    [inspections, slotsByProcess, crossChecks, t],
   );
 
   // 접속 여부는 모니터 스냅샷(SSE)에서 온다 — 진행도와 출처가 다르다.
@@ -205,29 +213,29 @@ export default function StatusBoard({
       <div className="grid shrink-0 grid-cols-6 gap-4 px-6 pt-5 pb-4">
         <StatCard
           dense
-          label="완료"
-          tag={<TrackTag text="자주" />}
+          label={t("stats.done")}
+          tag={<TrackTag track="self" />}
           value={totals.done}
           color={T.success[700]}
         />
         <StatCard
           dense
-          label="진행중"
-          tag={<TrackTag text="자주" />}
+          label={t("stats.active")}
+          tag={<TrackTag track="self" />}
           value={totals.active}
           color={T.primary[500]}
         />
         <StatCard
           dense
-          label="건너뜀"
-          tag={<TrackTag text="자주" />}
+          label={t("stats.skipped")}
+          tag={<TrackTag track="self" />}
           value={totals.skipped}
           color={T.inkSub}
         />
         <StatCard
           dense
-          label="남은 시점"
-          tag={<TrackTag text="자주" />}
+          label={t("stats.remaining")}
+          tag={<TrackTag track="self" />}
           value={totals.remaining}
           color={T.neutral.ink}
         />
@@ -237,12 +245,12 @@ export default function StatusBoard({
         */}
         <StatCard
           dense
-          label="지연"
-          tag={<TrackTag text="자주" />}
+          label={t("stats.overdue")}
+          tag={<TrackTag track="self" />}
           value={overdueCount}
-          unit="칸"
+          unit={t("stats.overdueUnit")}
           color={overdueCount > 0 ? T.warning[700] : T.success[700]}
-          sub={overdueCount > 0 ? "시각 경과" : "정시"}
+          sub={overdueCount > 0 ? t("stats.overdueSub") : t("stats.onTime")}
         />
         {/*
           앞 네 칸과 세는 대상이 다르다 — 자주검사가 끝나 순회검사자를 기다리는 시점 수다.
@@ -251,8 +259,8 @@ export default function StatusBoard({
         */}
         <StatCard
           dense
-          label="순회 대기"
-          tag={<TrackTag text="순회" />}
+          label={t("stats.crossWaiting")}
+          tag={<TrackTag track="cross" />}
           value={totals.crossWaiting}
           // 수의 색은 그 수가 세는 칸의 색과 같아야 한다 — 앰버로 두면 '승인대기' 칸을
           // 찾게 되고, 대기 칸은 파랑이라 영영 못 찾는다. 칸 모양 그대로도 이름 옆에 붙인다.
@@ -261,17 +269,17 @@ export default function StatusBoard({
           foot={
             <>
               <FootStat
-                label="작성중"
+                label={t("stats.draft")}
                 value={crossTotals.draft}
                 color={T.primary[500]}
               />
               <FootStat
-                label="승인대기"
+                label={t("stats.pending")}
                 value={crossTotals.pending}
                 color={T.warning[700]}
               />
               <FootStat
-                label="반려"
+                label={t("stats.rejected")}
                 value={crossTotals.rejected}
                 color={T.error[700]}
               />
@@ -282,7 +290,11 @@ export default function StatusBoard({
 
       <main className="flex min-h-0 flex-1 px-6 pb-6">
         <Card className="flex-1">
-          <CardHead title="시점별 진행도" pager={rowPage} pagerLabel="진행도">
+          <CardHead
+            title={t("progress.title")}
+            pager={rowPage}
+            pagerLabel={t("progress.pagerLabel")}
+          >
             <Legend />
           </CardHead>
           {/* 남은 높이를 전부 쓰고, 넘치는 줄은 잘리는 대신 다음 페이지로 간다. */}
@@ -312,7 +324,7 @@ export default function StatusBoard({
               </div>
             </Flip>
             {inspections && rows.length === 0 && (
-              <Empty text="오늘 등록된 검사가 없습니다" />
+              <Empty text={t("progress.empty")} />
             )}
           </div>
           {finished.length > 0 && (
@@ -325,14 +337,15 @@ export default function StatusBoard({
 }
 
 /** 막대 왼쪽 이름표와 같은 색을 쓰는 작은 트랙 표식. */
-function TrackTag({ text }: { text: "자주" | "순회" }) {
-  const color = text === "자주" ? TRACK_COLOR.self : TRACK_COLOR.cross;
+function TrackTag({ track }: { track: "self" | "cross" }) {
+  const { t } = useTranslation("monitor");
+  const color = TRACK_COLOR[track];
   return (
     <span
       className="rounded px-1.5 py-0.5 text-sm font-bold"
       style={{ border: `1px solid ${color}`, color }}
     >
-      {text}
+      {t(`track.${track}`)}
     </span>
   );
 }
@@ -362,6 +375,7 @@ function ProgressRowView({
   /** 시점별 순회검사 담당자 (자주검사 id → 이름). */
   crossOwners: Map<number, string>;
 }) {
+  const { t } = useTranslation("monitor");
   const selfBar = compact ? 34 : 44;
   const crossBar = compact ? 26 : 30;
 
@@ -421,7 +435,7 @@ function ProgressRowView({
         <div className="flex shrink-0 items-center gap-3">
           {lateCount > 0 ? (
             <Chip bg={OVERDUE_COLOR} fg={T.neutral.ink} strong>
-              <span aria-hidden>▲</span> 지연 {lateCount}칸
+              <span aria-hidden>▲</span> {t("progress.lateChip", { n: lateCount })}
               {late > 0 && (
                 <span className="tabular-nums">· {formatCountdown(late)}</span>
               )}
@@ -429,7 +443,9 @@ function ProgressRowView({
           ) : next ? (
             <Chip bg={T.neutral.sub} fg={T.inkSub} border={T.neutral.border}>
               <span>
-                <span className="font-bold">{next.label}</span>까지
+                {t("progress.untilPrefix")}
+                <span className="font-bold">{slotText(next.label)}</span>
+                {t("progress.untilSuffix")}
               </span>
               <span className="tabular-nums">
                 {formatCountdown(next.seconds)}
@@ -437,7 +453,7 @@ function ProgressRowView({
             </Chip>
           ) : null}
           <Ratio
-            label="자주"
+            label={t("track.self")}
             labelColor={TRACK_COLOR.self}
             done={row.settled}
             total={row.cells.length}
@@ -445,7 +461,7 @@ function ProgressRowView({
           />
           {/* 순회 대상이 아직 하나도 없으면(자주검사가 초반) 분모가 0 — 숫자 대신 "–". */}
           <Ratio
-            label="순회"
+            label={t("track.cross")}
             labelColor={TRACK_COLOR.cross}
             done={row.crossChecked}
             total={row.crossTarget}
@@ -459,14 +475,14 @@ function ProgressRowView({
         className="grid grid-cols-[2.5rem_1fr] items-center gap-x-2"
         style={{ marginTop: compact ? 6 : 12, rowGap: compact ? 4 : 6 }}
       >
-        <TrackLabel text="자주" color={TRACK_COLOR.self} />
+        <TrackLabel text={t("track.self")} color={TRACK_COLOR.self} />
         <SegmentBar
           cells={row.cells}
           height={selfBar}
           skipReasons={skipReasons}
           now={now}
         />
-        <TrackLabel text="순회" color={TRACK_COLOR.cross} />
+        <TrackLabel text={t("track.cross")} color={TRACK_COLOR.cross} />
         <CrossBar
           cells={row.cells}
           height={crossBar}
@@ -581,10 +597,12 @@ function SegmentBar({
   skipReasons: Map<number, string>;
   now: Date;
 }) {
+  const { t } = useTranslation("monitor");
   return (
     <div className="flex w-full gap-0.5">
       {cells.map((cell, i) => {
         const s = CELL_STYLE[cell.status];
+        const slot = slotText(cell.label);
         // 건너뛴 칸은 "왜 건너뛰었나"가 곧 그 칸의 내용이다 — 시점 아래 한 줄로 붙인다.
         const reason =
           cell.status === "SKIPPED" && cell.inspectionId != null
@@ -608,10 +626,14 @@ function SegmentBar({
             }}
             title={
               skipped
-                ? `${cell.label} 자주검사 건너뜀 — ${reason ?? "사유 없음"}`
-                : `${cell.label} 자주검사 ${s.name}${
-                    late != null ? ` · ${formatCountdown(late)} 지연` : ""
-                  }`
+                ? t("bar.selfSkipped", {
+                    slot,
+                    reason: reason ?? t("bar.noReason"),
+                  })
+                : t("bar.selfCell", { slot, status: t(s.name) }) +
+                  (late != null
+                    ? t("bar.lateSuffix", { time: formatCountdown(late) })
+                    : "")
             }
           >
             {late != null && (
@@ -625,11 +647,11 @@ function SegmentBar({
             )}
             <span className="flex items-center gap-1.5 leading-none">
               <span aria-hidden>{s.mark}</span>
-              {cell.label}
+              {slot}
             </span>
             {skipped && (
               <span className="max-w-full truncate px-1.5 text-sm font-normal">
-                {reason ?? "사유 없음"}
+                {reason ?? t("bar.noReason")}
               </span>
             )}
           </div>
@@ -654,10 +676,13 @@ function CrossBar({
   now: Date;
   owners: Map<number, string>;
 }) {
+  const { t } = useTranslation("monitor");
   return (
     <div className="flex w-full gap-0.5">
       {cells.map((cell, i) => {
         const s = CROSS_STYLE[cell.cross];
+        const slot = slotText(cell.label);
+        const status = t(s.name);
         const live = cell.crossCheck;
         // 검사자 이름을 칸 안에 넣는다 — 줄 오른쪽에 칩으로 몇 개만 달면 순회검사가
         // 셋 이상인 줄에서 누군가는 화면에서 사라진다. 칸에 넣으면 전원이, 자기가
@@ -668,7 +693,7 @@ function CrossBar({
         const fromOwners =
           cell.inspectionId != null ? (owners.get(cell.inspectionId) ?? null) : null;
         const checker = live
-          ? (live.checkerName ?? fromOwners ?? "이관 대기")
+          ? (live.checkerName ?? fromOwners ?? t("worker.awaitingTakeover"))
           : fromOwners;
         // 반려는 채움색을 새로 늘리지 않고 테두리로 겹쳐 그린다 — 진행·지연 보드의
         // '지연'과 같은 방식이다. 칸의 색은 순회 대상 여부를, 테두리는 반려를 말한다.
@@ -693,12 +718,21 @@ function CrossBar({
             }}
             title={
               rejected
-                ? `${cell.label} 순회검사 반려 — ${
-                    backToWorker ? "작업자 재측정 중" : "순회검사자 재작업 필요"
-                  }${checker ? ` · ${checker}` : ""}`
+                ? t("bar.crossRejected", {
+                    slot,
+                    why: backToWorker
+                      ? t("bar.backToWorker")
+                      : t("bar.checkerRework"),
+                  }) + (checker ? t("bar.checkerDotSuffix", { checker }) : "")
                 : live
-                  ? `${cell.label} 순회검사 ${s.name} — ${checker} · ${formatElapsed(live.updatedAt, now)}`
-                  : `${cell.label} 순회검사 ${s.name}${checker ? ` — ${checker}` : ""}`
+                  ? t("bar.crossLive", {
+                      slot,
+                      status,
+                      checker,
+                      elapsed: formatElapsed(live.updatedAt, now),
+                    })
+                  : t("bar.crossCell", { slot, status }) +
+                    (checker ? t("bar.checkerSuffix", { checker }) : "")
             }
           >
             <span aria-hidden>{s.mark}</span>
@@ -743,26 +777,26 @@ const CELL_STYLE: Record<
     bg: T.success[700],
     fg: T.neutral.white,
     mark: "✓",
-    name: "완료",
+    name: "cellStatus.completed",
   },
   DRAFT: {
     bg: T.primary[500],
     fg: T.neutral.white,
     mark: "▶",
-    name: "진행중",
+    name: "cellStatus.draft",
   },
   SKIPPED: {
     bg: T.neutral.border,
     fg: "#5B5B5B",
     mark: "⊘",
-    name: "건너뜀",
+    name: "cellStatus.skipped",
   },
   // 건너뛴 항목이 있어 결재로 올라간 칸 — 순회검사 쪽 '승인대기'와 같은 뜻이라 같은 색.
   INCOMPLETE: {
     bg: T.warning[700],
     fg: T.neutral.white,
     mark: "!",
-    name: "미완료",
+    name: "cellStatus.incomplete",
   },
   // 결재가 끝나 종결된 칸이므로 완료와 같은 초록 계열로 둔다. 앰버로 두면 아직 결재를
   // 기다리는 '미완료'와 한 덩어리로 보인다. 앱의 다른 화면도 이 상태를 초록으로 쓴다.
@@ -771,17 +805,19 @@ const CELL_STYLE: Record<
     fg: T.success[700],
     border: "#A7E9C0",
     mark: "✓",
-    name: "미완료 승인",
+    name: "cellStatus.incompleteApproved",
   },
   NONE: {
     bg: T.neutral.sub,
     fg: "#6B6B6B",
     border: T.neutral.border,
     mark: "·",
-    name: "미시작",
+    name: "cellStatus.notStarted",
   },
 };
 
+// name 은 monitor 네임스페이스의 번역 키다.
+//
 // 순회 줄도 자주 줄과 같은 색 규칙을 쓴다 — 같은 뜻이면 같은 색이라야 벽에서 헷갈리지
 // 않는다. 두 줄은 색이 아니라 높이와 왼쪽 라벨(자주/순회)로 구분한다.
 const CROSS_STYLE: Record<
@@ -792,13 +828,13 @@ const CROSS_STYLE: Record<
     bg: T.success[700],
     fg: T.neutral.white,
     mark: "✓",
-    name: "완료",
+    name: "crossStatus.checked",
   },
   DRAFT: {
     bg: T.primary[500],
     fg: T.neutral.white,
     mark: "▶",
-    name: "작성중",
+    name: "crossStatus.draft",
   },
   // 순회검사자의 일은 끝났고 결재만 남은 칸 — 현장 진행으로는 완료와 다르지 않다.
   // 벽 화면을 본다고 결재가 빨라지지도 않는다. 완료와 같은 초록으로 묶어 막대에서
@@ -808,7 +844,7 @@ const CROSS_STYLE: Record<
     bg: T.success[700],
     fg: T.neutral.white,
     mark: "✓",
-    name: "완료(결재 대기)",
+    name: "crossStatus.pendingApproval",
   },
   // 반려되면 자주검사가 COMPLETED→DRAFT 로 되돌아간다 — 즉 "현장에 일이 돌아왔다"는
   // 사실은 바로 위 자주 막대가 이미 진행중으로 말하고 있다. 순회 막대에서 빨강으로
@@ -819,7 +855,7 @@ const CROSS_STYLE: Record<
     fg: "#6B6B6B",
     border: T.neutral.border,
     mark: "·",
-    name: "반려",
+    name: "crossStatus.rejected",
   },
   // 순회검사자를 기다리는 칸 — 결재 대기(앰버)와는 기다리는 사람도 할 일도 다르므로
   // 색을 나눈다. 순회 트랙 이름표와 같은 파랑 계열이라 "순회 쪽 할 일"로 읽힌다.
@@ -832,14 +868,14 @@ const CROSS_STYLE: Record<
     fg: T.info[700],
     border: T.info[500],
     mark: "◷",
-    name: "대기",
+    name: "crossStatus.waiting",
   },
   NA: {
     bg: T.neutral.sub,
     fg: "#6B6B6B",
     border: T.neutral.border,
     mark: "·",
-    name: "대상 아님",
+    name: "crossStatus.notApplicable",
   },
   // 서버가 hasCrossCheck 를 안 내려주는 경우 — 빈 칸으로 두고 "없음"이라 우기지 않는다.
   UNKNOWN: {
@@ -847,11 +883,12 @@ const CROSS_STYLE: Record<
     fg: T.neutral.muted,
     border: T.neutral.border,
     mark: "",
-    name: "정보 없음",
+    name: "crossStatus.unknown",
   },
 };
 
 function Legend() {
+  const { t } = useTranslation("monitor");
   // 두 트랙 모두 나오는 상태를 빠짐없이 싣는다 — 자주 막대의 앰버 칸(미완료)이 범례에서
   // 빠져 있으면 순회 줄의 앰버(승인대기)와 같은 것인지 다른 것인지 알 길이 없다.
   const self: CellStatus[] = [
@@ -871,23 +908,23 @@ function Legend() {
       style={{ color: T.inkSub }}
     >
       <LegendGroup
-        title="자주"
+        title={t("track.self")}
         items={[
           ...self.map((k) => CELL_STYLE[k]),
           // 지연은 채움이 아니라 겹쳐 그리는 테두리라 범례도 그 모양 그대로 보여준다.
-          { bg: T.neutral.sub, ring: OVERDUE_COLOR, name: "지연" },
+          { bg: T.neutral.sub, ring: OVERDUE_COLOR, name: "legend.overdue" },
         ]}
         color={TRACK_COLOR.self}
       />
       <LegendGroup
-        title="순회"
+        title={t("track.cross")}
         items={[
           ...cross.map((k) => CROSS_STYLE[k]),
           // 반려는 채움이 아니라 겹쳐 그리는 테두리라 범례도 그 모양 그대로 보여준다.
           {
             bg: CROSS_STYLE.REJECTED.bg,
             ring: T.error[700],
-            name: "반려",
+            name: "legend.rejected",
           },
         ]}
         color={TRACK_COLOR.cross}
@@ -902,10 +939,12 @@ function LegendGroup({
   color,
 }: {
   title: string;
+  /** name 은 monitor 네임스페이스의 번역 키. */
   items: { bg: string; border?: string; ring?: string; name: string }[];
   /** 트랙 이름표 색 — 막대 왼쪽 라벨과 같은 값을 쓴다. */
   color: string;
 }) {
+  const { t } = useTranslation("monitor");
   return (
     <span className="flex items-center gap-3">
       <span
@@ -925,7 +964,7 @@ function LegendGroup({
               boxShadow: s.ring ? `inset 0 0 0 2px ${s.ring}` : undefined,
             }}
           />
-          {s.name}
+          {t(s.name)}
         </span>
       ))}
     </span>
@@ -943,6 +982,7 @@ function FinishedStrip({
   rows: ProgressRow[];
   online: Set<string>;
 }) {
+  const { t } = useTranslation("monitor");
   // 진행도 줄과 따로 논다 — 여기서 멈춰도 위 목록은 계속 돌고, 그 반대도 마찬가지.
   const chipsRef = useRef<HTMLDivElement>(null);
   const perPage = useFitCount(chipsRef, CHIP_WIDTH, {
@@ -962,9 +1002,9 @@ function FinishedStrip({
     >
       <div className="mb-2.5 flex items-center justify-between gap-4">
         <div className="text-base" style={{ color: T.inkSub }}>
-          오늘 마감 <span className="tabular-nums">{rows.length}</span>줄
+          {t("finished.count", { n: rows.length })}
         </div>
-        <Pager pager={page} label="오늘 마감" />
+        <Pager pager={page} label={t("finished.pagerLabel")} />
       </div>
       {/* 칩 크기를 고정해야 한 페이지 개수 계산이 맞는다. 높이도 줄 수만큼으로 묶어
           아래로 자라지 않게 한다 — 자라면 위 진행도 줄의 높이를 뺏는다. */}
@@ -990,11 +1030,21 @@ function FinishedStrip({
               backgroundColor: T.neutral.white,
               border: `1px solid ${T.neutral.border}`,
             }}
-            title={`${r.productName} · ${r.equipmentName} — 완료 ${r.completed}, 건너뜀 ${r.skipped}, 순회 ${r.crossChecked}`}
+            title={t("finished.chipTitle", {
+              product: r.productName,
+              equipment: r.equipmentName,
+              completed: r.completed,
+              skipped: r.skipped,
+              crossChecked: r.crossChecked,
+            })}
           >
             <span
               aria-hidden
-              title={online.has(r.workerName) ? "접속중" : "미접속"}
+              title={
+                online.has(r.workerName)
+                  ? t("worker.online")
+                  : t("worker.offline")
+              }
               className="size-2 shrink-0 rounded-full"
               style={{
                 backgroundColor: online.has(r.workerName)
@@ -1028,7 +1078,7 @@ function FinishedStrip({
                   className="font-bold tabular-nums"
                   style={{ color: T.success[700] }}
                 >
-                  순회 {r.crossChecked}
+                  {t("finished.crossCount", { n: r.crossChecked })}
                 </span>
               )}
             </span>

@@ -1,6 +1,7 @@
 import { Icon } from "@iconify/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useMonitorStream } from "../api/useMonitorStream";
 import type { MonitorStream } from "../api/useMonitorStream";
 import { formatClock, formatDateLabel, kstToday, useNow } from "../lib/time";
@@ -29,24 +30,15 @@ import QualityBoard from "./QualityBoard";
 // 고정할 수 있게 뒀다. 고정은 이 화면에만 걸리고 ?page= 로 주소에 남는다 —
 // 모니터가 여러 대일 때 한 대는 품질 보드만 띄워 두는 식으로 쓸 수 있다.
 
-/**
- * 화면 전체의 이름. 머리말은 "검사 진행 현황 · 현황판" 처럼 이 이름 뒤에 지금 보는
- * 보드를 붙여 쓴다 — 네 페이지가 돌아가는 화면이라, 무엇을 보고 있는지가 늘 제목에
- * 남아 있어야 한다.
- */
-const BOARD_TITLE = "검사 진행 현황";
-
 interface BoardData {
   stream: MonitorStream;
   now: Date;
   today: string;
 }
 
+// 탭 이름·툴팁 제목은 monitor:pages.<key>.label / .title 로 번역한다.
 interface PageDef {
-  key: string;
-  label: string;
-  /** 머리말 제목 — 탭 이름보다 길게 쓴다. */
-  title: string;
+  key: "status" | "detail" | "quality";
   /** 이 페이지에 머무는 시간. 읽을 것이 많은 화면일수록 길게. */
   dwellMs: number;
   /** 이 페이지가 쓰는 이벤트 — 머리말의 "마지막 변경"을 보드별로 맞춘다. */
@@ -61,8 +53,6 @@ interface PageDef {
 const PAGES: PageDef[] = [
   {
     key: "status",
-    label: "현황판",
-    title: "검사 진행 현황",
     dwellMs: 30_000,
     source: "snapshot",
     available: () => true,
@@ -73,8 +63,6 @@ const PAGES: PageDef[] = [
   },
   {
     key: "detail",
-    label: "검사 상세",
-    title: "진행중 검사 측정값",
     dwellMs: 24_000,
     source: "snapshot",
     available: ({ stream }) =>
@@ -89,8 +77,6 @@ const PAGES: PageDef[] = [
   },
   {
     key: "quality",
-    label: "품질·불량",
-    title: "오늘 품질·불량",
     dwellMs: 24_000,
     source: "quality",
     // 불량 0 건도 보여줄 값이 있는 화면이다("오늘 잡힌 불량 없음") — 건너뛰지 않는다.
@@ -111,6 +97,7 @@ const PAGES: PageDef[] = [
 ];
 
 export default function MonitorPage() {
+  const { t } = useTranslation("monitor");
   const stream = useMonitorStream();
   const now = useNow();
   const today = useMemo(
@@ -218,6 +205,9 @@ export default function MonitorPage() {
         }}
       >
         {/*
+          화면 전체의 이름 뒤에 지금 보는 보드를 붙인다 — 세 페이지가 돌아가는 화면이라
+          무엇을 보고 있는지가 늘 제목에 남아 있어야 한다.
+
           제목은 글자 크기를 키우지 않고 강조한다 — 머리말이 커지면 그만큼 아래 목록
           줄이 줄어들기 때문이다. 흰 바탕에 먹색 글자는 이미 대비가 최대라 색으로는
           더 올릴 데가 없어, 남은 수단은 반전뿐이다. 브랜드색으로 채운 칩에 흰 글자를
@@ -232,13 +222,13 @@ export default function MonitorPage() {
               color: T.neutral.white,
             }}
           >
-            {BOARD_TITLE}
+            {t("title")}
           </h1>
           <span
             className="min-w-0 truncate text-3xl font-bold"
             style={{ color: T.neutral.ink }}
           >
-            {page.label}
+            {t(`pages.${page.key}.label`)}
           </span>
           <span
             className="shrink-0 text-xl"
@@ -308,9 +298,10 @@ function PageTabs({
   onPick: (i: number) => void;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation("monitor");
   return (
     <nav
-      aria-label="모니터 페이지"
+      aria-label={t("nav.aria")}
       className="flex shrink-0 items-center gap-1 rounded-xl p-1"
       style={{
         backgroundColor: T.neutral.sub,
@@ -321,6 +312,7 @@ function PageTabs({
         const active = i === index;
         const badge = p.badge(data);
         const dim = !availability[i] && !active;
+        const title = t(`pages.${p.key}.title`);
         return (
           <button
             key={p.key}
@@ -328,9 +320,7 @@ function PageTabs({
             onClick={() => onPick(i)}
             aria-current={active ? "page" : undefined}
             title={
-              availability[i]
-                ? p.title
-                : `${p.title} — 지금은 보여줄 내용이 없어 자동 순환에서 건너뜁니다`
+              availability[i] ? title : t("nav.skippedHint", { title })
             }
             className="relative flex h-11 items-center gap-2 overflow-hidden rounded-lg px-3.5 text-lg font-bold"
             style={{
@@ -345,7 +335,7 @@ function PageTabs({
             >
               {i + 1}
             </span>
-            {p.label}
+            {t(`pages.${p.key}.label`)}
             {badge && (
               <span
                 className="rounded-full px-2 text-base font-bold tabular-nums"
@@ -384,9 +374,7 @@ function PageTabs({
         onClick={onToggle}
         aria-pressed={pinned}
         title={
-          pinned
-            ? "자동 순환 다시 시작 (스페이스바)"
-            : "이 페이지에 고정 (스페이스바)"
+          pinned ? t("nav.resume") : t("nav.pin")
         }
         className="ml-1 flex h-11 items-center gap-1.5 rounded-lg px-3 text-lg font-bold"
         style={{
@@ -400,7 +388,7 @@ function PageTabs({
           width={20}
           height={20}
         />
-        {pinned ? "고정" : "자동"}
+        {pinned ? t("nav.pinned") : t("nav.auto")}
       </button>
     </nav>
   );
