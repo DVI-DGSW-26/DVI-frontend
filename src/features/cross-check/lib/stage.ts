@@ -1,4 +1,5 @@
 import type { ProcessType } from "../api";
+import { formatSlotTime } from "../../report/lib/inspectedTime";
 
 // 검사 차수(type)를 초/중/종 단계로 매핑.
 // - 압출: 초중종 3차수 → _1=초, _2=중, _3=종
@@ -49,4 +50,25 @@ export function needsHardnessInput(
     getStage(cc.type, cc.product.process) === "FINAL" &&
     !cc.hardnessResult?.trim()
   );
+}
+
+// 순회검사를 하지 않는 시간대 — 시간대별 검사인 AL/ST 절단의 10시·15시 차수.
+// 자주검사는 진행하지만 순회검사는 없어서, 순회검사자가 전체 항목을 한 번에 건너뛰고
+// 바로 결재 요청한다(POST /cross-check/{id}/skip-all).
+const SKIP_ALL_PROCESSES: ProcessType[] = ["AL_CUTTING", "ST_CUTTING"];
+const SKIP_ALL_SLOT_TIMES = ["10:00", "15:00"];
+
+export function canSkipAll(cc: {
+  product: { process: ProcessType };
+  inspectionTime: string;
+}): boolean {
+  return (
+    SKIP_ALL_PROCESSES.includes(cc.product.process) &&
+    SKIP_ALL_SLOT_TIMES.includes(formatSlotTime(cc.inspectionTime) ?? "")
+  );
+}
+
+// 전체 건너뛰기로 끝난 건 — 모든 DIM 이 건너뜀. 서버에 전용 필드가 없어 results 로 판별한다.
+export function isSkippedAll(cc: { results: { skipped?: boolean }[] }): boolean {
+  return cc.results.length > 0 && cc.results.every((r) => r.skipped === true);
 }

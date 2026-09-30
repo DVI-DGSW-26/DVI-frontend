@@ -39,6 +39,8 @@ interface Props {
   onGoNext?: () => void;
   /** 사진 없이 측정값만 입력. 전달된 경우에만 버튼 노출 (순회검사 한정). */
   onMeasureWithoutPhoto?: () => void;
+  /** 외관 포함 전체 항목 건너뛰기. 전달된 경우에만 버튼 노출 (순회검사 미실시 시간대 한정). */
+  onSkipAll?: () => void;
 }
 
 export default function CapturePhase({
@@ -48,6 +50,7 @@ export default function CapturePhase({
   onGoBack,
   onGoNext,
   onMeasureWithoutPhoto,
+  onSkipAll,
 }: Props) {
   const { t } = useTranslation("inspection");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -309,6 +312,16 @@ export default function CapturePhase({
           className="h-11 w-full rounded-md border border-[#931B82] bg-white text-sm font-medium text-[#931B82] hover:bg-[#F3E8FF]"
         >
           {t("capture.withoutPhoto")}
+        </button>
+      )}
+
+      {onSkipAll && (
+        <button
+          type="button"
+          onClick={onSkipAll}
+          className="h-11 w-full rounded-md border border-[#E5E7EB] bg-[#F9FAFB] text-sm font-medium text-[#6B7280] hover:bg-[#F3F4F6]"
+        >
+          전체 항목 건너뛰기
         </button>
       )}
 

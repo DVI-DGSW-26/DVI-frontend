@@ -5,6 +5,7 @@ import { Icon } from "@iconify/react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import {
+  useCancelSkipAllCrossCheck,
   useCrossCheckDetail,
   useDecideCrossCheck,
   useDeleteCrossCheck,
@@ -15,7 +16,8 @@ import { formatStandardWithTolerance } from "../../inspection/lib/format";
 import { judgeMeasurement } from "../../inspection/lib/judgment";
 import { useAuth } from "../../auth/AuthContext";
 import { hasRole } from "../../auth/roles";
-import { getStage, STAGE_BADGE } from "../lib/stage";
+import { getStage, isSkippedAll, STAGE_BADGE } from "../lib/stage";
+import SkipAllModal from "./SkipAllModal";
 import PhotoCompareModal from "../../../components/shared/PhotoCompareModal";
 import { formatDateTime } from "../../../lib/datetime";
 import { slotLabelText } from "../../../lib/slotLabel";
@@ -71,11 +73,16 @@ export default function CrossCheckApprovalDetailPage() {
   const detail = detailQuery.data;
   const decideMut = useDecideCrossCheck(crossCheckId);
   const deleteMut = useDeleteCrossCheck(crossCheckId);
+  const cancelSkipAllMut = useCancelSkipAllCrossCheck(crossCheckId);
 
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [photoRow, setPhotoRow] = useState<CrossCheckResultInfo | null>(null);
+  const [showCancelSkipAll, setShowCancelSkipAll] = useState(false);
+  const [cancelSkipAllError, setCancelSkipAllError] = useState<string | null>(
+    null,
+  );
 
   const goBack = () => navigate("/cross-check-approval", { replace: true });
 
@@ -128,6 +135,23 @@ export default function CrossCheckApprovalDetailPage() {
     }
   };
 
+  // 전체 건너뛰기를 잘못 누른 경우 — 해제 후 바로 다시 측정하도록 측정 화면으로 보낸다.
+  const handleCancelSkipAll = async () => {
+    setCancelSkipAllError(null);
+    try {
+      await cancelSkipAllMut.mutateAsync();
+      navigate(`/cross-check/${crossCheckId}/measure`, { replace: true });
+    } catch (err) {
+      setCancelSkipAllError(toErrorMessage(err, t));
+    }
+  };
+
+  const closeCancelSkipAll = () => {
+    if (cancelSkipAllMut.isPending) return;
+    setCancelSkipAllError(null);
+    setShowCancelSkipAll(false);
+  };
+
   if (detailQuery.isLoading) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
@@ -169,12 +193,31 @@ export default function CrossCheckApprovalDetailPage() {
   const canDelete =
     hasRole(user?.role, ["ADMIN", "QUALITY_ADMIN"]) &&
     detail.status !== "APPROVED";
+  // 전체 건너뛰기로 끝난 건의 해제는 순회검사자 몫. 승인 전(초·중은 COMPLETED,
+  // 종은 PENDING_APPROVAL)까지만 가능하고, 묶음이 이미 승인됐으면 서버가 거부한다.
+  const canCancelSkipAll =
+    hasRole(user?.role, ["QUALITY"]) &&
+    (detail.status === "COMPLETED" || detail.status === "PENDING_APPROVAL") &&
+    isSkippedAll(detail);
 
   return (
     <div className="flex flex-col gap-4 p-4 pb-32 md:p-6 md:pb-32">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">{t("approval.title")}</h1>
         <div className="flex items-center gap-2">
+          {canCancelSkipAll && (
+            <button
+              type="button"
+              onClick={() => {
+                setCancelSkipAllError(null);
+                setShowCancelSkipAll(true);
+              }}
+              className="flex items-center gap-1 rounded-md border border-[#931B82] px-3 py-1.5 text-xs font-medium text-[#931B82] transition-colors hover:bg-[#F3E8FF]"
+            >
+              <Icon icon="solar:refresh-linear" width={14} height={14} />
+              건너뜀 해제
+            </button>
+          )}
           {canDelete && (
             <button
               type="button"
@@ -419,6 +462,15 @@ export default function CrossCheckApprovalDetailPage() {
           )}
         </div>
       )}
+
+      <SkipAllModal
+        open={showCancelSkipAll}
+        mode="cancel"
+        isSubmitting={cancelSkipAllMut.isPending}
+        error={cancelSkipAllError}
+        onCancel={closeCancelSkipAll}
+        onConfirm={handleCancelSkipAll}
+      />
 
       <PhotoCompareModal
         open={photoRow !== null}

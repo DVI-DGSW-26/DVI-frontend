@@ -13,6 +13,8 @@ import {
   releaseCrossCheck,
   reopenCrossCheck,
   saveCrossCheckResults,
+  skipAllCrossCheck,
+  cancelSkipAllCrossCheck,
 } from "./crossCheckApi";
 import type {
   CreateCrossCheckRequest,
@@ -197,6 +199,29 @@ export function useCancelCrossCheck() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (crossCheckId: number) => releaseCrossCheck(crossCheckId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: crossCheckKeys.all });
+    },
+  });
+}
+
+// 전체 항목 건너뛰기. DIM·외관 건너뜀 + 결재 요청까지 서버가 처리해 상태가 바뀌므로
+// 목록/이력/상세 전부 갱신한다.
+export function useSkipAllCrossCheck(crossCheckId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => skipAllCrossCheck(crossCheckId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: crossCheckKeys.all });
+    },
+  });
+}
+
+// 전체 건너뛰기 해제. 다시 측정 가능한 상태로 돌아가므로 전체 캐시 무효화.
+export function useCancelSkipAllCrossCheck(crossCheckId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => cancelSkipAllCrossCheck(crossCheckId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: crossCheckKeys.all });
     },
