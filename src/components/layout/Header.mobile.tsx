@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useUnreadCount } from "../../features/notification/api";
 import { useAuth } from "../../features/auth/AuthContext";
 import { runHeaderBackHandler } from "../../lib/headerBack";
+import LanguageToggle from "./LanguageToggle";
 
 // layout 네임스페이스 titles.* / tabs.* 키
 const ROUTE_TITLE_KEYS: Record<string, string> = {
@@ -65,19 +66,22 @@ const HeaderMobile = () => {
 
       <h1 className="text-base font-semibold">{title}</h1>
 
-      {showBell && !isNotificationsPage && (
-        <button
-          type="button"
-          onClick={() => navigate("/notifications")}
-          aria-label={t("notifications")}
-          className="absolute right-4 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center text-[#212121]"
-        >
-          <Icon icon="solar:bell-linear" width={22} height={22} />
-          {hasUnread && (
-            <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#EF4444]" />
-          )}
-        </button>
-      )}
+      <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center">
+        <LanguageToggle />
+        {showBell && !isNotificationsPage && (
+          <button
+            type="button"
+            onClick={() => navigate("/notifications")}
+            aria-label={t("notifications")}
+            className="relative flex h-8 w-8 items-center justify-center text-[#212121]"
+          >
+            <Icon icon="solar:bell-linear" width={22} height={22} />
+            {hasUnread && (
+              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#EF4444]" />
+            )}
+          </button>
+        )}
+      </div>
     </header>
   );
 };

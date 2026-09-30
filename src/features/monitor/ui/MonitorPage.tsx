@@ -248,6 +248,7 @@ export default function MonitorPage() {
         />
 
         <div className="flex shrink-0 items-center gap-5">
+          <LanguageButton />
           {/* 보드마다 마지막 변경 시각이 다르다 — 지금 보는 보드의 것을 보여준다. */}
           <ConnectionBadge
             connection={stream.connection}
@@ -271,6 +272,35 @@ export default function MonitorPage() {
         {page.render(data)}
       </div>
     </div>
+  );
+}
+
+/* ── 언어 전환 ────────────────────────────────────────────── */
+
+/**
+ * 모니터는 앱 헤더가 없는 단독 화면이라 언어 버튼을 따로 둔다. 앱의 LanguageToggle 과
+ * 같은 규칙 — 바꿀 "반대쪽" 언어를 보여주고, 선택은 localStorage 에 남는다.
+ * 생김새는 옆의 자동/고정 버튼에 맞춘다.
+ */
+function LanguageButton() {
+  const { t, i18n } = useTranslation("layout");
+  const next = i18n.language.startsWith("ko") ? "en" : "ko";
+  return (
+    <button
+      type="button"
+      onClick={() => i18n.changeLanguage(next)}
+      aria-label={t("language")}
+      title={t("language")}
+      className="flex h-11 items-center gap-1.5 rounded-lg px-3 text-lg font-bold uppercase"
+      style={{
+        backgroundColor: T.neutral.white,
+        color: T.inkSub,
+        border: `1px solid ${T.neutral.border}`,
+      }}
+    >
+      <Icon icon="mdi:web" width={20} height={20} />
+      {next}
+    </button>
   );
 }
 
