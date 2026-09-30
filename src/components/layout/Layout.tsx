@@ -2,7 +2,6 @@ import { useRef } from "react";
 import { Outlet } from "react-router-dom";
 import TabBar from "./TabBar";
 import Header from "./Header";
-import TestModeBanner from "../shared/TestModeBanner";
 import { useScrollRestore } from "../../lib/viewState";
 
 const Layout = () => {
@@ -15,7 +14,6 @@ const Layout = () => {
     <div className="flex h-dvh w-full overflow-hidden bg-gray-50">
       <TabBar />
       <div className="flex min-w-0 flex-1 flex-col">
-        <TestModeBanner />
         <Header />
         <main
           ref={mainRef}
