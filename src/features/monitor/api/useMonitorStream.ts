@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { tokenStorage, refreshAccessToken } from "../../auth/api";
 import { apiBase } from "../../../lib/apiServer";
+import { translateData } from "../../../lib/dataDictionary";
 import { getMonitorQuality, getMonitorSnapshot } from "./monitorApi";
 import type {
   MonitorConnection,
@@ -155,10 +156,11 @@ export function useMonitorStream(): MonitorStream {
                 // 이 화면이 깨지지 않아야 한다.
                 switch (ev.event) {
                   case "snapshot":
-                    apply.snapshot(JSON.parse(ev.data) as MonitorSnapshot);
+                    // SSE 는 axios 를 안 타서 DB 값 번역을 여기서 건다.
+                    apply.snapshot(translateData(JSON.parse(ev.data) as MonitorSnapshot));
                     break;
                   case "quality":
-                    apply.quality(JSON.parse(ev.data) as MonitorQualityBoard);
+                    apply.quality(translateData(JSON.parse(ev.data) as MonitorQualityBoard));
                     break;
                 }
               } catch {

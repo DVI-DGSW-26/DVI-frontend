@@ -55,6 +55,10 @@ export default {
       "The cancel feature is not available on this server yet. Please contact an administrator.",
   },
   home: {
+    actionableTitle: "Inspections You Can Do Now",
+    viewAll: "View All",
+    startTakenOrFailed: "Another inspector is already working on it, or it failed to start.",
+    startFailed: "Failed to start the patrol inspection.",
     greeting: "Hello, {{name}}",
     delegationGranted: "Manager authority delegated",
     adminAbsent: "Manager absent",
@@ -199,6 +203,8 @@ export default {
     saving: "Saving...",
     remeasure: "Re-measure",
     cancelSkip: "Undo skip",
+    cancelSkipUnavailable: "Cannot undo. Please refresh and try again.",
+    remainingSlots: "Remaining rounds: {{labels}}",
     skipCancelled: "Skip has been undone",
     skipped: "Skipped",
     photoAlt: "{{name}} measurement photo",
@@ -212,6 +218,8 @@ export default {
     listError: "Failed to load the list.",
     emptyTitle: "No patrol inspections pending approval or in progress",
     emptyFiltered: "No patrol inspections pending approval or in progress for the selected processes.",
+    processFilterAll: "Process",
+    processFilterCount: "{{n}} processes",
     emptyHint:
       "They will appear here when a quality inspector starts a patrol inspection or requests approval",
     emptyPeriod: "No patrol inspections in the selected period.",

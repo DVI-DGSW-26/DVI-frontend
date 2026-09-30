@@ -16,6 +16,7 @@ import {
   type WebNotificationPermission,
 } from "../lib/webNotification";
 import { enableWebPush, isWebPushConfigured } from "../lib/webPush";
+import { notificationText } from "../lib/notificationText";
 
 type NotificationType = "error" | "warning" | "success" | "info";
 
@@ -224,12 +225,12 @@ const NotificationPage = () => {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm font-semibold text-[#212121]">{item.title}</p>
+                        <p className="text-sm font-semibold text-[#212121]">{notificationText(item).title}</p>
                         <span className="shrink-0 text-xs text-[#A8A8A8]">
                           {formatTime(item.createdAt)}
                         </span>
                       </div>
-                      <p className="mt-1 text-sm text-[#A8A8A8]">{item.content}</p>
+                      <p className="mt-1 text-sm text-[#A8A8A8]">{notificationText(item).content}</p>
                       {hasMeta && (
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {item.productName && (

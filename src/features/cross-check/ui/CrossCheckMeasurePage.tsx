@@ -29,6 +29,7 @@ import {
 import { toCancelErrorMessage } from "../lib/cancelError";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import { formatDate } from "../../../lib/datetime";
+import { slotLabelText } from "../../../lib/slotLabel";
 
 type Phase = "capture" | "crop" | "input";
 
@@ -613,7 +614,7 @@ export default function CrossCheckMeasurePage() {
           </div>
         </div>
         <InfoRow label={t("label.machine")} value={detail.equipment.name} />
-        <InfoRow label={t("label.round")} value={detail.typeLabel} />
+        <InfoRow label={t("label.round")} value={slotLabelText(detail.typeLabel)} />
         <InfoRow
           label={t("label.inspectionStartDate")}
           value={formatDate(inspectionDetailQuery.data?.createdAt ?? detail.createdAt)}

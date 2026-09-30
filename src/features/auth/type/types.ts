@@ -40,6 +40,8 @@ export interface User {
   status: UserStatus;
   // 백엔드가 내려주지 않는 경우(구형 응답/비대상 역할)를 대비해 선택 필드로 둔다.
   workType?: WorkType | null;
+  // 서버에 저장된 표시 언어. null 이면 미선택(서버 기본 언어).
+  language?: string | null;
 }
 
 export interface SignupRequest {

@@ -39,6 +39,7 @@ import LatestCompletedCard from "./LatestCompletedCard";
 import SkipModal from "../../inspection/ui/SkipModal";
 import TerminateInspectionModal from "../../inspection/ui/TerminateInspectionModal";
 import Toast from "../../inspection/ui/Toast";
+import { slotLabelText } from "../../../lib/slotLabel";
 
 // 건너뛰기 모달 대상 — latestDraft(DRAFT 인 검사 자체 건너뛰기) 와
 // nextEligible(다음 시점을 건너뛰기) 둘 다 같은 모양으로 처리.
@@ -205,7 +206,7 @@ export default function ProductionHomePage() {
       return;
     }
     setSkipTarget({
-      label: `${inspection.product.name} (${inspection.typeLabel})`,
+      label: `${inspection.product.name} (${slotLabelText(inspection.typeLabel)})`,
       orderId,
       type: inspection.type,
       draftInspectionIdToDelete: inspection.inspectionId,
@@ -326,7 +327,7 @@ export default function ProductionHomePage() {
                     {latestDraft.product.name}
                   </div>
                   <div className="mt-0.5 truncate text-xs text-[#F3E8FF]/90">
-                    {latestDraft.type} / {latestDraft.typeLabel}
+                    {latestDraft.type} / {slotLabelText(latestDraft.typeLabel)}
                   </div>
                 </div>
                 <Icon
@@ -418,7 +419,7 @@ export default function ProductionHomePage() {
                     {i.product.name}
                   </div>
                   <div className="mt-0.5 truncate text-xs text-[#6B7280]">
-                    {i.equipment.name} · {i.typeLabel || i.type}
+                    {i.equipment.name} · {slotLabelText(i.typeLabel) || i.type}
                   </div>
                   {i.createdAt && (
                     <div className="mt-0.5 truncate text-xs text-[#A8A8A8]">
@@ -589,7 +590,7 @@ export default function ProductionHomePage() {
                     />
                     <span>
                       {t("home.typeCompleted", {
-                        type: previous.typeLabel || previous.type,
+                        type: slotLabelText(previous.typeLabel) || previous.type,
                       })}
                     </span>
                     <span className="text-[#D1D5DB]">›</span>
@@ -664,7 +665,7 @@ export default function ProductionHomePage() {
                         {i.customer.name} · {i.equipment.name}
                       </div>
                       <div className="mt-0.5 text-xs text-[#6B7280]">
-                        {i.typeLabel} · {formatSlotTime(i.inspectionTime)}
+                        {slotLabelText(i.typeLabel)} · {formatSlotTime(i.inspectionTime)}
                       </div>
                     </div>
                     <span

@@ -21,19 +21,20 @@ import { formatTolerance } from "../../inspection/lib/format";
 import { formatDateTime, parseServerDate } from "../../../lib/datetime";
 import { formatSlotTime } from "./inspectedTime";
 import { resolveShift } from "./shift";
+import { slotLabelText, withSlotLabel } from "../../../lib/slotLabel";
 
 // 문서 본문도 발행 시점의 앱 언어(한/영)를 따른다. React 밖이라 싱글턴으로 푼다.
 const tr = (key: string, opts?: Record<string, unknown>): string =>
   i18n.t(`report:${key}`, opts) as string;
 
 function stageTitle(s: { stage: ReportStage; typeLabel: string }): string {
-  return `${tr(`stage.${s.stage}`)} ${s.typeLabel ?? ""}`.trim();
+  return withSlotLabel(tr(`stage.${s.stage}`), s.typeLabel);
 }
 
 // 차수 열 머리글. 화면(ReportMeasurementsSection)과 같은 조합 규칙 — 차수는
 // 번역하고 백엔드 표기(typeLabel)는 그대로, 반복 측정은 "(N회차)" 를 붙인다.
 function columnLabel(c: StageColumn): string {
-  const base = `${tr(`stage.${c.stage}`)} ${c.typeLabel ?? ""}`.trim();
+  const base = withSlotLabel(tr(`stage.${c.stage}`), c.typeLabel);
   if (c.occurrence === 0) return base;
   return tr("measurements.repeatRun", { label: base, n: c.occurrence + 1 });
 }
@@ -368,7 +369,7 @@ function inspectionLabelText(detail: ReportDetail): string {
       labels: columns.map(columnLabel).join(" · "),
     });
   }
-  return detail.inspectionLabel;
+  return slotLabelText(detail.inspectionLabel);
 }
 
 // 근무조(주간/야간). 판정할 수 없으면 칸 자체를 빼서 빈 항목이 남지 않게 한다.

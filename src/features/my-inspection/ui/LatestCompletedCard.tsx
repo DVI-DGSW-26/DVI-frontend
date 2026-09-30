@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { MyInspection } from "../type/types";
+import { slotLabelText } from "../../../lib/slotLabel";
 
 interface Props {
   /** 가장 최근 완료된 직전 검사 — 클릭 시 이 검사의 다음 시점을 시작. */
@@ -25,13 +26,13 @@ export default function LatestCompletedCard({
         {previous.product.name}
       </div>
       <div className="mt-0.5 truncate text-xs text-[#6B7280]">
-        {previous.equipment.name} · {previous.typeLabel || previous.type}
+        {previous.equipment.name} · {slotLabelText(previous.typeLabel) || previous.type}
       </div>
 
       <div className="mt-2 flex items-center gap-1.5 text-xs text-[#6B7280]">
         <span>
           {t("latestCard.typeCompleted", {
-            type: previous.typeLabel || previous.type,
+            type: slotLabelText(previous.typeLabel) || previous.type,
           })}
         </span>
         <span className="text-[#D1D5DB]">›</span>

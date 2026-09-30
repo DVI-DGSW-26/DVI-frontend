@@ -1,4 +1,5 @@
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import { T } from "../lib/tokens";
 import { formatClock } from "../lib/time";
 import type { PagedList } from "../lib/usePagedList";
@@ -86,12 +87,13 @@ export function Pager({
   pager: PagedList<unknown>;
   label: string;
 }) {
+  const { t } = useTranslation("monitor");
   if (pager.pageCount <= 1) return null;
   return (
     <div className="flex items-center gap-1.5">
       <PagerButton
         icon="solar:alt-arrow-left-linear"
-        label={`${label} 이전 페이지`}
+        label={t("pager.prevPage", { label })}
         onClick={pager.prev}
       />
       {/* 자동으로 넘어가는 중이라는 걸 알려야 "왜 화면이 바뀌지?"가 안 생긴다. */}
@@ -103,7 +105,7 @@ export function Pager({
       </span>
       <PagerButton
         icon="solar:alt-arrow-right-linear"
-        label={`${label} 다음 페이지`}
+        label={t("pager.nextPage", { label })}
         onClick={pager.next}
       />
       {/*
@@ -118,8 +120,8 @@ export function Pager({
         aria-pressed={pager.paused}
         title={
           pager.paused
-            ? `${label} 자동 넘김 다시 시작`
-            : `${label} 자동 넘김 멈춤`
+            ? t("pager.resumeAuto", { label })
+            : t("pager.pauseAuto", { label })
         }
         className="ml-1 flex h-9 items-center gap-1.5 rounded-lg px-3 text-base font-bold"
         style={{
@@ -133,7 +135,7 @@ export function Pager({
           width={18}
           height={18}
         />
-        {pager.paused ? "멈춤" : "자동"}
+        {pager.paused ? t("pager.paused") : t("pager.auto")}
       </button>
     </div>
   );
@@ -390,6 +392,7 @@ export function Avatar({
   online?: boolean;
   size?: number;
 }) {
+  const { t } = useTranslation("monitor");
   return (
     <span className="relative shrink-0">
       <span
@@ -408,7 +411,7 @@ export function Avatar({
       {online !== undefined && (
         <span
           aria-hidden
-          title={online ? "접속중" : "미접속"}
+          title={online ? t("worker.online") : t("worker.offline")}
           className="absolute right-0 bottom-0 rounded-full"
           style={{
             width: size / 3,
@@ -483,14 +486,15 @@ export function Meter({
 
 /* ── 연결 표시등 ───────────────────────────────────────────── */
 
-const CONNECTION_LABEL: Record<
+// 이름은 monitor:connection.<키> 로 번역한다.
+const CONNECTION_STYLE: Record<
   MonitorConnection,
-  { text: string; color: string; bg: string }
+  { color: string; bg: string }
 > = {
-  connecting: { text: "연결중", color: T.warning[700], bg: T.warning[100] },
-  live: { text: "실시간", color: T.success[700], bg: T.success[100] },
-  polling: { text: "5초 갱신", color: T.warning[700], bg: T.warning[100] },
-  down: { text: "연결 끊김", color: T.error[700], bg: T.error[100] },
+  connecting: { color: T.warning[700], bg: T.warning[100] },
+  live: { color: T.success[700], bg: T.success[100] },
+  polling: { color: T.warning[700], bg: T.warning[100] },
+  down: { color: T.error[700], bg: T.error[100] },
 };
 
 export function ConnectionBadge({
@@ -500,7 +504,8 @@ export function ConnectionBadge({
   connection: MonitorConnection;
   updatedAt: Date | null;
 }) {
-  const { text, color, bg } = CONNECTION_LABEL[connection];
+  const { t } = useTranslation("monitor");
+  const { color, bg } = CONNECTION_STYLE[connection];
   return (
     <div className="flex items-center gap-3">
       <span
@@ -512,7 +517,7 @@ export function ConnectionBadge({
           className="size-2.5 rounded-full"
           style={{ backgroundColor: color }}
         />
-        {text}
+        {t(`connection.${connection}`)}
       </span>
       {/*
         이벤트는 내용이 바뀔 때만 오므로 이 시각이 한참 전이어도 정상이다 —
@@ -520,7 +525,7 @@ export function ConnectionBadge({
       */}
       {updatedAt && (
         <span className="text-base" style={{ color: T.inkSub }}>
-          마지막 변경{" "}
+          {t("connection.lastChange")}{" "}
           <span className="tabular-nums">{formatClock(updatedAt)}</span>
         </span>
       )}

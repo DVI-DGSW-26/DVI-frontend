@@ -22,4 +22,13 @@ export default {
     error: "오류가 발생했습니다",
     empty: "데이터가 없습니다",
   },
+  // 서버 슬롯 라벨 — 한국어 화면은 서버 값을 그대로 쓰므로 영문과 짝만 맞춘다.
+  slot: {
+    INITIAL: "초",
+    MIDDLE: "중",
+    FINAL: "종",
+    night: "야간{{label}}",
+    nightOnly: "야간",
+    round: "{{n}}차",
+  },
 } as const;

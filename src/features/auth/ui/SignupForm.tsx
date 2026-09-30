@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
+import LanguageToggle from "../../../components/layout/LanguageToggle";
 import { signup, AuthError, type SignupRole } from "../api";
 import SignupFormWeb from "./SignupForm.web";
 import SignupFormMobile from "./SignupForm.mobile";
@@ -76,5 +77,13 @@ export default function Signup() {
     onSubmit: handleSubmit,
   };
 
-  return isMobile ? <SignupFormMobile {...props} /> : <SignupFormWeb {...props} />;
+  return (
+    <>
+      {isMobile ? <SignupFormMobile {...props} /> : <SignupFormWeb {...props} />}
+      {/* 로그인 전 화면이라 앱 헤더가 없다 — 언어 버튼을 오른쪽 위에 띄워 둔다. */}
+      <div className="fixed right-3 top-3 z-50 rounded-full bg-white/90">
+        <LanguageToggle />
+      </div>
+    </>
+  );
 }

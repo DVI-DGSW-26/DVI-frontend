@@ -69,6 +69,21 @@ export default {
       errorUnknown: "An unknown error occurred.",
     },
   },
+  errors: {
+    connection:
+      "Cannot connect to the server. Check your network or ask the administrator about the server status.",
+    invalidInput: "Please check your input.",
+    duplicateId: "This ID already exists.",
+    signupFailed: "An error occurred during sign-up.",
+    invalidCredentials: "Incorrect ID or password.",
+    notApproved: "This account has not been approved by an administrator yet.",
+    loginFailed: "An error occurred while logging in.",
+    testRelogin: "Test accounts must log in again to the test server. Please log in.",
+    noAccessToken:
+      "The login response has no accessToken. Please check the backend response format.",
+    testServerLoginFailed: "Test server login failed: {{message}}",
+    notSavedAccount: "This account is not saved on this device.",
+  },
   accountSwitcher: {
     credentialMismatch:
       "The credentials for {{label}} ({{loginId}}) do not match the server.",

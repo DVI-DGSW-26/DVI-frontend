@@ -40,6 +40,7 @@ import InputPhase from "./InputPhase";
 import PassFailPhase from "./PassFailPhase";
 import Toast from "./Toast";
 import TerminateInspectionModal from "./TerminateInspectionModal";
+import { slotLabelText } from "../../../lib/slotLabel";
 
 type Phase = "capture" | "crop" | "input";
 
@@ -735,7 +736,7 @@ export default function InspectionMeasurePage() {
     <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-24">
       <section className="border-b border-gray-200 bg-white px-4 py-4">
         <InfoRow label={t("measure.machineName")} value={info.equipment.name} />
-        <InfoRow label={t("measure.round")} value={info.typeLabel || "-"} />
+        <InfoRow label={t("measure.round")} value={slotLabelText(info.typeLabel) || "-"} />
         <InfoRow
           label={t("measure.startDate")}
           value={formatDate(info.createdAt)}

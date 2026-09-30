@@ -1,4 +1,11 @@
 export default {
+  names: {
+    EXTRUSION: "Extrusion",
+    AL_CUTTING: "AL Cutting",
+    ST_CUTTING: "ST Cutting",
+    MACHINING: "Machining",
+    PRESS: "Press",
+  },
   page: {
     title: "Process Management",
     register: "Add Process",

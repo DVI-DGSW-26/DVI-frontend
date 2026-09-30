@@ -13,6 +13,7 @@ import {
   findMeasurement,
   type StageColumn,
 } from "../lib/stageMeasurements";
+import { withSlotLabel } from "../../../lib/slotLabel";
 
 const STAGE_BADGE: Record<ReportStage, string> = {
   INITIAL: "border-[#DBEAFE] bg-[#EFF6FF] text-[#1D4ED8]",
@@ -45,7 +46,7 @@ function formatValue(value: number | null | undefined): string {
 
 function StageChip({ column }: { column: StageColumn }) {
   const { t } = useTranslation("report");
-  const base = `${t(`stage.${column.stage}`, "")} ${column.typeLabel}`.trim();
+  const base = withSlotLabel(t(`stage.${column.stage}`, ""), column.typeLabel);
   const label =
     column.occurrence === 0
       ? base

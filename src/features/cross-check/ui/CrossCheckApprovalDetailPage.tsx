@@ -18,6 +18,7 @@ import { hasRole } from "../../auth/roles";
 import { getStage, STAGE_BADGE } from "../lib/stage";
 import PhotoCompareModal from "../../../components/shared/PhotoCompareModal";
 import { formatDateTime } from "../../../lib/datetime";
+import { slotLabelText } from "../../../lib/slotLabel";
 
 function isWithinTolerance(
   value: number,
@@ -233,7 +234,7 @@ export default function CrossCheckApprovalDetailPage() {
             value={(() => {
               const stage = getStage(detail.type, detail.product.process);
               const stageText = stage ? ` · ${t(`stage.${stage}`)}` : "";
-              return `${detail.typeLabel} (${detail.type})${stageText}`;
+              return `${slotLabelText(detail.typeLabel)} (${detail.type})${stageText}`;
             })()}
           />
           <InfoLine

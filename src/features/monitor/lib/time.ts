@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import i18n from "../../../lib/i18n";
 import { parseServerDate } from "../../../lib/datetime";
 
 // 벽 화면의 시간 표시는 전부 KST 로 고정한다 — 현장 PC 의 시간대가 잘못 잡혀 있어도
@@ -48,12 +49,19 @@ export function kstToday(now: Date): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
+// 아래 문구는 전부 앱 언어를 따른다. 화면이 매초 다시 그려지므로 언어를 바꾸면 바로 따라온다.
+const mt = (key: string, opts?: Record<string, unknown>) =>
+  i18n.t(key, { ns: "monitor", ...opts });
 
-/** "9월 11일 (금)" — 머리말용 사람이 읽는 날짜. */
+/** "9월 11일 (금)" / "Sep 11 (Fri)" — 머리말용 사람이 읽는 날짜. */
 export function formatDateLabel(now: Date): string {
   const { mm, dd, day } = kstParts(now);
-  return `${Number(mm)}월 ${Number(dd)}일 (${WEEKDAY[day]})`;
+  const months = mt("date.months").split(",");
+  return mt("date.format", {
+    month: months[Number(mm) - 1] || Number(mm),
+    day: Number(dd),
+    weekday: mt("date.weekdays").split(",")[day],
+  });
 }
 
 /** "방금 / 12분 전 / 3시간 전" — 서버가 오프셋 없이 내려주는 KST 표기도 안전하게 읽는다. */
@@ -61,12 +69,12 @@ export function formatElapsed(iso: string, now: Date): string {
   const t = parseServerDate(iso).getTime();
   if (Number.isNaN(t)) return "";
   const sec = Math.max(0, Math.floor((now.getTime() - t) / 1000));
-  if (sec < 60) return "방금";
+  if (sec < 60) return mt("elapsed.justNow");
   const min = Math.floor(sec / 60);
-  if (min < 60) return `${min}분 전`;
+  if (min < 60) return mt("elapsed.minutesAgo", { n: min });
   const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}시간 전`;
-  return `${Math.floor(hr / 24)}일 전`;
+  if (hr < 24) return mt("elapsed.hoursAgo", { n: hr });
+  return mt("elapsed.daysAgo", { n: Math.floor(hr / 24) });
 }
 
 /** 서버 타임스탬프의 시:분 (KST). 못 읽으면 null. */
@@ -103,11 +111,20 @@ export function formatCountdown(sec: number): string {
   const s = Math.max(0, Math.floor(sec));
   const hr = Math.floor(s / 3600);
   const min = Math.floor((s % 3600) / 60);
-  if (hr > 0) return min > 0 ? `${hr}시간 ${min}분` : `${hr}시간`;
-  if (min >= 10) return `${min}분`;
+  if (hr > 0) {
+    return min > 0
+      ? mt("countdown.hoursMinutes", { h: hr, m: min })
+      : mt("countdown.hours", { h: hr });
+  }
+  if (min >= 10) return mt("countdown.minutes", { m: min });
   const rest = s % 60;
-  if (min > 0) return `${min}분 ${String(rest).padStart(2, "0")}초`;
-  return `${rest}초`;
+  if (min > 0) {
+    return mt("countdown.minutesSeconds", {
+      m: min,
+      s: String(rest).padStart(2, "0"),
+    });
+  }
+  return mt("countdown.seconds", { s: rest });
 }
 
 /**

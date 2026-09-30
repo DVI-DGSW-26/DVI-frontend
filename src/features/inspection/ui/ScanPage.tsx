@@ -22,6 +22,7 @@ import { skipErrorMessage } from "../lib/skipError";
 import SlotItem, { type SlotStatus } from "./SlotItem";
 import SkipModal from "./SkipModal";
 import Toast from "./Toast";
+import { slotLabelText } from "../../../lib/slotLabel";
 
 interface ScanLocationState {
   // POST /inspection 에 필요한 필수 컨텍스트. 검사는 배정받은 작업지시 안에서만
@@ -386,9 +387,8 @@ export default function ScanPage() {
       <SkipModal
         open={!!skipTargetType}
         slotLabel={
-          slots.find((s) => s.type === skipTargetType)?.label ??
-          skipTargetType ??
-          ""
+          slotLabelText(slots.find((s) => s.type === skipTargetType)?.label) ||
+          (skipTargetType ?? "")
         }
         isSubmitting={skipMutation.isPending}
         onCancel={() => {
