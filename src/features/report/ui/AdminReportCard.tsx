@@ -6,6 +6,7 @@ import { downloadReportPdf } from "../lib/downloadReportPdf";
 import { resolveSummaryShift } from "../lib/shift";
 import { formatDate } from "../../../lib/datetime";
 import { useProcessLabel } from "../../process";
+import { slotLabelText } from "../../../lib/slotLabel";
 
 // 검사일자 = 대상일(targetDate). 없으면 발행일(createdAt) 날짜로 폴백.
 // 발행 시각(createdAt 의 시:분)은 검사 시간과 무관해 혼동을 주므로 표시하지 않는다.
@@ -123,7 +124,7 @@ const AdminReportCard = ({ report, onClick }: Props) => {
       <p className="text-xs text-[#A8A8A8]">
         {report.customerName ? `${report.customerName} · ` : ""}
         {inspectionDateText(report)}
-        {report.inspectionLabel ? ` · ${report.inspectionLabel}` : ""}
+        {report.inspectionLabel ? ` · ${slotLabelText(report.inspectionLabel)}` : ""}
         {shift && (
           <>
             {" · "}

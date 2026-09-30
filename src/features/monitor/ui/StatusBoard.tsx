@@ -21,7 +21,7 @@ import {
   secondsUntilSlot,
 } from "../lib/time";
 import { T } from "../lib/tokens";
-import { slotText } from "../lib/slotText";
+import { slotLabelText as slotText } from "../../../lib/slotLabel";
 import {
   Avatar,
   Card,

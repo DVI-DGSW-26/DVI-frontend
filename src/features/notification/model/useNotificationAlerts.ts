@@ -11,6 +11,7 @@ import {
   subscribeWebPushActive,
 } from "../lib/webPush";
 import { showWebNotification } from "../lib/webNotification";
+import { notificationText } from "../lib/notificationText";
 
 /**
  * 알림을 화면 밖(OS 알림창)으로 내보내는 배선. App 에 한 번만 마운트한다.
@@ -77,9 +78,10 @@ export function useNotificationAlerts(): void {
     setWebPushHandler(({ title, body, type, linkUrl }) => {
       void queryClient.invalidateQueries({ queryKey: notificationKeys.all });
       // 탭이 떠 있는 동안은 브라우저가 자동 표시하지 않으므로 직접 띄운다.
+      const text = notificationText({ type, title, content: body });
       void showWebNotification(
-        title,
-        body,
+        text.title,
+        text.content,
         resolveNotificationLink({ type, linkUrl }),
       );
     });
@@ -101,9 +103,10 @@ export function useNotificationAlerts(): void {
         const { items } = await getMyNotifications();
         const latest = items.find((n) => !n.isRead);
         if (!latest) return;
+        const text = notificationText(latest);
         await showWebNotification(
-          latest.title,
-          latest.content,
+          text.title,
+          text.content,
           resolveNotificationLink(latest),
         );
       } catch {

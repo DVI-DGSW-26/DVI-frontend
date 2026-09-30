@@ -1,5 +1,5 @@
 export { signup, login, reissue } from "./authApi";
-export { getMe, changeMyPassword } from "./userApi";
+export { getMe, changeMyPassword, updateMyLanguage } from "./userApi";
 export type { ChangePasswordRequest } from "./userApi";
 export { tokenStorage, accountStorage } from "./tokenStorage";
 export type { StoredAccount } from "./tokenStorage";

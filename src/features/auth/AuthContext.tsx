@@ -14,11 +14,13 @@ import {
   getMe,
   login as loginApi,
   tokenStorage,
+  updateMyLanguage,
 } from "./api";
 import { stopWebPush } from "../notification/lib/webPush";
 import type { PushSession } from "../notification/api/pushTokenApi";
 import { clearViewState } from "../../lib/viewState";
 import { currentApiServer, type ApiServer } from "../../lib/apiServer";
+import i18n from "../../lib/i18n";
 import type { LoginRequest, StoredAccount, TokenData, User } from "./api";
 
 // 지금 올라가 있는 세션 — 푸시 해제를 보낼 곳. 세션을 바꾸거나 지우기 "전에"
@@ -45,14 +47,12 @@ function isTestAccountOnProd(role: string | undefined): boolean {
   return role === "TEST" && currentApiServer() === "prod";
 }
 
-const TEST_ACCOUNT_RELOGIN_MESSAGE =
-  "테스트 계정은 테스트 서버로 다시 로그인해야 합니다. 로그인해 주세요.";
+const authError = (key: string, opts?: Record<string, unknown>) =>
+  i18n.t(`errors.${key}`, { ns: "auth", ...opts });
 
 function assertTokens(tokens: TokenData | undefined): TokenData {
   if (!tokens?.accessToken) {
-    throw new Error(
-      "로그인 응답에 accessToken 이 없습니다. 백엔드 응답 형태를 확인해주세요.",
-    );
+    throw new Error(authError("noAccessToken"));
   }
   return tokens;
 }
@@ -137,6 +137,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refresh().finally(() => setLoading(false));
   }, [refresh]);
 
+  // 화면 언어(이 기기에서 고른 값)를 서버에도 맞춘다 — 서버가 보내는 에러·알림 문구가
+  // 그 언어로 온다. 로그인·계정 전환 때 한 번, 그리고 언어를 바꿀 때마다.
+  // 언어가 바뀌면 받아 둔 데이터도 새로 받는다: 서버 문구와 DB 값 번역(dataDictionary)이
+  // 언어에 따라 달라진다.
+  useEffect(() => {
+    if (!user) return;
+    const toServer = (lng: string) => (lng.startsWith("ko") ? "ko" : "en");
+    let sent = user.language ?? null;
+    const sync = async () => {
+      const lang = toServer(i18n.language ?? "ko");
+      if (sent === lang) return;
+      sent = lang;
+      await updateMyLanguage(lang);
+    };
+    // 서버 언어가 바뀐 뒤에 다시 받아야 서버 문구도 새 언어로 온다.
+    const onChange = () => {
+      void sync().then(() => queryClient.invalidateQueries());
+    };
+    void sync();
+    i18n.on("languageChanged", onChange);
+    return () => i18n.off("languageChanged", onChange);
+  }, [user, queryClient]);
+
   const login = useCallback(
     async (body: LoginRequest, persist?: boolean) => {
       const previousPush = currentPushSession();
@@ -156,7 +179,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           tokens = assertTokens(await loginApi(body, server));
         } catch (err) {
           if (err instanceof AuthError) {
-            throw new AuthError(err.code, `테스트 서버 로그인 실패: ${err.message}`);
+            throw new AuthError(
+              err.code,
+              authError("testServerLoginFailed", { message: err.message }),
+            );
           }
           throw err;
         }
@@ -189,18 +215,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (target?.role === "TEST" && (target.server ?? "prod") === "prod") {
         accountStorage.remove(loginId);
         setAccounts(accountStorage.list());
-        throw new AuthError("UNKNOWN", TEST_ACCOUNT_RELOGIN_MESSAGE);
+        throw new AuthError("UNKNOWN", authError("testRelogin"));
       }
       // 저장된 계정마다 발급 서버가 기록돼 있어, 올리는 순간 요청 기준 주소도
       // 그 서버로 바뀐다.
       if (!accountStorage.activate(loginId)) {
-        throw new Error("저장된 계정이 아닙니다.");
+        throw new Error(authError("notSavedAccount"));
       }
       try {
         const me = await getMe();
         if (isTestAccountOnProd(me.role)) {
           accountStorage.remove(loginId);
-          throw new AuthError("UNKNOWN", TEST_ACCOUNT_RELOGIN_MESSAGE);
+          throw new AuthError("UNKNOWN", authError("testRelogin"));
         }
         accountStorage.upsert(me);
         releasePushIfServerChanged(previousPush);

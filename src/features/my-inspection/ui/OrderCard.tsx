@@ -6,6 +6,7 @@ import type { MyInspection } from "../type/types";
 import { getStatusBadge } from "../lib/inspectionStatus";
 import { formatWorkDay } from "../../../lib/datetime";
 import ShiftBadge from "../../../components/shared/ShiftBadge";
+import { slotLabelText } from "../../../lib/slotLabel";
 
 // 한 카드는 한 검사를 표현. /inspection/assigned 제거 후로는 my inspection 한 종류만 표시.
 
@@ -105,7 +106,7 @@ export default function OrderCard({
               {inspection.customer.name} · {inspection.equipment.name}
             </div>
             <div className="mt-0.5 flex items-center gap-1.5 text-xs text-[#6B7280]">
-              <span className="truncate">{inspection.typeLabel}</span>
+              <span className="truncate">{slotLabelText(inspection.typeLabel)}</span>
               <ShiftBadge shift={inspection.shift} compact />
             </div>
             {inspection.createdAt && (

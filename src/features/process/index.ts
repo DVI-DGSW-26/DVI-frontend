@@ -10,6 +10,7 @@ export type {
   UpdateProcessRequest,
 } from "./api";
 export {
+  processDisplayName,
   useProcessFlag,
   useProcessInfo,
   useProcessLabel,

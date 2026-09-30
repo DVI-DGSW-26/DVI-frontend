@@ -64,7 +64,7 @@ export default function AccountSwitcher({ onDone }: Props) {
       } else if (credentials) {
         me = await login(credentials);
       } else {
-        throw new Error("저장된 계정이 아닙니다.");
+        throw new Error(t("errors.notSavedAccount"));
       }
       onDone?.();
       navigate(ROLE_HOME[me.role] ?? "/", { replace: true });

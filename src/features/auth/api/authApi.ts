@@ -2,6 +2,7 @@ import { AxiosError } from "axios";
 import { http } from "../../../lib/http";
 import { apiBase, type ApiServer } from "../../../lib/apiServer";
 import { isConnectionError } from "../../../lib/serverStatus";
+import i18n from "../../../lib/i18n";
 import {
   AuthError,
   type ApiResponse,
@@ -10,26 +11,29 @@ import {
   type TokenData,
 } from "../type/types";
 
-const CONNECTION_ERROR_MESSAGE =
-  "서버에 연결할 수 없습니다. 네트워크 상태를 확인하거나 관리자에게 서버 상태를 문의해 주세요.";
+// 에러 문구는 앱 언어를 따른다. 서버 message 는 한국어라, 영어 화면에서는 쓰지 않는다.
+const msg = (key: string) => i18n.t(`errors.${key}`, { ns: "auth" });
+const serverText = (text: string | undefined) =>
+  i18n.language?.startsWith("ko") ? text : undefined;
 
 export async function signup(body: SignupRequest): Promise<void> {
   try {
     await http.post("/auth/signup", body);
   } catch (err) {
     if (err instanceof AxiosError) {
-      const serverMessage =
-        (err.response?.data as { message?: string } | undefined)?.message;
+      const serverMessage = serverText(
+        (err.response?.data as { message?: string } | undefined)?.message,
+      );
       if (err.response?.status === 400) {
         throw new AuthError(
           "UNKNOWN",
-          serverMessage ?? "입력값을 확인해주세요.",
+          serverMessage ?? msg("invalidInput"),
         );
       }
       if (err.response?.status === 409) {
         throw new AuthError(
           "UNKNOWN",
-          serverMessage ?? "이미 존재하는 아이디입니다.",
+          serverMessage ?? msg("duplicateId"),
         );
       }
       if (serverMessage) {
@@ -37,9 +41,9 @@ export async function signup(body: SignupRequest): Promise<void> {
       }
     }
     if (isConnectionError(err)) {
-      throw new AuthError("UNKNOWN", CONNECTION_ERROR_MESSAGE);
+      throw new AuthError("UNKNOWN", msg("connection"));
     }
-    throw new AuthError("UNKNOWN", "회원가입 중 오류가 발생했습니다.");
+    throw new AuthError("UNKNOWN", msg("signupFailed"));
   }
 }
 
@@ -60,22 +64,22 @@ export async function login(
       if (err.response?.status === 401) {
         throw new AuthError(
           "INVALID_CREDENTIALS",
-          "아이디 또는 비밀번호가 올바르지 않습니다.",
+          msg("invalidCredentials"),
         );
       }
       if (err.response?.status === 403) {
         throw new AuthError(
           "USER_NOT_APPROVED",
-          "아직 관리자 승인되지 않은 계정입니다.",
+          msg("notApproved"),
         );
       }
     }
     // 서버까지 닿지 못한 실패를 "로그인 중 오류" 로 뭉뚱그리면, 사용자가 계정
     // 문제로 오해하고 아이디·비밀번호를 계속 다시 친다. 원인을 밝혀준다.
     if (isConnectionError(err)) {
-      throw new AuthError("UNKNOWN", CONNECTION_ERROR_MESSAGE);
+      throw new AuthError("UNKNOWN", msg("connection"));
     }
-    throw new AuthError("UNKNOWN", "로그인 중 오류가 발생했습니다.");
+    throw new AuthError("UNKNOWN", msg("loginFailed"));
   }
 }
 

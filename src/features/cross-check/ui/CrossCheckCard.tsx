@@ -5,6 +5,7 @@ import { finishedBadge, isTakeoverable } from "../lib/assigned";
 import { elapsedFrom, TONE_COLOR } from "../lib/elapsed";
 import { getStage, STAGE_BADGE } from "../lib/stage";
 import { formatDate } from "../../../lib/datetime";
+import { slotLabelText } from "../../../lib/slotLabel";
 
 interface Props {
   item: AssignedInspection;
@@ -80,7 +81,7 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
         </div>
         {item.typeLabel && (
           <span className="mt-2 truncate text-xs text-[#A8A8A8]">
-            {t("card.roundLine", { label: item.typeLabel })}
+            {t("card.roundLine", { label: slotLabelText(item.typeLabel) })}
           </span>
         )}
         {item.equipmentName && (

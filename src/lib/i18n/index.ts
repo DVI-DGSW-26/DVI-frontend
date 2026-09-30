@@ -110,4 +110,16 @@ i18n
     interpolation: { escapeValue: false }, // React 가 이미 XSS 를 막는다
   });
 
+// 브라우저 탭 제목과 <html lang> 도 앱 언어를 따른다 — index.html 에는 한국어가 박혀 있다.
+// (설치형 앱 이름은 manifest 라 여기서 바꿀 수 없다.)
+const APP_TITLE: Record<string, string> = { ko: "콱 플로우", en: "QAC-FLOW" };
+function syncDocumentLanguage(lng: string) {
+  if (typeof document === "undefined") return;
+  const lang = lng.startsWith("ko") ? "ko" : "en";
+  document.documentElement.lang = lang;
+  document.title = APP_TITLE[lang];
+}
+syncDocumentLanguage(i18n.language ?? "ko");
+i18n.on("languageChanged", syncDocumentLanguage);
+
 export default i18n;

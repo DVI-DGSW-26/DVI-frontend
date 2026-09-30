@@ -45,6 +45,7 @@ import {
 } from "../lib/historyFilter";
 import Toast from "../../inspection/ui/Toast";
 import { useViewState } from "../../../lib/viewState";
+import { slotLabelText } from "../../../lib/slotLabel";
 
 type Tab = "assigned" | "history";
 
@@ -704,7 +705,7 @@ function DraftResumeCard({
             </span>
           </div>
           <span className="mt-2 block truncate text-xs text-[#A8A8A8]">
-            {t("card.roundLine", { label: cc.typeLabel })}
+            {t("card.roundLine", { label: slotLabelText(cc.typeLabel) })}
           </span>
           <span className="mt-1 block truncate text-xs text-[#A8A8A8]">
             {t("card.equipmentLine", { name: cc.equipment.name })}
@@ -776,7 +777,7 @@ function HistoryCard({
           <InfoLine label={t("label.equipment")} value={cc.equipment.name} />
           <InfoLine
             label={t("label.round")}
-            value={`${cc.typeLabel} (${cc.type})`}
+            value={`${slotLabelText(cc.typeLabel)} (${cc.type})`}
           />
           <InfoLine label={t("label.startDate")} value={formatDate(cc.createdAt)} />
           <InfoLine

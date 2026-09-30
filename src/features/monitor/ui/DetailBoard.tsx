@@ -15,7 +15,7 @@ import { useFitCount } from "../lib/useFitCount";
 import { formatElapsed } from "../lib/time";
 import { bandOf, formatDeviation, formatValue } from "../lib/tolerance";
 import { T } from "../lib/tokens";
-import { slotText } from "../lib/slotText";
+import { slotLabelText as slotText } from "../../../lib/slotLabel";
 import {
   Avatar,
   Card,

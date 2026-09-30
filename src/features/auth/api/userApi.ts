@@ -39,3 +39,15 @@ export async function changeMyPassword(
     body,
   );
 }
+
+/**
+ * 내 표시 언어를 서버에 저장한다 — 서버가 보내는 문구(에러·알림·엑셀 라벨)가 이 언어로 온다.
+ * 서버에 기능이 없거나(배포 전) 실패해도 화면 언어는 그대로 두므로 오류를 삼킨다.
+ */
+export async function updateMyLanguage(language: "ko" | "en"): Promise<void> {
+  try {
+    await http.patch("/user/me/language", { language });
+  } catch {
+    // 무시 — 다음 로그인·언어 변경 때 다시 맞춘다.
+  }
+}

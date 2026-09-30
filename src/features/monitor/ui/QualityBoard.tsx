@@ -10,7 +10,7 @@ import { useFitCount } from "../lib/useFitCount";
 import { formatElapsed, timeOf } from "../lib/time";
 import { formatValue, parseAllowedRange, toNumber } from "../lib/tolerance";
 import { T } from "../lib/tokens";
-import { slotText } from "../lib/slotText";
+import { slotLabelText as slotText } from "../../../lib/slotLabel";
 import {
   Card,
   CardHead,

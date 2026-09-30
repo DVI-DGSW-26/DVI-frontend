@@ -1,5 +1,7 @@
 import axios from "axios";
 import { apiBase } from "./apiServer";
+import i18n from "./i18n";
+import { installDataDictionary } from "./dataDictionary";
 
 // 응답 제한 시간. 예전엔 무제한이라 서버가 죽으면 요청이 영원히 떠 있었고,
 // 화면이 "그냥 느린 것" 처럼 보여 사용자가 원인을 알 수 없었다. 여기서 끊어야
@@ -35,3 +37,26 @@ http.interceptors.request.use((config) => {
   if (!config.baseURL) config.baseURL = apiBase();
   return config;
 });
+
+// 서버 오류 message 는 사용자 언어(PATCH /user/me/language)로 번역돼 온다. 그래도 서버에
+// 언어가 아직 반영되지 않았거나 번역이 없는 문구는 한국어로 올 수 있다 — 영어 화면에서
+// 한국어가 섞인 message 만 떼어 내, 화면마다 `message ?? t(...)` 의 자기 문구를 쓰게 한다.
+// 문구 내용으로 분기하는 코드는 없다.
+const HANGUL = /[가-힣]/;
+http.interceptors.response.use(undefined, (err) => {
+  const data = err?.response?.data;
+  if (
+    data &&
+    typeof data === "object" &&
+    "message" in data &&
+    typeof (data as { message?: unknown }).message === "string" &&
+    HANGUL.test((data as { message: string }).message) &&
+    !i18n.language?.startsWith("ko")
+  ) {
+    delete (data as { message?: unknown }).message;
+  }
+  return Promise.reject(err);
+});
+
+// DB 값 번역 사전(테스트 서버) — lib/dataDictionary.ts 참고.
+installDataDictionary(http);
