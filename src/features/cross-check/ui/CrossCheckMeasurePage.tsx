@@ -25,8 +25,11 @@ import {
   useCrossCheckDetail,
   useRejectCrossCheck,
   useSaveCrossCheckResults,
+  useSkipAllCrossCheck,
 } from "../api";
 import { toCancelErrorMessage } from "../lib/cancelError";
+import { canSkipAll } from "../lib/stage";
+import SkipAllModal from "./SkipAllModal";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import { formatDate } from "../../../lib/datetime";
 import { slotLabelText } from "../../../lib/slotLabel";
@@ -170,12 +173,15 @@ export default function CrossCheckMeasurePage() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   // 취소 실패 사유는 모달 안에 띄운다 — 토스트는 모달 오버레이 뒤에 가려 안 보인다.
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [showSkipAllModal, setShowSkipAllModal] = useState(false);
+  const [skipAllError, setSkipAllError] = useState<string | null>(null);
 
   const uploadImage = useUploadInspectionImage();
   const ocrImage = useOcrInspectionImage();
   const saveResults = useSaveCrossCheckResults(crossCheckId);
   const rejectMut = useRejectCrossCheck(crossCheckId);
   const cancelMut = useCancelCrossCheck();
+  const skipAllMut = useSkipAllCrossCheck(crossCheckId);
 
   useEffect(() => {
     if (!detail || !allDone) return;
@@ -504,6 +510,33 @@ export default function CrossCheckMeasurePage() {
     setShowCancelModal(false);
   };
 
+  // 순회검사를 하지 않는 시간대 — 외관 포함 전체 항목을 건너뛰고 결재 요청까지 서버가 처리.
+  const confirmSkipAll = async () => {
+    setSkipAllError(null);
+    try {
+      await skipAllMut.mutateAsync();
+      navigate("/cross-checks", { replace: true });
+    } catch (err) {
+      // 실패해도 모달은 열어둔다 — 사유를 읽고 "닫기"로 측정을 이어갈 수 있게.
+      setSkipAllError(toErrorMessage(err, t));
+    }
+  };
+
+  const closeSkipAllModal = () => {
+    if (skipAllMut.isPending) return;
+    setSkipAllError(null);
+    setShowSkipAllModal(false);
+  };
+
+  // 측정값을 하나라도 입력했으면 순회검사를 한 건이라 노출하지 않는다. 저장해도 detail 을
+  // 다시 읽지 않으므로(useSaveCrossCheckResults 주석) 이번 세션 입력분은 sessionResults 로 본다.
+  // 특정 항목 "다시 측정" 으로 들어온 경우도 한 항목만 고치는 흐름이라 제외.
+  const hasMeasured =
+    items.some((it) => it.measuredValue != null) ||
+    sessionResults.some((s) => s.status === "completed");
+  const showSkipAll =
+    targetDimNo == null && !hasMeasured && canSkipAll(detail);
+
   const productionNg = detail.productionAppearanceResult === "NG";
 
   if (totalSteps === 0) {
@@ -718,6 +751,14 @@ export default function CrossCheckMeasurePage() {
             onSkip={handleSkip}
             onGoBack={canGoBack ? goToPreviousStep : undefined}
             onMeasureWithoutPhoto={startMeasureWithoutPhoto}
+            onSkipAll={
+              showSkipAll
+                ? () => {
+                    setSkipAllError(null);
+                    setShowSkipAllModal(true);
+                  }
+                : undefined
+            }
           />
         )}
 
@@ -875,6 +916,15 @@ export default function CrossCheckMeasurePage() {
           </div>
         </div>
       )}
+
+      <SkipAllModal
+        open={showSkipAllModal}
+        mode="skip"
+        isSubmitting={skipAllMut.isPending}
+        error={skipAllError}
+        onCancel={closeSkipAllModal}
+        onConfirm={confirmSkipAll}
+      />
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
