@@ -19,6 +19,8 @@ export default {
     incomplete: "Incomplete",
     incompleteApproved: "Incomplete (Approved)",
     skipped: "Skipped",
+    terminated: "Finalized Early",
+    unknown: "Unknown",
   },
   meta: {
     round: "Round",

@@ -51,6 +51,16 @@ const STATUS_BADGE: Record<
     labelKey: "status.skipped",
     className: "border-gray-200 bg-[#F3F4F6] text-[#9CA3AF]",
   },
+  TERMINATED: {
+    labelKey: "status.terminated",
+    className: "border-[#FECACA] bg-[#FEF2F2] text-[#B91C1C]",
+  },
+};
+
+// 서버에 새 상태가 생겨도 목록 전체가 죽지 않도록 — TERMINATED 추가 때 실제로 크래시났다.
+const UNKNOWN_BADGE = {
+  labelKey: "status.unknown",
+  className: "border-gray-200 bg-[#F3F4F6] text-[#6B7280]",
 };
 
 function matchesTab(status: MyInspectionStatus, tab: StatusTab): boolean {
@@ -172,7 +182,7 @@ export default function AdminInspectionListPage() {
       ) : (
         <ul className="flex flex-col gap-2">
           {filtered.map((item) => {
-            const badge = STATUS_BADGE[item.status];
+            const badge = STATUS_BADGE[item.status] ?? UNKNOWN_BADGE;
             const deletable = item.status === "DRAFT";
             return (
               <li
