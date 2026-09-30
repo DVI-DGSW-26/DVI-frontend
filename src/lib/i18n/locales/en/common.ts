@@ -22,4 +22,11 @@ export default {
     error: "Something went wrong",
     empty: "No data",
   },
+  slot: {
+    INITIAL: "First-off",
+    MIDDLE: "In-process",
+    FINAL: "Last-off",
+    night: "Night {{label}}",
+    nightOnly: "Night",
+  },
 } as const;

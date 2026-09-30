@@ -20,6 +20,7 @@ import { isUnprocessed } from "../lib/assigned";
 import { TODAY_DATE_FILTER, matchesDateFilter } from "../lib/dateFilter";
 import { formatDateTime } from "../../../lib/datetime";
 import CrossCheckCard from "./CrossCheckCard";
+import { slotLabelText } from "../../../lib/slotLabel";
 
 // 홈에는 할 수 있는 검사 중 가장 오래 기다린 몇 건만 — 나머지는 순회검사 현황에서.
 const HOME_ACTIONABLE_LIMIT = 5;
@@ -294,7 +295,7 @@ const QualityHomePage = () => {
                         {cc.product.name}
                       </div>
                       <div className="mt-0.5 truncate text-xs text-[#6B7280]">
-                        {cc.equipment.name} · {cc.typeLabel}
+                        {cc.equipment.name} · {slotLabelText(cc.typeLabel)}
                       </div>
                       <div className="mt-0.5 text-xs text-[#B91C1C]">
                         {t("home.rejectedNotice")}

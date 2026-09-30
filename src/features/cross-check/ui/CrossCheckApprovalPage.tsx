@@ -24,6 +24,7 @@ import DateRangeFilter from "./DateRangeFilter";
 import DeleteInspectionModal from "../../my-inspection/ui/DeleteInspectionModal";
 import Toast from "../../inspection/ui/Toast";
 import { useViewState } from "../../../lib/viewState";
+import { slotLabelText } from "../../../lib/slotLabel";
 
 function toDeleteErrorMessage(
   err: unknown,
@@ -374,7 +375,7 @@ function ApprovalCard({
               </span>
             )}
             <span className="text-sm font-semibold text-[#212121]">
-              {cc.typeLabel}
+              {slotLabelText(cc.typeLabel)}
             </span>
             <span
               className="rounded-md px-2 py-0.5 text-xs font-semibold"

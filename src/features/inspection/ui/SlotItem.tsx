@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react";
 import type { InspectionSlot } from "../type/types";
 import { formatSlotTime } from "../lib/format";
 import ShiftBadge from "../../../components/shared/ShiftBadge";
+import { slotLabelText } from "../../../lib/slotLabel";
 
 export type SlotStatus =
   | "COMPLETED"
@@ -165,12 +166,12 @@ export default function SlotItem({ slot, status, onTap, onSkip }: Props) {
         <div
           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${avatarClass}`}
         >
-          {slot.label}
+          {slotLabelText(slot.label)}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-medium text-[#212121]">
-              {slot.label}
+              {slotLabelText(slot.label)}
             </span>
             {/* 주/야는 서버가 준 shift 로만 판단한다 (slot.type 접두어 아님). */}
             <ShiftBadge shift={slot.shift} compact />
