@@ -27,6 +27,7 @@ import Toast from "../../inspection/ui/Toast";
 import { useAuth } from "../../auth/AuthContext";
 import { hasRole } from "../../auth/roles";
 import { useProcessLabel } from "../../process";
+import { slotLabelText } from "../../../lib/slotLabel";
 
 function formatDateTime(iso: string) {
   const d = new Date(iso);
@@ -345,7 +346,7 @@ const AdminReportDetailPageMobile = () => {
           />
           <InfoCell
             label={t("detail.inspectionRound")}
-            value={data.inspectionLabel || "—"}
+            value={slotLabelText(data.inspectionLabel) || "—"}
           />
           {/* 판정 불가하면(초품 검사 시각·슬롯 타입 모두 불충분) 아예 숨긴다. */}
           {shift && (
@@ -401,7 +402,7 @@ const AdminReportDetailPageMobile = () => {
           title={t("detail.measurementsTitle")}
           trailing={
             <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
-              {data.inspectionLabel || "—"}
+              {slotLabelText(data.inspectionLabel) || "—"}
             </span>
           }
         >
@@ -430,7 +431,7 @@ const AdminReportDetailPageMobile = () => {
             title={t("detail.selfSection")}
             trailing={
               <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
-                {data.inspectionLabel || "—"}
+                {slotLabelText(data.inspectionLabel) || "—"}
               </span>
             }
           >
@@ -457,7 +458,7 @@ const AdminReportDetailPageMobile = () => {
             title={t("detail.patrolSection")}
             trailing={
               <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
-                {data.inspectionLabel || "—"}
+                {slotLabelText(data.inspectionLabel) || "—"}
               </span>
             }
           >

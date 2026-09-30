@@ -21,7 +21,7 @@ import { formatTolerance } from "../../inspection/lib/format";
 import { formatDateTime, parseServerDate } from "../../../lib/datetime";
 import { formatSlotTime } from "./inspectedTime";
 import { resolveShift } from "./shift";
-import { withSlotLabel } from "../../../lib/slotLabel";
+import { slotLabelText, withSlotLabel } from "../../../lib/slotLabel";
 
 // 문서 본문도 발행 시점의 앱 언어(한/영)를 따른다. React 밖이라 싱글턴으로 푼다.
 const tr = (key: string, opts?: Record<string, unknown>): string =>
@@ -369,7 +369,7 @@ function inspectionLabelText(detail: ReportDetail): string {
       labels: columns.map(columnLabel).join(" · "),
     });
   }
-  return detail.inspectionLabel;
+  return slotLabelText(detail.inspectionLabel);
 }
 
 // 근무조(주간/야간). 판정할 수 없으면 칸 자체를 빼서 빈 항목이 남지 않게 한다.
