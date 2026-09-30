@@ -10,7 +10,9 @@ export type MyInspectionStatus =
   | "COMPLETED"
   | "INCOMPLETE"
   | "INCOMPLETE_APPROVED"
-  | "SKIPPED";
+  | "SKIPPED"
+  // 품질문제 조기 마감(POST /inspection/{id}/terminate) — 그 차수까지 묶어 보고서를 즉시 발행한 건.
+  | "TERMINATED";
 
 export interface MyInspectionProduct {
   id: number;

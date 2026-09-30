@@ -19,6 +19,8 @@ export default {
     incomplete: "미완료",
     incompleteApproved: "미완료(승인)",
     skipped: "건너뜀",
+    terminated: "조기종료",
+    unknown: "알 수 없음",
   },
   meta: {
     round: "차수",
