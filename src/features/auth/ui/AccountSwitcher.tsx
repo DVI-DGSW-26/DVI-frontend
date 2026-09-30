@@ -10,9 +10,9 @@ import { SWITCHABLE_ACCOUNTS } from "../switchableAccounts";
 import type { SwitchableAccount } from "../switchableAccounts";
 
 /**
- * 전환 대상. 목록에 없는 계정(테스트 계정 등)도 이 기기에 로그인해 둔 적이 있으면
- * 저장된 토큰으로 오갈 수 있게 보여 준다. 그런 계정은 비밀번호가 없어서, 토큰이
- * 만료되면 직접 다시 로그인해야 한다.
+ * 전환 대상. 목록에 없는 계정도 이 기기에 로그인해 둔 적이 있으면 저장된 토큰으로
+ * 오갈 수 있게 보여 준다. 그런 계정은 비밀번호가 없어서, 토큰이 만료되면 직접
+ * 다시 로그인해야 한다. 테스트 계정(TEST)은 전환 대상에서 뺀다.
  */
 type SwitchTarget = Omit<SwitchableAccount, "password"> & { password?: string };
 
@@ -33,7 +33,11 @@ export default function AccountSwitcher({ onDone }: Props) {
   const targets: SwitchTarget[] = [
     ...SWITCHABLE_ACCOUNTS,
     ...accounts
-      .filter((a) => !SWITCHABLE_ACCOUNTS.some((s) => s.loginId === a.loginId))
+      .filter(
+        (a) =>
+          a.role !== "TEST" &&
+          !SWITCHABLE_ACCOUNTS.some((s) => s.loginId === a.loginId),
+      )
       .map((a) => ({ loginId: a.loginId, label: a.name, role: a.role })),
   ];
 
