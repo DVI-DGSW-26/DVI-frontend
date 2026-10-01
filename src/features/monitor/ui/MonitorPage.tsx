@@ -1,5 +1,12 @@
 import { Icon } from "@iconify/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMonitorStream } from "../api/useMonitorStream";
@@ -96,6 +103,65 @@ const PAGES: PageDef[] = [
   },
 ];
 
+/**
+ * 이 화면이 설계된 기준 크기. 줄 높이·칸 너비·두 단 분할 문턱이 모두 이 크기를
+ * 전제로 잡혀 있다.
+ */
+const DESIGN_WIDTH = 1920;
+const DESIGN_HEIGHT = 1080;
+
+/**
+ * 좁은 화면을 "더 좁은 화면"이 아니라 "축소된 기준 화면"으로 만든다.
+ *
+ * 노트북(1366·1280 등)에서 그냥 그리면 기준 너비를 전제로 한 것들이 줄줄이 무너진다 —
+ * 머리말 지표가 두 줄로 접히고, 범례가 카드 제목 아래로 내려가고, 두 단 분할 문턱
+ * (TWO_COLUMN_MIN_WIDTH) 에 못 미쳐 한 단으로 떨어진다. 그렇게 깎인 높이가 그대로
+ * 목록 영역에서 빠져서, 1920 에서 아홉 줄이 보이던 화면이 한 줄까지 내려간다.
+ *
+ * 그래서 폭을 기준 너비로 고정하고 그 비율만큼 통째로 축소한다. 레이아웃 계산은 늘
+ * 1920 폭에서 이뤄지므로 접힘·분할 문턱이 화면 크기와 무관해지고, 남는 세로는 그대로
+ * 줄 수로 돌아간다. 글자는 작아지지만 노트북은 벽걸이와 달리 가까이서 보므로 읽는 데
+ * 문제가 없고, 무엇보다 "몇 줄이 보이나"가 기기마다 달라지지 않는다.
+ *
+ * 넓은 화면에서는 반대로 확대한다. 벽걸이는 멀리서 보는 화면이라 4K 모니터에 기준
+ * 크기 그대로 그리면 글자가 화면 대비 절반으로 작아져 읽을 수 없다. 확대해도 보이는
+ * 줄 수는 기준 화면과 똑같으므로 잃는 것이 없다.
+ *
+ * 결과적으로 어느 기기에서 띄우든 같은 화면이 나온다 — 노트북이든 허브로 물린 대형
+ * 모니터든 "몇 줄이 보이나"가 달라지지 않는다.
+ */
+function useDesignScale(): { scale: number; width: number; height: number } {
+  const [vp, setVp] = useState(() => ({
+    w: typeof window === "undefined" ? DESIGN_WIDTH : window.innerWidth,
+    h: typeof window === "undefined" ? 1080 : window.innerHeight,
+  }));
+
+  // 그린 뒤에 재면 첫 프레임이 원래 크기로 한 번 번쩍인다 — 그리기 전에 잰다.
+  useLayoutEffect(() => {
+    const measure = () =>
+      setVp((prev) =>
+        prev.w === window.innerWidth && prev.h === window.innerHeight
+          ? prev
+          : { w: window.innerWidth, h: window.innerHeight },
+      );
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+
+  // 가로·세로 중 더 빡빡한 쪽에 맞춘다. 폭만 기준으로 삼으면 울트라와이드처럼 가로만
+  // 긴 화면에서 세로가 기준보다 짧아져 오히려 줄이 줄어든다. 이렇게 두면 어떤 화면이든
+  // 최소한 기준 크기만큼은 담고, 여유 있는 쪽으로는 그만큼 더 담는다.
+  const scale = Math.min(vp.w / DESIGN_WIDTH, vp.h / DESIGN_HEIGHT);
+  // 나눗셈 결과를 그대로 쓰면 1919.9999 같은 값이 나와 clientHeight 가 1px 모자라게
+  // 반올림되고, 그 1px 때문에 목록 한 줄이 통째로 다음 페이지로 밀린다 — 내림한다.
+  return {
+    scale,
+    width: Math.floor(vp.w / scale),
+    height: Math.floor(vp.h / scale),
+  };
+}
+
 export default function MonitorPage() {
   const { t } = useTranslation("monitor");
   const stream = useMonitorStream();
@@ -108,6 +174,8 @@ export default function MonitorPage() {
   );
 
   const data: BoardData = { stream, now, today };
+
+  const design = useDesignScale();
 
   const [searchParams, setSearchParams] = useSearchParams();
   // ?page=quality 로 들어오면 그 페이지에 고정한 채 시작한다 — 모니터 여러 대에
@@ -193,10 +261,21 @@ export default function MonitorPage() {
 
   return (
     // 화면 밖으로 넘기지 않는다 — 넘치는 항목은 스크롤이 아니라 페이지로 보여준다.
+    // 바깥은 실제 화면 크기, 안쪽은 기준 너비로 그린 뒤 그만큼 축소한다(useDesignScale).
     <div
-      className="flex h-dvh flex-col overflow-hidden"
-      style={{ backgroundColor: T.neutral.sub, color: T.neutral.ink }}
+      className="h-dvh w-screen overflow-hidden"
+      style={{ backgroundColor: T.neutral.sub }}
     >
+      <div
+        className="flex flex-col overflow-hidden"
+        style={{
+          width: design.width,
+          height: design.height,
+          transform: `scale(${design.scale})`,
+          transformOrigin: "top left",
+          color: T.neutral.ink,
+        }}
+      >
       <header
         className="flex shrink-0 items-center justify-between gap-6 px-8 py-3"
         style={{
@@ -269,7 +348,8 @@ export default function MonitorPage() {
         className="flex min-h-0 flex-1 flex-col"
         style={{ animation: "monitor-page-in 340ms ease-out" }}
       >
-        {page.render(data)}
+          {page.render(data)}
+        </div>
       </div>
     </div>
   );

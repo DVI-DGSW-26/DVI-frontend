@@ -21,6 +21,7 @@ import {
   todayInspections,
 } from "./mockRest";
 import { broadcast, installMockStream } from "./mockStream";
+import "../lib/i18n";
 import "../index.css";
 
 /** 현장이 움직이는 흉내 — 6초마다 하나씩 올라간다. */
