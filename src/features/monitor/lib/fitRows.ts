@@ -6,8 +6,14 @@ import type { BoxSize } from "./useBoxSize";
 
 /** 줄 높이 상한 — 줄이 적을 때 쓸데없이 커지지 않게 막는다. */
 export const ROW_HEIGHT_MAX = 158;
-/** 줄 높이 하한 — 이보다 낮추면 막대와 글자가 벽에서 안 읽힌다. */
-export const ROW_HEIGHT_MIN = 104;
+/**
+ * 줄 높이 하한 — 이보다 낮추면 막대와 글자가 벽에서 안 읽힌다.
+ *
+ * 압축 배치일 때 줄 하나가 실제로 쓰는 높이(제목 28 + 여백 6 + 자주 막대 34 +
+ * 여백 4 + 순회 막대 26 = 98)에 맞춰 잡았다. 줄은 세로 가운데 정렬에 넘침을
+ * 자르므로 몇 px 모자라도 위아래 여백만 깎인다.
+ */
+export const ROW_HEIGHT_MIN = 96;
 /** 이 높이 아래로는 줄 내부를 압축 배치로 바꾼다. */
 export const ROW_COMPACT_BELOW = 132;
 /** 두 단으로 나눌 수 있는 최소 너비 — 한 단이 좁아지면 시점 칸 글자가 깨진다. */
@@ -43,18 +49,37 @@ export function fitRows(count: number, box: BoxSize): RowLayout {
     };
   }
 
+  // 한 단으로 둘지는 "최소 높이로 들어가나"가 아니라 "넉넉한 높이로 들어가나"로 정한다.
+  // 최소 높이를 기준으로 삼으면 넓은 화면일수록 한 단에 욱여넣어, 가로는 남아도는데
+  // 줄만 납작해진다 — 벽걸이에서 제일 피해야 할 그림이다.
   const canSplit = box.width >= TWO_COLUMN_MIN_WIDTH;
-  const fitsInOne = count * ROW_HEIGHT_MIN <= box.height;
+  const fitsInOne = count * ROW_COMPACT_BELOW <= box.height;
   const columns = canSplit && !fitsInOne ? 2 : 1;
 
   const perColumn = Math.ceil(count / columns);
+  // 전부 한 화면에 담으려면 줄 하나가 이만큼이 된다.
   const ideal = Math.floor(box.height / perColumn);
+
+  // 하한 위로 떨어지면 그 높이로 전부 보여준다 — 줄을 낮추는 쪽이 페이지로 넘기는
+  // 쪽보다 언제나 낫다. 예전에는 하한을 밑돌면 높이를 하한으로 "올려" 버려서,
+  // 칸이 몇 px 모자란 것만으로 줄 하나가 통째로 다음 페이지로 밀렸다.
+  if (ideal >= ROW_HEIGHT_MIN) {
+    const rowHeight = Math.min(ROW_HEIGHT_MAX, ideal);
+    return {
+      columns,
+      rowHeight,
+      perPage: perColumn * columns,
+      compact: rowHeight < ROW_COMPACT_BELOW,
+    };
+  }
+
+  // 하한까지 낮춰도 안 들어간다 — 여기서부터 페이지로 넘긴다. 넘길 때도 남는 높이는
+  // 남겨 두지 않고 보이는 줄들이 나눠 갖는다.
+  const rowsPerColumn = Math.max(1, Math.floor(box.height / ROW_HEIGHT_MIN));
   const rowHeight = Math.min(
     ROW_HEIGHT_MAX,
-    Math.max(ROW_HEIGHT_MIN, ideal),
+    Math.floor(box.height / rowsPerColumn),
   );
-
-  const rowsPerColumn = Math.max(1, Math.floor(box.height / rowHeight));
   return {
     columns,
     rowHeight,
