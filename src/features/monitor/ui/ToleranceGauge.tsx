@@ -25,6 +25,7 @@ export function ToleranceGauge({
   value,
   height = 20,
   bounds = true,
+  compact = false,
 }: {
   band: Band;
   /** 측정값. 없으면 빈 눈금만 그린다(아직 측정 전). */
@@ -32,6 +33,11 @@ export function ToleranceGauge({
   height?: number;
   /** 아래에 허용 하한·상한 숫자를 적을지. */
   bounds?: boolean;
+  /**
+   * 줄이 얇아졌을 때의 압축 배치. 막대·숫자 두 줄이 모두 한 단계씩 낮아진다 —
+   * 눈금의 구조(이탈·허용·측정값·경계)는 그대로 두고 크기만 줄인다.
+   */
+  compact?: boolean;
 }) {
   const out = value != null && (value < band.min || value > band.max);
   const offset = value != null ? gaugeOffset(value, band) : null;
@@ -110,7 +116,11 @@ export function ToleranceGauge({
         두면 하필 가장 중요한 순간에 두 숫자가 겹친다.
       */}
       {bounds && (
-        <div className="relative mt-1 h-6 w-full text-lg font-bold tabular-nums">
+        <div
+          className={`relative w-full font-bold tabular-nums ${
+            compact ? "mt-0.5 h-5 text-base" : "mt-1 h-6 text-lg"
+          }`}
+        >
           {offset != null && value != null && (
             <span
               className="absolute whitespace-nowrap"
@@ -124,7 +134,9 @@ export function ToleranceGauge({
       {bounds && (
         // 경계 숫자는 띠 경계 바로 아래에 붙인다 — 이 자리가 곧 허용 한계다.
         <div
-          className="relative h-5 w-full text-sm font-bold tabular-nums"
+          className={`relative w-full font-bold tabular-nums ${
+            compact ? "h-4 text-xs" : "h-5 text-sm"
+          }`}
           style={{ color: T.success[700] }}
         >
           <span
