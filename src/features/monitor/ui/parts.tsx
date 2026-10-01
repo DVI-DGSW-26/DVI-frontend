@@ -182,6 +182,7 @@ export function StatCard({
   tag,
   dense = false,
   tone = "normal",
+  tint,
   value,
   unit,
   color,
@@ -199,10 +200,16 @@ export function StatCard({
    */
   dense?: boolean;
   /**
-   * 경고 단계. "alert" 면 카드를 통째로 물들여 다른 칸보다 먼저 눈에 들어오게 한다.
-   * 한 화면에 하나만 쓴다 — 여럿이 빨개지면 어디를 봐야 할지가 다시 사라진다.
+   * 경고 단계. "alert" 면 연한 바탕과 굵은 테두리로 다른 칸보다 먼저 눈에 들어오게 한다.
+   * 한 화면에 하나만 쓴다 — 여럿이 물들면 어디를 봐야 할지가 다시 사라진다.
+   *
+   * 예전에는 진한 색으로 통째로 칠하고 글자를 흰색으로 뒤집었는데, 벽에서 그 한 칸만
+   * 색덩어리로 튀어 옆 칸들의 수가 같이 안 읽혔다. 연한 바탕 + 진한 글자는 대비를
+   * 그대로 지키면서(100/700 조합 4.51~9.62) 줄 전체의 균형을 깨지 않는다.
    */
   tone?: "normal" | "alert";
+  /** alert 일 때 칠할 연한 바탕. 글자는 color 를 그대로 쓴다. */
+  tint?: string;
   value: React.ReactNode;
   /** 값 뒤 단위 — "건", "%" 처럼 작게 붙는다. */
   unit?: string;
@@ -215,9 +222,9 @@ export function StatCard({
   foot?: React.ReactNode;
 }) {
   const alert = tone === "alert";
-  // 물든 카드 안에서는 글자가 바탕색을 이긴다 — 큰 수는 흰색, 이름표는 한 단계 낮춘 흰색.
-  const ink = alert ? T.neutral.white : color;
-  const subInk = alert ? "rgba(255,255,255,0.82)" : T.inkSub;
+  // 연한 바탕 위에서는 글자를 뒤집지 않는다 — 제 색 그대로가 가장 잘 읽힌다.
+  const ink = color;
+  const subInk = alert ? color : T.inkSub;
 
   return (
     <div
@@ -225,8 +232,9 @@ export function StatCard({
         dense ? "px-5 py-2.5" : "px-6 py-4"
       }`}
       style={{
-        backgroundColor: alert ? color : T.neutral.white,
-        border: `1px solid ${alert ? color : T.neutral.border}`,
+        backgroundColor: alert ? (tint ?? T.error[100]) : T.neutral.white,
+        // 물든 칸은 테두리도 한 겹 굵게 — 바탕이 연해진 만큼 윤곽으로 세운다.
+        border: `${alert ? 2 : 1}px solid ${alert ? color : T.neutral.border}`,
         boxShadow: CARD_SHADOW,
       }}
     >
@@ -247,7 +255,7 @@ export function StatCard({
         )}
         <span
           className={`${dense ? "text-base" : "text-lg"} ${alert ? "font-bold" : ""}`}
-          style={{ color: alert ? T.neutral.white : T.inkSub }}
+          style={{ color: alert ? color : T.inkSub }}
         >
           {label}
         </span>

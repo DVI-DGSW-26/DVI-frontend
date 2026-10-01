@@ -12,6 +12,7 @@ import type {
 } from "../../inspection/type/types";
 import { usePagedList } from "../lib/usePagedList";
 import { useFitCount } from "../lib/useFitCount";
+import { useBoxSize } from "../lib/useBoxSize";
 import { formatElapsed } from "../lib/time";
 import { bandOf, formatDeviation, formatValue } from "../lib/tolerance";
 import { T } from "../lib/tokens";
@@ -45,7 +46,39 @@ import type { MonitorInspection, MonitorSnapshot } from "../type/types";
 /** 대기열 한 줄 높이(px) — 한 페이지에 몇 줄 들어가는지 이 값으로 나눠 구한다. */
 const QUEUE_ROW_HEIGHT = 76;
 /** 측정 항목 한 줄 높이(px). 고정이어야 페이지 계산이 맞는다. */
-const DIM_ROW_HEIGHT = 78;
+/** 항목 줄 높이 상한 — 항목이 적을 때 쓸데없이 커지지 않게 막는다. */
+const DIM_ROW_MAX = 78;
+/**
+ * 항목 줄 높이 하한 — 압축 배치에서 측정값(30px)과 눈금(16+2+20+16=54px)이
+ * 겹치지 않는 최소.
+ */
+const DIM_ROW_MIN = 54;
+/** 이 높이 아래로는 측정값과 눈금을 압축 배치로 바꾼다. */
+const DIM_ROW_COMPACT_BELOW = 70;
+
+/**
+ * 측정 항목은 한 검사에 많아야 열 개다. 열 줄이면 줄 높이를 낮춰서라도 한 화면에
+ * 다 보여준다 — 현황판과 같은 규칙으로, 페이지 넘김은 하한까지 낮춰도 안 들어갈
+ * 때의 마지막 수단이다(fitRows 참고).
+ */
+function fitDims(
+  count: number,
+  avail: number,
+): { rowHeight: number; perPage: number; compact: boolean } {
+  if (avail <= 0 || count <= 0) {
+    return { rowHeight: DIM_ROW_MAX, perPage: 1, compact: false };
+  }
+  const ideal = Math.floor(avail / count);
+  const pick = (rowHeight: number, perPage: number) => ({
+    rowHeight,
+    perPage,
+    compact: rowHeight < DIM_ROW_COMPACT_BELOW,
+  });
+  if (ideal >= DIM_ROW_MIN) return pick(Math.min(DIM_ROW_MAX, ideal), count);
+
+  const perPage = Math.max(1, Math.floor(avail / DIM_ROW_MIN));
+  return pick(Math.min(DIM_ROW_MAX, Math.floor(avail / perPage)), perPage);
+}
 /** 한 검사를 보여주는 시간. 항목을 눈으로 훑을 만큼은 머문다. */
 const ITEM_INTERVAL_MS = 12_000;
 
@@ -216,8 +249,9 @@ function DetailCard({ item, now }: { item: MonitorInspection; now: Date }) {
   const results = detail?.results ?? [];
 
   const rowsRef = useRef<HTMLDivElement>(null);
-  const perPage = useFitCount(rowsRef, DIM_ROW_HEIGHT);
-  const page = usePagedList(results, perPage, PAGE_INTERVAL_MS);
+  const box = useBoxSize(rowsRef);
+  const dims = fitDims(results.length, box.height);
+  const page = usePagedList(results, dims.perPage, PAGE_INTERVAL_MS);
 
   // 가공 공정은 치수 항목도 작업자 판정이 우선이라 판정에 공정이 필요하다.
   const machining = detail?.product.process === "MACHINING";
@@ -252,6 +286,8 @@ function DetailCard({ item, now }: { item: MonitorInspection; now: Date }) {
               key={r.resultId ?? r.dimId}
               result={r}
               machining={machining}
+              height={dims.rowHeight}
+              compact={dims.compact}
             />
           ))}
         </Flip>
@@ -403,9 +439,15 @@ function DimColumns() {
 function DimRow({
   result,
   machining,
+  height,
+  compact,
 }: {
   result: InspectionDetailResult;
   machining: boolean;
+  /** 줄 높이(px) — 항목 수에 맞춰 바깥에서 정해 준다. */
+  height: number;
+  /** 줄이 얇아졌을 때의 압축 배치. */
+  compact: boolean;
 }) {
   const { t } = useTranslation("monitor");
   const passFail = (result.valueType ?? "NUMBER") === "PASS_FAIL";
@@ -422,7 +464,7 @@ function DimRow({
       className="grid items-center gap-x-4"
       style={{
         gridTemplateColumns: DIM_GRID,
-        height: DIM_ROW_HEIGHT,
+        height,
         borderTop: `1px solid ${T.neutral.border}`,
         // 불량 줄은 왼쪽에 굵은 선을 세워 표시한다 — 바탕째 물들이면 눈금의 이탈
         // 구간(같은 연빨강)이 줄 배경에 묻혀, 정작 봐야 할 "어디까지가 허용인지"가
@@ -469,13 +511,15 @@ function DimRow({
         ) : (
           <>
             <span
-              className="block text-4xl leading-none font-black tabular-nums"
+              className={`block leading-none font-black tabular-nums ${
+                compact ? "text-3xl" : "text-4xl"
+              }`}
               style={{ color: ng ? T.error[700] : T.neutral.ink }}
             >
               {formatValue(result.measuredValue)}
             </span>
             <span
-              className="text-base tabular-nums"
+              className={`tabular-nums ${compact ? "text-sm" : "text-base"}`}
               style={{ color: ng ? T.error[700] : T.inkSub }}
             >
               {formatDeviation(result.measuredValue, result.standardValue)}
@@ -498,7 +542,12 @@ function DimRow({
               : t("detail.workerPicks")}
           </span>
         ) : (
-          <ToleranceGauge band={band} value={result.measuredValue} />
+          <ToleranceGauge
+            band={band}
+            value={result.measuredValue}
+            height={compact ? 16 : 20}
+            compact={compact}
+          />
         )}
       </span>
 
