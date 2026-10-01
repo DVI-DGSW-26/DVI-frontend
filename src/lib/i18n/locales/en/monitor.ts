@@ -76,7 +76,7 @@ export default {
     pagerLabel: "Progress",
     empty: "No inspections registered today",
     forbidden:
-      "This account cannot view the inspection list — sign in as a production manager or admin",
+      "This account cannot view the inspection list — sign in as an admin",
     loadFailed: "Could not load the inspection list — retrying",
     lateChip: "{{n}} overdue",
     untilPrefix: "",

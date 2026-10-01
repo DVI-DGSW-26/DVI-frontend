@@ -80,7 +80,9 @@ export default function StatusBoard({
   const slotsByProcess = useAllSlots();
   const inspectionsQuery = useTodayInspections(today);
   const { data: inspections } = inspectionsQuery;
-  // 진행도의 원본은 GET /inspection/all 인데 이 API 는 생산관리자·관리자 전용이다.
+  // 진행도의 원본은 GET /inspection/all 인데 이 API 는 생산관리자·통합관리자 전용이다.
+  // 모니터는 통합관리자로 띄우기로 했으므로 정상 운영에서는 걸리지 않는다 —
+  // 계정이 잘못 물렸을 때를 위한 안전장치다.
   // 권한이 없으면 data 가 undefined 라 빈 화면이 그대로 나가 "오늘 검사가 없다"와
   // 구분이 안 된다 — 멈춘 화면 앞에서 사람이 원인을 짐작하게 두지 않는다.
   const loadError = inspectionsQuery.isError
