@@ -208,7 +208,7 @@ export default function QualityBoard({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* 불량 검사 칸을 넓게 잡는다 — 다섯 수 중 관리자가 먼저 봐야 하는 하나다. */}
-      <div className="grid shrink-0 grid-cols-[1fr_1fr_1.35fr_1fr_1fr] gap-4 px-6 pt-5 pb-4">
+      <div className="grid shrink-0 grid-cols-[1fr_1fr_1.35fr_1fr] gap-4 px-6 pt-5 pb-4">
         <StatCard
           label={t("quality.stats.today")}
           value={summary?.inspectionsToday ?? 0}
@@ -227,6 +227,7 @@ export default function QualityBoard({
         <StatCard
           label={t("quality.stats.ngInspections")}
           tone={level === "danger" ? "alert" : "normal"}
+          tint={T.error[100]}
           value={summary?.ngInspectionCount ?? 0}
           unit={t("quality.unit.count")}
           color={LEVEL_COLOR[level]}
@@ -238,13 +239,6 @@ export default function QualityBoard({
                   level: t(`quality.level.${level}`),
                 })
           }
-        />
-        {/* 한 검사에서 여러 항목이 걸릴 수 있어 위 수보다 크다 — 더해 읽히지 않게 이름을 나눈다. */}
-        <StatCard
-          label={t("quality.stats.defectItems")}
-          value={summary?.defectItemCount ?? defects.length}
-          unit={t("quality.unit.items")}
-          color={LEVEL_COLOR[level]}
         />
         <StatCard
           label={t("quality.stats.terminated")}
