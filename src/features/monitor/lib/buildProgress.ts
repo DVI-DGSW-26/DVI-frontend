@@ -1,6 +1,11 @@
 import type { AdminInspection } from "../../admin-inspection/api/types";
 import type { InspectionSlot } from "../../inspection/type/types";
-import type { MonitorCrossCheck, MonitorCrossCheckStatus } from "../type/types";
+import {
+  isLiveCrossCheck,
+  type MonitorCrossCheck,
+  type MonitorCrossCheckStatus,
+  type MonitorLiveCrossCheckStatus,
+} from "../type/types";
 
 // 한 칸의 상태. NONE 은 "아직 기록이 없는 시점"(미시작).
 export type CellStatus =
@@ -25,16 +30,26 @@ export type CrossCellStatus =
   | "WAITING"
   /** 순회검사가 끝남 — 스냅샷엔 없고 기록만 남은 상태. */
   | "CHECKED"
-  /** 진행중 순회검사가 걸린 칸 — 스냅샷의 상태를 그대로 쓴다. */
-  | MonitorCrossCheckStatus
+  /**
+   * 진행중 순회검사가 걸린 칸. 스냅샷의 상태를 그대로 쓰되 진행중인 셋만이다 —
+   * 끝난 건(COMPLETED·APPROVED)도 스냅샷에 오지만 칸에서는 CHECKED 로 접는다.
+   * 여기에 서버 상태를 통째로 들이면 화면이 모르는 키가 섞여 들어온다.
+   */
+  | MonitorLiveCrossCheckStatus
   /** 서버가 hasCrossCheck 를 안 내려줌 — 없다고 단정하지 않는다. */
   | "UNKNOWN";
 
-/** 손이 가야 하는 순서 — 반려 > 승인대기 > 작성중. 줄 정렬과 목록 정렬에 공용. */
+/**
+ * 손이 가야 하는 순서 — 반려 > 승인대기 > 작성중. 줄 정렬과 목록 정렬에 공용.
+ * 끝난 건은 급할 것이 없어 맨 뒤다. 다섯 상태를 모두 적어 둬야 조회가 undefined 로
+ * 빠지지 않는다 — Math.min(x, undefined) 는 NaN 이라 정렬이 통째로 어긋난다.
+ */
 export const CROSS_CHECK_URGENCY: Record<MonitorCrossCheckStatus, number> = {
   REJECTED: 0,
   PENDING_APPROVAL: 1,
   DRAFT: 2,
+  COMPLETED: 3,
+  APPROVED: 3,
 };
 
 export interface ProgressCell {
@@ -165,7 +180,9 @@ export function buildProgressRows(
         (c) => c.cross === "CHECKED" || c.cross === "PENDING_APPROVAL",
       ).length,
       crossWaiting: cells.filter((c) => c.cross === "WAITING").length,
-      crossLive: cells.filter((c) => c.crossCheck).length,
+      crossLive: cells.filter(
+        (c) => c.crossCheck && isLiveCrossCheck(c.crossCheck.status),
+      ).length,
       crossTarget: cells.filter((c) => c.cross !== "NA").length,
       active: cells.some((c) => c.status === "DRAFT"),
     });
@@ -186,7 +203,8 @@ export function buildProgressRows(
 function crossUrgency(row: ProgressRow): number {
   let best = Number.MAX_SAFE_INTEGER;
   for (const c of row.cells) {
-    if (c.crossCheck) {
+    // 끝난 건은 줄을 끌어올리지 않는다 — 급한 줄만 위로 올라와야 한다.
+    if (c.crossCheck && isLiveCrossCheck(c.crossCheck.status)) {
       best = Math.min(best, CROSS_CHECK_URGENCY[c.crossCheck.status]);
     }
   }
@@ -202,8 +220,10 @@ function crossCellStatus(
   hasCrossCheck: boolean | undefined,
   live: MonitorCrossCheck | null,
 ): CrossCellStatus {
-  if (live) return live.status;
-  // 스냅샷엔 없는데 기록은 있다 = 이미 끝난 순회검사.
+  // 끝난 건도 스냅샷에 오므로(오늘자) 상태를 그대로 쓰면 안 된다 — 칸이 아는
+  // 셋만 통과시키고 나머지는 '완료'로 접는다.
+  if (live) return isLiveCrossCheck(live.status) ? live.status : "CHECKED";
+  // 스냅샷엔 없는데 기록은 있다 = 오늘자가 아닌 이미 끝난 순회검사.
   if (hasCrossCheck) return "CHECKED";
   // 순회검사는 자주검사가 끝난 시점에만 붙는다 — 그 전엔 "대상 아님".
   if (status !== "COMPLETED" && status !== "INCOMPLETE_APPROVED") return "NA";

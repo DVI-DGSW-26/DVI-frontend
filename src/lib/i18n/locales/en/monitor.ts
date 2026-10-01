@@ -75,6 +75,9 @@ export default {
     title: "Progress by Slot",
     pagerLabel: "Progress",
     empty: "No inspections registered today",
+    forbidden:
+      "This account cannot view the inspection list — sign in as a production manager or admin",
+    loadFailed: "Could not load the inspection list — retrying",
     lateChip: "{{n}} overdue",
     untilPrefix: "",
     untilSuffix: " in",
