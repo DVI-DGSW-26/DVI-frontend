@@ -14,25 +14,59 @@ export interface MonitorInspection {
   equipmentName: string;
   customerName: string;
   workerName: string;
-  /** UTC ISO-8601. */
+  /**
+   * 오프셋 없는 KST ISO-8601 ("2026-07-20T16:20:00.000").
+   * 'Z' 나 +09:00 이 없으므로 parseServerDate 로 읽는다 — Date.parse 로 바로 읽으면
+   * 기기 시간대만큼 어긋난다.
+   */
   updatedAt: string;
 }
 
-/** 진행중 순회검사 상태 — 완료/승인은 "진행중"이 아니라 내려오지 않는다. */
-export type MonitorCrossCheckStatus = "DRAFT" | "PENDING_APPROVAL" | "REJECTED";
+/**
+ * 순회검사 상태.
+ *
+ * 스냅샷에는 진행중(DRAFT·PENDING_APPROVAL·REJECTED)이 날짜와 무관하게 전부 오고,
+ * 끝난 건(COMPLETED·APPROVED)은 오늘자만 온다 — 시점별로 누가 검사했는지를 칸에
+ * 적기 위해서다(서버 스펙 2026-10-01 확인).
+ */
+export type MonitorCrossCheckStatus =
+  | "DRAFT"
+  | "PENDING_APPROVAL"
+  | "REJECTED"
+  | "COMPLETED"
+  | "APPROVED";
+
+/** 아직 사람 손이 남은 순회검사 상태. */
+export type MonitorLiveCrossCheckStatus =
+  | "DRAFT"
+  | "PENDING_APPROVAL"
+  | "REJECTED";
+
+/** 아직 사람 손이 남은 순회검사인지 — 끝난 건은 칸의 '완료'로만 쓴다. */
+export function isLiveCrossCheck(
+  s: MonitorCrossCheckStatus,
+): s is MonitorLiveCrossCheckStatus {
+  return s === "DRAFT" || s === "PENDING_APPROVAL" || s === "REJECTED";
+}
 
 export interface MonitorCrossCheck {
   crossCheckId: number;
   /** 대상 자주검사 id — 진행도 줄의 어느 칸인지 이걸로 정확히 맞춘다. */
   inspectionId: number;
   status: MonitorCrossCheckStatus;
-  /** 슬롯 코드 (DAY_1 등). slotLabel 이 없을 때 대신 표시. */
+  /** 슬롯 코드 (DAY_1 등). typeLabel 이 없을 때 대신 표시. */
   type: string;
-  /** 표시용 슬롯 라벨 — "초/중/종" 또는 "08:00". null 이면 type 으로 표시. */
-  slotLabel: string | null;
+  /**
+   * 표시용 슬롯 라벨 — "초/중/종" 또는 "08:00". null 이면 type 으로 표시.
+   * 자주검사 쪽은 slotLabel, 순회검사 쪽은 typeLabel 이다 — 서버 필드명이 다르다.
+   */
+  typeLabel: string | null;
   productName: string;
   equipmentName: string;
-  checkerName: string;
+  /** 검사자명. release(이관 대기)로 담당자가 빈 건은 null. */
+  checkerName: string | null;
+  /** 반려 사유. status=REJECTED 건에만 값이 있고 그 외는 null. */
+  rejectReason: string | null;
   updatedAt: string;
 }
 

@@ -1,5 +1,6 @@
 import { useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import axios from "axios";
 import { useAllSlots } from "../api/useAllSlots";
 import { useTodayInspections } from "../api/useTodayInspections";
 import { buildProgressRows } from "../lib/buildProgress";
@@ -13,7 +14,6 @@ import { useFitCount } from "../lib/useFitCount";
 import { useBoxSize } from "../lib/useBoxSize";
 import { fitRows } from "../lib/fitRows";
 import { useInspectionReasons } from "../api/useInspectionReasons";
-import { useCrossCheckOwners } from "../api/useCrossCheckOwners";
 import {
   formatCountdown,
   formatElapsed,
@@ -34,6 +34,7 @@ import {
   Pager,
   StatCard,
 } from "./parts";
+import { isLiveCrossCheck } from "../type/types";
 import type { MonitorCrossCheck, MonitorSnapshot } from "../type/types";
 
 // 페이지1 — 실시간 현황판. 공장 벽걸이 모니터의 기본 화면이다.
@@ -77,7 +78,20 @@ export default function StatusBoard({
 }) {
   const { t } = useTranslation("monitor");
   const slotsByProcess = useAllSlots();
-  const { data: inspections } = useTodayInspections(today);
+  const inspectionsQuery = useTodayInspections(today);
+  const { data: inspections } = inspectionsQuery;
+  // 진행도의 원본은 GET /inspection/all 인데 이 API 는 생산관리자·통합관리자 전용이다.
+  // 모니터는 통합관리자로 띄우기로 했으므로 정상 운영에서는 걸리지 않는다 —
+  // 계정이 잘못 물렸을 때를 위한 안전장치다.
+  // 권한이 없으면 data 가 undefined 라 빈 화면이 그대로 나가 "오늘 검사가 없다"와
+  // 구분이 안 된다 — 멈춘 화면 앞에서 사람이 원인을 짐작하게 두지 않는다.
+  const loadError = inspectionsQuery.isError
+    ? axios.isAxiosError(inspectionsQuery.error) &&
+      (inspectionsQuery.error.response?.status === 401 ||
+        inspectionsQuery.error.response?.status === 403)
+      ? "forbidden"
+      : "loadFailed"
+    : null;
 
   const crossChecks = useMemo(
     () => snapshot?.crossChecks ?? [],
@@ -205,7 +219,6 @@ export default function StatusBoard({
   );
 
   // 끝난 차수의 순회검사자 이름은 스냅샷에 없다 — 배정 목록에서 메운다.
-  const crossOwners = useCrossCheckOwners();
 
 
   return (
@@ -318,11 +331,13 @@ export default function StatusBoard({
                     height={layout.rowHeight}
                     compact={layout.compact}
                     skipReasons={skipReasons}
-                    crossOwners={crossOwners}
                   />
                 ))}
               </div>
             </Flip>
+            {!inspections && loadError && (
+              <Empty text={t(`progress.${loadError}`)} />
+            )}
             {inspections && rows.length === 0 && (
               <Empty text={t("progress.empty")} />
             )}
@@ -360,7 +375,6 @@ function ProgressRowView({
   height,
   compact,
   skipReasons,
-  crossOwners,
 }: {
   row: ProgressRow;
   online: boolean;
@@ -373,7 +387,6 @@ function ProgressRowView({
   /** 건너뛴 칸의 사유 (자주검사 id → 사유). */
   skipReasons: Map<number, string>;
   /** 시점별 순회검사 담당자 (자주검사 id → 이름). */
-  crossOwners: Map<number, string>;
 }) {
   const { t } = useTranslation("monitor");
   const selfBar = compact ? 34 : 44;
@@ -487,7 +500,6 @@ function ProgressRowView({
           cells={row.cells}
           height={crossBar}
           now={now}
-          owners={crossOwners}
         />
       </div>
     </div>
@@ -669,12 +681,10 @@ function CrossBar({
   cells,
   height,
   now,
-  owners,
 }: {
   cells: ProgressRow["cells"];
   height: number;
   now: Date;
-  owners: Map<number, string>;
 }) {
   const { t } = useTranslation("monitor");
   return (
@@ -683,18 +693,20 @@ function CrossBar({
         const s = CROSS_STYLE[cell.cross];
         const slot = slotText(cell.label);
         const status = t(s.name);
-        const live = cell.crossCheck;
         // 검사자 이름을 칸 안에 넣는다 — 줄 오른쪽에 칩으로 몇 개만 달면 순회검사가
         // 셋 이상인 줄에서 누군가는 화면에서 사라진다. 칸에 넣으면 전원이, 자기가
         // 맡은 시점 자리에 그대로 선다.
         //
-        // 진행중 건은 스냅샷이, 끝난 건은 배정 목록이 이름을 준다. 진행중인데 이름이
-        // 없으면 이관 대기(release)라 아직 이어받은 사람이 없다는 뜻이다.
-        const fromOwners =
-          cell.inspectionId != null ? (owners.get(cell.inspectionId) ?? null) : null;
-        const checker = live
-          ? (live.checkerName ?? fromOwners ?? t("worker.awaitingTakeover"))
-          : fromOwners;
+        // 진행중 건도 끝난 건(오늘자)도 스냅샷이 이름을 준다. 예전에는 끝난 건의
+        // 이름을 GET /cross-check/assigned 로 따로 받아 왔는데, 그 API 는
+        // QUALITY·ADMIN 전용이라 생산 계정으로 띄운 모니터에서는 403 이 났다.
+        const cross = cell.crossCheck;
+        const live = cross && isLiveCrossCheck(cross.status) ? cross : null;
+        // 진행중인데 이름이 없으면 이관 대기(release)라 아직 이어받은 사람이 없다는
+        // 뜻이다. 끝난 건에 이름이 없으면 적을 것이 없으니 비워 둔다.
+        const checker =
+          cross?.checkerName ??
+          (live ? t("worker.awaitingTakeover") : null);
         // 반려는 채움색을 새로 늘리지 않고 테두리로 겹쳐 그린다 — 진행·지연 보드의
         // '지연'과 같은 방식이다. 칸의 색은 순회 대상 여부를, 테두리는 반려를 말한다.
         const rejected = cell.cross === "REJECTED";

@@ -77,6 +77,9 @@ export default {
     title: "시점별 진행도",
     pagerLabel: "진행도",
     empty: "오늘 등록된 검사가 없습니다",
+    forbidden:
+      "검사 목록을 볼 권한이 없는 계정입니다 — 모니터는 통합 관리자로 로그인해야 합니다",
+    loadFailed: "검사 목록을 불러오지 못했습니다 — 다시 시도하는 중입니다",
     lateChip: "지연 {{n}}칸",
     untilPrefix: "",
     untilSuffix: "까지",

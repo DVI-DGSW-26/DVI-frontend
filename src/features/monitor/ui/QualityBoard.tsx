@@ -4,7 +4,6 @@ import type { TFunction } from "i18next";
 import { parseServerDate } from "../../../lib/datetime";
 import { useTodayInspections } from "../api/useTodayInspections";
 import { useInspectionReasons } from "../api/useInspectionReasons";
-import { useCrossCheckReasons } from "../api/useCrossCheckReasons";
 import { usePagedList } from "../lib/usePagedList";
 import { useFitCount } from "../lib/useFitCount";
 import { formatElapsed, timeOf } from "../lib/time";
@@ -110,12 +109,7 @@ export default function QualityBoard({
     () => incomplete.map((i) => i.inspectionId),
     [incomplete],
   );
-  const rejectedIds = useMemo(
-    () => crossRejected.map((c) => c.crossCheckId),
-    [crossRejected],
-  );
   const incompleteReasons = useInspectionReasons(incompleteIds);
-  const rejectReasons = useCrossCheckReasons(rejectedIds);
 
   const actions = useMemo<ActionItem[]>(() => {
     const list: ActionItem[] = [
@@ -153,7 +147,7 @@ export default function QualityBoard({
           productName: c.productName,
           equipmentName: c.equipmentName,
           person: c.checkerName ?? t("worker.awaitingTakeover"),
-          reason: rejectReasons.get(c.crossCheckId) ?? null,
+          reason: c.rejectReason,
           at: c.updatedAt,
           note:
             inspection?.status === "DRAFT"
@@ -172,7 +166,6 @@ export default function QualityBoard({
     crossRejected,
     inspections,
     incompleteReasons,
-    rejectReasons,
     t,
   ]);
 
