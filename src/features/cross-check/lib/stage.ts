@@ -53,8 +53,7 @@ export function needsHardnessInput(
 }
 
 // 순회검사를 하지 않는 시간대 — 시간대별 검사인 AL/ST 절단의 10시·15시 차수.
-// 자주검사는 진행하지만 순회검사는 없어서, 순회검사자가 전체 항목을 한 번에 건너뛰고
-// 바로 결재 요청한다(POST /cross-check/{id}/skip-all).
+// 자주검사는 진행하지만 순회검사는 없어서 전체 항목 건너뛰기를 허용한다.
 const SKIP_ALL_PROCESSES: ProcessType[] = ["AL_CUTTING", "ST_CUTTING"];
 const SKIP_ALL_SLOT_TIMES = ["10:00", "15:00"];
 

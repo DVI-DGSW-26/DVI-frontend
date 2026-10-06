@@ -205,8 +205,7 @@ export function useCancelCrossCheck() {
   });
 }
 
-// 전체 항목 건너뛰기. DIM·외관 건너뜀 + 결재 요청까지 서버가 처리해 상태가 바뀌므로
-// 목록/이력/상세 전부 갱신한다.
+// 전체 항목 건너뛰기 후 목록/이력/상세 캐시를 갱신한다.
 export function useSkipAllCrossCheck(crossCheckId: number) {
   const qc = useQueryClient();
   return useMutation({
