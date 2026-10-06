@@ -308,7 +308,7 @@ const AdminReportDetailPageMobile = () => {
                 width={14}
                 height={14}
               />
-              {isPass ? t("detail.approved") : t("detail.rejected")}
+              {isPass ? t("result.pass") : t("result.fail")}
             </span>
           )}
         </div>
