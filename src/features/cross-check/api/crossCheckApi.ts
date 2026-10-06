@@ -153,8 +153,8 @@ export async function releaseCrossCheck(crossCheckId: number): Promise<void> {
   );
 }
 
-// 순회검사를 하지 않는 시간대(AL/ST 절단 10시·15시) 건을 한 번에 끝낸다.
-// 바디 없이 호출하면 서버가 전체 DIM·외관검사를 건너뜀 처리하고 결재 요청까지 진행한다.
+// 순회검사를 하지 않는 시간대(AL/ST 절단 10시·15시)의 전체 건너뛰기를 요청한다.
+// 바디 없이 전체 DIM·외관검사를 건너뜀 처리한다. DRAFT 상태가 남으면 호출부에서 완료 요청한다.
 export async function skipAllCrossCheck(crossCheckId: number): Promise<void> {
   await http.post<ApiResponse<Record<string, never>>>(
     `/cross-check/${crossCheckId}/skip-all`,
@@ -166,6 +166,6 @@ export async function cancelSkipAllCrossCheck(
   crossCheckId: number,
 ): Promise<void> {
   await http.post<ApiResponse<Record<string, never>>>(
-    `/cross-check/${crossCheckId}/skip-all/cancel`,
+    `/cross-check/${crossCheckId}/skip-all/cancle`,
   );
 }
