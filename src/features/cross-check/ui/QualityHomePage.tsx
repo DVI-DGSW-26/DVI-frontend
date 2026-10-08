@@ -11,7 +11,6 @@ import {
   useAssignedCrossChecks,
   useCreateCrossCheck,
   useMyCrossChecks,
-  useCrossCheckRejectReasons,
   useMyDelegation,
   useReopenCrossCheck,
 } from "../api";
@@ -118,10 +117,6 @@ const QualityHomePage = () => {
             elapsedFrom(a.updatedAt).minutes,
         ),
     [myCrossChecks],
-  );
-
-  const rejectReasons = useCrossCheckRejectReasons(
-    rejectedCrossChecks.map((c) => c.crossCheckId),
   );
 
   const handleReopen = async (cc: CrossCheckSummary) => {
@@ -320,8 +315,7 @@ const QualityHomePage = () => {
                       {t("home.rejectReasonLabel")}
                     </div>
                     <div className="mt-0.5 wrap-break-word text-xs text-[#212121]">
-                      {rejectReasons.get(cc.crossCheckId) ??
-                        t("home.rejectedNotice")}
+                      {cc.rejectReason?.trim() || t("home.rejectedNotice")}
                     </div>
                   </div>
                   <button
