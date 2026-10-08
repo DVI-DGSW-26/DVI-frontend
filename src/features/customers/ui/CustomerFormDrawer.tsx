@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useCreateCustomer, useUpdateCustomer } from "../api";
 import type { Customer } from "../api";
 
+import { useDiscardGuard } from "../../../components/shared/useDiscardGuard";
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -55,10 +56,13 @@ export default function CustomerFormDrawer({ open, onClose, customer }: Props) {
       ? t("form.submittingCreate")
       : t("form.submitCreate");
 
+  // 바깥 터치·닫기·취소로 닫을 때 입력이 있으면 한 번 묻는다(저장 성공 경로는 그대로 닫힘).
+  const guard = useDiscardGuard(open, onClose);
+
   return (
     <>
       <div
-        onClick={onClose}
+        onClick={guard.requestClose}
         className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
@@ -66,6 +70,7 @@ export default function CustomerFormDrawer({ open, onClose, customer }: Props) {
       />
 
       <aside
+        onChange={guard.track}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -77,7 +82,7 @@ export default function CustomerFormDrawer({ open, onClose, customer }: Props) {
           <h2 className="text-base font-semibold text-[#212121]">{title}</h2>
           <button
             type="button"
-            onClick={onClose}
+            onClick={guard.requestClose}
             aria-label={t("common:actions.close")}
             className="text-[#A8A8A8] transition-colors hover:text-[#212121]"
           >
@@ -112,7 +117,7 @@ export default function CustomerFormDrawer({ open, onClose, customer }: Props) {
           <div className="mt-auto flex gap-2 pt-4">
             <button
               type="button"
-              onClick={onClose}
+              onClick={guard.requestClose}
               className="h-11 flex-1 rounded-lg border border-gray-300 text-sm font-medium text-[#212121] transition-colors hover:bg-gray-50"
             >
               {t("common:actions.cancel")}
@@ -127,6 +132,7 @@ export default function CustomerFormDrawer({ open, onClose, customer }: Props) {
           </div>
         </form>
       </aside>
+      {guard.dialog}
     </>
   );
 }
