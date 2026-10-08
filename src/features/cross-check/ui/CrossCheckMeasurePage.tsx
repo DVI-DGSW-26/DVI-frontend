@@ -13,6 +13,8 @@ import {
 import { judgeMeasurement } from "../../inspection/lib/judgment";
 import Toast from "../../inspection/ui/Toast";
 import CapturePhase from "../../inspection/ui/CapturePhase";
+import StepProgress from "../../inspection/ui/StepProgress";
+import { toChipState } from "../../inspection/lib/stepChip";
 import CropPhase from "../../inspection/ui/CropPhase";
 import {
   useInspectionDetail,
@@ -251,8 +253,13 @@ export default function CrossCheckMeasurePage() {
   const isLastDim = stepIndex === totalSteps - 1;
   const canGoBack = stepIndex > 0;
   const canGoForward = stepIndex < items.length - 1;
-  const progressPercent =
-    totalSteps === 0 ? 0 : Math.round((stepIndex / totalSteps) * 100);
+  // 번호 줄 — 이번에 입력한 값이 있으면 그것, 없으면 저장돼 있던 값. 둘 다 없으면 아직 안 한 칸.
+  const chipStates = items.map((it) =>
+    toChipState(
+      sessionResults.find((s) => s.dimNo === it.dimNo) ??
+        (isItemDone(it) ? toCompletedStep(it) : undefined),
+    ),
+  );
 
   // 이전 단계로 돌아가 재저장하면 sessionResults 에 해당 dim 의 새 값이 들어가므로
   // persistedDoneSteps 에서는 같은 dimNo 를 제외해 결과 페이지로 중복 전달되지 않게 한다.
@@ -672,18 +679,12 @@ export default function CrossCheckMeasurePage() {
       </section>
 
       <section className="border-b border-gray-200 bg-white px-4 py-4">
-        <div className="flex items-baseline justify-between">
-          <span className="text-sm font-semibold text-[#212121]">
-            Step {stepIndex + 1} of {totalSteps}
-          </span>
-          <span className="text-xs text-[#6B7280]">{progressPercent}%</span>
-        </div>
-        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#F3E8FF]">
-          <div
-            className="h-full rounded-full bg-[#931B82] transition-all"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
+        <StepProgress
+          states={chipStates}
+          currentIndex={stepIndex}
+          onPick={moveToStep}
+          disabled={isSaving}
+        />
 
         <div className="mt-4 rounded-lg bg-[#F9FAFB] p-3">
           <div className="flex items-center gap-2">

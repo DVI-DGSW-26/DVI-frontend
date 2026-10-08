@@ -35,6 +35,8 @@ import { setRecentInspectionId } from "../lib/recentInspection";
 import { useHeaderBackHandler } from "../../../lib/headerBack";
 import { formatDate } from "../../../lib/datetime";
 import CapturePhase from "./CapturePhase";
+import StepProgress from "./StepProgress";
+import { toChipState } from "../lib/stepChip";
 import CropPhase from "./CropPhase";
 import InputPhase from "./InputPhase";
 import PassFailPhase from "./PassFailPhase";
@@ -419,10 +421,13 @@ export default function InspectionMeasurePage() {
       </div>
     );
   }
-  // 진행률은 "완료한 DIM 수" 기준 — 시작 직전 0%, 마지막 DIM 완료 시 100%.
-  const progressPercent = totalSteps === 0
-    ? 0
-    : Math.round((stepIndex / totalSteps) * 100);
+  // 번호 줄 — 이번에 입력한 값이 있으면 그것, 없으면 저장돼 있던 값. 둘 다 없으면 아직 안 한 칸.
+  const chipStates = items.map((it) =>
+    toChipState(
+      sessionResults.find((s) => s.dimNo === it.dimNo) ??
+        (isItemDone(it) ? toStepResult(it) : undefined),
+    ),
+  );
 
   // 결과 화면에 넘길 전체 목록. 항목 목록(items)을 기준으로 놓고 이번 세션에서 입력한
   // 값만 덮어쓴다 — 세션 값을 쌓아 올리는 방식은 못 쓴다. 항목을 저장할 때마다 detail 이
@@ -755,20 +760,12 @@ export default function InspectionMeasurePage() {
       </section>
 
       <section className="border-b border-gray-200 bg-white px-4 py-4">
-        <div className="flex items-baseline justify-between">
-          <span className="text-sm font-semibold text-[#212121]">
-            Step {stepIndex + 1} of {totalSteps}
-          </span>
-          <span className="text-xs text-[#6B7280]">
-            {progressPercent}%
-          </span>
-        </div>
-        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#F3E8FF]">
-          <div
-            className="h-full rounded-full bg-[#931B82] transition-all"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
+        <StepProgress
+          states={chipStates}
+          currentIndex={stepIndex}
+          onPick={moveToStep}
+          disabled={isSaving}
+        />
 
         <div className="mt-4 rounded-lg bg-[#F9FAFB] p-3">
           <div className="flex items-center gap-2">

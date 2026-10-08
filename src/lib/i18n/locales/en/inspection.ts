@@ -93,6 +93,17 @@ export default {
   },
   measure: {
     movingToResult: "Moving to results...",
+    progressDone: "{{done}} / {{total}} items done",
+    stepLabel: "Item {{n}}",
+    stepListAria: "Measurement items",
+    stepListHint: "Tap a number to jump · red = fail, yellow = left empty",
+    stepChipAria: "Item {{n}} — {{state}}",
+    stepState: {
+      done: "Measured",
+      fail: "Fail",
+      skipped: "Left empty",
+      empty: "Not measured yet",
+    },
     loadingItems: "Loading measurement items...",
     noItems: "No items to measure.",
     machineName: "Machine",

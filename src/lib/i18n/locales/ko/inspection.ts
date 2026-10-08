@@ -91,6 +91,18 @@ export default {
   },
   measure: {
     movingToResult: "결과 화면으로 이동 중...",
+    // StepProgress — 진행률은 측정을 마친 항목 수 기준.
+    progressDone: "{{done}} / {{total}} 항목 완료",
+    stepLabel: "{{n}}번 항목",
+    stepListAria: "측정 항목 목록",
+    stepListHint: "번호를 눌러 바로 이동 · 빨강은 불합격, 노랑은 비워 둔 항목",
+    stepChipAria: "{{n}}번 항목 — {{state}}",
+    stepState: {
+      done: "측정 완료",
+      fail: "불합격",
+      skipped: "비워 둠",
+      empty: "아직 측정 안 함",
+    },
     loadingItems: "측정 항목을 불러오는 중...",
     noItems: "측정할 항목이 없습니다.",
     machineName: "기계명",
