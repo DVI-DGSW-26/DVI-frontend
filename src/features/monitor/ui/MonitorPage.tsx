@@ -232,15 +232,17 @@ export default function MonitorPage() {
     if (!availRef.current[index]) setIndex((i) => step(i, 1));
   }, [mask, index, pinned, step]);
 
-  // 고정 상태를 주소에 남긴다 — 새로고침해도, 다른 모니터에 링크를 걸어도 같은 화면.
+  // 주소로 고정해 띄운 모니터만 주소에 ?page= 를 남긴다 — 새로고침해도 같은 화면.
+  // 사람이 눌러서 건 고정은 주소에 쓰지 않는다. 쓰면 그 상태로 새로고침되는 순간
+  // "주소로 고정한 모니터"가 되어 자동 해제가 영영 안 걸린다.
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
-    if (pinned) next.set("page", PAGES[index].key);
+    if (pinned && pinnedByUrl) next.set("page", PAGES[index].key);
     else next.delete("page");
     if (next.toString() !== searchParams.toString()) {
       setSearchParams(next, { replace: true });
     }
-  }, [pinned, index, searchParams, setSearchParams]);
+  }, [pinned, pinnedByUrl, index, searchParams, setSearchParams]);
 
   const pinTo = useCallback((i: number) => {
     setIndex(i);
