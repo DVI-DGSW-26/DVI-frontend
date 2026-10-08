@@ -181,6 +181,18 @@ export default function InspectionResultPage() {
     () => results.some((r) => r.status === "skipped"),
     [results],
   );
+  const skippedResults = results.filter((r) => r.status === "skipped");
+  const firstSkipped = skippedResults[0] ?? null;
+  const skippedCount = skippedResults.length;
+  // "DIM 3" / "DIM 3, DIM 5 외 1개" — 길어지면 셋째부터는 개수로 줄인다.
+  const skippedLabels =
+    skippedResults
+      .slice(0, 2)
+      .map((r) => `DIM ${r.dimNo}`)
+      .join(", ") +
+    (skippedCount > 2
+      ? t("result.skippedMore", { n: skippedCount - 2 })
+      : "");
 
   const finalReason =
     reasonKey === OTHER_REASON ? customReason.trim() : reasonKey;
@@ -327,7 +339,12 @@ export default function InspectionResultPage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-28">
+    <div
+      className={`flex min-h-dvh flex-col bg-[#F5F5F5] ${
+        // 비운 항목이 있으면 하단에 버튼 둘과 안내가 붙어 더 높다.
+        hasSkipped && postSubmitMode === null ? "pb-64" : "pb-28"
+      }`}
+    >
       <section className="border-b border-gray-200 bg-white px-4 py-4">
         <InfoRow label={t("measure.machineName")} value={equipmentName} />
         <div className="mt-2 grid grid-cols-2 gap-2">
@@ -484,16 +501,46 @@ export default function InspectionResultPage() {
             </button>
           </div>
         ) : hasSkipped ? (
-          <button
-            type="button"
-            onClick={handleIncomplete}
-            disabled={!canSubmitIncomplete || isBusy}
-            className="h-12 w-full rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
-          >
-            {incompleteMut.isPending
-              ? t("result.processing")
-              : t("result.incompleteSubmit")}
-          </button>
+          // 비운 항목이 있어도 "검사 완료"를 없애지 않는다 — 버튼이 통째로 사라지면
+          // 건너뛰기 한 번 잘못 누른 사람이 미완료 말고는 길이 없다고 여긴다.
+          // 왜 못 누르는지와 되돌아가는 길을 먼저 보여주고, 미완료는 두 번째 선택으로 둔다.
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              disabled
+              className="h-12 w-full rounded-md bg-[#D1D5DB] text-base font-semibold text-white"
+            >
+              {t("result.completeSubmit")}
+            </button>
+            {firstSkipped && (
+              <div className="flex items-center gap-2 rounded-md border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2">
+                <p className="min-w-0 flex-1 text-xs text-[#92400E]">
+                  {t("result.skippedBlocksComplete", {
+                    items: skippedLabels,
+                    count: skippedCount,
+                  })}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleRetake(firstSkipped.dimNo)}
+                  disabled={isBusy}
+                  className="shrink-0 rounded-md bg-[#931B82] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+                >
+                  {t("result.measureNow")}
+                </button>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={handleIncomplete}
+              disabled={!canSubmitIncomplete || isBusy}
+              className="h-12 w-full rounded-md border border-[#931B82] bg-white text-base font-semibold text-[#931B82] transition-colors hover:bg-[#F3E8FF] disabled:border-[#E5E7EB] disabled:text-[#9CA3AF] disabled:hover:bg-white"
+            >
+              {incompleteMut.isPending
+                ? t("result.processing")
+                : t("result.incompleteSubmit")}
+            </button>
+          </div>
         ) : (
           <button
             type="button"

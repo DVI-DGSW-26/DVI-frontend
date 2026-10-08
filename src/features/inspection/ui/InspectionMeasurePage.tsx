@@ -822,6 +822,7 @@ export default function InspectionMeasurePage() {
             onSkip={handleSkip}
             onGoBack={canGoBack ? goToPreviousStep : undefined}
             onMeasureWithoutPhoto={startMeasureWithoutPhoto}
+            skipHint={t("capture.skipItemHintSelf")}
           />
         )}
 
