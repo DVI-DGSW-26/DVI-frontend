@@ -10,8 +10,8 @@ import LanguageToggle from "./LanguageToggle";
 const ROUTE_TITLE_KEYS: Record<string, string> = {
   "/": "titles.home",
   "/reports": "tabs.reports",
-  "/approval-management": "tabs.approvalManagement",
-  "/qm-reports": "tabs.qmReports",
+  "/approval-management": "titles.approvalManagement",
+  "/qm-reports": "titles.qmReports",
   "/inspections": "titles.inspections",
   "/scan": "titles.scan",
   "/products": "tabs.products",

@@ -2,9 +2,10 @@ export default {
   tabs: {
     dashboard: "대시보드",
     reports: "검사보고서",
-    adminInspections: "자주검사 관리",
-    approvalManagement: "승인관리",
-    qmReports: "보고서",
+    // 메뉴 이름은 무엇을 다루는지가 드러나게(18번). 화면 제목은 titles.* 를 따로 쓴다.
+    adminInspections: "자주검사 현황",
+    approvalManagement: "자주검사 미완료",
+    qmReports: "검사보고서",
     crossCheckApproval: "순회검사 결재",
     crossChecks: "순회검사 현황",
     products: "제품관리",
@@ -18,8 +19,18 @@ export default {
     inspectionHistory: "검사이력",
     scan: "스캔",
     tryoutReports: "시압 결과보고서",
+    more: "더보기",
+  },
+  // 관리자 메뉴 묶음 제목.
+  groups: {
+    approval: "결재",
+    status: "검사 현황",
+    master: "기준정보",
   },
   titles: {
+    // 메뉴 이름을 바꿔도 화면 제목은 그대로 둔다.
+    approvalManagement: "승인관리",
+    qmReports: "보고서",
     notifications: "알림",
     home: "홈",
     inspections: "현황",
