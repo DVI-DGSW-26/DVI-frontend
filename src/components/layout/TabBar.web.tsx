@@ -29,6 +29,7 @@ const TABS: TabItem[] = [
   { labelKey: "processes", to: "/processes", icon: "mdi:cog-transfer-outline", roles: ["ADMIN", "QUALITY_ADMIN"] },
   { labelKey: "inspectionOrders", to: "/inspection-orders", icon: "mdi:clipboard-text-outline", roles: ["PRODUCTION_MANAGER"] },
   { labelKey: "myOrders", to: "/my-orders", icon: "mdi:clipboard-list-outline", roles: ["PRODUCTION"] },
+  { labelKey: "tryoutReports", to: "/tryout-reports", icon: "mdi:file-document-edit-outline", roles: ["ADMIN", "QUALITY_ADMIN", "PRODUCTION", "PRODUCTION_MANAGER", "QUALITY"] },
   { labelKey: "myPage", to: "/my-page", icon: "mdi:account-circle", roles: ["ADMIN", "QUALITY_ADMIN", "PRODUCTION", "PRODUCTION_MANAGER", "QUALITY"] },
 ];
 
