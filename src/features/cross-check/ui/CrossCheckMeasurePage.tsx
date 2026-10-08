@@ -551,6 +551,13 @@ export default function CrossCheckMeasurePage() {
     sessionResults.some((s) => s.status === "completed");
   const showSkipAll =
     targetDimNo == null && !hasMeasured && canSkipAll(detail);
+  // 못 쓸 때는 숨기지 않고 이유를 댄다. 한 항목만 다시 재러 들어온 경우는 해당 없음.
+  const skipAllDisabledReason =
+    showSkipAll || targetDimNo != null
+      ? undefined
+      : !canSkipAll(detail)
+        ? t("measure.skipAllOnlyAt")
+        : t("measure.skipAllAfterMeasure");
 
   const productionNg = detail.productionAppearanceResult === "NG";
 
@@ -749,6 +756,7 @@ export default function CrossCheckMeasurePage() {
                   }
                 : undefined
             }
+            skipAllDisabledReason={skipAllDisabledReason}
           />
         )}
 

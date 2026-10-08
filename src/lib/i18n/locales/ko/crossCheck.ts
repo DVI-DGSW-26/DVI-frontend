@@ -139,6 +139,9 @@ export default {
     productionNgHint:
       "측정 없이 바로 반려할 수 있어요. 반려 시 작업자에게 재측정 요청이 전달됩니다.",
     rejectNow: "재측정 요청",
+    // 전체 건너뛰기를 못 쓸 때 이유 — 숨기면 "어제는 있었는데?"가 된다.
+    skipAllOnlyAt: "AL·ST 절단 공정의 10시·15시 차수에서만 쓸 수 있습니다",
+    skipAllAfterMeasure: "이미 측정한 항목이 있어 쓸 수 없습니다",
     title: "순회검사 측정",
     reject: "반려",
     productionRef: "자주검사 측정값 (참고)",

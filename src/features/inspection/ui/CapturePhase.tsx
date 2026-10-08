@@ -43,6 +43,8 @@ interface Props {
   onSkipAll?: () => void;
   /** "이 항목 측정 안 함" 아래에 붙는 결과 설명. 검사 종류마다 뒤따르는 일이 달라 부모가 정한다. */
   skipHint?: string;
+  /** 전체 건너뛰기를 못 쓰는 이유. onSkipAll 이 없을 때 ⋯ 안에 비활성 줄로 보여준다. */
+  skipAllDisabledReason?: string;
 }
 
 export default function CapturePhase({
@@ -54,6 +56,7 @@ export default function CapturePhase({
   onMeasureWithoutPhoto,
   onSkipAll,
   skipHint,
+  skipAllDisabledReason,
 }: Props) {
   const { t } = useTranslation("inspection");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -337,6 +340,23 @@ export default function CapturePhase({
               {skipHint ?? t("capture.skipItemHint")}
             </span>
           </button>
+          {/*
+            조건이 안 맞을 때 전체 건너뛰기를 숨기면 "어제는 있었는데 왜 없지?"가 된다.
+            눈에 띄는 자리엔 두지 않되, 여기서는 못 쓰는 이유와 함께 보여준다.
+          */}
+          {!onSkipAll && skipAllDisabledReason && (
+            <div
+              aria-disabled="true"
+              className="flex w-full flex-col items-start gap-0.5 border-t border-[#F3F4F6] px-3 py-2.5"
+            >
+              <span className="text-sm font-medium text-[#9CA3AF]">
+                {t("capture.skipAll")}
+              </span>
+              <span className="text-xs text-[#B45309]">
+                {skipAllDisabledReason}
+              </span>
+            </div>
+          )}
         </div>
       )}
 
@@ -350,13 +370,15 @@ export default function CapturePhase({
         </button>
       )}
 
+      {/* 이름에 "언제 쓰는지"를 담는다 — "전체 항목 건너뛰기"만으론 검사를 안 해도 되는 줄 안다. */}
       {onSkipAll && (
         <button
           type="button"
           onClick={onSkipAll}
-          className="h-11 w-full rounded-md border border-[#E5E7EB] bg-[#F9FAFB] text-sm font-medium text-[#6B7280] hover:bg-[#F3F4F6]"
+          className="flex w-full flex-col items-center justify-center gap-0.5 rounded-md border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-[#6B7280] hover:bg-[#F3F4F6]"
         >
-          전체 항목 건너뛰기
+          <span className="text-sm font-medium">{t("capture.skipAll")}</span>
+          <span className="text-[11px]">{t("capture.skipAllHint")}</span>
         </button>
       )}
 

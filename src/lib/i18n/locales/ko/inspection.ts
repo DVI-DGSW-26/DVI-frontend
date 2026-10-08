@@ -130,6 +130,9 @@ export default {
     skipItemHintSelf:
       "이 칸을 비워 두고 넘어갑니다. 비운 칸이 있으면 검사 완료 대신 미완료로 제출하게 됩니다(결과 화면에서 다시 측정 가능).",
     moreOptions: "다른 선택",
+    // 순회검사 미실시 시간대(AL/ST 절단 10시·15시) 전용 — 이름에 쓰는 때를 담는다.
+    skipAll: "이 시간대는 순회검사 안 함",
+    skipAllHint: "전체 항목을 건너뛰고 바로 결재 요청합니다",
     nextStep: "다음 단계",
     withoutPhoto: "사진 없이 측정값 입력",
     cameraOpening: "카메라 여는 중...",

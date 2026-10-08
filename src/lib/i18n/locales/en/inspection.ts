@@ -133,6 +133,8 @@ export default {
     skipItemHintSelf:
       "Leaves this field empty. With an empty field you'll submit as incomplete instead of completing (you can still measure it from the result screen).",
     moreOptions: "More",
+    skipAll: "No patrol inspection at this time slot",
+    skipAllHint: "Skips all items and requests approval right away",
     nextStep: "Next Step",
     withoutPhoto: "Enter value without photo",
     cameraOpening: "Opening camera...",

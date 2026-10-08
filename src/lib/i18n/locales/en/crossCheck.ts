@@ -141,6 +141,8 @@ export default {
     productionNgHint:
       "You can reject immediately without measuring. On rejection, a re-measurement request is sent to the worker.",
     rejectNow: "Request Re-measure",
+    skipAllOnlyAt: "Only available for the 10:00 and 15:00 slots of AL/ST cutting",
+    skipAllAfterMeasure: "Not available once an item has been measured",
     title: "Patrol Inspection Measurement",
     reject: "Reject",
     productionRef: "Self-Inspection Value (reference)",
