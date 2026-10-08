@@ -13,6 +13,8 @@ import {
 import { judgeMeasurement } from "../../inspection/lib/judgment";
 import Toast from "../../inspection/ui/Toast";
 import CapturePhase from "../../inspection/ui/CapturePhase";
+import StepProgress from "../../inspection/ui/StepProgress";
+import { toChipState } from "../../inspection/lib/stepChip";
 import CropPhase from "../../inspection/ui/CropPhase";
 import {
   useInspectionDetail,
@@ -172,6 +174,7 @@ export default function CrossCheckMeasurePage() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showExitOptions, setShowExitOptions] = useState(false);
   // 취소 실패 사유는 모달 안에 띄운다 — 토스트는 모달 오버레이 뒤에 가려 안 보인다.
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [showSkipAllModal, setShowSkipAllModal] = useState(false);
@@ -251,8 +254,13 @@ export default function CrossCheckMeasurePage() {
   const isLastDim = stepIndex === totalSteps - 1;
   const canGoBack = stepIndex > 0;
   const canGoForward = stepIndex < items.length - 1;
-  const progressPercent =
-    totalSteps === 0 ? 0 : Math.round((stepIndex / totalSteps) * 100);
+  // 번호 줄 — 이번에 입력한 값이 있으면 그것, 없으면 저장돼 있던 값. 둘 다 없으면 아직 안 한 칸.
+  const chipStates = items.map((it) =>
+    toChipState(
+      sessionResults.find((s) => s.dimNo === it.dimNo) ??
+        (isItemDone(it) ? toCompletedStep(it) : undefined),
+    ),
+  );
 
   // 이전 단계로 돌아가 재저장하면 sessionResults 에 해당 dim 의 새 값이 들어가므로
   // persistedDoneSteps 에서는 같은 dimNo 를 제외해 결과 페이지로 중복 전달되지 않게 한다.
@@ -543,6 +551,13 @@ export default function CrossCheckMeasurePage() {
     sessionResults.some((s) => s.status === "completed");
   const showSkipAll =
     targetDimNo == null && !hasMeasured && canSkipAll(detail);
+  // 못 쓸 때는 숨기지 않고 이유를 댄다. 한 항목만 다시 재러 들어온 경우는 해당 없음.
+  const skipAllDisabledReason =
+    showSkipAll || targetDimNo != null
+      ? undefined
+      : !canSkipAll(detail)
+        ? t("measure.skipAllOnlyAt")
+        : t("measure.skipAllAfterMeasure");
 
   const productionNg = detail.productionAppearanceResult === "NG";
 
@@ -633,25 +648,6 @@ export default function CrossCheckMeasurePage() {
           <span className="text-sm font-semibold text-[#212121]">
             {t("measure.title")}
           </span>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setCancelError(null);
-                setShowCancelModal(true);
-              }}
-              className="h-8 rounded-md border border-[#D1D5DB] px-3 text-xs font-semibold text-[#6B7280] transition-colors hover:bg-[#F3F4F6]"
-            >
-              {tCommon("actions.cancel")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowRejectModal(true)}
-              className="h-8 rounded-md border border-[#EF4444] px-3 text-xs font-semibold text-[#EF4444] transition-colors hover:bg-[#FEF2F2]"
-            >
-              {t("measure.reject")}
-            </button>
-          </div>
         </div>
         <InfoRow label={t("label.machine")} value={detail.equipment.name} />
         <InfoRow label={t("label.round")} value={slotLabelText(detail.typeLabel)} />
@@ -672,18 +668,12 @@ export default function CrossCheckMeasurePage() {
       </section>
 
       <section className="border-b border-gray-200 bg-white px-4 py-4">
-        <div className="flex items-baseline justify-between">
-          <span className="text-sm font-semibold text-[#212121]">
-            Step {stepIndex + 1} of {totalSteps}
-          </span>
-          <span className="text-xs text-[#6B7280]">{progressPercent}%</span>
-        </div>
-        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#F3E8FF]">
-          <div
-            className="h-full rounded-full bg-[#931B82] transition-all"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
+        <StepProgress
+          states={chipStates}
+          currentIndex={stepIndex}
+          onPick={moveToStep}
+          disabled={isSaving}
+        />
 
         <div className="mt-4 rounded-lg bg-[#F9FAFB] p-3">
           <div className="flex items-center gap-2">
@@ -766,6 +756,7 @@ export default function CrossCheckMeasurePage() {
                   }
                 : undefined
             }
+            skipAllDisabledReason={skipAllDisabledReason}
           />
         )}
 
@@ -825,6 +816,67 @@ export default function CrossCheckMeasurePage() {
               />
             );
           })()}
+      </section>
+
+      {/*
+        측정을 그만두는 두 길. 예전엔 제목 옆에 "반려"·"취소"로 붙어 있었는데, 이름만으론
+        결과를 알 수 없었다 — 특히 "취소"는 실제로 담당을 넘기는 동작이라, 되돌리려 해도
+        그 사이 다른 검사자가 가져갈 수 있다. 결과가 드러나는 이름으로 바꾸고, 측정 흐름과
+        섞이지 않게 한 겹 접어 둔다. 동작(모달·API)은 그대로다.
+      */}
+      <section className="px-4 pt-4">
+        <button
+          type="button"
+          onClick={() => setShowExitOptions((v) => !v)}
+          aria-expanded={showExitOptions}
+          className="flex w-full items-center justify-center gap-1 text-xs text-[#6B7280]"
+        >
+          {t("measure.exit.prompt")}
+          <span className="font-semibold text-[#931B82]">
+            {t("measure.exit.toggle")}
+          </span>
+          <Icon
+            icon={
+              showExitOptions
+                ? "solar:alt-arrow-up-linear"
+                : "solar:alt-arrow-down-linear"
+            }
+            width={14}
+            height={14}
+            className="text-[#931B82]"
+          />
+        </button>
+        {showExitOptions && (
+          <div className="mt-2 divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white">
+            <button
+              type="button"
+              onClick={() => setShowRejectModal(true)}
+              className="flex w-full flex-col items-start gap-0.5 px-3 py-2.5 text-left hover:bg-[#F9FAFB]"
+            >
+              <span className="text-sm font-semibold text-[#B91C1C]">
+                {t("measure.exit.reject")}
+              </span>
+              <span className="text-xs text-[#6B7280]">
+                {t("measure.exit.rejectHint")}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setCancelError(null);
+                setShowCancelModal(true);
+              }}
+              className="flex w-full flex-col items-start gap-0.5 px-3 py-2.5 text-left hover:bg-[#F9FAFB]"
+            >
+              <span className="text-sm font-semibold text-[#212121]">
+                {t("measure.exit.handOver")}
+              </span>
+              <span className="text-xs text-[#6B7280]">
+                {t("measure.exit.handOverHint")}
+              </span>
+            </button>
+          </div>
+        )}
       </section>
 
       {showRejectModal && (

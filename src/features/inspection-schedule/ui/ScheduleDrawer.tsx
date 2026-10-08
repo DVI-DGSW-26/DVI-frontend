@@ -11,6 +11,7 @@ import type {
 } from "../api";
 import type { ReactNode } from "react";
 
+import { useDiscardGuard } from "../../../components/shared/useDiscardGuard";
 /**
  * 검사 스케줄(시점) 편집 드로어.
  *
@@ -165,10 +166,13 @@ export default function ScheduleDrawer({
   const nightCount = slots.filter((s) => s.shift === "NIGHT").length;
   const shownError = error ?? submitError ?? null;
 
+  // 바깥 터치·닫기·취소로 닫을 때 입력이 있으면 한 번 묻는다(저장 성공 경로는 그대로 닫힘).
+  const guard = useDiscardGuard(open, onClose);
+
   return (
     <>
       <div
-        onClick={onClose}
+        onClick={guard.requestClose}
         className={`fixed inset-0 z-60 bg-black/40 transition-opacity duration-300 ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
@@ -176,6 +180,7 @@ export default function ScheduleDrawer({
       />
 
       <aside
+        onChange={guard.track}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -190,7 +195,7 @@ export default function ScheduleDrawer({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={guard.requestClose}
             aria-label={t("common:actions.close")}
             className="text-[#A8A8A8] transition-colors hover:text-[#212121]"
           >
@@ -376,7 +381,7 @@ export default function ScheduleDrawer({
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={guard.requestClose}
                   className="h-11 flex-1 rounded-lg border border-gray-300 text-sm font-medium text-[#212121] transition-colors hover:bg-gray-50"
                 >
                   {t("common:actions.cancel")}
@@ -394,6 +399,7 @@ export default function ScheduleDrawer({
           </form>
         )}
       </aside>
+      {guard.dialog}
     </>
   );
 }

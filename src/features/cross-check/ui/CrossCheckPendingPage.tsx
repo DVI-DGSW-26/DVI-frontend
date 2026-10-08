@@ -660,7 +660,6 @@ function DraftResumeCard({
   onCancel: () => void;
 }) {
   const { t } = useTranslation("crossCheck");
-  const { t: tCommon } = useTranslation("common");
   const hardnessTracked = useProcessFlag("hardnessTracked");
   // 카드 전체가 "이어하기" 버튼이므로, 취소 버튼은 중첩(button 안 button)이 되지
   // 않도록 형제 요소로 분리하고 relative 컨테이너 위에 얹는다.
@@ -727,7 +726,7 @@ function DraftResumeCard({
         aria-label={t("card.cancelPatrol")}
         className="absolute right-2 top-2 rounded-md border border-[#E5E7EB] bg-white/90 px-2 py-1 text-[11px] font-semibold text-[#6B7280] shadow-sm transition-colors hover:bg-[#F3F4F6]"
       >
-        {tCommon("actions.cancel")}
+        {t("card.handOver")}
       </button>
     </div>
   );

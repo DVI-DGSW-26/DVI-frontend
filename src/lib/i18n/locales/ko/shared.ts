@@ -38,4 +38,11 @@ export default {
     back: "뒤로",
     home: "홈으로",
   },
+  // useDiscardGuard — 등록·수정 서랍을 실수로 닫을 때.
+  discardGuard: {
+    title: "작성 중인 내용을 버릴까요?",
+    description: "입력란 {{count}}곳을 작성했습니다. 창을 닫으면 되돌릴 수 없습니다.",
+    keepEditing: "계속 작성",
+    discard: "버리고 닫기",
+  },
 } as const;

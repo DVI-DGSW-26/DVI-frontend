@@ -36,4 +36,11 @@ export default {
     back: "Back",
     home: "Go Home",
   },
+  // useDiscardGuard — closing a create/edit drawer by accident.
+  discardGuard: {
+    title: "Discard your changes?",
+    description: "You've filled in {{count}} field(s). Closing this panel can't be undone.",
+    keepEditing: "Keep editing",
+    discard: "Discard and close",
+  },
 } as const;
