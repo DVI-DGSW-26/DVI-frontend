@@ -19,6 +19,7 @@ const ROUTE_TITLE_KEYS: Record<string, string> = {
   "/customers": "tabs.customers",
   "/processes": "tabs.processes",
   "/cross-check-approval": "tabs.crossCheckApproval",
+  "/tryout-reports": "tabs.tryoutReports",
   "/my-page": "tabs.myPage",
   "/notifications": "titles.notifications",
 };

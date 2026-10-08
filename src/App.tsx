@@ -37,6 +37,10 @@ import CrossCheckApprovalDetailPage from "./features/cross-check/ui/CrossCheckAp
 
 import MonitorPage from "./features/monitor/ui/MonitorPage";
 
+import TryoutReportListPage from "./features/tryout-report/ui/TryoutReportListPage";
+import TryoutReportDetailPage from "./features/tryout-report/ui/TryoutReportDetailPage";
+import TryoutReportFormPage from "./features/tryout-report/ui/TryoutReportFormPage";
+
 import { useTranslation } from "react-i18next";
 import { useAuth } from "./features/auth/AuthContext";
 import { useNotificationAlerts } from "./features/notification/model/useNotificationAlerts";
@@ -200,6 +204,12 @@ function App() {
             </Route>
 
             {/* 매칭 안 된 모든 경로 — 잘못된 알림 linkUrl 등으로 흰 화면이 뜨지 않도록. */}
+            {/* 시압 결과보고서 — 모든 역할 (수정·삭제 권한은 서버가 작성자·관리자로 막는다) */}
+            <Route path="/tryout-reports" element={<TryoutReportListPage />} />
+            <Route path="/tryout-reports/new" element={<TryoutReportFormPage />} />
+            <Route path="/tryout-reports/:id" element={<TryoutReportDetailPage />} />
+            <Route path="/tryout-reports/:id/edit" element={<TryoutReportFormPage />} />
+
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Route>
