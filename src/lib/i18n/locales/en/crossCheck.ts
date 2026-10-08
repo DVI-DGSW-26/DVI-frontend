@@ -74,6 +74,7 @@ export default {
     rejectedTitle: "Rejected Inspections",
     rejectedFixCount: "{{n}} need fixing",
     rejectedNotice: "Approval rejected — fix and resubmit",
+    rejectReasonLabel: "Rejection reason",
     preparing: "Preparing...",
     fix: "Fix",
     recentNotifications: "Recent Notifications",

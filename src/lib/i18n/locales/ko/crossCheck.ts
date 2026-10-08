@@ -75,6 +75,7 @@ export default {
     rejectedTitle: "반려된 검사",
     rejectedFixCount: "{{n}}건 수정 필요",
     rejectedNotice: "결재 반려됨 — 수정 후 재제출 필요",
+    rejectReasonLabel: "반려 사유",
     preparing: "준비 중...",
     fix: "수정하기",
     recentNotifications: "최근 알림",

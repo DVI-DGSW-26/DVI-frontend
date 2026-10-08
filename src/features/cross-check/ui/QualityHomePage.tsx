@@ -11,6 +11,7 @@ import {
   useAssignedCrossChecks,
   useCreateCrossCheck,
   useMyCrossChecks,
+  useCrossCheckRejectReasons,
   useMyDelegation,
   useReopenCrossCheck,
 } from "../api";
@@ -117,6 +118,10 @@ const QualityHomePage = () => {
             elapsedFrom(a.updatedAt).minutes,
         ),
     [myCrossChecks],
+  );
+
+  const rejectReasons = useCrossCheckRejectReasons(
+    rejectedCrossChecks.map((c) => c.crossCheckId),
   );
 
   const handleReopen = async (cc: CrossCheckSummary) => {
@@ -300,9 +305,23 @@ const QualityHomePage = () => {
                       <div className="mt-0.5 truncate text-xs text-[#6B7280]">
                         {cc.equipment.name} · {slotLabelText(cc.typeLabel)}
                       </div>
-                      <div className="mt-0.5 text-xs text-[#B91C1C]">
-                        {t("home.rejectedNotice")}
-                      </div>
+                    </div>
+                    <span className="shrink-0 text-[11px] text-[#9CA3AF]">
+                      {formatDateTime(cc.updatedAt)}
+                    </span>
+                  </div>
+                  {/*
+                    반려 사유를 카드에서 바로 읽는다 — 예전엔 "수정하기"(= 다시 열기, 상태가
+                    바뀌어 되돌릴 수 없음)를 눌러야 사유가 보여서, 무엇부터 고칠지 고르려면
+                    전부 열어봐야 했다. 사유를 아직 못 불러왔으면 예전 안내 문구로 둔다.
+                  */}
+                  <div className="mt-2 rounded-md bg-white px-3 py-2">
+                    <div className="text-[11px] text-[#9CA3AF]">
+                      {t("home.rejectReasonLabel")}
+                    </div>
+                    <div className="mt-0.5 wrap-break-word text-xs text-[#212121]">
+                      {rejectReasons.get(cc.crossCheckId) ??
+                        t("home.rejectedNotice")}
                     </div>
                   </div>
                   <button

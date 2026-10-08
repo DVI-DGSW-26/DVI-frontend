@@ -33,6 +33,7 @@ export {
   useSkipAllCrossCheck,
   useCancelSkipAllCrossCheck,
   crossCheckKeys,
+  useCrossCheckRejectReasons,
 } from "./queries";
 export type {
   AssignedInspection,
