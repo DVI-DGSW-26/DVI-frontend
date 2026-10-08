@@ -4,3 +4,6 @@ export const CELL_HEIGHT_PX = 40;
 export const CELL_FOCUS_BG = "#FBF7FC";
 export const CELL_FOCUS_RING = "inset 0 0 0 1px #931B82";
 export const CELL_FOCUS = "focus:outline-none focus:bg-[#FBF7FC] focus:shadow-[inset_0_0_0_1px_#931B82]";
+// 버튼처럼 누르는 칸(OK/NG, 종합평가)은 마우스로 눌렀을 때 테두리가 뜨면 거슬린다 — 키보드로 옮겨 왔을 때만 보인다.
+export const CELL_FOCUS_VISIBLE =
+  "focus:outline-none focus-visible:bg-[#FBF7FC] focus-visible:shadow-[inset_0_0_0_1px_#931B82]";

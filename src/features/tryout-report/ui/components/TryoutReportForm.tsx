@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   TryoutItemRequest,
@@ -16,8 +16,9 @@ import {
   type ItemError,
 } from "../../lib/formState";
 import { toSaveError, type SaveError } from "../../lib/errors";
+import { clearDraft, loadDraft, saveDraft } from "../../lib/draft";
 import ItemFormTable from "./ItemFormTable";
-import { CELL_FOCUS } from "./cellStyle";
+import { CELL_FOCUS, CELL_FOCUS_VISIBLE } from "./cellStyle";
 import { AttendeesSelect, ManagerSelect, PeopleNotice } from "./PeopleFields";
 import { usePeopleOptions } from "./usePeopleOptions";
 
@@ -42,6 +43,10 @@ interface Props {
   ) => Promise<TryoutReportDetail>;
   onSaved: (detail: TryoutReportDetail) => void;
   onCancel: () => void;
+  // 쓰던 내용을 맡겨 둘 자리(lib/draft). 없으면(로그인 정보 없음) 맡기지 않는다.
+  draftKey: string | null;
+  // 수정 화면: 보고서 updatedAt — 그사이 서버에서 바뀌었으면 맡겨 둔 내용을 버린다.
+  draftBase?: string;
 }
 
 const OVERALL_OPTIONS: TryoutOverallResult[] = ["OK", "NG", "SPECIAL_ACCEPT", "REWORK"];
@@ -58,16 +63,45 @@ export default function TryoutReportForm({
   onSubmit,
   onSaved,
   onCancel,
+  draftKey,
+  draftBase,
 }: Props) {
   const { t } = useTranslation("tryoutReport");
-  const [header, setHeader] = useState(initialHeader);
-  const [items, setItems] = useState(initialItems);
+  // 처음 깐 값은 한 번만 잡는다 — 부모가 다시 그려지면 같은 내용의 새 객체가 오기 때문.
+  const [initial] = useState(() => ({ header: initialHeader, items: initialItems }));
+  // 맡겨 둔 내용이 있으면 그걸로 시작한다.
+  const [restored] = useState(() => (draftKey ? loadDraft(draftKey, { items: initial.items, base: draftBase }) : null));
+  const [showRestored, setShowRestored] = useState(restored != null);
+  const [header, setHeader] = useState(restored?.header ?? initial.header);
+  const [items, setItems] = useState(restored?.items ?? initial.items);
   const [headerErrors, setHeaderErrors] = useState<Partial<Record<"roundNo" | "conductedOn", HeaderError>>>({});
   const [itemErrors, setItemErrors] = useState<Record<string, ItemError>>({});
   const [saveError, setSaveError] = useState<SaveError | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<Set<string>>(new Set());
   const people = usePeopleOptions(knownPeople);
+
+  // 고칠 때마다 맡겨 둔다. 화면이 사라져도(뒤로 가기·새로고침·모바일 폭) 다시 열면 이어 쓴다.
+  // 아직 아무것도 안 고쳤으면(처음 깐 값 그대로) 맡길 게 없다.
+  useEffect(() => {
+    if (!draftKey) return;
+    if (header === initial.header && items === initial.items) clearDraft(draftKey);
+    else saveDraft(draftKey, { header, items, base: draftBase });
+  }, [draftKey, draftBase, header, items, initial]);
+
+  const discardDraft = () => {
+    setHeader(initial.header);
+    setItems(initial.items);
+    setHeaderErrors({});
+    setItemErrors({});
+    setSaveError(null);
+    setShowRestored(false);
+  };
+
+  // 저장했거나 취소했으면 맡겨 둔 내용은 필요 없다.
+  const dropDraft = () => {
+    if (draftKey) clearDraft(draftKey);
+  };
 
   const patchHeader = (patch: Partial<HeaderDraft>) => setHeader((h) => ({ ...h, ...patch }));
 
@@ -101,6 +135,7 @@ export default function TryoutReportForm({
     setSaving(true);
     try {
       const detail = await onSubmit(headerToRequest(header), built.items);
+      dropDraft();
       onSaved(detail);
     } catch (err) {
       setSaveError(toSaveError(err, t));
@@ -127,6 +162,19 @@ export default function TryoutReportForm({
 
   return (
     <div className="flex flex-col gap-4">
+      {showRestored && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#E9D5E5] bg-[#FBF7FC] px-4 py-3 text-sm text-[#6A0F5D]">
+          <span>{t("draft.restored")}</span>
+          <div className="flex gap-3">
+            <button type="button" onClick={discardDraft} className="text-xs font-medium text-[#6B7280] hover:text-[#DC2626]">
+              {t("draft.discard")}
+            </button>
+            <button type="button" onClick={() => setShowRestored(false)} className="text-xs font-medium text-[#931B82]">
+              {t("draft.keep")}
+            </button>
+          </div>
+        </div>
+      )}
       <section className="flex flex-col gap-2 rounded-2xl bg-white p-5 shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1040px] table-fixed border-collapse">
@@ -212,7 +260,7 @@ export default function TryoutReportForm({
                           type="button"
                           aria-pressed={active}
                           onClick={() => patchHeader({ overallResult: active ? null : o })}
-                          className={`flex flex-1 items-center justify-center gap-1 whitespace-nowrap text-sm ${CELL_FOCUS} ${
+                          className={`flex flex-1 items-center justify-center gap-1 whitespace-nowrap text-sm ${CELL_FOCUS_VISIBLE} ${
                             active ? "font-semibold text-[#931B82]" : "text-[#6B7280] hover:text-[#212121]"
                           }`}
                         >
@@ -257,7 +305,10 @@ export default function TryoutReportForm({
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={onCancel}
+            onClick={() => {
+              dropDraft();
+              onCancel();
+            }}
             disabled={saving}
             className="h-11 w-28 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-60"
           >

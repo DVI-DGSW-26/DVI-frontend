@@ -12,7 +12,7 @@ import {
 } from "../../lib/grid";
 import { parseStandardNotation } from "../../lib/standard";
 import PhotoInput from "./PhotoInput";
-import { CELL_FOCUS } from "./cellStyle";
+import { CELL_FOCUS, CELL_FOCUS_VISIBLE } from "./cellStyle";
 import { ItemResultBadge } from "./ResultBadges";
 import { useAuth } from "../../../auth/AuthContext";
 import { hasRole } from "../../../auth/roles";
@@ -77,7 +77,7 @@ function ResultCell({
       role="group"
       aria-label={t("columns.result")}
       onKeyDown={onKeyDown}
-      className={`flex h-10 items-center justify-center gap-1 ${CELL_FOCUS}`}
+      className={`flex h-10 items-center justify-center gap-1 ${CELL_FOCUS_VISIBLE}`}
     >
       {(["OK", "NG"] as const).map((v) => {
         const active = value === v;

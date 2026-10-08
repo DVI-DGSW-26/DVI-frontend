@@ -78,7 +78,8 @@ export function itemsFrom(source: TryoutReportPrefill | TryoutReportDetail): Ite
 
 export function headerFromPrefill(p: TryoutReportPrefill): HeaderDraft {
   return {
-    roundNo: String(p.suggestedRoundNo),
+    // 차수는 사람이 직접 적는다 — 추천 차수를 미리 채우면 확인 없이 저장되기 쉽다.
+    roundNo: "",
     conductedOn: p.conductedOn,
     managerId: null,
     attendeeIds: [],

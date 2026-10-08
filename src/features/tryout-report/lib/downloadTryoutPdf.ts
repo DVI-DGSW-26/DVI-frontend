@@ -1,16 +1,17 @@
 import i18n from "i18next";
 import type { TryoutItem, TryoutOverallResult, TryoutReportDetail } from "../api/types";
-import { toBackendImageUrl } from "../../../lib/imageUrl";
+import { toSameOriginImageUrl } from "../../../lib/imageUrl";
 import { formatDateTime } from "../../../lib/datetime";
 import { itemLabel, sheetItemLabel, stepLabel, stepSpans } from "../ui/components/labels";
 import { compareItems, fixedSpecOf } from "./itemCatalog";
 import { formatStandard } from "./standard";
 
-// 시압 결과보고서 인쇄본 — 현장 엑셀 양식(압출 T/O 결과보고서)과 같은 12열 격자로 A4 가로 한 장.
+// 시압 결과보고서 PDF — 현장 엑셀 양식(압출 T/O 결과보고서)과 같은 12열 격자로 A4 가로 한 장.
 //   열: 사전체크(순서·준비사항·OK,NG·문제점) | SPEC(순서·항목·단위·유사품 작업기준·SETT'NG·실측값) | 결과(OK/NG·문제점)
 // 저장하지 않는 칸(당사형번, 온도/습도, 사전체크 결과, 유사품 품번, SETT'NG)도 양식대로 빈칸으로 그린다 —
 // 출력해서 손으로 채우는 양식과 모양이 같아야 현장에서 그대로 쓴다.
-// 새 창에 그려 브라우저 인쇄 창을 띄운다. "PDF로 저장"은 사용자가 인쇄 창에서 고른다.
+// 쪽마다 .sheet 하나(A4 가로). 팝업 없이 화면에 안 보이는 iframe 에 그린 뒤 쪽을 이미지로 떠서
+// PDF 파일로 바로 저장한다(인쇄 창을 거치지 않는다).
 // 문서 문구도 앱 언어(한/영)를 따른다. React 밖이라 싱글턴으로 푼다.
 
 function escapeHtml(s: string | number | null | undefined): string {
@@ -114,12 +115,12 @@ function photoPage(r: TryoutReportDetail, photos: Photo[]): string {
     .map(
       (p, i) => `<figure>
         <figcaption><b>${escapeHtml(t("print.photoRef", { n: i + 1 }))}</b> ${escapeHtml(p.caption)} ${resultMark(p.item.result)}</figcaption>
-        <div class="frame"><img src="${escapeHtml(toBackendImageUrl(p.item.imageUrl))}" alt="${escapeHtml(p.caption)}" /></div>
+        <div class="frame"><img src="${escapeHtml(toSameOriginImageUrl(p.item.imageUrl))}" alt="${escapeHtml(p.caption)}" /></div>
         ${p.item.note ? `<p class="note">${escapeHtml(p.item.note)}</p>` : ""}
       </figure>`,
     )
     .join("");
-  return `<section class="photos">
+  return `<section class="sheet photos">
     <h2>${escapeHtml(t("roundTitle", { n: r.roundNo }))} · ${escapeHtml(r.productCode)} — ${escapeHtml(t("print.photoTitle"))}</h2>
     <div class="figures">${figures}</div>
   </section>`;
@@ -147,7 +148,8 @@ function buildHtml(r: TryoutReportDetail): string {
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
     color: #111;
-    margin: 24px;
+    margin: 0;
+    background: #fff;
     font-size: 9.5px;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
@@ -165,7 +167,8 @@ function buildHtml(r: TryoutReportDetail): string {
   .ref { font-size: 9.5px; color: #444; }
   .ng-cell { background: #FFF5F5; }
   tr { break-inside: avoid; }
-  .photos { break-before: page; }
+  /* A4 가로 한 쪽. PDF 는 .sheet 마다 한 쪽으로 뜬다. */
+  .sheet { width: 297mm; min-height: 210mm; padding: 10mm; background: #fff; }
   .photos h2 { font-size: 13px; margin: 0 0 8px; }
   .figures { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
   figure { margin: 0; border: 1px solid #333; padding: 6px; break-inside: avoid; }
@@ -175,10 +178,10 @@ function buildHtml(r: TryoutReportDetail): string {
   .frame .broken { color: #B91C1C; font-size: 11px; }
   figure .note { margin: 4px 0 0; white-space: pre-wrap; }
   .footer { margin-top: 6px; color: #666; font-size: 9px; text-align: right; }
-  @media print { body { margin: 0; padding: 10mm; } }
 </style>
 </head>
 <body>
+  <div class="sheet">
   <table class="form">
     <colgroup>
       <col style="width:4.5%" /><col style="width:8%" /><col style="width:5.5%" /><col style="width:9%" />
@@ -251,43 +254,76 @@ function buildHtml(r: TryoutReportDetail): string {
 
   <div class="footer">${escapeHtml(t("print.printedAt", { at: formatDateTime(new Date().toISOString()) }))}</div>
 
+  </div>
+
   ${photoPage(r, photos)}
 
-  <script>
-    // 사진이 모두 로드된 뒤 인쇄해야 PDF 에 사진이 들어간다.
-    window.onload = function () {
-      var imgs = Array.prototype.slice.call(document.images);
-      var remaining = imgs.length;
-      function go() { setTimeout(function () { window.print(); }, 200); }
-      if (remaining === 0) return go();
-      function done() { if (--remaining <= 0) go(); }
-      function broken(img) {
-        var p = document.createElement("span");
-        p.className = "broken";
-        p.textContent = ${JSON.stringify(t("print.photoFailed"))};
-        img.replaceWith(p);
-        done();
-      }
-      imgs.forEach(function (img) {
-        if (img.complete) return img.naturalWidth > 0 ? done() : broken(img);
-        img.addEventListener("load", done);
-        img.addEventListener("error", function () { broken(img); });
-      });
-    };
-  </script>
 </body>
 </html>`;
 }
 
-/** 상세 화면에서 이미 받은 보고서를 인쇄 창으로 띄운다. 클릭 처리 안에서 바로 불러야 팝업이 막히지 않는다. */
-export function printTryoutReport(report: TryoutReportDetail): void {
-  const w = window.open("", "_blank");
-  if (!w) {
-    alert(i18n.t("tryoutReport:print.popupBlocked"));
-    return;
+// 화면 밖에 두는 iframe 에 문서를 그린다. 같은 출처라 안쪽 문서를 직접 다룰 수 있다.
+// 사진은 다 불러온 뒤에 돌려준다 — 못 불러온 사진은 깨진 아이콘 대신 안내 문구로 바꾼다.
+async function renderInFrame(html: string): Promise<HTMLIFrameElement> {
+  const frame = document.createElement("iframe");
+  frame.setAttribute("aria-hidden", "true");
+  frame.tabIndex = -1;
+  // 쪽 너비(297mm ≈ 1123px)보다 넓게 — 좁으면 표가 접혀 다르게 그려진다.
+  Object.assign(frame.style, { position: "fixed", left: "-10000px", top: "0", width: "1200px", height: "900px", border: "0" });
+  document.body.appendChild(frame);
+  const doc = frame.contentDocument;
+  if (!doc) throw new Error("print frame unavailable");
+  doc.open();
+  doc.write(html);
+  doc.close();
+
+  const failed = i18n.t("tryoutReport:print.photoFailed");
+  await Promise.all(
+    Array.from(doc.images).map(
+      (img) =>
+        new Promise<void>((resolve) => {
+          const broken = () => {
+            const note = doc.createElement("span");
+            note.className = "broken";
+            note.textContent = failed;
+            img.replaceWith(note);
+            resolve();
+          };
+          if (img.complete) return img.naturalWidth > 0 ? resolve() : broken();
+          img.addEventListener("load", () => resolve());
+          img.addEventListener("error", broken);
+        }),
+    ),
+  );
+  await doc.fonts?.ready;
+  return frame;
+}
+
+function fileNameOf(r: TryoutReportDetail): string {
+  return i18n.t("tryoutReport:print.fileName", { code: r.productCode, n: r.roundNo, date: r.conductedOn });
+}
+
+/** 보고서를 PDF 파일로 바로 내려받는다. 쪽마다 이미지로 떠서 A4 가로에 맞춰 넣는다. */
+export async function downloadTryoutPdf(report: TryoutReportDetail): Promise<void> {
+  // 무거운 라이브러리라 누를 때만 불러온다.
+  const [{ jsPDF }, { default: html2canvas }] = await Promise.all([import("jspdf"), import("html2canvas-pro")]);
+  const frame = await renderInFrame(buildHtml(report));
+  try {
+    const sheets = Array.from(frame.contentDocument!.querySelectorAll<HTMLElement>(".sheet"));
+    const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    for (const [i, sheet] of sheets.entries()) {
+      const canvas = await html2canvas(sheet, { scale: 2, backgroundColor: "#ffffff", logging: false });
+      // 문제점이 길어 쪽이 늘어나도 한 쪽 안에 들어가게 비율을 지켜 줄인다.
+      const ratio = Math.min(pageW / canvas.width, pageH / canvas.height);
+      const w = canvas.width * ratio;
+      const h = canvas.height * ratio;
+      if (i > 0) pdf.addPage();
+      pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", (pageW - w) / 2, 0, w, h);
+    }
+    pdf.save(`${fileNameOf(report)}.pdf`);
+  } finally {
+    frame.remove();
   }
-  w.document.open();
-  w.document.write(buildHtml(report));
-  w.document.close();
-  w.focus();
 }

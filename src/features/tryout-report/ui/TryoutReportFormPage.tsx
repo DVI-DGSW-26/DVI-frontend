@@ -18,6 +18,7 @@ import {
   itemsFrom,
 } from "../lib/formState";
 import { canEditTryout } from "../lib/permissions";
+import { draftKeys, loadLastProduct, saveLastProduct } from "../lib/draft";
 import TryoutReportForm from "./components/TryoutReportForm";
 
 type ProductOption = { value: number; label: string };
@@ -46,8 +47,19 @@ function Message({ children, tone = "muted" }: { children: React.ReactNode; tone
 function CreateForm() {
   const { t } = useTranslation("tryoutReport");
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
   const { data: products = [], isLoading: productsLoading } = useExtrusionProducts();
-  const [productId, setProductId] = useState<number | null>(null);
+  // 쓰던 보고서로 돌아오면(뒤로 가기·새로고침) 고르던 제품부터 다시 깐다.
+  const [productId, setProductIdState] = useState<number | null>(() => (userId != null ? loadLastProduct(userId) : null));
+  const setProductId = (next: number | null) => {
+    setProductIdState(next);
+    if (userId != null) saveLastProduct(userId, next);
+  };
+  const leave = (to: string) => {
+    if (userId != null) saveLastProduct(userId, null);
+    navigate(to, { replace: true });
+  };
   const prefill = useTryoutReportPrefill(productId);
   const create = useCreateTryoutReport();
 
@@ -59,7 +71,7 @@ function CreateForm() {
     [products],
   );
 
-  const goDetail = (d: TryoutReportDetail) => navigate(`/tryout-reports/${d.id}`, { replace: true });
+  const goDetail = (d: TryoutReportDetail) => leave(`/tryout-reports/${d.id}`);
 
   return (
     <Frame title={t("form.createTitle")}>
@@ -115,7 +127,8 @@ function CreateForm() {
           mode="create"
           onSubmit={(header, items) => create.mutateAsync({ productId, ...header, items })}
           onSaved={goDetail}
-          onCancel={() => navigate("/tryout-reports")}
+          onCancel={() => leave("/tryout-reports")}
+          draftKey={userId != null ? draftKeys.create(userId, productId) : null}
         />
       )}
     </Frame>
@@ -151,6 +164,8 @@ function EditForm({ id }: { id: number }) {
         onSubmit={(header, items) => update.mutateAsync({ ...header, items })}
         onSaved={() => navigate(`/tryout-reports/${id}`, { replace: true })}
         onCancel={() => navigate(`/tryout-reports/${id}`)}
+        draftKey={user ? draftKeys.edit(user.id, id) : null}
+        draftBase={d.updatedAt}
       />
     );
   })();
