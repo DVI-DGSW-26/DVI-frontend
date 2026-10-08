@@ -174,6 +174,7 @@ export default function CrossCheckMeasurePage() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showExitOptions, setShowExitOptions] = useState(false);
   // 취소 실패 사유는 모달 안에 띄운다 — 토스트는 모달 오버레이 뒤에 가려 안 보인다.
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [showSkipAllModal, setShowSkipAllModal] = useState(false);
@@ -640,25 +641,6 @@ export default function CrossCheckMeasurePage() {
           <span className="text-sm font-semibold text-[#212121]">
             {t("measure.title")}
           </span>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setCancelError(null);
-                setShowCancelModal(true);
-              }}
-              className="h-8 rounded-md border border-[#D1D5DB] px-3 text-xs font-semibold text-[#6B7280] transition-colors hover:bg-[#F3F4F6]"
-            >
-              {tCommon("actions.cancel")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowRejectModal(true)}
-              className="h-8 rounded-md border border-[#EF4444] px-3 text-xs font-semibold text-[#EF4444] transition-colors hover:bg-[#FEF2F2]"
-            >
-              {t("measure.reject")}
-            </button>
-          </div>
         </div>
         <InfoRow label={t("label.machine")} value={detail.equipment.name} />
         <InfoRow label={t("label.round")} value={slotLabelText(detail.typeLabel)} />
@@ -826,6 +808,67 @@ export default function CrossCheckMeasurePage() {
               />
             );
           })()}
+      </section>
+
+      {/*
+        측정을 그만두는 두 길. 예전엔 제목 옆에 "반려"·"취소"로 붙어 있었는데, 이름만으론
+        결과를 알 수 없었다 — 특히 "취소"는 실제로 담당을 넘기는 동작이라, 되돌리려 해도
+        그 사이 다른 검사자가 가져갈 수 있다. 결과가 드러나는 이름으로 바꾸고, 측정 흐름과
+        섞이지 않게 한 겹 접어 둔다. 동작(모달·API)은 그대로다.
+      */}
+      <section className="px-4 pt-4">
+        <button
+          type="button"
+          onClick={() => setShowExitOptions((v) => !v)}
+          aria-expanded={showExitOptions}
+          className="flex w-full items-center justify-center gap-1 text-xs text-[#6B7280]"
+        >
+          {t("measure.exit.prompt")}
+          <span className="font-semibold text-[#931B82]">
+            {t("measure.exit.toggle")}
+          </span>
+          <Icon
+            icon={
+              showExitOptions
+                ? "solar:alt-arrow-up-linear"
+                : "solar:alt-arrow-down-linear"
+            }
+            width={14}
+            height={14}
+            className="text-[#931B82]"
+          />
+        </button>
+        {showExitOptions && (
+          <div className="mt-2 divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white">
+            <button
+              type="button"
+              onClick={() => setShowRejectModal(true)}
+              className="flex w-full flex-col items-start gap-0.5 px-3 py-2.5 text-left hover:bg-[#F9FAFB]"
+            >
+              <span className="text-sm font-semibold text-[#B91C1C]">
+                {t("measure.exit.reject")}
+              </span>
+              <span className="text-xs text-[#6B7280]">
+                {t("measure.exit.rejectHint")}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setCancelError(null);
+                setShowCancelModal(true);
+              }}
+              className="flex w-full flex-col items-start gap-0.5 px-3 py-2.5 text-left hover:bg-[#F9FAFB]"
+            >
+              <span className="text-sm font-semibold text-[#212121]">
+                {t("measure.exit.handOver")}
+              </span>
+              <span className="text-xs text-[#6B7280]">
+                {t("measure.exit.handOverHint")}
+              </span>
+            </button>
+          </div>
+        )}
       </section>
 
       {showRejectModal && (
