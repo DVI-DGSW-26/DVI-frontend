@@ -203,10 +203,13 @@ export default {
     notePlaceholder: "설비 이상이나 측정 특이사항",
     skippedTitle: "건너뛴 항목이 있어요",
     skippedBody:
-      '본인이 직접 다시 측정하려면 위 카드의 <b>"다시 측정"</b> 버튼을, 결재자 판단에 맡기려면 그대로 <b>결재 요청</b> 하세요. 반려되면 알림 → 홈에서 다시 수정 가능합니다.',
+      '본인이 직접 다시 측정하려면 위 카드의 <b>"다시 측정"</b> 버튼을, 결재자 판단에 맡기려면 그대로 아래 버튼으로 <b>제출</b>하세요. 반려되면 알림 → 홈에서 다시 수정 가능합니다.',
     processing: "처리 중...",
-    requestApproval: "결재 요청",
-    approvalSent: "결재 요청이 전송되었습니다",
+    requestApproval: "결재 올리기",
+    approvalSent: "결재자에게 올렸습니다 · 승인되면 보고서가 발행됩니다",
+    // 초·중 차수는 결재 없이 끝난다 — 결재 문구를 쓰지 않는다.
+    completeStage: "이 차수 완료",
+    stageCompleted: "{{stage}} 차수 완료 · 종 차수까지 끝내면 결재로 올라갑니다",
     valueUpdated: "측정값이 수정되었습니다",
     cannotSave: "저장할 수 없습니다. 새로고침 후 다시 시도해주세요.",
     editValue: "측정값 수정",

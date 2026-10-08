@@ -24,6 +24,8 @@ import { toBackendImageUrl } from "../../../lib/imageUrl";
 import { formatDate } from "../../../lib/datetime";
 import { slotLabelText } from "../../../lib/slotLabel";
 
+const STAGE_ORDER = { INITIAL: 1, MIDDLE: 2, FINAL: 3 } as const;
+
 interface ResultLocationState {
   results?: StepResult[];
   equipmentName?: string;
@@ -108,6 +110,14 @@ export default function CrossCheckResultPage() {
     !!detail &&
     hardnessTracked(detail.product.process) &&
     getStage(detail.type, detail.product.process) === "FINAL";
+
+  // 결재자에게 올라가는 건 종(FINAL) 차수뿐 — 초·중은 제출하면 바로 COMPLETED 로 끝난다.
+  // 세 차수가 같은 "결재 요청" 문구를 쓰면 초품을 올리고 오지 않을 승인을 기다리게 된다.
+  // 차수를 모르면(서버 형식 변경 등) 예전처럼 결재 문구로 둔다.
+  const submitStage = detail
+    ? getStage(detail.type, detail.product.process)
+    : null;
+  const goesToApproval = submitStage === null || submitStage === "FINAL";
 
   const saveMut = useSaveCrossCheckResults(crossCheckId);
   const completeMut = useCompleteCrossCheck(crossCheckId);
@@ -215,9 +225,15 @@ export default function CrossCheckResultPage() {
           : {}),
         ...(note.trim() ? { note: note.trim() } : {}),
       });
-      // 저장 직후 QUALITY_ADMIN 결재 대기로 전환 (DRAFT → PENDING_APPROVAL).
+      // 저장 직후 제출 — 종은 결재 대기(PENDING_APPROVAL), 초·중은 바로 COMPLETED.
       await completeMut.mutateAsync();
-      setToast(t("result.approvalSent"));
+      setToast(
+        goesToApproval
+          ? t("result.approvalSent")
+          : t("result.stageCompleted", {
+              stage: t(`stage.${submitStage}`),
+            }),
+      );
       setTimeout(() => navigate("/cross-checks", { replace: true }), 1200);
     } catch (err) {
       setToast(toErrorMessage(err, t));
@@ -284,6 +300,10 @@ export default function CrossCheckResultPage() {
                   className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${STAGE_BADGE[stage]}`}
                 >
                   {t(`stage.${stage}`)}
+                  {/* 세 단계 중 몇 번째인지 — 종까지 가야 결재로 올라간다는 걸 숫자로도 보인다. */}
+                  <span className="ml-1 tabular-nums opacity-70">
+                    {STAGE_ORDER[stage]}/3
+                  </span>
                 </span>
                 {remainingSlotLabels.length > 0 && (
                   <span className="text-xs text-[#A8A8A8]">
@@ -445,7 +465,9 @@ export default function CrossCheckResultPage() {
         >
           {saveMut.isPending || completeMut.isPending
             ? t("result.processing")
-            : t("result.requestApproval")}
+            : goesToApproval
+              ? t("result.requestApproval")
+              : t("result.completeStage")}
         </button>
       </div>
 
