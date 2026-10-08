@@ -2,6 +2,13 @@ export default {
   home: {
     greeting: "안녕하세요, {{name}}님",
     resumeWork: "이어 작업하기",
+    // 맨 위 카드 하나 — 하던 검사 → 다음 시점 순으로 시스템이 고른다.
+    nextUp: "다음 할 일",
+    // 작업일 경계(새벽 6시)를 화면에 적어 둔다.
+    workDay: {
+      title: "이번 작업일",
+      range: "{{start}} ~ {{end}} · {{h}}시간 {{m}}분 남음 (새벽 6시 전까지는 전날 작업)",
+    },
     skip: "건너뛰기",
     newInspection: "새 검사 시작",
     startFromAssigned: "배정된 검사 지시에서 시작",
@@ -11,10 +18,10 @@ export default {
     count: "{{n}}건",
     startedAt: "시작일: {{date}}",
     resume: "이어서 하기",
-    noOrdersTitle: "오늘 배정된 검사지시가 없습니다",
+    noOrdersTitle: "이번 작업일에 배정된 검사지시가 없습니다",
     noOrdersDesc:
       "검사는 배정된 작업지시에서만 시작할 수 있습니다. 생산 관리자에게 작업지시 배정을 요청해주세요.",
-    todaysOrdersSection: "오늘 할당된 검사",
+    todaysOrdersSection: "이번 작업일 검사",
     startInspection: "검사 시작",
     latestSection: "가장 최근에 한 검사 바로 이어하기",
     nextTodoSection: "이어서 할 일",
@@ -22,9 +29,9 @@ export default {
     typeStart: "{{type}} 시작",
     starting: "시작 중...",
     startNext: "다음 시점 시작",
-    incompleteSection: "미완료 검사",
+    incompleteSection: "승인 기다리는 검사",
     pendingReviewCount: "{{n}}건 검토 대기",
-    remeasureSection: "재측정 해야하는 검사",
+    remeasureSection: "다시 채워야 하는 검사",
     incompleteApproved: "미완료 승인됨",
     preparing: "준비 중...",
     remeasure: "재측정하기",
