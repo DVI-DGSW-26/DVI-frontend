@@ -94,6 +94,7 @@ export default {
   },
   measure: {
     movingToResult: "결과 화면으로 이동 중...",
+    nightAutoCopyNotice: "이 공정은 야간에 자주검사 결과가 순회검사로 함께 기록됩니다.",
     // StepProgress — 진행률은 측정을 마친 항목 수 기준.
     progressDone: "{{done}} / {{total}} 항목 완료",
     stepLabel: "{{n}}번 항목",

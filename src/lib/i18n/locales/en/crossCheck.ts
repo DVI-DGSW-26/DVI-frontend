@@ -263,6 +263,10 @@ export default {
       thStandard: "Nominal (Tolerance)",
       thProduction: "Self-Inspection",
       thPatrol: "Patrol Inspection",
+      thPatrolAuto: "Patrol (auto)",
+      nightAutoTitle: "Night auto-record",
+      nightAutoBody:
+        "No patrol inspector works the night shift, so per the process setting the self-inspection results were recorded as the patrol inspection. Identical values are expected.",
       thPhoto: "Photos",
       photos: "Photos",
       standardWithValue: "Nominal {{value}}",

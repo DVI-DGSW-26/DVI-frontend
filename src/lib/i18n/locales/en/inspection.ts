@@ -96,6 +96,7 @@ export default {
   },
   measure: {
     movingToResult: "Moving to results...",
+    nightAutoCopyNotice: "For this process, night-shift self-inspection results are also recorded as the patrol inspection.",
     progressDone: "{{done}} / {{total}} items done",
     stepLabel: "Item {{n}}",
     stepListAria: "Measurement items",

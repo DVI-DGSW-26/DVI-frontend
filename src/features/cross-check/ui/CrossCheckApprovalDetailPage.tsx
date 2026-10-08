@@ -69,6 +69,7 @@ export default function CrossCheckApprovalDetailPage() {
   const { user } = useAuth();
   const processLabel = useProcessLabel();
   const hardnessTracked = useProcessFlag("hardnessTracked");
+  const autoCopyNight = useProcessFlag("autoCopyNightCrossCheck");
   const detailQuery = useCrossCheckDetail(crossCheckId);
   const detail = detailQuery.data;
   const decideMut = useDecideCrossCheck(crossCheckId);
@@ -195,6 +196,21 @@ export default function CrossCheckApprovalDetailPage() {
     detail.status !== "APPROVED";
   // 전체 건너뛰기로 끝난 건의 해제는 순회검사자 몫. 승인 전(초·중은 COMPLETED,
   // 종은 PENDING_APPROVAL)까지만 가능하고, 묶음이 이미 승인됐으면 서버가 거부한다.
+  // 야간 자동 기록 — 순회검사자가 없는 야간엔 공정 설정(야간 자동복사)에 따라 자주검사
+  // 결과가 순회검사로 그대로 들어온다. 비교표가 두 열을 나란히 보여주니 이유를 모르면
+  // "복사해 넣은 것 아닌가"로 보거나 무심코 승인하게 된다. 서버가 "자동 기록" 표시를
+  // 따로 주지 않아 ① 공정 설정 ② 야간 차수(라벨) ③ 모든 값이 자주검사와 같음 으로 판단한다.
+  // 순회검사 상세엔 shift 가 없어 라벨로 본다(서버가 야간 슬롯 라벨을 "야간…"으로 준다).
+  const autoRecorded =
+    autoCopyNight(detail.product.process) &&
+    detail.typeLabel.trim().startsWith("야간") &&
+    detail.results.length > 0 &&
+    detail.results.every(
+      (r) => r.measuredValue != null && r.measuredValue === r.productionValue,
+    );
+  const patrolLabel = autoRecorded
+    ? t("approval.detail.thPatrolAuto")
+    : t("approval.detail.thPatrol");
   const canCancelSkipAll =
     hasRole(user?.role, ["QUALITY"]) &&
     (detail.status === "COMPLETED" || detail.status === "PENDING_APPROVAL") &&
@@ -318,6 +334,20 @@ export default function CrossCheckApprovalDetailPage() {
         <h2 className="border-b border-gray-100 px-5 py-3 text-sm font-semibold text-[#212121]">
           {t("approval.detail.comparisonTitle")}
         </h2>
+        {autoRecorded && (
+          <div className="mx-3 mt-3 flex items-start gap-2 rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2 text-xs text-[#1E40AF]">
+            <Icon
+              icon="solar:moon-bold"
+              width={16}
+              height={16}
+              className="mt-0.5 shrink-0"
+            />
+            <span>
+              <b>{t("approval.detail.nightAutoTitle")}</b> —{" "}
+              {t("approval.detail.nightAutoBody")}
+            </span>
+          </div>
+        )}
         {/* 데스크톱: 가로 표 */}
         <div className="hidden overflow-x-auto px-2 py-2 md:block md:px-3">
           <table className="w-full min-w-160 text-sm">
@@ -331,7 +361,7 @@ export default function CrossCheckApprovalDetailPage() {
                   {t("approval.detail.thProduction")}
                 </th>
                 <th className="px-3 py-2 text-right font-medium">
-                  {t("approval.detail.thPatrol")}
+                  {patrolLabel}
                 </th>
                 <th className="px-3 py-2 text-center font-medium">
                   {t("approval.detail.thPhoto")}
@@ -354,7 +384,12 @@ export default function CrossCheckApprovalDetailPage() {
             .slice()
             .sort((a, b) => a.dimNo - b.dimNo)
             .map((r) => (
-              <DimCard key={r.resultId} row={r} onOpenPhotos={setPhotoRow} />
+              <DimCard
+                key={r.resultId}
+                row={r}
+                onOpenPhotos={setPhotoRow}
+                patrolLabel={patrolLabel}
+              />
             ))}
         </ul>
       </section>
@@ -565,9 +600,12 @@ function DimRow({
 function DimCard({
   row,
   onOpenPhotos,
+  patrolLabel,
 }: {
   row: CrossCheckResultInfo;
   onOpenPhotos: (row: CrossCheckResultInfo) => void;
+  /** 야간 자동 기록이면 "순회 (자동)". */
+  patrolLabel: string;
 }) {
   const { t } = useTranslation("crossCheck");
   const productionWithin =
@@ -635,7 +673,7 @@ function DimCard({
         </div>
         <div className="rounded-lg bg-[#F9FAFB] px-3 py-2">
           <div className="text-[11px] text-[#6B7280]">
-            {t("approval.detail.thPatrol")}
+            {patrolLabel}
           </div>
           <div className="mt-0.5 flex items-center gap-1.5">
             <JudgmentChip within={crossWithin} />

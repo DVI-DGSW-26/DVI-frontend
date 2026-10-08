@@ -260,6 +260,10 @@ export default {
       thStandard: "기준 (공차)",
       thProduction: "자주검사",
       thPatrol: "순회검사",
+      thPatrolAuto: "순회 (자동)",
+      nightAutoTitle: "야간 자동 기록",
+      nightAutoBody:
+        "순회검사자가 없는 야간이라 공정 설정에 따라 자주검사 결과가 그대로 순회검사로 기록됐습니다. 두 값이 같은 것이 정상입니다.",
       thPhoto: "사진",
       photos: "사진",
       standardWithValue: "기준 {{value}}",

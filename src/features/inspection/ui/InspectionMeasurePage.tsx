@@ -1,3 +1,4 @@
+import { Icon } from "@iconify/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -43,6 +44,7 @@ import PassFailPhase from "./PassFailPhase";
 import Toast from "./Toast";
 import TerminateInspectionModal from "./TerminateInspectionModal";
 import { slotLabelText } from "../../../lib/slotLabel";
+import { useProcessFlag } from "../../process";
 
 type Phase = "capture" | "crop" | "input";
 
@@ -302,6 +304,7 @@ export default function InspectionMeasurePage() {
   const uploadImage = useUploadInspectionImage();
   const ocrImage = useOcrInspectionImage();
   const saveResults = useSaveInspectionResults(inspectionId);
+  const autoCopyNight = useProcessFlag("autoCopyNightCrossCheck");
 
   // 메타 정보(설비명/제품명) 는 detail 우선, 없으면 location.state.inspection 에서.
   const info = detail ?? stateInspection;
@@ -758,6 +761,17 @@ export default function InspectionMeasurePage() {
           {t("measure.terminateButton")}
         </button>
       </section>
+
+      {/*
+        야간 자동 기록 공정 — 이 결과가 그대로 순회검사로도 기록된다는 걸 측정하는 사람이
+        알아야 "순회검사는 안 했는데 왜 되어 있지?"가 안 생긴다.
+      */}
+      {info?.shift === "NIGHT" && autoCopyNight(info.product.process) && (
+        <section className="flex items-start gap-2 border-b border-[#BFDBFE] bg-[#EFF6FF] px-4 py-2.5 text-xs text-[#1E40AF]">
+          <Icon icon="solar:moon-bold" width={16} height={16} className="mt-0.5 shrink-0" />
+          <span>{t("measure.nightAutoCopyNotice")}</span>
+        </section>
+      )}
 
       <section className="border-b border-gray-200 bg-white px-4 py-4">
         <StepProgress
