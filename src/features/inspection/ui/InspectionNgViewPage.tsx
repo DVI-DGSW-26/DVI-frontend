@@ -9,7 +9,7 @@ import { judgeMeasurement } from "../lib/judgment";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import JudgmentBadge from "./JudgmentBadge";
 import SketchImage from "./SketchImage";
-import { slotLabelText } from "../../../lib/slotLabel";
+import { slotLabelWithShift } from "../../../lib/slotLabel";
 
 // 자주검사 NG 알림에서 진입하는 읽기전용 상세.
 // 순회검사자/관리자가 NG 발생 건을 확인하는 용도 — GET /inspection/{id}(권한:전체)로 조회한다.
@@ -76,7 +76,7 @@ export default function InspectionNgViewPage() {
           />
           <InfoRow
             label={t("detail.fields.round")}
-            value={`${slotLabelText(detail.typeLabel)} (${detail.type})`}
+            value={slotLabelWithShift(detail.typeLabel, detail.type, detail.shift)}
           />
         </dl>
       </section>

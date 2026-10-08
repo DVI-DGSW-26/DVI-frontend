@@ -6,6 +6,8 @@ import { useAuth } from "../../features/auth/AuthContext";
 import type { Role } from "../../features/auth/api";
 import { TAB_GROUP_ORDER, visibleTabsFor } from "./tabVisibility";
 import type { TabGroup } from "./tabVisibility";
+import { useMenuBadges } from "./useMenuBadges";
+import type { MenuBadges } from "./useMenuBadges";
 
 type TabItem = {
   // layout 네임스페이스 tabs.* 키
@@ -69,6 +71,7 @@ const TabBarMobile = () => {
   const moreOpen = moreOpenAt === location.pathname;
 
   const visibleTabs = visibleTabsFor(TABS, user?.role);
+  const badges = useMenuBadges();
   // 통합 관리자는 탭이 열한 개라 글자 없는 아이콘만 한 줄로 늘어섰고, 비슷한 방패
   // 아이콘이 둘이라 구분도 안 됐다. 많으면 앞의 넷 + "더보기"만 두고 글자를 함께 쓴다.
   const collapsed = visibleTabs.length > MAX_TABS;
@@ -83,6 +86,7 @@ const TabBarMobile = () => {
     <>
       {moreOpen && (
         <MoreSheet
+          badges={badges}
           tabs={overflow}
           isActive={isTabActive}
           onClose={() => setMoreOpenAt(null)}
@@ -104,11 +108,14 @@ const TabBarMobile = () => {
                 }`;
               }}
             >
-              <Icon
-                icon={tab.icon}
-                width={collapsed ? 24 : (tab.iconSize ?? 28)}
-                height={collapsed ? 24 : (tab.iconSize ?? 28)}
-              />
+              <span className="relative">
+                <Icon
+                  icon={tab.icon}
+                  width={collapsed ? 24 : (tab.iconSize ?? 28)}
+                  height={collapsed ? 24 : (tab.iconSize ?? 28)}
+                />
+                <CountBadge n={badges[tab.labelKey]} />
+              </span>
               {collapsed && (
                 <span className="max-w-full truncate px-0.5 text-[10px] font-medium">
                   {t(`tabs.${tab.labelKey}`)}
@@ -138,11 +145,23 @@ const TabBarMobile = () => {
 };
 
 /** "더보기" 시트 — 탭바에 못 올린 메뉴를 웹 사이드바와 같은 묶음으로 보여준다. */
+/** 아이콘 오른쪽 위 건수 — 결재 대기가 있을 때만. */
+function CountBadge({ n }: { n: number | undefined }) {
+  if (!n) return null;
+  return (
+    <span className="absolute -right-2.5 -top-1.5 min-w-4 rounded-full bg-[#DC2626] px-1 text-center text-[10px] font-bold leading-4 text-white tabular-nums">
+      {n > 99 ? "99+" : n}
+    </span>
+  );
+}
+
 function MoreSheet({
+  badges,
   tabs,
   isActive,
   onClose,
 }: {
+  badges: MenuBadges;
   tabs: TabItem[];
   isActive: (tab: TabItem) => boolean;
   onClose: () => void;
@@ -180,6 +199,11 @@ function MoreSheet({
                     >
                       <Icon icon={tab.icon} width={20} height={20} />
                       <span className="truncate">{t(`tabs.${tab.labelKey}`)}</span>
+                      {badges[tab.labelKey] ? (
+                        <span className="ml-auto rounded-full bg-[#DC2626] px-1.5 text-[11px] font-bold leading-5 text-white tabular-nums">
+                          {badges[tab.labelKey]}
+                        </span>
+                      ) : null}
                     </NavLink>
                   </li>
                 ))}
