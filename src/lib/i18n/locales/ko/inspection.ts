@@ -37,6 +37,8 @@ export default {
     errors: {
       alreadyExists: "이미 시작된 검사입니다. 목록을 새로고침해주세요.",
       previousNotCompleted: "이전 시점을 먼저 완료해주세요.",
+      previousInReview:
+        "앞 시점의 미완료 건이 품질관리자 승인을 기다리고 있어 아직 시작할 수 없습니다.",
       notAssigned: "이 작업지시에 배정된 작업자가 아닙니다.",
       orderNotFound: "작업지시를 찾을 수 없습니다. 목록을 새로고침해주세요.",
       orderFinished: "이미 마감된 작업지시입니다.",
@@ -53,10 +55,11 @@ export default {
     status: {
       draft: "작성 중",
       completed: "완료",
-      reviewPending: "검토 대기",
+      reviewPending: "품질관리자 승인 대기",
       incompleteApproved: "미완료 승인됨",
       skipped: "건너뜀",
       locked: "이전 시점 완료 필요",
+      lockedReview: "앞 시점 미완료 승인 대기 중",
     },
     timeUnset: "시각 미지정",
     openMenu: "메뉴 열기",

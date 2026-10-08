@@ -13,6 +13,9 @@ export type SlotStatus =
   | "INCOMPLETE_APPROVED"
   | "SKIPPED"
   | "LOCKED"
+  // 앞 시점이 미완료로 품질관리자 승인을 기다리는 탓에 잠김 — "이전 시점 완료 필요"라고 하면
+  // 분명히 제출한 사람이 무엇을 더 해야 하는지 헷갈린다.
+  | "LOCKED_REVIEW"
   | "NONE";
 
 interface Props {
@@ -92,6 +95,16 @@ const STATUS_META: Record<
       icon: "solar:lock-keyhole-bold",
       labelKey: "slot.status.locked",
       color: "text-[#9CA3AF]",
+    },
+    actionLabelKey: "",
+    disabled: true,
+    dim: true,
+  },
+  LOCKED_REVIEW: {
+    badge: {
+      icon: "solar:lock-keyhole-bold",
+      labelKey: "slot.status.lockedReview",
+      color: "text-[#B45309]",
     },
     actionLabelKey: "",
     disabled: true,

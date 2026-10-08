@@ -38,6 +38,8 @@ export default {
       alreadyExists:
         "This inspection has already been started. Please refresh the list.",
       previousNotCompleted: "Please complete the previous slot first.",
+      previousInReview:
+        "An earlier slot was submitted as incomplete and is awaiting quality manager approval, so this one can't start yet.",
       notAssigned: "You are not a worker assigned to this work order.",
       orderNotFound: "Work order not found. Please refresh the list.",
       orderFinished: "This work order has already been finalized.",
@@ -54,10 +56,11 @@ export default {
     status: {
       draft: "In Progress",
       completed: "Completed",
-      reviewPending: "Pending Review",
+      reviewPending: "Awaiting QA approval",
       incompleteApproved: "Incomplete Approved",
       skipped: "Skipped",
       locked: "Complete previous slot first",
+      lockedReview: "Earlier slot awaiting approval",
     },
     timeUnset: "Time not set",
     openMenu: "Open menu",

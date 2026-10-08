@@ -135,6 +135,8 @@ export default function ScanPage() {
   const slotStatusByType = useMemo(() => {
     const map = new Map<string, SlotStatus>();
     let allPrevDone = true;
+    // 앞에서 처음 막힌 시점이 미완료(승인 대기)였는지 — 잠긴 이유를 정확히 대기 위해.
+    let blockedByReview = false;
     for (const s of slots) {
       const ins = inspectionByType.get(s.type);
       // 로컬로 기억한 건너뜀은 서버 상태보다 우선 — refetch 지연/누락과 무관하게 즉시 반영.
@@ -147,7 +149,12 @@ export default function ScanPage() {
       else if (ins?.status === "INCOMPLETE_APPROVED")
         status = "INCOMPLETE_APPROVED";
       else if (ins?.status === "SKIPPED") status = "SKIPPED";
-      else status = allPrevDone ? "NONE" : "LOCKED";
+      else
+        status = allPrevDone
+          ? "NONE"
+          : blockedByReview
+            ? "LOCKED_REVIEW"
+            : "LOCKED";
       map.set(s.type, status);
 
       // 이전 시점이 "종결" 상태인지 — COMPLETED / INCOMPLETE_APPROVED / SKIPPED 가 다음 진행 허용.
@@ -156,7 +163,10 @@ export default function ScanPage() {
         ins?.status === "COMPLETED" ||
         ins?.status === "INCOMPLETE_APPROVED" ||
         ins?.status === "SKIPPED";
-      if (!terminal) allPrevDone = false;
+      if (!terminal && allPrevDone) {
+        allPrevDone = false;
+        blockedByReview = ins?.status === "INCOMPLETE";
+      }
     }
     return map;
   }, [slots, inspectionByType, skippedTypes]);
@@ -305,10 +315,13 @@ export default function ScanPage() {
     }
 
     // LOCKED — 안내 토스트만.
-    if (status === "LOCKED") {
+    if (status === "LOCKED" || status === "LOCKED_REVIEW") {
       setToast({
         code: "PREVIOUS_INSPECTION_NOT_COMPLETED",
-        message: t("scan.errors.previousNotCompleted"),
+        message:
+          status === "LOCKED_REVIEW"
+            ? t("scan.errors.previousInReview")
+            : t("scan.errors.previousNotCompleted"),
       });
       return;
     }
