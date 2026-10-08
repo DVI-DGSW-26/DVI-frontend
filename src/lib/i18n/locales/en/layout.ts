@@ -17,6 +17,7 @@ export default {
     home: "Home",
     inspectionHistory: "History",
     scan: "Scan",
+    tryoutReports: "Tryout reports",
     more: "More",
   },
   groups: {

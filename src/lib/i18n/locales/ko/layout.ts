@@ -18,6 +18,7 @@ export default {
     home: "홈",
     inspectionHistory: "검사이력",
     scan: "스캔",
+    tryoutReports: "시압 결과보고서",
     more: "더보기",
   },
   // 관리자 메뉴 묶음 제목.

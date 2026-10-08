@@ -24,6 +24,7 @@ import koUserSearch from "./locales/ko/userSearch";
 import koNotification from "./locales/ko/notification";
 import koMonitor from "./locales/ko/monitor";
 import koShared from "./locales/ko/shared";
+import koTryoutReport from "./locales/ko/tryoutReport";
 
 import enLayout from "./locales/en/layout";
 import enCommon from "./locales/en/common";
@@ -46,6 +47,7 @@ import enUserSearch from "./locales/en/userSearch";
 import enNotification from "./locales/en/notification";
 import enMonitor from "./locales/en/monitor";
 import enShared from "./locales/en/shared";
+import enTryoutReport from "./locales/en/tryoutReport";
 
 export const LANGS = ["ko", "en"] as const;
 export type Lang = (typeof LANGS)[number];
@@ -77,6 +79,7 @@ i18n
         notification: koNotification,
         monitor: koMonitor,
         shared: koShared,
+        tryoutReport: koTryoutReport,
       },
       en: {
         layout: enLayout,
@@ -100,6 +103,7 @@ i18n
         notification: enNotification,
         monitor: enMonitor,
         shared: enShared,
+        tryoutReport: enTryoutReport,
       },
     },
     // 공장 내 사용자는 한국어가 기본. 브라우저 언어로 자동 전환하지 않고,

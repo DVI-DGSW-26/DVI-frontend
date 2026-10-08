@@ -29,6 +29,7 @@ const TABS: TabItem[] = [
   { labelKey: "crossChecks", to: "/cross-checks", icon: "icon-park-outline:big-clock", roles: ["ADMIN"], group: "status" },
   { labelKey: "reports", to: "/reports", icon: "basil:document-solid", roles: ["ADMIN"], group: "status" },
   { labelKey: "qmReports", to: "/qm-reports", icon: "basil:document-solid", roles: ["QUALITY_ADMIN"], group: "status" },
+  { labelKey: "tryoutReports", to: "/tryout-reports", icon: "mdi:file-document-edit-outline", roles: ["ADMIN", "QUALITY_ADMIN", "PRODUCTION", "PRODUCTION_MANAGER", "QUALITY"], group: "status" },
   { labelKey: "products", to: "/products", icon: "mdi:cube", roles: ["ADMIN", "QUALITY_ADMIN"], group: "master" },
   { labelKey: "equipment", to: "/equipment", icon: "mdi:factory", roles: ["ADMIN", "QUALITY_ADMIN"], group: "master" },
   { labelKey: "customers", to: "/customers", icon: "mdi:office-building", roles: ["ADMIN", "QUALITY_ADMIN"], group: "master" },
@@ -56,6 +57,10 @@ const TabBarWeb = () => {
       {visibleTabs.map((tab, i) => (
         <Fragment key={tab.to}>
         {/* 묶음이 바뀌는 자리에만 제목 — 그 역할에 보이는 탭 기준이라 빈 묶음 제목은 안 생긴다. */}
+        {/* 묶음이 끝나고 묶음 없는 탭(마이페이지 등)이 오면 선만 그어 앞 묶음에 딸려 보이지 않게. */}
+        {!tab.group && visibleTabs[i - 1]?.group && (
+          <div className="mx-2 my-2 border-t border-gray-100" />
+        )}
         {tab.group && tab.group !== visibleTabs[i - 1]?.group && (
           <div className="px-2 pb-1 pt-4 text-[11px] font-semibold tracking-wide text-[#9CA3AF]">
             {t(`groups.${tab.group}`)}
