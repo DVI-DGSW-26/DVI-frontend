@@ -21,7 +21,7 @@ import { getStage, isSkippedAll, STAGE_BADGE } from "../lib/stage";
 import SkipAllModal from "./SkipAllModal";
 import PhotoCompareModal from "../../../components/shared/PhotoCompareModal";
 import { formatDateTime } from "../../../lib/datetime";
-import { slotLabelText } from "../../../lib/slotLabel";
+import { slotLabelWithShift } from "../../../lib/slotLabel";
 
 function isWithinTolerance(
   value: number,
@@ -76,8 +76,11 @@ export default function CrossCheckApprovalDetailPage() {
   // 이 차수가 야간인지 — 순회검사 응답엔 교대가 없고 라벨도 입력한 이름 그대로("초")라,
   // 공정 시점 목록에서 같은 시점 코드의 shift 를 찾는다(시점 코드는 서버가 매긴 식별자).
   const { data: processSlots = [] } = useInspectionSlots(detail?.product.process);
-  const isNightSlot =
-    processSlots.find((s) => s.type === detail?.type)?.shift === "NIGHT";
+  // 스케줄에서 그 시점이 나중에 빠졌으면(옛 기록) 목록에 없다 — 그때만 시점 코드로 본다.
+  const slotShift = processSlots.find((s) => s.type === detail?.type)?.shift;
+  const isNightSlot = slotShift
+    ? slotShift === "NIGHT"
+    : !!detail?.type.startsWith("NIGHT_");
   const decideMut = useDecideCrossCheck(crossCheckId);
   const deleteMut = useDeleteCrossCheck(crossCheckId);
   const cancelSkipAllMut = useCancelSkipAllCrossCheck(crossCheckId);
@@ -299,7 +302,7 @@ export default function CrossCheckApprovalDetailPage() {
             value={(() => {
               const stage = getStage(detail.type, detail.product.process);
               const stageText = stage ? ` · ${t(`stage.${stage}`)}` : "";
-              return `${slotLabelText(detail.typeLabel)} (${detail.type})${stageText}`;
+              return `${slotLabelWithShift(detail.typeLabel, detail.type)}${stageText}`;
             })()}
           />
           <InfoLine
@@ -404,6 +407,10 @@ export default function CrossCheckApprovalDetailPage() {
         <h2 className="text-sm font-semibold text-[#212121]">
           {t("approval.detail.sectionAppearance")}
         </h2>
+        {/* 외관 판정 기준 — 모든 제품 공통 고정 문구(번역 파일에서 관리). */}
+        <p className="mt-0.5 text-[11px] text-[#9CA3AF]">
+          {t("appearanceCriterion", { ns: "shared" })}
+        </p>
         <dl className="mt-3 grid grid-cols-1 gap-y-2 text-xs md:grid-cols-2 md:gap-x-6">
           <InfoLine
             label={t("approval.detail.productionAppearance")}
@@ -434,7 +441,7 @@ export default function CrossCheckApprovalDetailPage() {
       )}
 
       {canDecide && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white p-4">
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white p-4 md:left-60">
           {showRejectForm ? (
             <div className="mx-auto flex max-w-3xl flex-col gap-3">
               <label

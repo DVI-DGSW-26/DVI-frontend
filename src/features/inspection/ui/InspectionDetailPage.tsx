@@ -12,7 +12,7 @@ import {
 import { useProcessLabel } from "../../process";
 import SketchImage from "./SketchImage";
 import ShiftBadge from "../../../components/shared/ShiftBadge";
-import { slotLabelText } from "../../../lib/slotLabel";
+import { slotLabelWithShift } from "../../../lib/slotLabel";
 
 interface DetailLocationState {
   inspection?: MyInspection;
@@ -106,7 +106,7 @@ export default function InspectionDetailPage() {
           />
           <InfoRow
             label={t("detail.fields.round")}
-            value={`${slotLabelText(inspection.typeLabel)} (${inspection.type})`}
+            value={slotLabelWithShift(inspection.typeLabel, inspection.type, inspection.shift)}
             suffix={<ShiftBadge shift={inspection.shift} compact />}
           />
           <InfoRow label={t("detail.fields.worker")} value={user?.name ?? "-"} />
@@ -179,7 +179,7 @@ export default function InspectionDetailPage() {
         )}
       </section>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white p-4">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white p-4 md:left-60">
         <button
           type="button"
           onClick={handleStart}

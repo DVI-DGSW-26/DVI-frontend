@@ -311,9 +311,12 @@ export default function InspectionMeasurePage() {
   const info = detail ?? stateInspection;
   // 야간 여부 — 응답의 shift 가 없을 수 있어 공정 시점 목록에서 같은 시점 코드의 shift 로 보강한다.
   const { data: processSlots = [] } = useInspectionSlots(info?.product.process);
-  const isNightShift =
-    info?.shift === "NIGHT" ||
-    processSlots.find((s) => s.type === info?.type)?.shift === "NIGHT";
+  const slotShift = processSlots.find((s) => s.type === info?.type)?.shift;
+  const isNightShift = info?.shift
+    ? info.shift === "NIGHT"
+    : slotShift
+      ? slotShift === "NIGHT"
+      : !!info?.type?.startsWith("NIGHT_");
 
   // result 페이지에서 "측정으로 돌아가기" 로 진입한 경우 — allDone 자동 redirect 를 막기 위한 플래그.
   const editMode = useMemo<boolean>(() => {

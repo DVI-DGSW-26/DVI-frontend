@@ -45,7 +45,7 @@ import {
 } from "../lib/historyFilter";
 import Toast from "../../inspection/ui/Toast";
 import { useViewState } from "../../../lib/viewState";
-import { slotLabelText } from "../../../lib/slotLabel";
+import { slotLabelText, slotLabelWithShift } from "../../../lib/slotLabel";
 
 type Tab = "assigned" | "history";
 
@@ -776,7 +776,7 @@ function HistoryCard({
           <InfoLine label={t("label.equipment")} value={cc.equipment.name} />
           <InfoLine
             label={t("label.round")}
-            value={`${slotLabelText(cc.typeLabel)} (${cc.type})`}
+            value={slotLabelWithShift(cc.typeLabel, cc.type)}
           />
           <InfoLine label={t("label.startDate")} value={formatDate(cc.createdAt)} />
           <InfoLine

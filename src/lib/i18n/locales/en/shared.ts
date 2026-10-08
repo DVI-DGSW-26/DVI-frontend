@@ -43,4 +43,6 @@ export default {
     keepEditing: "Keep editing",
     discard: "Discard and close",
   },
+  // Appearance check criterion — fixed for every product.
+  appearanceCriterion: "Criterion: no harmful defects",
 } as const;

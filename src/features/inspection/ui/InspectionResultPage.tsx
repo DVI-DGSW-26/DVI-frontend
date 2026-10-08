@@ -412,6 +412,10 @@ export default function InspectionResultPage() {
           <div className="text-xs font-medium text-[#6B7280]">
             {t("result.appearance")}
           </div>
+          {/* 외관 판정 기준 — 모든 제품 공통 고정 문구(번역 파일에서 관리). */}
+          <p className="mt-0.5 text-[11px] text-[#9CA3AF]">
+            {t("appearanceCriterion", { ns: "shared" })}
+          </p>
           <div
             role="radiogroup"
             aria-label={t("result.appearanceAria")}
@@ -506,7 +510,7 @@ export default function InspectionResultPage() {
         )}
       </section>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white p-4">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white p-4 md:left-60">
         {postSubmitMode ? (
           // 완료/미완료 처리 후 — 다음 시점이 있으면 그쪽 진입, 없으면 홈으로 이동.
           <div className="flex flex-col gap-2">

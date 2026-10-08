@@ -45,4 +45,6 @@ export default {
     keepEditing: "계속 작성",
     discard: "버리고 닫기",
   },
+  // 외관 검사 판정 기준 — 모든 제품 공통 고정 문구. 결과·결재 화면의 "외관 검사" 칸에 붙는다.
+  appearanceCriterion: "기준: 유해한 결함이 없을 것",
 } as const;
