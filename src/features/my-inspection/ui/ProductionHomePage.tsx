@@ -20,7 +20,10 @@ import type {
 } from "../../inspection/type/types";
 import { isTerminableInspection } from "../../inspection/lib/process";
 import { useMyInspectionOrders } from "../../inspection-orders/api";
-import { orderWorkDayKey } from "../../inspection-orders/lib/orderWorkDay";
+import {
+  orderWorkDayKey,
+  orderWorkDayRange,
+} from "../../inspection-orders/lib/orderWorkDay";
 import type { InspectionOrder } from "../../inspection-orders/api";
 import type { MyInspection } from "../type/types";
 import { getStatusBadge } from "../lib/inspectionStatus";
@@ -70,6 +73,10 @@ export default function ProductionHomePage() {
   const [pendingPrevId, setPendingPrevId] = useState<number | null>(null);
   const [pendingReopenId, setPendingReopenId] = useState<number | null>(null);
   const [skipTarget, setSkipTarget] = useState<SkipTarget | null>(null);
+  // 아래쪽 요약(승인 기다리는 검사 / 다시 채워야 하는 검사)은 접어 두고 필요할 때 편다.
+  const [openSummary, setOpenSummary] = useState<"incomplete" | "reopen" | null>(
+    null,
+  );
   // 조기 마감 확인 모달의 대상 검사. 진행중 목록과 "이어서 할 일" 목록이 공유한다.
   const [terminateTarget, setTerminateTarget] = useState<MyInspection | null>(
     null,
@@ -148,15 +155,24 @@ export default function ProductionHomePage() {
     [inspections, getNextSlot],
   );
 
+  // 맨 위 "다음 할 일" 카드 하나 — 하던 검사 → 다음 시점 → (없으면) 지시에서 시작 순으로
+  // 시스템이 한 번만 고른다. 예전엔 상단 카드·진행중 첫 줄·"가장 최근 검사"·"이어서 할 일"이
+  // 같은 검사를 서로 다른 제목으로 두세 번 보여줘 교대 시작마다 화면을 훑어야 했다.
+  const topIsDraft = !!latestDraft;
+  const topIsNext = !latestDraft && !!latestCompleted;
+
   // "이어서 할 일" — 같은 제품/설비로 다음 시점 진입 가능한 후보.
-  // 상단 강조 카드로 이미 올린 1건은 중복되지 않게 목록에서 제외.
+  // "가장 최근 검사" 섹션과 계산이 같아 하나로 합쳤다. 맨 위 카드로 올린 1건만 뺀다.
   const nextEligible = useMemo(() => {
     const all = extractNextEligible(inspections, getNextSlot);
-    if (!latestCompleted) return all;
+    if (!topIsNext || !latestCompleted) return all;
     return all.filter(
       (e) => e.previous.inspectionId !== latestCompleted.previous.inspectionId,
     );
-  }, [inspections, latestCompleted, getNextSlot]);
+  }, [inspections, latestCompleted, getNextSlot, topIsNext]);
+
+  // 진행중 목록 — 맨 위 카드로 올린 1건은 빼고 나머지만.
+  const otherDrafts = topIsDraft ? draftInspections.slice(1) : draftInspections;
 
   const handleResume = (inspection: MyInspection) => {
     navigate(`/inspection/${inspection.inspectionId}/measure`, {
@@ -311,6 +327,14 @@ export default function ProductionHomePage() {
           {t("home.greeting", { name: user?.name ?? "" })}
         </h1>
 
+        <WorkDayBanner />
+
+        {(topIsDraft || topIsNext) && (
+          <div className="mt-4 text-xs font-semibold text-[#6B7280]">
+            {t("home.nextUp")}
+          </div>
+        )}
+
         {latestDraft ? (
           <>
             <div className="relative mt-3">
@@ -346,7 +370,47 @@ export default function ProductionHomePage() {
                 {t("home.skip")}
               </button>
             </div>
+            {isTerminableInspection(latestDraft) && (
+              <TerminateButton
+                onClick={() => setTerminateTarget(latestDraft)}
+                disabled={terminateMutation.isPending}
+              />
+            )}
 
+            <button
+              type="button"
+              onClick={() => navigate("/my-orders")}
+              className="mt-2 flex w-full items-center justify-between gap-3 rounded-xl border border-[#E5E7EB] bg-white p-3 text-left text-[#212121] transition-colors hover:bg-gray-50"
+            >
+              <div className="min-w-0">
+                <div className="text-xs font-medium text-[#6B7280]">
+                  {t("home.newInspection")}
+                </div>
+                <div className="mt-0.5 text-sm text-[#212121]">
+                  {t("home.startFromAssigned")}
+                </div>
+              </div>
+              <Icon
+                icon="solar:clipboard-list-linear"
+                width={22}
+                height={22}
+                className="shrink-0 text-[#931B82]"
+              />
+            </button>
+          </>
+        ) : latestCompleted ? (
+          <>
+            <div className="mt-2">
+              <LatestCompletedCard
+                previous={latestCompleted.previous}
+                nextType={latestCompleted.nextType}
+                onStartNext={handleStartNext}
+                isStartingNext={
+                  startNextMutation.isPending &&
+                  pendingPrevId === latestCompleted.previous.inspectionId
+                }
+              />
+            </div>
             <button
               type="button"
               onClick={() => navigate("/my-orders")}
@@ -397,19 +461,19 @@ export default function ProductionHomePage() {
       </div>
 
       {/* 진행중 검사 — 이어서 하거나, 금형 교체 등으로 여기서 바로 마감한다. */}
-      {draftInspections.length > 0 && (
+      {otherDrafts.length > 0 && (
         <section className="px-4 pt-6">
           <div className="mb-2 flex items-baseline justify-between">
             <h2 className="text-sm font-semibold text-[#212121]">
               {t("home.inProgressSection")}
             </h2>
             <span className="text-xs font-medium text-[#931B82]">
-              {t("home.count", { n: draftInspections.length })}
+              {t("home.count", { n: otherDrafts.length })}
             </span>
           </div>
 
           <ul className="flex flex-col gap-2">
-            {draftInspections.map((i) => (
+            {otherDrafts.map((i) => (
               <li
                 key={i.inspectionId}
                 className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm"
@@ -516,24 +580,6 @@ export default function ProductionHomePage() {
         </section>
       )}
 
-      {/* "가장 최근 완료" — 마지막으로 끝낸 1건에서 다음 검사를 바로 시작. */}
-      {latestCompleted && (
-        <section className="px-4 pt-6">
-          <h2 className="mb-2 text-lg font-semibold text-[#525050]">
-            {t("home.latestSection")}
-          </h2>
-          <LatestCompletedCard
-            previous={latestCompleted.previous}
-            nextType={latestCompleted.nextType}
-            onStartNext={handleStartNext}
-            isStartingNext={
-              startNextMutation.isPending &&
-              pendingPrevId === latestCompleted.previous.inspectionId
-            }
-          />
-        </section>
-      )}
-
       {/* "이어서 할 일" — 같은 제품/설비로 다음 시점 검사를 한 번에 시작. 비어있으면 영역 숨김. */}
       {nextEligible.length > 0 && (
         <section className="px-4 pt-4">
@@ -629,20 +675,38 @@ export default function ProductionHomePage() {
         </section>
       )}
 
-      {/* 미완료 검사가 있으면 후속 조치를 위해 홈에 미리 노출. 없으면 영역 자체를 숨김. */}
-      {incompleteInspections.length > 0 && (
-        <section className="px-4 pt-4">
-          <div className="mb-2 flex items-baseline justify-between">
-            <h2 className="text-sm font-semibold text-[#212121]">
-              {t("home.incompleteSection")}
-            </h2>
-            <span className="text-xs font-medium text-[#F59E0B]">
-              {t("home.pendingReviewCount", {
-                n: incompleteInspections.length,
-              })}
-            </span>
+      {/*
+        미완료(승인 대기)·재측정은 매번 볼 일은 아니라 한 줄 요약으로 접어 둔다 — 누르면 편다.
+        건수가 0이어도 줄은 남겨 "없음"을 알린다(두 줄 다 0이면 통째로 숨김).
+      */}
+      {(incompleteInspections.length > 0 ||
+        reopenableInspections.length > 0) && (
+        <section className="px-4 pt-6">
+          <div className="divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white shadow-sm">
+            <SummaryToggle
+              label={t("home.incompleteSection")}
+              count={incompleteInspections.length}
+              tone="amber"
+              open={openSummary === "incomplete"}
+              onToggle={() =>
+                setOpenSummary((v) => (v === "incomplete" ? null : "incomplete"))
+              }
+            />
+            <SummaryToggle
+              label={t("home.remeasureSection")}
+              count={reopenableInspections.length}
+              tone="neutral"
+              open={openSummary === "reopen"}
+              onToggle={() =>
+                setOpenSummary((v) => (v === "reopen" ? null : "reopen"))
+              }
+            />
           </div>
+        </section>
+      )}
 
+      {openSummary === "incomplete" && incompleteInspections.length > 0 && (
+        <section className="px-4 pt-2">
           <ul className="flex flex-col divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white shadow-sm">
             {incompleteInspections.map((i) => {
               const badge = getStatusBadge(i.status);
@@ -685,17 +749,8 @@ export default function ProductionHomePage() {
       )}
 
       {/* 미완료 승인된 검사들 — 건너뛴 dim 을 채우기 위한 재측정 흐름. */}
-      {reopenableInspections.length > 0 && (
-        <section className="px-4 pt-4">
-          <div className="mb-2 flex items-baseline justify-between">
-            <h2 className="text-sm font-semibold text-[#212121]">
-              {t("home.remeasureSection")}
-            </h2>
-            <span className="text-xs font-medium text-[#6B7280]">
-              {t("home.count", { n: reopenableInspections.length })}
-            </span>
-          </div>
-
+      {openSummary === "reopen" && reopenableInspections.length > 0 && (
+        <section className="px-4 pt-2">
           <ul className="flex flex-col gap-2">
             {reopenableInspections.map((i) => {
               const isReopening = pendingReopenId === i.inspectionId;
@@ -757,6 +812,84 @@ export default function ProductionHomePage() {
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
+  );
+}
+
+/**
+ * 작업일 범위 띠 — 경계가 자정이 아니라 새벽 6시라, "오늘"이라고만 쓰면 새벽에 어제
+ * 날짜 지시가 보이는 게 고장처럼 읽힌다. 지금 보는 목록이 언제부터 언제까지인지 적어 둔다.
+ * 경계 시각은 작업지시 목록과 같은 값(ORDER_WORK_DAY_START_HOUR)을 따른다.
+ */
+function WorkDayBanner() {
+  const { t } = useTranslation("myInspection");
+  const now = new Date();
+  const { start, end } = orderWorkDayRange(now);
+  const leftMin = Math.max(0, Math.floor((end.getTime() - now.getTime()) / 60000));
+  return (
+    <div className="mt-3 rounded-xl border border-[#BFDBFE] bg-[#EFF6FF] px-3.5 py-2.5">
+      <div className="text-xs font-semibold text-[#1E40AF]">
+        {t("home.workDay.title")}
+      </div>
+      <div className="mt-0.5 text-xs text-[#1D4ED8]">
+        {t("home.workDay.range", {
+          start: formatKstShort(start),
+          end: formatKstShort(end),
+          h: Math.floor(leftMin / 60),
+          m: leftMin % 60,
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** "10/06 06:00" — 기기 시간대와 무관하게 KST 로. */
+function formatKstShort(d: Date): string {
+  const k = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(k.getUTCMonth() + 1)}/${p(k.getUTCDate())} ${p(k.getUTCHours())}:${p(k.getUTCMinutes())}`;
+}
+
+/** 접히는 요약 한 줄 — 제목·건수·펼침 기호. */
+function SummaryToggle({
+  label,
+  count,
+  tone,
+  open,
+  onToggle,
+}: {
+  label: string;
+  count: number;
+  tone: "amber" | "neutral";
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const { t } = useTranslation("myInspection");
+  const countColor =
+    count === 0
+      ? "text-[#9CA3AF]"
+      : tone === "amber"
+        ? "text-[#B45309]"
+        : "text-[#931B82]";
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      disabled={count === 0}
+      aria-expanded={open}
+      className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-gray-50 disabled:cursor-default disabled:hover:bg-white"
+    >
+      <span className="text-sm text-[#212121]">{label}</span>
+      <span className={`flex items-center gap-1 text-sm font-semibold ${countColor}`}>
+        {t("home.count", { n: count })}
+        {count > 0 && (
+          <Icon
+            icon={open ? "solar:alt-arrow-up-linear" : "solar:alt-arrow-down-linear"}
+            width={16}
+            height={16}
+          />
+        )}
+      </span>
+    </button>
   );
 }
 

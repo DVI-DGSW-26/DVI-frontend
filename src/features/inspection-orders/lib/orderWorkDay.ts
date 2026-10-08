@@ -20,3 +20,17 @@ export function orderWorkDayKey(d: Date): string {
     new Date(d.getTime() - ORDER_WORK_DAY_START_HOUR * 60 * 60 * 1000),
   );
 }
+
+/**
+ * now 가 속한 작업일의 시작·끝 시각. 화면에 "언제부터 언제까지"를 적어 두려는 용도 —
+ * "오늘"이라고만 쓰면 새벽 2시에 어제 날짜 지시가 보이는 게 고장처럼 읽힌다.
+ */
+export function orderWorkDayRange(now: Date): { start: Date; end: Date } {
+  const key = orderWorkDayKey(now);
+  const [y, m, d] = key.split("-").map(Number);
+  // KST(UTC+9) 경계 시각을 UTC 로 — 기기 시간대와 무관하게 계산한다.
+  const start = new Date(
+    Date.UTC(y, m - 1, d, ORDER_WORK_DAY_START_HOUR - 9, 0, 0),
+  );
+  return { start, end: new Date(start.getTime() + 24 * 60 * 60 * 1000) };
+}
