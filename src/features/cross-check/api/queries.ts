@@ -1,9 +1,4 @@
-import {
-  useMutation,
-  useQueries,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   completeCrossCheck,
   createCrossCheck,
@@ -79,26 +74,6 @@ export function useMyDelegation() {
     queryKey: crossCheckKeys.delegationMe(),
     queryFn: getMyDelegation,
   });
-}
-
-// 반려된 건들의 반려 사유 — 목록 응답(CrossCheckSummary)에는 사유가 없어 건마다 상세를 읽는다.
-// 반려 카드에서 "수정하기"(= reopen, 상태가 바뀜)를 누르지 않고도 사유를 읽게 하려는 용도.
-// 반려 건은 보통 몇 개 안 되고, 상세 화면과 같은 캐시 키를 써서 들어가면 다시 받지 않는다.
-export function useCrossCheckRejectReasons(
-  crossCheckIds: number[],
-): Map<number, string | null> {
-  const results = useQueries({
-    queries: crossCheckIds.map((id) => ({
-      queryKey: crossCheckKeys.detail(id),
-      queryFn: () => getCrossCheckDetail(id),
-      staleTime: 60_000,
-    })),
-  });
-  const map = new Map<number, string | null>();
-  results.forEach((r, i) => {
-    if (r.data) map.set(crossCheckIds[i], r.data.rejectReason?.trim() || null);
-  });
-  return map;
 }
 
 export function useCrossCheckDetail(crossCheckId: number | undefined) {

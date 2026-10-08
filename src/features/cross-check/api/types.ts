@@ -64,6 +64,8 @@ export interface CrossCheckSummary {
   hardnessResult?: string | null;
   // 압출 종품인데 경도 미입력 → true. 승인 시 경도 입력 필수.
   hardnessPending?: boolean;
+  // 결재 반려 사유 — status=REJECTED 일 때만 채워진다. 목록(/cross-check/my)에도 내려온다.
+  rejectReason?: string | null;
   createdAt?: string;
   updatedAt?: string;
   // 초·중·종 순회검사를 묶는 검사 지시(InspectionOrder) ID. 결재 목록의 run 그룹핑 키.
