@@ -52,3 +52,21 @@ export function toBackendImageUrl(
   if (url.startsWith("/")) return apiBase() + url;
   return url;
 }
+
+/**
+ * 사진을 화면 출처(/api, /api-test 프록시)로 불러오는 주소. 사진을 canvas 에 그려 PDF 로 만들 때 쓴다 —
+ * 백엔드는 다른 출처의 이미지 요청을 403 으로 막아서, 직접 주소로는 canvas 에 담을 수 없다.
+ */
+export function toSameOriginImageUrl(url: string | null | undefined): string | undefined {
+  const resolved = toBackendImageUrl(url);
+  if (!resolved) return undefined;
+  let parsed: URL;
+  try {
+    parsed = new URL(resolved);
+  } catch {
+    return resolved; // 이미 상대경로(프록시 경로)
+  }
+  if (parsed.hostname !== BACKEND_HOST) return resolved;
+  const path = parsed.pathname + parsed.search;
+  return path.startsWith("/test/") ? API_BASE.test + path.slice("/test".length) : API_BASE.prod + path;
+}

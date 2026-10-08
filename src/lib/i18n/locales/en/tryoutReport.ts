@@ -152,6 +152,11 @@ export default {
     dimHowEdit: "Dimension rows are fixed to the product's dimensions at the time the report was written.",
     openProducts: "Open Product management",
   },
+  draft: {
+    restored: "Restored what you were writing.",
+    discard: "Start over",
+    keep: "OK",
+  },
   print: {
     roundTitle: "T/O Round ( {{n}} ) Result Report",
     vendorPartNo: "Our part no.",
@@ -172,10 +177,11 @@ export default {
     photoTitle: "Etching photos",
     photoFailed: "Could not load the photo.",
     fileName: "{{code}}_TO{{n}}_report_{{date}}",
-    button: "Print PDF",
+    download: "Download PDF",
+    downloading: "Creating PDF...",
+    failed: "Could not create the PDF. Please try again.",
     writtenOn: "Written",
     printedAt: "Printed {{at}}",
-    popupBlocked: "The print window was blocked. Please allow pop-ups in your browser.",
   },
   deleteModal: {
     title: "Delete this report?",

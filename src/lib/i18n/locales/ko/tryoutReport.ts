@@ -152,6 +152,11 @@ export default {
     dimHowEdit: "치수 행은 보고서를 작성할 때의 제품 치수로 정해져 수정 화면에서는 바뀌지 않습니다.",
     openProducts: "제품 관리 열기",
   },
+  draft: {
+    restored: "작성 중이던 내용을 불러왔습니다.",
+    discard: "처음부터 다시 쓰기",
+    keep: "확인",
+  },
   print: {
     roundTitle: "( {{n}} )차 T/O 결과 보고서",
     vendorPartNo: "당사형번",
@@ -172,10 +177,11 @@ export default {
     photoTitle: "에칭 사진",
     photoFailed: "사진을 불러오지 못했습니다.",
     fileName: "{{code}}_{{n}}차_TO결과보고서_{{date}}",
-    button: "PDF 인쇄",
+    download: "PDF 다운로드",
+    downloading: "PDF 만드는 중...",
+    failed: "PDF를 만들지 못했습니다. 다시 시도해 주세요.",
     writtenOn: "작성일",
     printedAt: "출력 {{at}}",
-    popupBlocked: "팝업이 막혀 인쇄 창을 열 수 없습니다. 브라우저에서 팝업을 허용해 주세요.",
   },
   deleteModal: {
     title: "이 보고서를 삭제할까요?",

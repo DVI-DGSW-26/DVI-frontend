@@ -8,7 +8,7 @@ import { useAuth } from "../../auth/AuthContext";
 import { useDeleteTryoutReport, useTryoutReportDetail } from "../api";
 import { toDeleteErrorMessage } from "../lib/errors";
 import { canEditTryout } from "../lib/permissions";
-import { printTryoutReport } from "../lib/printTryoutReport";
+import { downloadTryoutPdf } from "../lib/downloadTryoutPdf";
 import DeleteTryoutModal from "./components/DeleteTryoutModal";
 import ItemViewTable from "./components/ItemViewTable";
 import { OverallBadge } from "./components/ResultBadges";
@@ -26,6 +26,7 @@ export default function TryoutReportDetailPage() {
   const isMobile = useMediaQuery("(max-width: 767px)");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
 
   const message = (text: string, tone: "muted" | "error" = "muted") => (
     <div className="p-4 md:p-6">
@@ -55,6 +56,17 @@ export default function TryoutReportDetailPage() {
     }
   };
 
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      await downloadTryoutPdf(report);
+    } catch {
+      alert(t("print.failed"));
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   const info: { label: string; value: React.ReactNode }[] = [
     { label: t("form.customer"), value: report.customerName || "-" },
     { label: t("form.product"), value: report.productCode },
@@ -81,15 +93,16 @@ export default function TryoutReportDetailPage() {
           {t("detail.back")}
         </button>
         <div className="flex gap-2">
-          {/* 인쇄는 PC 에서만 — 모바일 브라우저는 새 창 인쇄가 제각각이다. */}
+          {/* PDF 는 PC 에서만 — 쪽을 그리는 데 화면 폭이 필요하다. */}
           {!isMobile && (
             <button
               type="button"
-              onClick={() => printTryoutReport(report)}
-              className="flex h-9 items-center gap-1 rounded-md border border-[#E5E7EB] bg-white px-4 text-sm font-medium text-[#212121] hover:bg-[#F9FAFB]"
+              disabled={downloading}
+              onClick={handleDownload}
+              className="flex h-9 items-center gap-1 rounded-md bg-[#931B82] px-4 text-sm font-medium text-white hover:bg-[#6A0F5D] disabled:opacity-60"
             >
-              <Icon icon="mdi:printer-outline" width={18} height={18} />
-              {t("print.button")}
+              <Icon icon="mdi:file-pdf-box" width={18} height={18} />
+              {downloading ? t("print.downloading") : t("print.download")}
             </button>
           )}
           {editable && (
