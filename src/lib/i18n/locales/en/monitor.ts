@@ -12,6 +12,7 @@ export default {
     resume: "Resume auto-rotation (Space)",
     pin: "Pin this page (Space)",
     pinned: "Pinned",
+    autoResumeIn: "Auto-rotation resumes in {{time}}",
     auto: "Auto",
   },
   connection: {
@@ -27,6 +28,7 @@ export default {
     resumeAuto: "{{label}}: resume auto-paging",
     pauseAuto: "{{label}}: pause auto-paging",
     paused: "Paused",
+    autoResumeIn: "Auto-paging resumes in {{time}}",
     auto: "Auto",
   },
   worker: {

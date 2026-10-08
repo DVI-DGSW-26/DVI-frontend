@@ -12,6 +12,7 @@ export default {
     resume: "자동 순환 다시 시작 (스페이스바)",
     pin: "이 페이지에 고정 (스페이스바)",
     pinned: "고정",
+    autoResumeIn: "{{time}} 뒤 자동 순환으로 돌아갑니다",
     auto: "자동",
   },
   connection: {
@@ -27,6 +28,8 @@ export default {
     resumeAuto: "{{label}} 자동 넘김 다시 시작",
     pauseAuto: "{{label}} 자동 넘김 멈춤",
     paused: "멈춤",
+    // 멈춤은 시한부 — 남은 시간을 함께 보여 "고장"으로 오인하지 않게 한다.
+    autoResumeIn: "{{time}} 뒤 자동으로 다시 넘어갑니다",
     auto: "자동",
   },
   worker: {

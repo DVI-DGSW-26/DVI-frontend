@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useAutoRelease } from "./useAutoRelease";
 
 export interface PagedList<T> {
   page: number;
@@ -6,6 +7,8 @@ export interface PagedList<T> {
   visible: T[];
   /** 자동 넘김이 멈춰 있는지. */
   paused: boolean;
+  /** 멈춤이 저절로 풀리기까지 남은 시간(ms). 멈춰 있지 않으면 null. */
+  pauseRemainingMs: number | null;
   /** 자동 넘김 멈춤/재개. */
   togglePause: () => void;
   /** 자동 넘김 멈춤 — 사람이 직접 고른 항목을 그 자리에 붙잡아 둘 때. */
@@ -28,6 +31,7 @@ export interface PagedList<T> {
  * 자동 넘김만으로는 "방금 지나간 줄을 다시 보고 싶다"를 할 수 없어 멈춤과 수동 이동을
  * 함께 둔다. 멈춤 상태는 이 훅 인스턴스 안에만 있다 — 목록마다 따로 멈추고, 저장하거나
  * 공유하지 않으므로 한 화면에서 멈춰도 다른 화면은 계속 돈다.
+ * 멈춤은 시한부다 — 한동안 아무도 만지지 않으면 저절로 다시 돈다(useAutoRelease).
  *
  * 데이터가 줄어 현재 페이지가 범위를 벗어나면 렌더 시점에 첫 페이지로 접는다
  * (state 를 되돌리는 effect 를 두면 불필요한 연쇄 렌더가 생긴다). 다음 타이머가
@@ -45,6 +49,13 @@ export function usePagedList<T>(
   // 수동으로 넘긴 직후 타이머를 다시 걸기 위한 값 — 방금 넘긴 페이지가 남은 시간
   // 몇백 ms 만에 지나가버리면 눌러도 못 읽는다.
   const [nudge, setNudge] = useState(0);
+  // 멈춘 채로 다시 고르거나 넘기면 자동 해제 시간을 처음부터 다시 잰다.
+  const [pauseTouch, setPauseTouch] = useState(0);
+  const pauseRemainingMs = useAutoRelease(
+    paused,
+    () => setPaused(false),
+    `${pauseTouch}:${nudge}`,
+  );
 
   useEffect(() => {
     if (paused || pageCount <= 1) return;
@@ -67,7 +78,10 @@ export function usePagedList<T>(
   const prev = useCallback(() => go(-1), [go]);
   const next = useCallback(() => go(1), [go]);
   const togglePause = useCallback(() => setPaused((v) => !v), []);
-  const pause = useCallback(() => setPaused(true), []);
+  const pause = useCallback(() => {
+    setPaused(true);
+    setPauseTouch((n) => n + 1);
+  }, []);
 
   const goTo = useCallback(
     (target: number) => {
@@ -90,6 +104,7 @@ export function usePagedList<T>(
     pageCount,
     visible: items.slice(start, start + size),
     paused,
+    pauseRemainingMs,
     togglePause,
     pause,
     prev,
