@@ -41,6 +41,10 @@ interface Props {
   onMeasureWithoutPhoto?: () => void;
   /** 외관 포함 전체 항목 건너뛰기. 전달된 경우에만 버튼 노출 (순회검사 미실시 시간대 한정). */
   onSkipAll?: () => void;
+  /** "이 항목 측정 안 함" 아래에 붙는 결과 설명. 검사 종류마다 뒤따르는 일이 달라 부모가 정한다. */
+  skipHint?: string;
+  /** 전체 건너뛰기를 못 쓰는 이유. onSkipAll 이 없을 때 ⋯ 안에 비활성 줄로 보여준다. */
+  skipAllDisabledReason?: string;
 }
 
 export default function CapturePhase({
@@ -51,6 +55,8 @@ export default function CapturePhase({
   onGoNext,
   onMeasureWithoutPhoto,
   onSkipAll,
+  skipHint,
+  skipAllDisabledReason,
 }: Props) {
   const { t } = useTranslation("inspection");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,6 +64,7 @@ export default function CapturePhase({
   const streamRef = useRef<MediaStream | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
@@ -277,6 +284,11 @@ export default function CapturePhase({
           className="hidden"
         />
       </div>
+      {/*
+        건너뛰기는 이동 버튼 줄에 두지 않는다 — 같은 모양 버튼 사이에 있으면 장갑 낀 손으로
+        한 번 잘못 눌러 칸이 비고, 결과 화면에서 정상 완료가 막힌다. ⋯ 안으로 한 겹 넣고
+        누르기 전에 결과를 한 줄로 보여준다(시점 건너뛰기와 같은 방식).
+      */}
       <div className="flex gap-2">
         {onGoBack && (
           <button
@@ -284,26 +296,69 @@ export default function CapturePhase({
             onClick={onGoBack}
             className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F3F4F6]"
           >
-            {t("capture.prevStep")}
+            ← {t("capture.prevStep")}
           </button>
         )}
-        <button
-          type="button"
-          onClick={onSkip}
-          className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-[#F9FAFB] text-sm font-medium text-[#6B7280] hover:bg-[#F3F4F6]"
-        >
-          {t("capture.skipItem")}
-        </button>
         {onGoNext && (
           <button
             type="button"
             onClick={onGoNext}
             className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F3F4F6]"
           >
-            {t("capture.nextStep")}
+            {t("capture.nextStep")} →
           </button>
         )}
+        <button
+          type="button"
+          onClick={() => setShowMore((v) => !v)}
+          aria-expanded={showMore}
+          aria-label={t("capture.moreOptions")}
+          title={t("capture.moreOptions")}
+          className={`flex h-11 items-center justify-center gap-1 rounded-md border border-[#E5E7EB] bg-white px-3 text-sm font-medium text-[#6B7280] hover:bg-[#F3F4F6] ${
+            onGoBack || onGoNext ? "w-11 px-0" : "ml-auto"
+          }`}
+        >
+          <Icon icon="solar:menu-dots-bold" width={18} height={18} />
+          {!onGoBack && !onGoNext && t("capture.moreOptions")}
+        </button>
       </div>
+
+      {showMore && (
+        <div className="rounded-md border border-[#E5E7EB] bg-white">
+          <button
+            type="button"
+            onClick={() => {
+              setShowMore(false);
+              onSkip();
+            }}
+            className="flex w-full flex-col items-start gap-0.5 px-3 py-2.5 text-left hover:bg-[#F9FAFB]"
+          >
+            <span className="text-sm font-medium text-[#212121]">
+              {t("capture.skipItem")}
+            </span>
+            <span className="text-xs text-[#6B7280]">
+              {skipHint ?? t("capture.skipItemHint")}
+            </span>
+          </button>
+          {/*
+            조건이 안 맞을 때 전체 건너뛰기를 숨기면 "어제는 있었는데 왜 없지?"가 된다.
+            눈에 띄는 자리엔 두지 않되, 여기서는 못 쓰는 이유와 함께 보여준다.
+          */}
+          {!onSkipAll && skipAllDisabledReason && (
+            <div
+              aria-disabled="true"
+              className="flex w-full flex-col items-start gap-0.5 border-t border-[#F3F4F6] px-3 py-2.5"
+            >
+              <span className="text-sm font-medium text-[#9CA3AF]">
+                {t("capture.skipAll")}
+              </span>
+              <span className="text-xs text-[#B45309]">
+                {skipAllDisabledReason}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       {onMeasureWithoutPhoto && (
         <button
@@ -315,13 +370,15 @@ export default function CapturePhase({
         </button>
       )}
 
+      {/* 이름에 "언제 쓰는지"를 담는다 — "전체 항목 건너뛰기"만으론 검사를 안 해도 되는 줄 안다. */}
       {onSkipAll && (
         <button
           type="button"
           onClick={onSkipAll}
-          className="h-11 w-full rounded-md border border-[#E5E7EB] bg-[#F9FAFB] text-sm font-medium text-[#6B7280] hover:bg-[#F3F4F6]"
+          className="flex w-full flex-col items-center justify-center gap-0.5 rounded-md border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-[#6B7280] hover:bg-[#F3F4F6]"
         >
-          전체 항목 건너뛰기
+          <span className="text-sm font-medium">{t("capture.skipAll")}</span>
+          <span className="text-[11px]">{t("capture.skipAllHint")}</span>
         </button>
       )}
 

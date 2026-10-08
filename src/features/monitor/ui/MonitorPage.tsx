@@ -13,6 +13,7 @@ import { useMonitorStream } from "../api/useMonitorStream";
 import type { MonitorStream } from "../api/useMonitorStream";
 import { formatClock, formatDateLabel, kstToday, useNow } from "../lib/time";
 import { T } from "../lib/tokens";
+import { formatRemaining, useAutoRelease } from "../lib/useAutoRelease";
 import { CARD_SHADOW, ConnectionBadge } from "./parts";
 import StatusBoard from "./StatusBoard";
 import DetailBoard from "./DetailBoard";
@@ -184,8 +185,20 @@ export default function MonitorPage() {
     const i = PAGES.findIndex((p) => p.key === searchParams.get("page"));
     return i >= 0 ? i : 0;
   });
-  const [pinned, setPinned] = useState(() =>
+  const [pinned, setPinnedState] = useState(() =>
     PAGES.some((p) => p.key === searchParams.get("page")),
+  );
+  // 주소로 고정해 띄운 모니터는 일부러 그 화면만 보여주는 것이라 저절로 풀지 않는다.
+  // 사람이 눌러서 고정한 것만 시한부다 — 멈춰 두고 자리를 뜨면 다음 사람에겐 고장으로 보인다.
+  const [pinnedByUrl, setPinnedByUrl] = useState(pinned);
+  const setPinned = useCallback((v: boolean | ((p: boolean) => boolean)) => {
+    setPinnedByUrl(false);
+    setPinnedState(v);
+  }, []);
+  const pinRemainingMs = useAutoRelease(
+    pinned && !pinnedByUrl,
+    () => setPinnedState(false),
+    index,
   );
 
   // 순환 타이머가 매초 다시 걸리지 않도록, 자주 바뀌는 값은 ref 로만 읽는다.
@@ -232,7 +245,7 @@ export default function MonitorPage() {
   const pinTo = useCallback((i: number) => {
     setIndex(i);
     setPinned(true);
-  }, []);
+  }, [setPinned]);
 
   // 키보드는 보조 수단 — 벽 화면 앞에서 잠깐 붙잡아 볼 때만 쓴다.
   useEffect(() => {
@@ -255,7 +268,7 @@ export default function MonitorPage() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [step]);
+  }, [step, setPinned]);
 
   const page = PAGES[index];
 
@@ -320,6 +333,7 @@ export default function MonitorPage() {
         <PageTabs
           index={index}
           pinned={pinned}
+          pinRemainingMs={pinRemainingMs}
           availability={availability}
           data={data}
           onPick={pinTo}
@@ -396,6 +410,7 @@ function LanguageButton() {
 function PageTabs({
   index,
   pinned,
+  pinRemainingMs,
   availability,
   data,
   onPick,
@@ -403,6 +418,7 @@ function PageTabs({
 }: {
   index: number;
   pinned: boolean;
+  pinRemainingMs: number | null;
   availability: boolean[];
   data: BoardData;
   onPick: (i: number) => void;
@@ -484,7 +500,11 @@ function PageTabs({
         onClick={onToggle}
         aria-pressed={pinned}
         title={
-          pinned ? t("nav.resume") : t("nav.pin")
+          pinned
+            ? pinRemainingMs !== null
+              ? `${t("nav.resume")} — ${t("nav.autoResumeIn", { time: formatRemaining(pinRemainingMs) })}`
+              : t("nav.resume")
+            : t("nav.pin")
         }
         className="ml-1 flex h-11 items-center gap-1.5 rounded-lg px-3 text-lg font-bold"
         style={{
@@ -499,6 +519,12 @@ function PageTabs({
           height={20}
         />
         {pinned ? t("nav.pinned") : t("nav.auto")}
+        {/* 눌러서 고정한 것은 시한부 — 남은 시간을 보여 고장으로 오인하지 않게 한다. */}
+        {pinned && pinRemainingMs !== null && (
+          <span className="tabular-nums font-semibold opacity-80">
+            {formatRemaining(pinRemainingMs)}
+          </span>
+        )}
       </button>
     </nav>
   );

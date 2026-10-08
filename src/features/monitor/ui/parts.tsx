@@ -2,6 +2,7 @@ import { Icon } from "@iconify/react";
 import { useTranslation } from "react-i18next";
 import { T } from "../lib/tokens";
 import { formatClock } from "../lib/time";
+import { formatRemaining } from "../lib/useAutoRelease";
 import type { PagedList } from "../lib/usePagedList";
 import type { MonitorConnection } from "../type/types";
 
@@ -120,7 +121,9 @@ export function Pager({
         aria-pressed={pager.paused}
         title={
           pager.paused
-            ? t("pager.resumeAuto", { label })
+            ? `${t("pager.resumeAuto", { label })} — ${t("pager.autoResumeIn", {
+                time: formatRemaining(pager.pauseRemainingMs ?? 0),
+              })}`
             : t("pager.pauseAuto", { label })
         }
         className="ml-1 flex h-9 items-center gap-1.5 rounded-lg px-3 text-base font-bold"
@@ -136,6 +139,12 @@ export function Pager({
           height={18}
         />
         {pager.paused ? t("pager.paused") : t("pager.auto")}
+        {/* 멈춤은 시한부 — 남은 시간이 보여야 지나가는 사람이 고장으로 보지 않는다. */}
+        {pager.paused && pager.pauseRemainingMs !== null && (
+          <span className="tabular-nums font-semibold opacity-80">
+            {formatRemaining(pager.pauseRemainingMs)}
+          </span>
+        )}
       </button>
     </div>
   );

@@ -110,10 +110,10 @@ export default {
     startFailedTaken: "이미 다른 담당자가 진행 중이거나 시작에 실패했습니다.",
     startFailed: "순회검사 시작에 실패했습니다.",
     cancelModal: {
-      title: "순회검사 취소",
+      title: "다른 검사자에게 넘기기",
       body: "<b>{{product}}</b> · 자주검사자 <b>{{production}}</b> 건의 담당을 해제합니다. 다른 검사자가 이어받을 수 있으며, 입력한 측정값은 보존됩니다. (작업자에게 재측정 요청이 가지 않습니다.)",
-      canceling: "취소 중...",
-      confirm: "취소 확정",
+      canceling: "넘기는 중...",
+      confirm: "넘기기",
     },
   },
   card: {
@@ -126,7 +126,8 @@ export default {
     equipmentLine: "설비: {{name}}",
     processLine: "공정: {{name}}",
     startDateLine: "시작일: {{date}}",
-    cancelPatrol: "순회검사 취소",
+    cancelPatrol: "다른 검사자에게 넘기기",
+    handOver: "넘기기",
   },
   measure: {
     notFound: "순회검사 정보를 찾을 수 없습니다.",
@@ -137,7 +138,10 @@ export default {
     productionNg: "자주검사 외관 NG",
     productionNgHint:
       "측정 없이 바로 반려할 수 있어요. 반려 시 작업자에게 재측정 요청이 전달됩니다.",
-    rejectNow: "바로 반려",
+    rejectNow: "재측정 요청",
+    // 전체 건너뛰기를 못 쓸 때 이유 — 숨기면 "어제는 있었는데?"가 된다.
+    skipAllOnlyAt: "AL·ST 절단 공정의 10시·15시 차수에서만 쓸 수 있습니다",
+    skipAllAfterMeasure: "이미 측정한 항목이 있어 쓸 수 없습니다",
     title: "순회검사 측정",
     reject: "반려",
     productionRef: "자주검사 측정값 (참고)",
@@ -145,17 +149,26 @@ export default {
     noProductionPhoto: "자주검사 사진 없음",
     workerValue: "작업자 측정값",
     rejectModal: {
-      title: "순회검사 반려",
+      title: "작업자에게 재측정 요청",
       body: "측정 없이 바로 반려합니다. 자주검사가 작업자에게 되돌아가 재측정을 요청합니다.",
       placeholder: "반려 사유 (예: DIM1 외관 NG 확인됨)",
       processing: "처리 중...",
-      confirm: "반려 확정",
+      confirm: "재측정 요청 보내기",
     },
     cancelModal: {
-      title: "순회검사 취소",
-      body: "자주검사자를 잘못 선택했나요? 취소하면 이 순회검사의 담당이 해제되어 다른 검사자가 이어받을 수 있습니다. 입력한 측정값은 보존되며, 반려와 달리 작업자에게 재측정 요청이 가지 않습니다.",
-      canceling: "취소 중...",
-      confirm: "취소 확정",
+      title: "다른 검사자에게 넘기기",
+      body: "자주검사자를 잘못 골랐거나 이어서 하기 어렵나요? 이 순회검사의 담당을 내려놓아 다른 검사자가 이어받게 합니다. 입력한 측정값은 그대로 남고, 작업자에게 재측정 요청은 가지 않습니다. 다시 하려면 배정 목록에서 다시 잡아야 하며, 그 사이 다른 검사자가 가져갈 수 있습니다.",
+      canceling: "넘기는 중...",
+      confirm: "넘기기",
+    },
+    // 측정을 그만두는 두 길 — 이름에 결과를 담고 한 겹 접어 둔다.
+    exit: {
+      prompt: "이 검사를 그만둘까요?",
+      toggle: "선택 보기",
+      reject: "작업자에게 재측정 요청",
+      rejectHint: "자주검사가 작업자에게 돌아가 다시 측정합니다",
+      handOver: "다른 검사자에게 넘기기",
+      handOverHint: "측정값은 그대로 · 작업자에게는 영향 없음",
     },
   },
   input: {

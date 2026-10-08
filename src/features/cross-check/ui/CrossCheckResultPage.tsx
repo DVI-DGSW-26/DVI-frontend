@@ -515,7 +515,7 @@ function StepResultCard({
     <div className="rounded-xl border border-gray-200 bg-white p-3">
       <div className="flex items-center gap-2">
         <span className="rounded-md bg-[#F3E8FF] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
-          Step {step}
+          {t("inspection:measure.stepLabel", { n: step })}
         </span>
         <span className="text-sm font-medium text-[#212121]">
           {dimDisplayName(result)}

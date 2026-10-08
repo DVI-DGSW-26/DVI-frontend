@@ -181,10 +181,32 @@ export default function InspectionResultPage() {
     () => results.some((r) => r.status === "skipped"),
     [results],
   );
+  const skippedResults = results.filter((r) => r.status === "skipped");
+  const firstSkipped = skippedResults[0] ?? null;
+  const skippedCount = skippedResults.length;
+  // "DIM 3" / "DIM 3, DIM 5 외 1개" — 길어지면 셋째부터는 개수로 줄인다.
+  const skippedLabels =
+    skippedResults
+      .slice(0, 2)
+      .map((r) => `DIM ${r.dimNo}`)
+      .join(", ") +
+    (skippedCount > 2
+      ? t("result.skippedMore", { n: skippedCount - 2 })
+      : "");
 
   const finalReason =
     reasonKey === OTHER_REASON ? customReason.trim() : reasonKey;
   const canSubmitIncomplete = !!finalReason;
+  const reasonLabel = finalReason
+    ? REASON_LABEL_KEYS[finalReason]
+      ? t(REASON_LABEL_KEYS[finalReason])
+      : finalReason
+    : null;
+  // 미완료 진행 카드 — 시점 자체를 건너뛴(SKIPPED) 건은 승인 절차가 없어 띄우지 않는다.
+  const incompleteApproved = detail?.status === "INCOMPLETE_APPROVED";
+  const showIncompleteCard =
+    postSubmitMode === "incomplete" && detail?.status !== "SKIPPED";
+  const [confirmIncomplete, setConfirmIncomplete] = useState(false);
   const canSubmitComplete = appearance !== null;
 
   const isBusy =
@@ -281,6 +303,7 @@ export default function InspectionResultPage() {
       { reason: finalReason },
       {
         onSuccess: () => {
+          setConfirmIncomplete(false);
           setToast(t("result.incompleteToast"));
           setPostSubmitMode("incomplete");
         },
@@ -327,7 +350,12 @@ export default function InspectionResultPage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-28">
+    <div
+      className={`flex min-h-dvh flex-col bg-[#F5F5F5] ${
+        // 비운 항목이 있으면 하단에 버튼 둘과 안내가 붙어 더 높다.
+        hasSkipped && postSubmitMode === null ? "pb-64" : "pb-28"
+      }`}
+    >
       <section className="border-b border-gray-200 bg-white px-4 py-4">
         <InfoRow label={t("measure.machineName")} value={equipmentName} />
         <div className="mt-2 grid grid-cols-2 gap-2">
@@ -335,6 +363,29 @@ export default function InspectionResultPage() {
           <Stat label={t("measure.manager")} value={inspectorName} />
         </div>
       </section>
+
+      {/*
+        미완료 제출 뒤 — 1~2초 뒤 사라지는 토스트만으로는 "기다려야 하나, 다음 시점을 해도
+        되나"를 알 수 없었다. 어디까지 왔고 다음에 무슨 일이 생기는지를 화면에 남겨 둔다.
+      */}
+      {showIncompleteCard && (
+        <section className="px-4 pt-4">
+          <div className="rounded-xl border border-[#BBF7D0] bg-white p-4">
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-[#15803D]">
+              <Icon icon="solar:check-circle-bold" width={18} height={18} />
+              {incompleteApproved
+                ? t("result.incompleteFlow.approvedTitle")
+                : t("result.incompleteFlow.receivedTitle")}
+            </div>
+            <IncompleteStages approved={incompleteApproved} />
+            <IncompleteFacts
+              reason={reasonLabel}
+              skipped={skippedCount > 0 ? skippedLabels : null}
+              approved={incompleteApproved}
+            />
+          </div>
+        </section>
+      )}
 
       <section className="flex-1 px-4 pt-4">
         <h2 className="mb-3 text-sm font-semibold text-[#212121]">
@@ -484,16 +535,46 @@ export default function InspectionResultPage() {
             </button>
           </div>
         ) : hasSkipped ? (
-          <button
-            type="button"
-            onClick={handleIncomplete}
-            disabled={!canSubmitIncomplete || isBusy}
-            className="h-12 w-full rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
-          >
-            {incompleteMut.isPending
-              ? t("result.processing")
-              : t("result.incompleteSubmit")}
-          </button>
+          // 비운 항목이 있어도 "검사 완료"를 없애지 않는다 — 버튼이 통째로 사라지면
+          // 건너뛰기 한 번 잘못 누른 사람이 미완료 말고는 길이 없다고 여긴다.
+          // 왜 못 누르는지와 되돌아가는 길을 먼저 보여주고, 미완료는 두 번째 선택으로 둔다.
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              disabled
+              className="h-12 w-full rounded-md bg-[#D1D5DB] text-base font-semibold text-white"
+            >
+              {t("result.completeSubmit")}
+            </button>
+            {firstSkipped && (
+              <div className="flex items-center gap-2 rounded-md border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2">
+                <p className="min-w-0 flex-1 text-xs text-[#92400E]">
+                  {t("result.skippedBlocksComplete", {
+                    items: skippedLabels,
+                    count: skippedCount,
+                  })}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleRetake(firstSkipped.dimNo)}
+                  disabled={isBusy}
+                  className="shrink-0 rounded-md bg-[#931B82] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+                >
+                  {t("result.measureNow")}
+                </button>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => setConfirmIncomplete(true)}
+              disabled={!canSubmitIncomplete || isBusy}
+              className="h-12 w-full rounded-md border border-[#931B82] bg-white text-base font-semibold text-[#931B82] transition-colors hover:bg-[#F3E8FF] disabled:border-[#E5E7EB] disabled:text-[#9CA3AF] disabled:hover:bg-white"
+            >
+              {incompleteMut.isPending
+                ? t("result.processing")
+                : t("result.incompleteSubmit")}
+            </button>
+          </div>
         ) : (
           <button
             type="button"
@@ -507,6 +588,57 @@ export default function InspectionResultPage() {
           </button>
         )}
       </div>
+
+      {/* 미완료는 확인 없이 바로 전송됐다 — 보내기 전에 이후 절차를 같은 내용으로 보여준다. */}
+      {confirmIncomplete && postSubmitMode === null && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-incomplete-title"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center"
+          onClick={() => {
+            if (!incompleteMut.isPending) setConfirmIncomplete(false);
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-t-2xl bg-white p-5 sm:rounded-2xl"
+          >
+            <h3
+              id="confirm-incomplete-title"
+              className="text-base font-semibold text-[#212121]"
+            >
+              {t("result.incompleteFlow.confirmTitle")}
+            </h3>
+            <IncompleteStages approved={false} pending />
+            <IncompleteFacts
+              reason={reasonLabel}
+              skipped={skippedCount > 0 ? skippedLabels : null}
+              approved={false}
+            />
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmIncomplete(false)}
+                disabled={incompleteMut.isPending}
+                className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-60"
+              >
+                {t("result.incompleteFlow.back")}
+              </button>
+              <button
+                type="button"
+                onClick={handleIncomplete}
+                disabled={incompleteMut.isPending}
+                className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+              >
+                {incompleteMut.isPending
+                  ? t("result.processing")
+                  : t("result.incompleteSubmit")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
@@ -554,7 +686,7 @@ function StepResultCard({
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <span className="shrink-0 rounded-md bg-[#F3E8FF] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
-            Step {step}
+            {t("measure.stepLabel", { n: step })}
           </span>
           <span className="truncate text-sm font-medium text-[#212121]">
             {dimDisplayName(result)}
@@ -648,6 +780,101 @@ function StepResultCard({
         </button>
       )}
     </div>
+  );
+}
+
+/**
+ * 미완료 처리 단계 — 접수 → 품질관리자 확인 → 종결.
+ * pending 이면 아직 보내기 전(확인창)이라 첫 칸도 비워 둔다.
+ */
+function IncompleteStages({
+  approved,
+  pending = false,
+}: {
+  approved: boolean;
+  pending?: boolean;
+}) {
+  const { t } = useTranslation("inspection");
+  const stages = [
+    t("result.incompleteFlow.stageReceived"),
+    t("result.incompleteFlow.stageReview"),
+    t("result.incompleteFlow.stageClosed"),
+  ];
+  // 지나온 칸 수 — 접수 뒤엔 "품질관리자 확인" 칸이 지금 단계.
+  const reached = pending ? 0 : approved ? 3 : 1;
+  return (
+    <ol className="mt-3 grid grid-cols-3 gap-1.5">
+      {stages.map((label, i) => {
+        const done = i < reached;
+        const current = i === reached && !pending;
+        return (
+          <li key={label} className="flex flex-col gap-1">
+            <span
+              className={`h-1.5 rounded-full ${
+                done ? "bg-[#22C55E]" : current ? "bg-[#931B82]" : "bg-[#E5E7EB]"
+              }`}
+            />
+            <span
+              className={`text-[11px] ${
+                current
+                  ? "font-semibold text-[#931B82]"
+                  : done
+                    ? "text-[#15803D]"
+                    : "text-[#9CA3AF]"
+              }`}
+            >
+              {label}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/** 미완료의 사유·비운 항목과, 승인 전후에 무엇이 되는지. 확인창과 접수 카드가 같은 내용을 쓴다. */
+function IncompleteFacts({
+  reason,
+  skipped,
+  approved,
+}: {
+  reason: string | null;
+  skipped: string | null;
+  approved: boolean;
+}) {
+  const { t } = useTranslation("inspection");
+  const rows: [string, string][] = [];
+  if (reason) rows.push([t("result.incompleteFlow.reason"), reason]);
+  if (skipped) rows.push([t("result.incompleteFlow.skipped"), skipped]);
+  if (!approved) {
+    rows.push([
+      t("result.incompleteFlow.next"),
+      t("result.incompleteFlow.nextValue"),
+    ]);
+  }
+  if (skipped) {
+    rows.push([
+      t("result.incompleteFlow.after"),
+      t("result.incompleteFlow.afterValue", { items: skipped }),
+    ]);
+  }
+  return (
+    <>
+      <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 rounded-lg bg-[#F9FAFB] px-3 py-2.5 text-xs">
+        {rows.map(([k, v]) => (
+          <div key={k} className="contents">
+            <dt className="text-[#6B7280]">{k}</dt>
+            <dd className="font-medium text-[#212121]">{v}</dd>
+          </div>
+        ))}
+      </dl>
+      {/* 지금 서버 규칙: 미완료는 승인 전까지 다음 시점을 막는다. 규칙이 바뀌면 이 줄도 고친다. */}
+      {!approved && (
+        <p className="mt-2 rounded-md border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
+          {t("result.incompleteFlow.blocksNext")}
+        </p>
+      )}
+    </>
   );
 }
 

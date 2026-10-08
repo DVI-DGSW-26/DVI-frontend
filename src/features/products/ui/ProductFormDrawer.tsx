@@ -31,6 +31,7 @@ import {
   MAX_UPLOAD_BYTES,
 } from "../../../lib/uploadImage";
 
+import { useDiscardGuard } from "../../../components/shared/useDiscardGuard";
 // "시간대별 8시점 (야간 3)" 같은 한 줄 요약. 슬롯이 없으면 null.
 function describeSchedule(
   schedule: InspectionSchedule | null,
@@ -171,6 +172,21 @@ export default function ProductFormDrawer({
   const sketchInputRef = useRef<HTMLInputElement | null>(null);
   const [dims, setDims] = useState<DimDraft[]>([emptyDim()]);
   const [error, setError] = useState<string | null>(null);
+  // 오류가 걸린 칸(data-field). 칸에 붙일 수 없는 서버 오류 등은 null — 아래 상자로 보인다.
+  // 오류가 지워지면(error=null) 칸 표시도 같이 사라지도록 error 와 함께 읽는다.
+  const [errorField, setErrorField] = useState<string | null>(null);
+  const fieldError = error ? errorField : null;
+  const formRef = useRef<HTMLFormElement | null>(null);
+  // 입력란이 마흔 개를 넘는 창이라 오류 칸이 화면 밖에 있기 쉽다 — 그 칸으로 데려간다.
+  // 같은 칸에서 연달아 틀려도 다시 데려가도록 error 문구 변화에도 반응한다.
+  useEffect(() => {
+    if (!fieldError) return;
+    const el = formRef.current?.querySelector<HTMLElement>(
+      `[data-field="${fieldError}"]`,
+    );
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    el?.focus({ preventScroll: true });
+  }, [fieldError, error]);
   // 수정 모드에서 dims 가 변경됐는지 판단용. 백엔드가 PATCH 시 dims 를 통째로 교체하면서
   // 기존 dim 이 검사 결과에서 참조될 경우 409 RESOURCE_IN_USE 가 떨어지므로,
   // 사용자가 dims 를 안 건드렸으면 payload 에서 빼서 백엔드가 손대지 않도록 한다.
@@ -316,12 +332,18 @@ export default function ProductFormDrawer({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setErrorField(null);
+    // 칸에 붙는 검증 오류 — 문구는 그 칸 아래에 뜨고 화면이 그 칸으로 이동한다.
+    const fail = (field: string, message: string) => {
+      setErrorField(field);
+      setError(message);
+    };
 
-    if (!name.trim()) return setError(t("form.errors.nameRequired"));
-    if (!code.trim()) return setError(t("form.errors.codeRequired"));
+    if (!name.trim()) return fail("name", t("form.errors.nameRequired"));
+    if (!code.trim()) return fail("code", t("form.errors.codeRequired"));
     if (resolvedCustomerId === null)
-      return setError(t("form.errors.customerRequired"));
-    if (!process) return setError(t("form.errors.processRequired"));
+      return fail("customer", t("form.errors.customerRequired"));
+    if (!process) return fail("process", t("form.errors.processRequired"));
 
     const dimsInput: ProductDimInput[] = [];
     for (let i = 0; i < dims.length; i += 1) {
@@ -350,14 +372,14 @@ export default function ProductFormDrawer({
       const plus = toNumber(d.toleranceUpper);
       const minus = toNumber(d.toleranceLower);
       if (std === null)
-        return setError(t("form.errors.standardRequired", { n: i + 1 }));
+        return fail(`dim-${i}-standard`, t("form.errors.standardRequired", { n: i + 1 }));
       if (plus === null)
-        return setError(t("form.errors.upperRequired", { n: i + 1 }));
+        return fail(`dim-${i}-upper`, t("form.errors.upperRequired", { n: i + 1 }));
       if (minus === null)
-        return setError(t("form.errors.lowerRequired", { n: i + 1 }));
+        return fail(`dim-${i}-lower`, t("form.errors.lowerRequired", { n: i + 1 }));
       // 서버도 TOLERANCE_BOUNDS_INVALID 로 막지만, 저장을 눌러보기 전에 알려준다.
       if (minus > plus)
-        return setError(t("form.errors.toleranceBounds", { n: i + 1 }));
+        return fail(`dim-${i}-lower`, t("form.errors.toleranceBounds", { n: i + 1 }));
 
       dimsInput.push({
         ...(d.id != null ? { id: d.id } : {}),
@@ -447,10 +469,13 @@ export default function ProductFormDrawer({
       ? t("form.submitCreating")
       : t("form.submitCreate");
 
+  // 바깥 터치·닫기·취소로 닫을 때 입력이 있으면 한 번 묻는다(저장 성공 경로는 그대로 닫힘).
+  const guard = useDiscardGuard(open, onClose);
+
   return (
     <>
       <div
-        onClick={onClose}
+        onClick={guard.requestClose}
         className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
@@ -458,6 +483,7 @@ export default function ProductFormDrawer({
       />
 
       <aside
+        onChange={guard.track}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -469,7 +495,7 @@ export default function ProductFormDrawer({
           <h2 className="text-base font-semibold text-[#212121]">{title}</h2>
           <button
             type="button"
-            onClick={onClose}
+            onClick={guard.requestClose}
             aria-label={t("common:actions.close")}
             className="text-[#A8A8A8] transition-colors hover:text-[#212121]"
           >
@@ -487,6 +513,7 @@ export default function ProductFormDrawer({
           </div>
         ) : (
           <form
+            ref={formRef}
             onSubmit={handleSubmit}
             className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-5"
           >
@@ -498,8 +525,11 @@ export default function ProductFormDrawer({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="DV-A0100"
-                  className="h-11 rounded-lg border border-gray-300 px-3 text-sm focus:border-[#931B82] focus:outline-none"
+                  data-field="name"
+                  aria-invalid={fieldError === "name" || undefined}
+                  className={`h-11 rounded-lg border px-3 text-sm focus:border-[#931B82] focus:outline-none ${fieldBorder(fieldError === "name")}`}
                 />
+                <FieldError message={fieldError === "name" ? error : null} />
               </label>
               <label className="flex flex-col gap-1.5">
                 <span className="text-sm font-medium text-[#212121]">{t("form.code")}</span>
@@ -508,8 +538,11 @@ export default function ProductFormDrawer({
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
                   placeholder="DV-A0100"
-                  className="h-11 rounded-lg border border-gray-300 px-3 text-sm focus:border-[#931B82] focus:outline-none"
+                  data-field="code"
+                  aria-invalid={fieldError === "code" || undefined}
+                  className={`h-11 rounded-lg border px-3 text-sm focus:border-[#931B82] focus:outline-none ${fieldBorder(fieldError === "code")}`}
                 />
+                <FieldError message={fieldError === "code" ? error : null} />
               </label>
             </div>
 
@@ -523,7 +556,9 @@ export default function ProductFormDrawer({
                     setCustomerId(v === "" ? "" : Number(v));
                     setCustomerIdManual(v);
                   }}
-                  className="h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none"
+                  data-field="customer"
+                  aria-invalid={fieldError === "customer" || undefined}
+                  className={`h-11 rounded-lg border bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none ${fieldBorder(fieldError === "customer")}`}
                 >
                   <option value="">{t("form.customerPlaceholder")}</option>
                   {customerOptions.map((c) => (
@@ -542,9 +577,12 @@ export default function ProductFormDrawer({
                     setCustomerId("");
                   }}
                   placeholder={t("form.customerIdPlaceholder")}
-                  className="h-11 rounded-lg border border-gray-300 px-3 text-sm focus:border-[#931B82] focus:outline-none"
+                  data-field="customer"
+                  aria-invalid={fieldError === "customer" || undefined}
+                  className={`h-11 rounded-lg border px-3 text-sm focus:border-[#931B82] focus:outline-none ${fieldBorder(fieldError === "customer")}`}
                 />
               )}
+              <FieldError message={fieldError === "customer" ? error : null} />
               {customerOptions.length > 0 && customerId !== "" && !customerInOptions && (
                 <span className="text-xs text-[#6B7280]">
                   {t("form.selectedCustomerId", { id: customerId })}
@@ -557,7 +595,9 @@ export default function ProductFormDrawer({
               <select
                 value={process}
                 onChange={(e) => setProcess(e.target.value as ProcessType | "")}
-                className="h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none"
+                data-field="process"
+                aria-invalid={fieldError === "process" || undefined}
+                className={`h-11 rounded-lg border bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none ${fieldBorder(fieldError === "process")}`}
               >
                 <option value="">{t("form.processPlaceholder")}</option>
                 {processOptions.map((opt) => (
@@ -566,6 +606,7 @@ export default function ProductFormDrawer({
                   </option>
                 ))}
               </select>
+              <FieldError message={fieldError === "process" ? error : null} />
             </label>
 
 
@@ -809,12 +850,16 @@ export default function ProductFormDrawer({
                             onChange={(v) =>
                               updateDim(idx, { standardValue: v })
                             }
+                            field={`dim-${idx}-standard`}
+                            invalid={fieldError === `dim-${idx}-standard`}
                           />
                           <DimNumberInput
                             label={t("form.dims.upperTolerance")}
                             placeholder="0.2"
                             value={d.toleranceUpper}
                             onChange={(v) => updateDim(idx, upperPatch(d, v))}
+                            field={`dim-${idx}-upper`}
+                            invalid={fieldError === `dim-${idx}-upper`}
                           />
                           <DimNumberInput
                             label={t("form.dims.lowerTolerance")}
@@ -826,16 +871,24 @@ export default function ProductFormDrawer({
                                 lowerEdited: true,
                               })
                             }
+                            field={`dim-${idx}-lower`}
+                            invalid={fieldError === `dim-${idx}-lower`}
                           />
                         </div>
                       )}
+                      <FieldError
+                        message={
+                          fieldError?.startsWith(`dim-${idx}-`) ? error : null
+                        }
+                      />
                     </div>
                   );
                 })}
               </div>
             </div>
 
-            {error && (
+            {/* 칸에 붙일 수 있는 오류는 칸 아래에 — 여기는 서버 오류 등 칸이 없는 것만. */}
+            {error && fieldError === null && (
               <div className="rounded-md border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 text-xs text-[#B91C1C]">
                 {error}
               </div>
@@ -844,7 +897,7 @@ export default function ProductFormDrawer({
             <div className="mt-auto flex gap-2 pt-2">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={guard.requestClose}
                 className="h-11 flex-1 rounded-lg border border-gray-300 text-sm font-medium text-[#212121] transition-colors hover:bg-gray-50"
               >
                 {t("common:actions.cancel")}
@@ -860,6 +913,7 @@ export default function ProductFormDrawer({
           </form>
         )}
       </aside>
+      {guard.dialog}
 
       <ProcessScheduleDrawer
         open={scheduleOpen}
@@ -886,6 +940,9 @@ interface DimNumberInputProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  /** 검증 실패 시 이 칸으로 이동하기 위한 이름. */
+  field: string;
+  invalid?: boolean;
 }
 
 function DimNumberInput({
@@ -893,6 +950,8 @@ function DimNumberInput({
   value,
   onChange,
   placeholder,
+  field,
+  invalid = false,
 }: DimNumberInputProps) {
   return (
     <label className="flex flex-col gap-1">
@@ -903,8 +962,25 @@ function DimNumberInput({
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="h-10 rounded-md border border-gray-300 bg-white px-2 text-sm focus:border-[#931B82] focus:outline-none"
+        data-field={field}
+        aria-invalid={invalid || undefined}
+        className={`h-10 rounded-md border bg-white px-2 text-sm focus:border-[#931B82] focus:outline-none ${fieldBorder(invalid)}`}
       />
     </label>
+  );
+}
+
+/** 오류 칸은 빨간 테두리 — 나머지는 평소 회색. */
+function fieldBorder(invalid: boolean) {
+  return invalid ? "border-[#EF4444]" : "border-gray-300";
+}
+
+/** 칸 바로 아래 붙는 오류 문구. */
+function FieldError({ message }: { message: string | null }) {
+  if (!message) return null;
+  return (
+    <span role="alert" className="text-xs text-[#B91C1C]">
+      {message}
+    </span>
   );
 }
