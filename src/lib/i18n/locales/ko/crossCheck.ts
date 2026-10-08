@@ -210,7 +210,7 @@ export default {
     approvalSent: "결재자에게 올렸습니다 · 승인되면 보고서가 발행됩니다",
     // 초·중 차수는 결재 없이 끝난다 — 결재 문구를 쓰지 않는다.
     completeStage: "이 차수 완료",
-    stageCompleted: "{{stage}} 차수 완료 · 종 차수까지 끝내면 결재로 올라갑니다",
+    stageCompleted: "{{stage}} 차수 완료 · 마지막 차수까지 끝내면 결재로 올라갑니다",
     valueUpdated: "측정값이 수정되었습니다",
     cannotSave: "저장할 수 없습니다. 새로고침 후 다시 시도해주세요.",
     editValue: "측정값 수정",

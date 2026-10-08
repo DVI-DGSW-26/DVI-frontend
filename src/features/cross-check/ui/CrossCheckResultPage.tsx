@@ -13,6 +13,7 @@ import {
 } from "../../inspection/lib/format";
 import Toast from "../../inspection/ui/Toast";
 import {
+  getCrossCheckDetail,
   useCompleteCrossCheck,
   useCrossCheckDetail,
   useSaveCrossCheckResults,
@@ -111,14 +112,6 @@ export default function CrossCheckResultPage() {
     hardnessTracked(detail.product.process) &&
     getStage(detail.type, detail.product.process) === "FINAL";
 
-  // 결재자에게 올라가는 건 종(FINAL) 차수뿐 — 초·중은 제출하면 바로 COMPLETED 로 끝난다.
-  // 세 차수가 같은 "결재 요청" 문구를 쓰면 초품을 올리고 오지 않을 승인을 기다리게 된다.
-  // 차수를 모르면(서버 형식 변경 등) 예전처럼 결재 문구로 둔다.
-  const submitStage = detail
-    ? getStage(detail.type, detail.product.process)
-    : null;
-  const goesToApproval = submitStage === null || submitStage === "FINAL";
-
   const saveMut = useSaveCrossCheckResults(crossCheckId);
   const completeMut = useCompleteCrossCheck(crossCheckId);
 
@@ -171,13 +164,35 @@ export default function CrossCheckResultPage() {
   // 반대로 이 지시가 주간만 쓰는 경우에는 야간 차수가 더 붙어 보일 수 있다.
   // 덜 알려서 막히는 것보다 더 보여주는 쪽이 안전하다고 보고 그대로 둔다.
   const slotsQuery = useProductSlots(detail?.product.id);
-  const remainingSlotLabels = useMemo(() => {
+  // 같은 교대의 시점만 한 묶음이다 — 주간 지시와 야간 지시는 따로 돈다. 주간 종 뒤에
+  // 야간 시점이 이어 붙어 있어도 그건 주간 묶음의 "남은 차수"가 아니다.
+  const sameShiftSlots = useMemo(() => {
     const slots = slotsQuery.data;
-    if (!slots?.length || !detail) return [];
-    const currentIdx = slots.findIndex((s) => s.type === detail.type);
-    if (currentIdx < 0) return [];
-    return slots.slice(currentIdx + 1).map((s) => slotLabelText(s.label));
+    if (!slots?.length || !detail) return null;
+    const current = slots.find((s) => s.type === detail.type);
+    if (!current) return null;
+    return slots.filter((s) => s.shift === current.shift);
   }, [slotsQuery.data, detail]);
+  const currentPos = sameShiftSlots
+    ? sameShiftSlots.findIndex((s) => s.type === detail?.type)
+    : -1;
+  const remainingSlotLabels =
+    sameShiftSlots && currentPos >= 0
+      ? sameShiftSlots.slice(currentPos + 1).map((s) => slotLabelText(s.label))
+      : [];
+
+  // 결재자에게 올라가는 건 묶음의 마지막 차수뿐 — 그 앞 차수는 제출하면 바로 COMPLETED.
+  // 세 차수가 같은 "결재 요청" 문구를 쓰면 초품을 올리고 오지 않을 승인을 기다리게 된다.
+  // 시점 이름("초")으로 짐작하면 틀린다: 시점이 하나뿐인 야간 지시의 "초"는 곧 마지막이라
+  // 결재로 간다(테스트 서버 확인). 그래서 같은 교대에 남은 차수가 있는지로 본다.
+  // 시점 목록을 못 받았으면 예전처럼 종(FINAL)만 결재로 본다.
+  const submitStage = detail
+    ? getStage(detail.type, detail.product.process)
+    : null;
+  const goesToApproval =
+    sameShiftSlots && currentPos >= 0
+      ? currentPos === sameShiftSlots.length - 1
+      : submitStage === null || submitStage === "FINAL";
 
   // 경도값은 경도 추적 공정이라도 결재요청 시점엔 선택. 초품검사 등 아직 측정하지
   // 못한 경우에도 결재요청이 가능해야 함 (경도는 열처리 후 입력).
@@ -225,13 +240,18 @@ export default function CrossCheckResultPage() {
           : {}),
         ...(note.trim() ? { note: note.trim() } : {}),
       });
-      // 저장 직후 제출 — 종은 결재 대기(PENDING_APPROVAL), 초·중은 바로 COMPLETED.
+      // 저장 직후 제출 — 마지막 차수는 결재 대기(PENDING_APPROVAL), 그 앞은 바로 COMPLETED.
       await completeMut.mutateAsync();
+      // 안내는 예측이 아니라 서버가 실제로 바꾼 상태로 고른다. 못 읽으면 예측값.
+      const fresh = await getCrossCheckDetail(crossCheckId).catch(() => null);
+      const sentToApproval = fresh
+        ? fresh.status === "PENDING_APPROVAL"
+        : goesToApproval;
       setToast(
-        goesToApproval
+        sentToApproval
           ? t("result.approvalSent")
           : t("result.stageCompleted", {
-              stage: t(`stage.${submitStage}`),
+              stage: slotLabelText(detail?.typeLabel) || t(`stage.${submitStage}`),
             }),
       );
       setTimeout(() => navigate("/cross-checks", { replace: true }), 1200);
@@ -302,7 +322,9 @@ export default function CrossCheckResultPage() {
                   {t(`stage.${stage}`)}
                   {/* 세 단계 중 몇 번째인지 — 종까지 가야 결재로 올라간다는 걸 숫자로도 보인다. */}
                   <span className="ml-1 tabular-nums opacity-70">
-                    {STAGE_ORDER[stage]}/3
+                    {sameShiftSlots && currentPos >= 0
+                      ? `${currentPos + 1}/${sameShiftSlots.length}`
+                      : `${STAGE_ORDER[stage]}/3`}
                   </span>
                 </span>
                 {remainingSlotLabels.length > 0 && (
