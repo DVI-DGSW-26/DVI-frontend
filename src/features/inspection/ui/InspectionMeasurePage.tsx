@@ -7,6 +7,7 @@ import { AxiosError } from "axios";
 import { useAuth } from "../../auth/AuthContext";
 import {
   useInspectionDetail,
+  useInspectionSlots,
   useOcrInspectionImage,
   useSaveInspectionResults,
   useTerminateInspection,
@@ -308,6 +309,11 @@ export default function InspectionMeasurePage() {
 
   // 메타 정보(설비명/제품명) 는 detail 우선, 없으면 location.state.inspection 에서.
   const info = detail ?? stateInspection;
+  // 야간 여부 — 응답의 shift 가 없을 수 있어 공정 시점 목록에서 같은 시점 코드의 shift 로 보강한다.
+  const { data: processSlots = [] } = useInspectionSlots(info?.product.process);
+  const isNightShift =
+    info?.shift === "NIGHT" ||
+    processSlots.find((s) => s.type === info?.type)?.shift === "NIGHT";
 
   // result 페이지에서 "측정으로 돌아가기" 로 진입한 경우 — allDone 자동 redirect 를 막기 위한 플래그.
   const editMode = useMemo<boolean>(() => {
@@ -766,7 +772,7 @@ export default function InspectionMeasurePage() {
         야간 자동 기록 공정 — 이 결과가 그대로 순회검사로도 기록된다는 걸 측정하는 사람이
         알아야 "순회검사는 안 했는데 왜 되어 있지?"가 안 생긴다.
       */}
-      {info?.shift === "NIGHT" && autoCopyNight(info.product.process) && (
+      {isNightShift && info && autoCopyNight(info.product.process) && (
         <section className="flex items-start gap-2 border-b border-[#BFDBFE] bg-[#EFF6FF] px-4 py-2.5 text-xs text-[#1E40AF]">
           <Icon icon="solar:moon-bold" width={16} height={16} className="mt-0.5 shrink-0" />
           <span>{t("measure.nightAutoCopyNotice")}</span>
