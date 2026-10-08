@@ -17,6 +17,7 @@ export default {
     home: "홈",
     inspectionHistory: "검사이력",
     scan: "스캔",
+    tryoutReports: "시압 결과보고서",
   },
   titles: {
     notifications: "알림",

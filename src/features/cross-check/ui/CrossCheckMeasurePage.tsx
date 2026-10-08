@@ -31,7 +31,7 @@ import {
   useSkipAllCrossCheck,
 } from "../api";
 import { toCancelErrorMessage } from "../lib/cancelError";
-import { canSkipAll } from "../lib/stage";
+import { canSkipAll, isSkippedAll } from "../lib/stage";
 import SkipAllModal from "./SkipAllModal";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import { formatDate } from "../../../lib/datetime";
@@ -179,6 +179,7 @@ export default function CrossCheckMeasurePage() {
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [showSkipAllModal, setShowSkipAllModal] = useState(false);
   const [skipAllError, setSkipAllError] = useState<string | null>(null);
+  const [isSkipAllSubmitting, setIsSkipAllSubmitting] = useState(false);
 
   const uploadImage = useUploadInspectionImage();
   const ocrImage = useOcrInspectionImage();
@@ -190,7 +191,7 @@ export default function CrossCheckMeasurePage() {
 
   useEffect(() => {
     if (!detail || !allDone) return;
-    if (editMode) return; // 사용자가 result 에서 명시적으로 돌아온 경우 redirect 안 함
+    if (editMode || showSkipAllModal) return; // 건너뛰기 처리 중에는 이 화면에서 완료까지 진행
     navigate(`/cross-check/${crossCheckId}/result`, {
       replace: true,
       state: {
@@ -202,7 +203,7 @@ export default function CrossCheckMeasurePage() {
         process: detail.product.process,
       },
     });
-  }, [detail, allDone, items, crossCheckId, navigate, user, editMode]);
+  }, [detail, allDone, items, crossCheckId, navigate, user, editMode, showSkipAllModal]);
 
   // targetDimNo 로 진입한 경우 해당 dim 의 인덱스. 수동 네비게이션(manualStepIdx) 전까지
   // 이 인덱스를 기본 위치로 사용해, 이미 측정된 항목도 바로 재촬영할 수 있게 한다.
@@ -522,23 +523,32 @@ export default function CrossCheckMeasurePage() {
 
   // 순회검사를 하지 않는 시간대 — 외관 포함 전체 항목을 건너뛰고 결재를 요청한다.
   const confirmSkipAll = async () => {
+    if (isSkipAllSubmitting) return;
+    setIsSkipAllSubmitting(true);
     setSkipAllError(null);
     try {
-      await skipAllMut.mutateAsync();
-      // 건너뛰기 후에도 DRAFT 상태라면 일반 완료 요청으로 결재 단계까지 진행한다.
-      const { data: updated } = await detailQuery.refetch({
+      // 이전 시도에서 일부만 성공했을 수 있으므로 서버 상태부터 확인한다.
+      let { data: current } = await detailQuery.refetch({
         throwOnError: true,
       });
-      if (updated?.status === "DRAFT") await completeMut.mutateAsync();
+      if (!current) throw new Error(t("measure.notFound"));
+      if (current.status === "DRAFT" && !isSkippedAll(current)) {
+        await skipAllMut.mutateAsync();
+        ({ data: current } = await detailQuery.refetch({ throwOnError: true }));
+        if (!current) throw new Error(t("measure.notFound"));
+      }
+      if (current.status === "DRAFT") await completeMut.mutateAsync();
       navigate("/cross-checks", { replace: true });
     } catch (err) {
       // 실패해도 모달은 열어둔다 — 사유를 읽고 "닫기"로 측정을 이어갈 수 있게.
       setSkipAllError(toErrorMessage(err, t));
+    } finally {
+      setIsSkipAllSubmitting(false);
     }
   };
 
   const closeSkipAllModal = () => {
-    if (skipAllMut.isPending || completeMut.isPending) return;
+    if (isSkipAllSubmitting) return;
     setSkipAllError(null);
     setShowSkipAllModal(false);
   };
@@ -979,7 +989,7 @@ export default function CrossCheckMeasurePage() {
       <SkipAllModal
         open={showSkipAllModal}
         mode="skip"
-        isSubmitting={skipAllMut.isPending || completeMut.isPending}
+        isSubmitting={isSkipAllSubmitting}
         error={skipAllError}
         onCancel={closeSkipAllModal}
         onConfirm={confirmSkipAll}
