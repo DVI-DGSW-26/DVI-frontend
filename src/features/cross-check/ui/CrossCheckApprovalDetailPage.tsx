@@ -14,6 +14,7 @@ import type { CrossCheckResultInfo } from "../api";
 import { useProcessFlag, useProcessLabel } from "../../process";
 import { formatStandardWithTolerance } from "../../inspection/lib/format";
 import { judgeMeasurement } from "../../inspection/lib/judgment";
+import { useInspectionSlots } from "../../inspection/api";
 import { useAuth } from "../../auth/AuthContext";
 import { hasRole } from "../../auth/roles";
 import { getStage, isSkippedAll, STAGE_BADGE } from "../lib/stage";
@@ -72,6 +73,11 @@ export default function CrossCheckApprovalDetailPage() {
   const autoCopyNight = useProcessFlag("autoCopyNightCrossCheck");
   const detailQuery = useCrossCheckDetail(crossCheckId);
   const detail = detailQuery.data;
+  // 이 차수가 야간인지 — 순회검사 응답엔 교대가 없고 라벨도 입력한 이름 그대로("초")라,
+  // 공정 시점 목록에서 같은 시점 코드의 shift 를 찾는다(시점 코드는 서버가 매긴 식별자).
+  const { data: processSlots = [] } = useInspectionSlots(detail?.product.process);
+  const isNightSlot =
+    processSlots.find((s) => s.type === detail?.type)?.shift === "NIGHT";
   const decideMut = useDecideCrossCheck(crossCheckId);
   const deleteMut = useDeleteCrossCheck(crossCheckId);
   const cancelSkipAllMut = useCancelSkipAllCrossCheck(crossCheckId);
@@ -199,11 +205,11 @@ export default function CrossCheckApprovalDetailPage() {
   // 야간 자동 기록 — 순회검사자가 없는 야간엔 공정 설정(야간 자동복사)에 따라 자주검사
   // 결과가 순회검사로 그대로 들어온다. 비교표가 두 열을 나란히 보여주니 이유를 모르면
   // "복사해 넣은 것 아닌가"로 보거나 무심코 승인하게 된다. 서버가 "자동 기록" 표시를
-  // 따로 주지 않아 ① 공정 설정 ② 야간 차수(라벨) ③ 모든 값이 자주검사와 같음 으로 판단한다.
-  // 순회검사 상세엔 shift 가 없어 라벨로 본다(서버가 야간 슬롯 라벨을 "야간…"으로 준다).
+  // 따로 주지 않아 ① 공정 설정 ② 야간 차수(공정 시점 목록의 shift) ③ 모든 값이 자주검사와
+  // 같음 으로 판단한다.
   const autoRecorded =
     autoCopyNight(detail.product.process) &&
-    detail.typeLabel.trim().startsWith("야간") &&
+    isNightSlot &&
     detail.results.length > 0 &&
     detail.results.every(
       (r) => r.measuredValue != null && r.measuredValue === r.productionValue,

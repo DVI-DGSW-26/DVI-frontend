@@ -109,7 +109,7 @@ export default {
     pending: "Pending",
     inProgress: "In progress",
     completed: "Completed",
-    pendingReview: "Pending review",
+    pendingReview: "Awaiting QA approval",
     incompleteApproved: "Incomplete approved",
     skipped: "Skipped",
   },

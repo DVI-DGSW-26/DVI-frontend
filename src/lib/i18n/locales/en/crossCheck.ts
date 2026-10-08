@@ -209,7 +209,7 @@ export default {
     requestApproval: "Send for Approval",
     approvalSent: "Sent to the approver · the report is issued once approved",
     completeStage: "Complete This Round",
-    stageCompleted: "{{stage}} round done · it goes to approval after the final round",
+    stageCompleted: "{{stage}} round done · it goes to approval after the last round",
     valueUpdated: "Measured value updated",
     cannotSave: "Could not save. Please refresh and try again.",
     editValue: "Edit Measured Value",
