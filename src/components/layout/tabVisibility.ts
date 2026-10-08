@@ -17,3 +17,9 @@ export function visibleTabsFor<T extends { to: string; roles: Role[] }>(
     return true;
   });
 }
+
+/** 관리자 메뉴 묶음 — layout 네임스페이스 groups.* 키. */
+export type TabGroup = "approval" | "status" | "master";
+
+/** 묶음 표시 순서. 묶음 없는 탭은 맨 뒤. */
+export const TAB_GROUP_ORDER: TabGroup[] = ["approval", "status", "master"];
