@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { postIncompleteDecision } from "../api/incompleteApi";
 import type { Decision } from "../type/types";
 import { incompleteQueryKey } from "./useIncomplete";
+import { approvalKeys } from "../../approval/api/approvalApi";
 
 interface DecisionVariables {
   inspectionIds: number[];
@@ -18,6 +19,7 @@ export function useIncompleteDecision() {
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: incompleteQueryKey });
+      queryClient.invalidateQueries({ queryKey: approvalKeys.pendingCounts });
     },
   });
 }

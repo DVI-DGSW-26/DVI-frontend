@@ -48,11 +48,15 @@ export default {
     unknown: "An unknown error occurred.",
   },
   cancelError: {
-    default: "An error occurred while canceling.",
-    resourceInUse:
-      "Measurement data has already been saved, so it could not be canceled. Continue as is, or if it was started by mistake, ask a quality manager to delete it.",
-    notDeployed:
-      "The cancel feature is not available on this server yet. Please contact an administrator.",
+    default: "An error occurred while handing over.",
+  },
+  autoRelease: {
+    soonTitle: "Hands over to another inspector automatically in {{minutes}} min",
+    soonBody: "Ownership is released after 15 minutes without saving. Saving a measurement adds another 15 minutes.",
+    releasedTitle: "Ownership released after 15 minutes without saving",
+    releasedBody: "Entered measurements are kept. If no one else has taken it over yet, you can take it back and continue.",
+    reclaim: "Take Back",
+    reclaiming: "Taking back...",
   },
   home: {
     actionableTitle: "Inspections You Can Do Now",
@@ -114,7 +118,7 @@ export default {
     startFailed: "Failed to start the patrol inspection.",
     cancelModal: {
       title: "Hand Over to Another Inspector",
-      body: "Lets go of <b>{{product}}</b> · self-inspector <b>{{production}}</b>. This patrol inspection record is deleted and another inspector starts over. It can't be handed over once measurements are saved. (No re-measurement request is sent to the worker.)",
+      body: "Releases ownership of <b>{{product}}</b> · self-inspector <b>{{production}}</b>. Another inspector can take it over, and entered measurements are kept. (No re-measurement request is sent to the worker.)",
       canceling: "Handing over...",
       confirm: "Hand Over",
     },
@@ -159,7 +163,7 @@ export default {
     },
     cancelModal: {
       title: "Hand Over to Another Inspector",
-      body: "Picked the wrong self-inspector, or can't continue? Letting go deletes this record and another inspector starts over. If measurements are already saved it can't be handed over — continue, or ask a quality manager to delete it. No re-measurement request is sent to the worker.",
+      body: "Picked the wrong self-inspector, or can't continue? This releases your ownership so another inspector can take it over. Entered measurements are kept and no re-measurement request is sent to the worker. To resume, you must pick it up again from the assignment list — someone else may take it first.",
       canceling: "Handing over...",
       confirm: "Hand Over",
     },
@@ -169,7 +173,7 @@ export default {
       reject: "Request re-measure from worker",
       rejectHint: "The self-inspection goes back to the worker to measure again",
       handOver: "Hand over to another inspector",
-      handOverHint: "Record is deleted and someone starts over · not possible once measurements are saved",
+      handOverHint: "Measurements kept · no effect on the worker",
     },
   },
   input: {
