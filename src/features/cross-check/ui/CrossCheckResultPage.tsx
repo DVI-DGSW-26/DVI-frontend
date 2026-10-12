@@ -24,6 +24,7 @@ import { getStage, STAGE_BADGE } from "../lib/stage";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import { formatDate } from "../../../lib/datetime";
 import { slotLabelText } from "../../../lib/slotLabel";
+import { AutoReleaseNotice } from "./AutoReleaseNotice";
 
 const STAGE_ORDER = { INITIAL: 1, MIDDLE: 2, FINAL: 3 } as const;
 
@@ -308,6 +309,7 @@ export default function CrossCheckResultPage() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-28">
+      {detail && <AutoReleaseNotice detail={detail} />}
       <section className="border-b border-gray-200 bg-white px-4 py-4">
         {detail &&
           (() => {

@@ -23,6 +23,7 @@ export {
   useCrossCheckDetail,
   useCreateCrossCheck,
   useSaveCrossCheckResults,
+  useReclaimCrossCheck,
   useDecideCrossCheck,
   useCompleteCrossCheck,
   useReopenCrossCheck,

@@ -33,6 +33,7 @@ import {
 import { toCancelErrorMessage } from "../lib/cancelError";
 import { canSkipAll, isSkippedAll } from "../lib/stage";
 import SkipAllModal from "./SkipAllModal";
+import { AutoReleaseNotice } from "./AutoReleaseNotice";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import { formatDate } from "../../../lib/datetime";
 import { slotLabelText } from "../../../lib/slotLabel";
@@ -601,6 +602,7 @@ export default function CrossCheckMeasurePage() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-24">
+      <AutoReleaseNotice detail={detail} />
       {detail.rejectReason && (
         <section className="border-b border-[#FECACA] bg-[#FEF2F2] px-4 py-3">
           <div className="flex items-start gap-2">

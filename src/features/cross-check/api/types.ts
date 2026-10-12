@@ -151,6 +151,8 @@ export interface CrossCheckDetail {
   status: CrossCheckStatus;
   // status=REJECTED 일 때만 채워짐.
   rejectReason: string | null;
+  // 담당이 자동으로 풀릴 예정 시각(마지막 저장 + 15분, KST). 담당자가 잡고 작성 중(DRAFT)일 때만 값이 있다.
+  autoReleaseAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
