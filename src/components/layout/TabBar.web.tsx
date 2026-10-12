@@ -26,6 +26,7 @@ const TABS: TabItem[] = [
   { labelKey: "dashboard", to: "/", icon: "flowbite:home-solid", roles: ["ADMIN"] },
   { labelKey: "approvalManagement", to: "/approval-management", icon: "fluent:shield-task-48-filled", roles: ["QUALITY_ADMIN", "ADMIN"], group: "approval" },
   { labelKey: "crossCheckApproval", to: "/cross-check-approval", icon: "mdi:shield-check-outline", roles: ["QUALITY_ADMIN", "ADMIN"], group: "approval" },
+  { labelKey: "missedInspections", to: "/missed-inspections", icon: "mdi:clipboard-alert-outline", roles: ["QUALITY", "QUALITY_ADMIN", "ADMIN"], group: "approval" },
   { labelKey: "adminInspections", to: "/admin-inspections", icon: "mdi:clipboard-remove-outline", roles: ["ADMIN"], group: "status" },
   { labelKey: "crossChecks", to: "/cross-checks", icon: "icon-park-outline:big-clock", roles: ["ADMIN"], group: "status" },
   { labelKey: "reports", to: "/reports", icon: "basil:document-solid", roles: ["ADMIN"], group: "status" },

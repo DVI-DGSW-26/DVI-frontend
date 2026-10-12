@@ -27,34 +27,20 @@ import Toast from "./Toast";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
 import { useHeaderBackHandler } from "../../../lib/headerBack";
 
+import {
+  OTHER_REASON,
+  REASON_LABEL_KEYS,
+  REASON_OPTIONS,
+  joinReason,
+  splitReason,
+} from "../lib/incompleteReasons";
+
 interface ResultLocationState {
   results?: StepResult[];
   equipmentName?: string;
   productName?: string;
   inspectorName?: string;
 }
-
-// 사유 값은 백엔드로 그대로 전송·저장되므로 한국어 원문을 유지한다.
-// 화면 표시는 REASON_LABEL_KEYS 로 번역한다.
-const REASON_OPTIONS = [
-  "설비고장/수리",
-  "치수불량",
-  "외관불량",
-  "소재부족",
-  "모델교환",
-  "기타",
-];
-
-const REASON_LABEL_KEYS: Record<string, string> = {
-  "설비고장/수리": "result.reasons.equipmentFailure",
-  치수불량: "result.reasons.dimensionDefect",
-  외관불량: "result.reasons.appearanceDefect",
-  소재부족: "result.reasons.materialShortage",
-  모델교환: "result.reasons.modelChange",
-  기타: "result.reasons.other",
-};
-
-const OTHER_REASON = "기타";
 
 export default function InspectionResultPage() {
   const { t } = useTranslation("inspection");
@@ -156,12 +142,9 @@ export default function InspectionResultPage() {
     if (detail.note) setNote(detail.note);
     if (detail.incompleteReason) {
       // REASON_OPTIONS 에 매칭되면 그 키, 아니면 "기타" + customReason 로 표현.
-      if (REASON_OPTIONS.includes(detail.incompleteReason)) {
-        setReasonKey(detail.incompleteReason);
-      } else {
-        setReasonKey(OTHER_REASON);
-        setCustomReason(detail.incompleteReason);
-      }
+      const { key, custom } = splitReason(detail.incompleteReason);
+      setReasonKey(key);
+      setCustomReason(custom);
     }
     // 검사가 이미 종결된 상태로 들어왔으면 "처리 후" 화면으로 — 검사 완료/미완료 처리 버튼 대신
     // 다음 시점 시작/홈으로 만 노출. (백엔드는 이미 완료된 검사를 다시 complete 시킬 수 없어 400 반환.)
@@ -194,9 +177,8 @@ export default function InspectionResultPage() {
       ? t("result.skippedMore", { n: skippedCount - 2 })
       : "");
 
-  const finalReason =
-    reasonKey === OTHER_REASON ? customReason.trim() : reasonKey;
-  const canSubmitIncomplete = !!finalReason;
+  // 사유는 선택 — 비워 내면 순회검사자가 대신 적는다(작업자 중 외국인이 많아서).
+  const finalReason = joinReason(reasonKey, customReason);
   const reasonLabel = finalReason
     ? REASON_LABEL_KEYS[finalReason]
       ? t(REASON_LABEL_KEYS[finalReason])
@@ -298,9 +280,8 @@ export default function InspectionResultPage() {
   };
 
   const handleIncomplete = () => {
-    if (!canSubmitIncomplete) return;
     incompleteMut.mutate(
-      { reason: finalReason },
+      { reason: finalReason || null },
       {
         onSuccess: () => {
           setConfirmIncomplete(false);
@@ -486,15 +467,17 @@ export default function InspectionResultPage() {
               disabled={isBusy}
               className="mt-1 h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
             >
-              <option value="" disabled>
-                {t("result.selectReason")}
-              </option>
+              <option value="">{t("result.noReason")}</option>
               {REASON_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>
                   {REASON_LABEL_KEYS[opt] ? t(REASON_LABEL_KEYS[opt]) : opt}
                 </option>
               ))}
             </select>
+
+            <p className="mt-1.5 text-[11px] text-[#6B7280]">
+              {t("result.reasonOptionalHint")}
+            </p>
 
             {reasonKey === OTHER_REASON && (
               <textarea
@@ -571,7 +554,7 @@ export default function InspectionResultPage() {
             <button
               type="button"
               onClick={() => setConfirmIncomplete(true)}
-              disabled={!canSubmitIncomplete || isBusy}
+              disabled={isBusy}
               className="h-12 w-full rounded-md border border-[#931B82] bg-white text-base font-semibold text-[#931B82] transition-colors hover:bg-[#F3E8FF] disabled:border-[#E5E7EB] disabled:text-[#9CA3AF] disabled:hover:bg-white"
             >
               {incompleteMut.isPending
@@ -849,11 +832,18 @@ function IncompleteFacts({
   const { t } = useTranslation("inspection");
   const rows: [string, string][] = [];
   if (reason) rows.push([t("result.incompleteFlow.reason"), reason]);
+  else if (!approved)
+    rows.push([
+      t("result.incompleteFlow.reason"),
+      t("result.incompleteFlow.reasonByPatrol"),
+    ]);
   if (skipped) rows.push([t("result.incompleteFlow.skipped"), skipped]);
   if (!approved) {
     rows.push([
       t("result.incompleteFlow.next"),
-      t("result.incompleteFlow.nextValue"),
+      reason
+        ? t("result.incompleteFlow.nextValue")
+        : t("result.incompleteFlow.nextValueNoReason"),
     ]);
   }
   if (skipped) {

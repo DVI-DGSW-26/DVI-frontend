@@ -56,6 +56,10 @@ export function resolveNotificationLink(
       // 권한 위임 변경 — 홈으로.
       return "/";
 
+    case "INCOMPLETE_REASON_REQUESTED":
+      // 작업자가 사유 없이 미완료로 냄 → 순회검사자에게. 사유 적는 화면으로.
+      return "/missed-inspections";
+
     case "INCOMPLETE_REQUESTED":
     case "INCOMPLETE_APPROVED":
     case "INCOMPLETE_REJECTED":

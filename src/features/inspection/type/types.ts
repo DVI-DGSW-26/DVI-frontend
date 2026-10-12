@@ -203,7 +203,8 @@ export interface StepResult {
 }
 
 export interface IncompleteRequest {
-  reason: string;
+  // 선택 — null 이면 순회검사자가 사유를 대신 적는다.
+  reason: string | null;
 }
 
 // 품질 문제(금형 교체 등) 조기 마감 요청. 사유는 선택.

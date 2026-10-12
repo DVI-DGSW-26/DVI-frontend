@@ -63,11 +63,19 @@ function IncompleteList({ checked, onToggle }: IncompleteListProps) {
               })}
             </span>
           </div>
-          <div className="ml-auto flex flex-row items-center gap-2">
-            <div className="bg-[#EF4444] w-2 h-2 rounded-2xl"></div>
-            <span className="text-right text-sm text-[#EF4444] truncate">
-              {item.incompleteReason ?? "-"}
-            </span>
+          <div className="ml-auto flex flex-col items-end min-w-0">
+            <div className="flex flex-row items-center gap-2 min-w-0">
+              <div className="bg-[#EF4444] w-2 h-2 rounded-2xl shrink-0"></div>
+              <span className="text-right text-sm text-[#EF4444] truncate">
+                {item.incompleteReason ?? "-"}
+              </span>
+            </div>
+            {/* 순회검사자가 대신 적었으면 작업자 이름과 달라진다 — 누가 적었는지 보이게. */}
+            {item.incompleteReasonByName && (
+              <span className="text-xs text-gray-500 truncate">
+                {t("list.reasonBy", { name: item.incompleteReasonByName })}
+              </span>
+            )}
           </div>
         </li>
       ))}

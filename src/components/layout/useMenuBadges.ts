@@ -5,6 +5,7 @@ import {
   approvalKeys,
   getApprovalPendingCounts,
 } from "../../features/approval/api/approvalApi";
+import { useAwaitingReasonCount } from "../../features/incomplete/model/useMissedInspections";
 
 /** 메뉴 옆에 붙일 대기 건수 — tabs.* labelKey 기준. 0 이거나 모르면 키가 없다. */
 export type MenuBadges = Partial<Record<string, number>>;
@@ -23,6 +24,9 @@ const BADGE_STALE_MS = 60 * 1000;
 export function useMenuBadges(): MenuBadges {
   const { user } = useAuth();
   const isApprover = hasRole(user?.role, ["QUALITY_ADMIN", "ADMIN"]);
+  // 사유 없이 낸 미완료 — 순회검사자가 사유를 적을 차례(미검사 사유 메뉴).
+  const canWriteReason = hasRole(user?.role, ["QUALITY", "QUALITY_ADMIN", "ADMIN"]);
+  const awaitingReason = useAwaitingReasonCount(canWriteReason);
 
   const counts = useQuery({
     queryKey: approvalKeys.pendingCounts,
@@ -32,11 +36,14 @@ export function useMenuBadges(): MenuBadges {
     refetchInterval: BADGE_STALE_MS,
   });
 
-  if (!isApprover || !counts.data) return {};
   const badges: MenuBadges = {};
-  if (counts.data.incomplete > 0)
-    badges.approvalManagement = counts.data.incomplete;
-  if (counts.data.crossCheck > 0)
-    badges.crossCheckApproval = counts.data.crossCheck;
+  if (canWriteReason && awaitingReason > 0)
+    badges.missedInspections = awaitingReason;
+  if (isApprover && counts.data) {
+    if (counts.data.incomplete > 0)
+      badges.approvalManagement = counts.data.incomplete;
+    if (counts.data.crossCheck > 0)
+      badges.crossCheckApproval = counts.data.crossCheck;
+  }
   return badges;
 }

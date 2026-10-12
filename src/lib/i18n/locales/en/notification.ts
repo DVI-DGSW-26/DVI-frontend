@@ -11,6 +11,7 @@ export default {
     DELEGATION_GRANTED: { title: "Authority delegated", content: "Manager authority has been delegated to you." },
     DELEGATION_REVOKED: { title: "Delegation revoked", content: "The delegated manager authority has been revoked." },
     INCOMPLETE_REQUESTED: { title: "Incomplete approval requested", content: "Approval has been requested for an incomplete inspection." },
+    INCOMPLETE_REASON_REQUESTED: { title: "Incomplete reason needed", content: "An inspection was submitted as incomplete without a reason. Please add one." },
     INCOMPLETE_APPROVED: { title: "Incomplete approved", content: "The incomplete inspection has been approved." },
     INCOMPLETE_REJECTED: { title: "Incomplete rejected", content: "The incomplete inspection request was rejected." },
   },

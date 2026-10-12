@@ -32,6 +32,7 @@ import CrossCheckPendingPage from "./features/cross-check/ui/CrossCheckPendingPa
 import CrossCheckMeasurePage from "./features/cross-check/ui/CrossCheckMeasurePage";
 import CrossCheckResultPage from "./features/cross-check/ui/CrossCheckResultPage";
 import QualityHomePage from "./features/cross-check/ui/QualityHomePage";
+import MissedInspectionsPage from "./features/incomplete/ui/MissedInspectionsPage";
 import CrossCheckApprovalPage from "./features/cross-check/ui/CrossCheckApprovalPage";
 import CrossCheckApprovalDetailPage from "./features/cross-check/ui/CrossCheckApprovalDetailPage";
 
@@ -153,6 +154,16 @@ function App() {
               <Route
                 path="/cross-check-approval/:crossCheckId"
                 element={<CrossCheckApprovalDetailPage />}
+              />
+            </Route>
+
+            {/* 미검사 사유 — 순회검사자가 사유 없는 미완료에 사유를 대신 적는다. */}
+            <Route
+              element={<RouteGuard roles={["QUALITY", "QUALITY_ADMIN", "ADMIN"]} />}
+            >
+              <Route
+                path="/missed-inspections"
+                element={<MissedInspectionsPage />}
               />
             </Route>
 
