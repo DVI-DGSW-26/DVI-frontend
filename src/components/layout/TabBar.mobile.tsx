@@ -45,6 +45,7 @@ const TABS: TabItem[] = [
 
   { labelKey: "home", to: "/", icon: "flowbite:home-solid", roles: ["QUALITY"], iconSize: 34 },
   { labelKey: "crossChecks", to: "/cross-checks", icon: "icon-park-outline:big-clock", roles: ["QUALITY", "ADMIN"], group: "status" },
+  { labelKey: "missedInspections", to: "/missed-inspections", icon: "mdi:clipboard-alert-outline", roles: ["QUALITY", "QUALITY_ADMIN", "ADMIN"], group: "approval" },
 
   { labelKey: "adminInspections", to: "/admin-inspections", icon: "mdi:clipboard-remove-outline", roles: ["ADMIN"], group: "status" },
   { labelKey: "products", to: "/products", icon: "mdi:cube", roles: ["ADMIN", "QUALITY_ADMIN"], group: "master" },

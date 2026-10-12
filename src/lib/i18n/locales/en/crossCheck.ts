@@ -74,6 +74,8 @@ export default {
     unprocessedTitle: "Unprocessed Patrol Inspections",
     unprocessedCount: "{{n}}",
     checkImmediately: "Immediate attention required.",
+    missedReasonTitle: "{{n}} incomplete inspections need a reason",
+    missedReasonHint: "Workers submitted these as incomplete without a reason. Tap to add one.",
     resumeLastWork: "Resume Last Work",
     rejectedTitle: "Rejected Inspections",
     rejectedFixCount: "{{n}} need fixing",

@@ -75,6 +75,8 @@ export default {
     unprocessedTitle: "미처리 순회 검사",
     unprocessedCount: "{{n}}건",
     checkImmediately: "즉시 확인이 필요합니다.",
+    missedReasonTitle: "사유를 적어야 할 미완료 {{n}}건",
+    missedReasonHint: "작업자가 사유 없이 미완료로 냈습니다. 눌러서 사유를 적어 주세요.",
     resumeLastWork: "직전 작업 이어하기",
     rejectedTitle: "반려된 검사",
     rejectedFixCount: "{{n}}건 수정 필요",

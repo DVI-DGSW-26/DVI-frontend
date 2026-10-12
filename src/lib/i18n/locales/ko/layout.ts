@@ -8,6 +8,7 @@ export default {
     qmReports: "검사보고서",
     crossCheckApproval: "순회검사 결재",
     crossChecks: "순회검사 현황",
+    missedInspections: "미검사 사유",
     products: "제품관리",
     equipment: "설비관리",
     customers: "고객사 관리",
