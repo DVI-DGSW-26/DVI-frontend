@@ -351,7 +351,9 @@ export default function ProductionHomePage() {
                     {latestDraft.product.name}
                   </div>
                   <div className="mt-0.5 truncate text-xs text-[#F3E8FF]/90">
-                    {latestDraft.type} / {slotLabelText(latestDraft.typeLabel)}
+                    {/* 내부 시점 코드(DAY_3)는 보이지 않는다 — 설비·차수만. */}
+                    {latestDraft.equipment.name} ·{" "}
+                    {slotLabelText(latestDraft.typeLabel) || latestDraft.type}
                   </div>
                 </div>
                 <Icon

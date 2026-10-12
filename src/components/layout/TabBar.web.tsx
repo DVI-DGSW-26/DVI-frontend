@@ -7,6 +7,7 @@ import { useAuth } from "../../features/auth/AuthContext";
 import { ROLE_HOME } from "../../features/auth/constants";
 import type { Role } from "../../features/auth/api";
 import { visibleTabsFor } from "./tabVisibility";
+import { useMenuBadges } from "./useMenuBadges";
 import type { TabGroup } from "./tabVisibility";
 
 type TabItem = {
@@ -25,6 +26,7 @@ const TABS: TabItem[] = [
   { labelKey: "dashboard", to: "/", icon: "flowbite:home-solid", roles: ["ADMIN"] },
   { labelKey: "approvalManagement", to: "/approval-management", icon: "fluent:shield-task-48-filled", roles: ["QUALITY_ADMIN", "ADMIN"], group: "approval" },
   { labelKey: "crossCheckApproval", to: "/cross-check-approval", icon: "mdi:shield-check-outline", roles: ["QUALITY_ADMIN", "ADMIN"], group: "approval" },
+  { labelKey: "missedInspections", to: "/missed-inspections", icon: "mdi:clipboard-alert-outline", roles: ["QUALITY", "QUALITY_ADMIN", "ADMIN"], group: "approval" },
   { labelKey: "adminInspections", to: "/admin-inspections", icon: "mdi:clipboard-remove-outline", roles: ["ADMIN"], group: "status" },
   { labelKey: "crossChecks", to: "/cross-checks", icon: "icon-park-outline:big-clock", roles: ["ADMIN"], group: "status" },
   { labelKey: "reports", to: "/reports", icon: "basil:document-solid", roles: ["ADMIN"], group: "status" },
@@ -43,6 +45,7 @@ const TabBarWeb = () => {
   const { user } = useAuth();
   const { t } = useTranslation("layout");
   const visibleTabs = visibleTabsFor(TABS, user?.role);
+  const badges = useMenuBadges();
   const homePath = user ? ROLE_HOME[user.role] : "/";
 
   return (
@@ -79,6 +82,12 @@ const TabBarWeb = () => {
         >
           <Icon icon={tab.icon} width={20} height={20} />
           <span>{t(`tabs.${tab.labelKey}`)}</span>
+          {/* 결재 대기 건수 — 어디부터 열어볼지 메뉴에서 바로 보이게. */}
+          {badges[tab.labelKey] ? (
+            <span className="ml-auto mr-2 rounded-full bg-[#DC2626] px-1.5 text-[11px] font-bold leading-5 text-white tabular-nums">
+              {badges[tab.labelKey]}
+            </span>
+          ) : null}
         </NavLink>
         </Fragment>
       ))}

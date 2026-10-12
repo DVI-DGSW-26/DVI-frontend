@@ -22,6 +22,7 @@ import { formatDateTime } from "../../../lib/datetime";
 import CrossCheckCard from "./CrossCheckCard";
 import { slotLabelText } from "../../../lib/slotLabel";
 import { notificationText } from "../../notification/lib/notificationText";
+import { useAwaitingReasonCount } from "../../incomplete/model/useMissedInspections";
 
 // 홈에는 할 수 있는 검사 중 가장 오래 기다린 몇 건만 — 나머지는 순회검사 현황에서.
 const HOME_ACTIONABLE_LIMIT = 5;
@@ -34,6 +35,7 @@ const QualityHomePage = () => {
   const { data: assigned = [] } = useAssignedCrossChecks();
   const { data: myCrossChecks = [] } = useMyCrossChecks(true);
   const { data: delegation } = useMyDelegation();
+  const awaitingReason = useAwaitingReasonCount();
   const { data: notifications = [] } = useNotifications();
   const markAsRead = useMarkAsRead();
   const reopenMut = useReopenCrossCheck();
@@ -225,6 +227,36 @@ const QualityHomePage = () => {
           </span>
         </div>
       </section>
+
+      {/* 작업자가 사유 없이 낸 미완료 — 순회검사자가 사유를 적어야 품질관리자 승인으로 간다. */}
+      {awaitingReason > 0 && (
+        <button
+          type="button"
+          onClick={() => navigate("/missed-inspections")}
+          className="flex items-center gap-3 rounded-2xl border border-[#FECACA] bg-white p-4 text-left shadow-sm"
+        >
+          <Icon
+            icon="mdi:clipboard-alert-outline"
+            width={22}
+            height={22}
+            className="shrink-0 text-[#EF4444]"
+          />
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold text-[#212121]">
+              {t("home.missedReasonTitle", { n: awaitingReason })}
+            </div>
+            <div className="mt-0.5 text-xs text-[#6B7280]">
+              {t("home.missedReasonHint")}
+            </div>
+          </div>
+          <Icon
+            icon="mdi:chevron-right"
+            width={20}
+            height={20}
+            className="shrink-0 text-[#9CA3AF]"
+          />
+        </button>
+      )}
 
       <button
         type="button"

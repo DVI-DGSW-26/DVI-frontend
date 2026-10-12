@@ -198,8 +198,9 @@ export default {
     noteHint:
       "설비 이상이나 측정 특이사항을 적어두면 보고서 비고란에 그대로 표시됩니다.",
     notePlaceholder: "예: 게이지 교체 직후 측정",
-    incompleteReason: "미완료 사유",
-    selectReason: "사유를 선택해주세요",
+    incompleteReason: "미완료 사유 (선택)",
+    noReason: "선택 안 함",
+    reasonOptionalHint: "사유를 모르면 비워 두세요. 순회검사자가 대신 적습니다.",
     reasons: {
       equipmentFailure: "설비고장/수리",
       dimensionDefect: "치수불량",
@@ -230,6 +231,8 @@ export default {
       skipped: "비운 항목",
       next: "다음은",
       nextValue: "품질관리자가 승인하면 종결",
+      reasonByPatrol: "순회검사자가 대신 적습니다",
+      nextValueNoReason: "순회검사자가 사유를 적고 품질관리자가 승인하면 종결",
       after: "그 뒤",
       afterValue: "{{items}}을(를) 다시 채울 수 있습니다",
       blocksNext: "승인될 때까지 다음 시점을 시작할 수 없습니다.",

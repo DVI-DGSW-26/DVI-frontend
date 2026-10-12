@@ -22,6 +22,8 @@ import type {
   SaveCrossCheckResultRequest,
 } from "./types";
 import { reportKeys } from "../../report/api";
+import { approvalKeys } from "../../approval/api/approvalApi";
+import { markCrossCheckSaved } from "../lib/autoRelease";
 
 export const crossCheckKeys = {
   all: ["cross-check"] as const,
@@ -100,6 +102,21 @@ export function useCreateCrossCheck() {
   });
 }
 
+// 측정 중 자동 넘기기로 담당이 풀린 건을 같은 화면에서 다시 잡는다(POST /cross-check 이어받기).
+// useCreateCrossCheck 와 달리 detail 은 무효화하지 않는다 — 측정 흐름 중 refetch 는
+// stepIndex 를 어긋나게 한다(아래 useSaveCrossCheckResults 주석). 입력값은 서버에 그대로 있다.
+export function useReclaimCrossCheck(crossCheckId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (inspectionId: number) => createCrossCheck({ inspectionId }),
+    onSuccess: () => {
+      markCrossCheckSaved(crossCheckId);
+      qc.invalidateQueries({ queryKey: crossCheckKeys.myAll() });
+      qc.invalidateQueries({ queryKey: [...crossCheckKeys.all, "assigned"] });
+    },
+  });
+}
+
 export function useSaveCrossCheckResults(crossCheckId: number) {
   const qc = useQueryClient();
   return useMutation({
@@ -125,6 +142,7 @@ export function useDecideCrossCheck(crossCheckId: number) {
       // 승인 시 보고서가 자동 발행되므로 양쪽 보고서 페이지(ADMIN/QUALITY_ADMIN)
       // 캐시도 같이 비워서 다음 진입 때 새 목록이 보이게 한다.
       qc.invalidateQueries({ queryKey: reportKeys.all });
+      qc.invalidateQueries({ queryKey: approvalKeys.pendingCounts });
     },
   });
 }

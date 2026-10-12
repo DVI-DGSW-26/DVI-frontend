@@ -13,6 +13,7 @@ const ROUTE_TITLE_KEYS: Record<string, string> = {
   "/": "tabs.dashboard",
   "/reports": "tabs.reports",
   "/approval-management": "titles.approvalManagement",
+  "/missed-inspections": "tabs.missedInspections",
   "/qm-reports": "titles.qmReports",
   "/products": "tabs.products",
   "/equipment": "tabs.equipment",

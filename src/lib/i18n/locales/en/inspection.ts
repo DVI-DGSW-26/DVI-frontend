@@ -203,8 +203,9 @@ export default {
     noteHint:
       "Notes on machine issues or measurement anomalies will appear in the report remarks as written.",
     notePlaceholder: "e.g. Measured right after gauge replacement",
-    incompleteReason: "Incomplete Reason",
-    selectReason: "Select a reason",
+    incompleteReason: "Incomplete Reason (optional)",
+    noReason: "None",
+    reasonOptionalHint: "If you don't know the reason, leave it empty. A patrol inspector will add it.",
     reasons: {
       equipmentFailure: "Machine failure/repair",
       dimensionDefect: "Dimension defect",
@@ -233,6 +234,8 @@ export default {
       skipped: "Empty items",
       next: "Next",
       nextValue: "Closed once the quality manager approves",
+      reasonByPatrol: "A patrol inspector will add it",
+      nextValueNoReason: "Closed once a patrol inspector adds the reason and a quality manager approves",
       after: "Then",
       afterValue: "You can fill in {{items}} again",
       blocksNext: "You can't start the next time slot until this is approved.",

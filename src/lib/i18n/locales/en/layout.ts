@@ -7,6 +7,7 @@ export default {
     qmReports: "Inspection Reports",
     crossCheckApproval: "Patrol Approval",
     crossChecks: "Patrol Inspections",
+    missedInspections: "Missed Inspections",
     products: "Products",
     equipment: "Machines",
     customers: "Customers",

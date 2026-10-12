@@ -15,7 +15,7 @@ import Toast from "../../inspection/ui/Toast";
 import { formatDate } from "../../../lib/datetime";
 import ShiftBadge from "../../../components/shared/ShiftBadge";
 import { useViewState } from "../../../lib/viewState";
-import { slotLabelText } from "../../../lib/slotLabel";
+import { slotLabelWithShift } from "../../../lib/slotLabel";
 
 type StatusTab = "ALL" | "DRAFT" | "COMPLETED" | "INCOMPLETE";
 
@@ -206,7 +206,7 @@ export default function AdminInspectionListPage() {
                   <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-[#6B7280] sm:grid-cols-3">
                     <Meta
                       label={t("meta.round")}
-                      value={`${slotLabelText(item.typeLabel)} (${item.type})`}
+                      value={slotLabelWithShift(item.typeLabel, item.type)}
                       suffix={<ShiftBadge shift={item.shift} compact />}
                     />
                     <Meta label={t("meta.writer")} value={item.production?.name ?? "-"} />

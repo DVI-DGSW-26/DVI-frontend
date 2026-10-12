@@ -51,3 +51,24 @@ export function withSlotLabel(
   const text = slotLabelText(label);
   return text && text !== stageName ? `${stageName} ${text}`.trim() : stageName;
 }
+
+/**
+ * 시점 라벨 + (야간이면) 교대 표기 — "초" / "초 · 야간".
+ *
+ * 화면에 "초 (NIGHT_1)"처럼 서버 시점 코드를 그대로 붙이던 곳을 대신한다. 코드가 붙어
+ * 있던 건 주간 "초"와 야간 "초"가 라벨만으론 같아서였으니, 그 구분만 사람 말로 남긴다.
+ * 교대는 응답의 shift 를 먼저 쓰고, 없을 때만 서버 시점 코드(DAY_n / NIGHT_n)로 판단한다
+ * (순회검사 응답 등엔 shift 가 없다).
+ */
+export function slotLabelWithShift(
+  label: string | null | undefined,
+  type: string | null | undefined,
+  shift?: "DAY" | "NIGHT" | null,
+): string {
+  const text = slotLabelText(label);
+  const night = shift ? shift === "NIGHT" : !!type?.startsWith("NIGHT_");
+  const nightWord = i18n.t("shiftBadge.night", { ns: "shared" });
+  // 라벨이 비어 오는 경우(시점이 스케줄에서 빠진 뒤의 옛 기록 등)에도 코드는 내보내지 않는다.
+  if (!text) return night ? nightWord : (type ?? "");
+  return night ? `${text} · ${nightWord}` : text;
+}
