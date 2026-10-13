@@ -190,10 +190,19 @@ export default function CrossCheckResultPage() {
   const submitStage = detail
     ? getStage(detail.type, detail.product.process)
     : null;
+  // 서버가 requiresApproval 을 주면 그 값을 쓴다(2026-10~). 아래 추정은 옛 서버용.
   const goesToApproval =
-    sameShiftSlots && currentPos >= 0
+    detail?.requiresApproval ??
+    (sameShiftSlots && currentPos >= 0
       ? currentPos === sameShiftSlots.length - 1
-      : submitStage === null || submitStage === "FINAL";
+      : submitStage === null || submitStage === "FINAL");
+  // 차수 배지 "2/3" — 서버 순번이 있으면 그것, 없으면 같은 교대 시점 목록에서 센 값.
+  const slotPosition =
+    detail?.slotIndex != null && detail.slotCount != null
+      ? `${detail.slotIndex}/${detail.slotCount}`
+      : sameShiftSlots && currentPos >= 0
+        ? `${currentPos + 1}/${sameShiftSlots.length}`
+        : null;
 
   // 경도값은 경도 추적 공정이라도 결재요청 시점엔 선택. 초품검사 등 아직 측정하지
   // 못한 경우에도 결재요청이 가능해야 함 (경도는 열처리 후 입력).
@@ -324,9 +333,7 @@ export default function CrossCheckResultPage() {
                   {t(`stage.${stage}`)}
                   {/* 세 단계 중 몇 번째인지 — 종까지 가야 결재로 올라간다는 걸 숫자로도 보인다. */}
                   <span className="ml-1 tabular-nums opacity-70">
-                    {sameShiftSlots && currentPos >= 0
-                      ? `${currentPos + 1}/${sameShiftSlots.length}`
-                      : `${STAGE_ORDER[stage]}/3`}
+                    {slotPosition ?? `${STAGE_ORDER[stage]}/3`}
                   </span>
                 </span>
                 {remainingSlotLabels.length > 0 && (

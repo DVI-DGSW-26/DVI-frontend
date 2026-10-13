@@ -66,6 +66,11 @@ export interface CrossCheckSummary {
   hardnessPending?: boolean;
   // 결재 반려 사유 — status=REJECTED 일 때만 채워진다. 목록(/cross-check/my)에도 내려온다.
   rejectReason?: string | null;
+  // 반려한 사람·시각. 반려 사유가 남아 있는 동안만 값이 있고, 반려자 기록이 없던 옛 건은 null.
+  rejectedByName?: string | null;
+  rejectedAt?: string | null;
+  // 야간 자동복사로 만들어진 건. 기능 이전의 옛 건은 구분할 수 없어 false.
+  autoCopied?: boolean;
   createdAt?: string;
   updatedAt?: string;
   // 초·중·종 순회검사를 묶는 검사 지시(InspectionOrder) ID. 결재 목록의 run 그룹핑 키.
@@ -153,6 +158,24 @@ export interface CrossCheckDetail {
   rejectReason: string | null;
   // 담당이 자동으로 풀릴 예정 시각(마지막 저장 + 15분, KST). 담당자가 잡고 작성 중(DRAFT)일 때만 값이 있다.
   autoReleaseAt?: string | null;
+  rejectedByName?: string | null;
+  rejectedAt?: string | null;
+  // ── 화면 판단용 서버 값 (2026-10 배포). 서버 문서: "추정 없이 이 값을 쓰세요".
+  //    옛 서버 대비로 optional — 없으면 화면이 예전처럼 추정한다.
+  // 야간 자동복사로 만들어진 건. 기능 이전의 옛 건은 구분할 수 없어 false.
+  autoCopied?: boolean;
+  // 전체 항목 건너뛰기 가능 여부와, 불가하면 그 이유.
+  skipAllAllowed?: boolean;
+  skipAllBlockedReason?:
+    | "NOT_DRAFT"
+    | "PROCESS_NOT_ELIGIBLE"
+    | "SLOT_TIME_NOT_ELIGIBLE"
+    | null;
+  // 완료하면 결재 대기로 올라가는지(작업지시의 마지막 시점 = 종품).
+  requiresApproval?: boolean;
+  // 작업지시 안에서의 시점 순번(1부터)과 전체 시점 수. 모르면 null.
+  slotIndex?: number | null;
+  slotCount?: number | null;
   createdAt: string;
   updatedAt: string;
 }
