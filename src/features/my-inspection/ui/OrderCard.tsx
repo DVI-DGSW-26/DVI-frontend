@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Icon } from "@iconify/react";
 import type { MyInspection } from "../type/types";
 import { getStatusBadge } from "../lib/inspectionStatus";
+import { opensNextSlot } from "../lib/nextEligible";
 import { formatWorkDay } from "../../../lib/datetime";
 import ShiftBadge from "../../../components/shared/ShiftBadge";
 import { slotLabelText } from "../../../lib/slotLabel";
@@ -39,7 +40,7 @@ export default function OrderCard({
     !!onRequestDelete &&
     (inspection.status === "DRAFT" || inspection.status === "SKIPPED");
   const showNext =
-    !!nextType && !!onStartNext && inspection.status === "COMPLETED";
+    !!nextType && !!onStartNext && opensNextSlot(inspection.status);
   const canRestart = !!onRestart && inspection.status === "COMPLETED";
 
   const [menuOpen, setMenuOpen] = useState(false);
