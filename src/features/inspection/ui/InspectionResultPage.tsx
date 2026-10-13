@@ -496,8 +496,9 @@ export default function InspectionResultPage() {
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white p-4 md:left-60">
         {postSubmitMode ? (
           // 완료/미완료 처리 후 — 다음 시점이 있으면 그쪽 진입, 없으면 홈으로 이동.
+          // 미완료도 승인 전에 다음 시점을 열 수 있다(서버 규칙 2026-10).
           <div className="flex flex-col gap-2">
-            {postSubmitMode === "complete" && nextType && (
+            {nextType && (
               <button
                 type="button"
                 onClick={handleStartNext}
@@ -513,7 +514,7 @@ export default function InspectionResultPage() {
               type="button"
               onClick={() => navigate("/", { replace: true })}
               className={`h-12 w-full rounded-md text-base font-semibold transition-colors ${
-                postSubmitMode === "complete" && nextType
+                nextType
                   ? "border border-[#E5E7EB] bg-white text-[#6B7280] hover:bg-[#F9FAFB]"
                   : "bg-[#931B82] text-white hover:bg-[#6A0F5D]"
               }`}
@@ -862,10 +863,10 @@ function IncompleteFacts({
           </div>
         ))}
       </dl>
-      {/* 지금 서버 규칙: 미완료는 승인 전까지 다음 시점을 막는다. 규칙이 바뀌면 이 줄도 고친다. */}
+      {/* 서버 규칙(2026-10): 미완료는 승인 전이어도 다음 시점을 연다. 승인은 종 결재 전까지. */}
       {!approved && (
-        <p className="mt-2 rounded-md border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
-          {t("result.incompleteFlow.blocksNext")}
+        <p className="mt-2 rounded-md border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2 text-xs text-[#1E40AF]">
+          {t("result.incompleteFlow.nextOpen")}
         </p>
       )}
     </>

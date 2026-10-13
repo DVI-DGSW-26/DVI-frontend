@@ -38,8 +38,6 @@ export default {
       alreadyExists:
         "This inspection has already been started. Please refresh the list.",
       previousNotCompleted: "Please complete the previous slot first.",
-      previousInReview:
-        "An earlier slot was submitted as incomplete and is awaiting quality manager approval, so this one can't start yet.",
       notAssigned: "You are not a worker assigned to this work order.",
       orderNotFound: "Work order not found. Please refresh the list.",
       orderFinished: "This work order has already been finalized.",
@@ -60,7 +58,6 @@ export default {
       incompleteApproved: "Incomplete Approved",
       skipped: "Skipped",
       locked: "Complete previous slot first",
-      lockedReview: "Earlier slot awaiting approval",
     },
     timeUnset: "Time not set",
     openMenu: "Open menu",
@@ -238,7 +235,7 @@ export default {
       nextValueNoReason: "Closed once a patrol inspector adds the reason and a quality manager approves",
       after: "Then",
       afterValue: "You can fill in {{items}} again",
-      blocksNext: "You can't start the next time slot until this is approved.",
+      nextOpen: "You can start the next time slot right away. Approval is needed before the last-off is approved.",
       back: "Go back",
     },
     completeSubmit: "Complete Inspection",
