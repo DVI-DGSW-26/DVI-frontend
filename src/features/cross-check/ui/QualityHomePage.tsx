@@ -18,7 +18,7 @@ import type { AssignedInspection, CrossCheckSummary } from "../api";
 import { elapsedFrom } from "../lib/elapsed";
 import { isUnprocessed } from "../lib/assigned";
 import { TODAY_DATE_FILTER, matchesDateFilter } from "../lib/dateFilter";
-import { formatDateTime } from "../../../lib/datetime";
+import { formatDateTime, formatShortDateTime } from "../../../lib/datetime";
 import CrossCheckCard from "./CrossCheckCard";
 import { slotLabelText } from "../../../lib/slotLabel";
 import { notificationText } from "../../notification/lib/notificationText";
@@ -345,6 +345,9 @@ const QualityHomePage = () => {
                   <div className="mt-2 rounded-md bg-white px-3 py-2">
                     <div className="text-[11px] text-[#9CA3AF]">
                       {t("home.rejectReasonLabel")}
+                      {/* 누가·언제 반려했는지 — 서버가 남긴 건만(옛 건은 null). */}
+                      {rejectedMeta(cc.rejectedByName, cc.rejectedAt) &&
+                        ` · ${rejectedMeta(cc.rejectedByName, cc.rejectedAt)}`}
                     </div>
                     <div className="mt-0.5 wrap-break-word text-xs text-[#212121]">
                       {cc.rejectReason?.trim() || t("home.rejectedNotice")}
@@ -414,3 +417,12 @@ const QualityHomePage = () => {
 };
 
 export default QualityHomePage;
+
+/** "홍길동 · 10-13 09:12" — 반려자·시각 중 있는 것만. 둘 다 없으면 null. */
+function rejectedMeta(
+  name: string | null | undefined,
+  at: string | null | undefined,
+): string | null {
+  const parts = [name?.trim(), formatShortDateTime(at)].filter(Boolean);
+  return parts.length ? parts.join(" · ") : null;
+}

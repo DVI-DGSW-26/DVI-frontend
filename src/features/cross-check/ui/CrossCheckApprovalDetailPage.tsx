@@ -207,16 +207,17 @@ export default function CrossCheckApprovalDetailPage() {
   // 종은 PENDING_APPROVAL)까지만 가능하고, 묶음이 이미 승인됐으면 서버가 거부한다.
   // 야간 자동 기록 — 순회검사자가 없는 야간엔 공정 설정(야간 자동복사)에 따라 자주검사
   // 결과가 순회검사로 그대로 들어온다. 비교표가 두 열을 나란히 보여주니 이유를 모르면
-  // "복사해 넣은 것 아닌가"로 보거나 무심코 승인하게 된다. 서버가 "자동 기록" 표시를
-  // 따로 주지 않아 ① 공정 설정 ② 야간 차수(공정 시점 목록의 shift) ③ 모든 값이 자주검사와
-  // 같음 으로 판단한다.
+  // "복사해 넣은 것 아닌가"로 보거나 무심코 승인하게 된다. 서버의 autoCopied 를 쓰고,
+  // 그 필드가 없는 옛 서버에서만 ① 공정 설정 ② 야간 차수(공정 시점 목록의 shift)
+  // ③ 모든 값이 자주검사와 같음 으로 추정한다.
   const autoRecorded =
-    autoCopyNight(detail.product.process) &&
-    isNightSlot &&
-    detail.results.length > 0 &&
-    detail.results.every(
-      (r) => r.measuredValue != null && r.measuredValue === r.productionValue,
-    );
+    detail.autoCopied ??
+    (autoCopyNight(detail.product.process) &&
+      isNightSlot &&
+      detail.results.length > 0 &&
+      detail.results.every(
+        (r) => r.measuredValue != null && r.measuredValue === r.productionValue,
+      ));
   const patrolLabel = autoRecorded
     ? t("approval.detail.thPatrolAuto")
     : t("approval.detail.thPatrol");
