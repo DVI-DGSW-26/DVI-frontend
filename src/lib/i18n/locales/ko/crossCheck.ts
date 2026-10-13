@@ -52,6 +52,20 @@ export default {
   cancelError: {
     default: "넘기는 중 오류가 발생했습니다.",
   },
+  // 마지막 차수 결재를 막고 있는 검사(GET /cross-check/{id}/blocking-inspections).
+  blocking: {
+    title: "아직 끝나지 않은 차수가 있어 결재할 수 없습니다",
+    hint: "아래 검사가 끝나면 다시 시도해 주세요.",
+    loading: "막고 있는 검사를 불러오는 중...",
+    loadError: "막고 있는 검사를 불러오지 못했습니다.",
+    none: "지금은 막는 검사가 없습니다. 다시 시도해 주세요.",
+    selfInProgress: "작업자 자주검사 진행 중",
+    incomplete: "미완료 — 사유 작성·승인 대기",
+    patrolNotStarted: "순회검사 시작 전",
+    patrolInProgress: "순회검사 진행 중 · {{name}}",
+    patrolRejected: "순회검사 반려됨 · {{name}}",
+    noChecker: "담당 없음",
+  },
   autoRelease: {
     soonTitle: "{{minutes}}분 뒤 다른 검사자에게 자동으로 넘어갑니다",
     soonBody: "15분 동안 저장이 없으면 담당이 풀립니다. 측정값을 저장하면 다시 15분이 늘어납니다.",

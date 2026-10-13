@@ -210,3 +210,19 @@ export interface DecideCrossCheckRequest {
   // 압출 종품 APPROVE 시 필수. 입력 시 저장 후 발행. (그 외 공정/차수는 무시)
   hardnessResult?: string;
 }
+
+// GET /cross-check/{id}/blocking-inspections — 마지막 차수 결재가 REQUIRED_SLOTS_NOT_COMPLETE 로
+// 막혔을 때 같은 작업지시에서 아직 안 끝난 검사. 결재 검증과 같은 판정. 빈 목록이면 막는 게 없다.
+// - inspectionStatus DRAFT/INCOMPLETE: 자주검사가 안 끝남(미완료는 승인·반려 대기)
+// - COMPLETED + crossCheckId null: 순회검사 시작 전
+// - COMPLETED + crossCheckId: 순회검사 진행 중·반려됨(crossCheckStatus, 담당 checkerName)
+export interface BlockingInspection {
+  inspectionId: number;
+  type: string;
+  typeLabel: string | null;
+  shift?: "DAY" | "NIGHT" | null;
+  inspectionStatus: string;
+  crossCheckId: number | null;
+  crossCheckStatus: CrossCheckStatus | null;
+  checkerName: string | null;
+}

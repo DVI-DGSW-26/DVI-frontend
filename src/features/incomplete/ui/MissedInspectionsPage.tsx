@@ -133,7 +133,11 @@ export default function MissedInspectionsPage() {
           />
           <Section
             title={t("missed.notStartedTitle")}
-            hint={t("missed.notStartedHint")}
+            hint={
+              groups.notStartedOlder > 0
+                ? `${t("missed.notStartedHint")} ${t("missed.notStartedOlder", { n: groups.notStartedOlder })}`
+                : t("missed.notStartedHint")
+            }
             items={groups.notStarted}
             render={(item) => (
               <MissedCard item={item} summary={summaryOf(item)} tone="gray" />

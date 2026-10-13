@@ -41,7 +41,9 @@ export default function OrderCard({
     (inspection.status === "DRAFT" || inspection.status === "SKIPPED");
   const showNext =
     !!nextType && !!onStartNext && opensNextSlot(inspection.status);
-  const canRestart = !!onRestart && inspection.status === "COMPLETED";
+  // 다시 재기 = 같은 검사 재오픈. 순회검사가 시작된 건은 서버가 막으므로(반려로만 되돌림) 숨긴다.
+  const canRestart =
+    !!onRestart && inspection.status === "COMPLETED" && !inspection.hasCrossCheck;
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);

@@ -17,6 +17,10 @@ export default {
     inProgressSection: "진행중 검사",
     count: "{{n}}건",
     startedAt: "시작일: {{date}}",
+    remeasureNote: {
+      crossCheckRejected: "순회검사자가 다시 측정을 요청했습니다",
+      incompleteRejected: "미완료가 반려됐습니다 — 다시 측정해 주세요",
+    },
     resume: "이어서 하기",
     noOrdersTitle: "이번 작업일에 배정된 검사지시가 없습니다",
     noOrdersDesc:
@@ -56,8 +60,6 @@ export default {
     notDeletable: "이미 처리된 검사는 삭제할 수 없습니다.",
     deleteNotOwner: "본인이 시작한 검사만 삭제할 수 있습니다.",
     deleteFailed: "검사를 삭제하지 못했습니다.",
-    restartNoOrder: "작업지시 정보가 없어 다시 시작할 수 없습니다.",
-    restartFailed: "다시 검사를 시작하지 못했습니다.",
   },
   history: {
     incompleteAlwaysShown: "미완료는 항상 표시",
@@ -80,7 +82,7 @@ export default {
     next: "다음:",
     starting: "시작 중...",
     startNext: "다음 시점 시작",
-    restart: "다시 검사 시작",
+    restart: "다시 측정하기",
   },
   latestCard: {
     typeCompleted: "{{type}} 완료",
