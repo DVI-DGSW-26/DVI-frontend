@@ -35,7 +35,7 @@ import { canSkipAll, isSkippedAll } from "../lib/stage";
 import SkipAllModal from "./SkipAllModal";
 import { AutoReleaseNotice } from "./AutoReleaseNotice";
 import { toBackendImageUrl } from "../../../lib/imageUrl";
-import { formatDate } from "../../../lib/datetime";
+import { formatDate, formatShortDateTime } from "../../../lib/datetime";
 import { slotLabelText } from "../../../lib/slotLabel";
 
 type Phase = "capture" | "crop" | "input";
@@ -560,14 +560,19 @@ export default function CrossCheckMeasurePage() {
   const hasMeasured =
     items.some((it) => it.measuredValue != null) ||
     sessionResults.some((s) => s.status === "completed");
-  const showSkipAll =
-    targetDimNo == null && !hasMeasured && canSkipAll(detail);
+  // 서버가 skipAllAllowed 를 주면 그 값(서버 검증과 같은 규칙), 없으면 공정·시각으로 추정.
+  const skipAllEligible = detail.skipAllAllowed ?? canSkipAll(detail);
+  const showSkipAll = targetDimNo == null && !hasMeasured && skipAllEligible;
   // 못 쓸 때는 숨기지 않고 이유를 댄다. 한 항목만 다시 재러 들어온 경우는 해당 없음.
   const skipAllDisabledReason =
     showSkipAll || targetDimNo != null
       ? undefined
-      : !canSkipAll(detail)
-        ? t("measure.skipAllOnlyAt")
+      : !skipAllEligible
+        ? detail.skipAllBlockedReason === "NOT_DRAFT"
+          ? t("measure.skipAllNotDraft")
+          : detail.skipAllBlockedReason === "PROCESS_NOT_ELIGIBLE"
+            ? t("measure.skipAllProcessOnly")
+            : t("measure.skipAllOnlyAt")
         : t("measure.skipAllAfterMeasure");
 
   const productionNg = detail.productionAppearanceResult === "NG";
@@ -615,6 +620,13 @@ export default function CrossCheckMeasurePage() {
             <div className="min-w-0">
               <div className="text-xs font-semibold text-[#B91C1C]">
                 {t("measure.prevRejectReason")}
+                {(detail.rejectedByName || detail.rejectedAt) && (
+                  <span className="ml-1 font-normal text-[#6B7280]">
+                    {[detail.rejectedByName, formatShortDateTime(detail.rejectedAt)]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                )}
               </div>
               <div className="mt-0.5 whitespace-pre-wrap text-sm text-[#212121]">
                 {detail.rejectReason}
