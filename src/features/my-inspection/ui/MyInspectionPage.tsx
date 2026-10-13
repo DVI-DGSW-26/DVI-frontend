@@ -23,7 +23,7 @@ import {
   type DateFilter,
   type Tab,
 } from "../lib/inspectionStatus";
-import { extractLatestCompletedNext } from "../lib/nextEligible";
+import { extractLatestCompletedNext, opensNextSlot } from "../lib/nextEligible";
 import TabBar from "./TabBar";
 import PullToRefreshIndicator from "./PullToRefreshIndicator";
 import EmptyState from "./EmptyState";
@@ -122,7 +122,7 @@ export default function MyInspectionPage() {
   );
 
   const getNextTypeFor = (i: MyInspection): string | null => {
-    if (i.status !== "COMPLETED") return null;
+    if (!opensNextSlot(i.status) || i.status === "SKIPPED") return null;
     // 상단 강조 카드가 이미 다루는 1건은 카드 내 인라인 버튼 중복 노출을 피한다.
     if (latestCompleted?.previous.inspectionId === i.inspectionId) return null;
     const next = getNextSlot(i.product.process, i.type);

@@ -1,5 +1,19 @@
 import type { MyInspection } from "../type/types";
 
+/**
+ * 이 상태로 끝난 시점 뒤에 다음 시점을 시작할 수 있는지.
+ * 미완료(INCOMPLETE)는 승인 전이어도 다음 시점을 연다 — 서버 규칙(2026-10), 승인은
+ * 종 결재 전까지만 받으면 된다. 건너뜀(SKIPPED)은 건너뛰기 흐름이 따로 다음으로 보낸다.
+ */
+export function opensNextSlot(status: string): boolean {
+  return (
+    status === "COMPLETED" ||
+    status === "INCOMPLETE" ||
+    status === "INCOMPLETE_APPROVED" ||
+    status === "SKIPPED"
+  );
+}
+
 export interface NextEligibleItem {
   /** 직전 검사 — 클릭 시 POST /inspection/{previousId}/next 에 쓰임. */
   previous: MyInspection;
@@ -14,7 +28,7 @@ type GetNextSlot = (process: string, currentType: string) => string | null;
 /**
  * "이어서 할 일" 후보 추출.
  *
- * - COMPLETED 검사 중 다음 시점이 존재하고,
+ * - 다음 시점을 여는 검사(완료·미완료 — opensNextSlot) 중 다음 시점이 존재하고,
  * - 그 다음 시점이 같은 작업지시 안에서 아직 시작/SKIPPED 되지 않은 것만,
  * - 작업지시당 가장 최근 1건만 남긴다.
  *
@@ -37,7 +51,7 @@ export function extractNextEligible(
   const seenOrder = new Set<number>();
 
   for (const ins of inspections) {
-    if (ins.status !== "COMPLETED") continue;
+    if (!opensNextSlot(ins.status) || ins.status === "SKIPPED") continue;
     const nextType = getNextSlot(ins.product.process, ins.type);
     if (!nextType) continue;
     // 다음 시점이 이미 시작/완료/SKIPPED 됐으면 후보 아님.
@@ -53,7 +67,7 @@ export function extractNextEligible(
 /**
  * "가장 최근 완료" 1건 추출 — 홈/현황 상단 강조 카드용.
  *
- * - COMPLETED 검사 중 다음 시점이 존재하고,
+ * - 다음 시점을 여는 검사(완료·미완료 — opensNextSlot) 중 다음 시점이 존재하고,
  * - 그 다음 시점이 같은 작업지시 안에서 아직 시작/SKIPPED 되지 않은 것 중에서,
  * - 완료 시각이 가장 최신인 1건만 반환. 없으면 null.
  *
@@ -75,7 +89,7 @@ export function extractLatestCompletedNext(
   let bestTs = -Infinity;
 
   for (const ins of inspections) {
-    if (ins.status !== "COMPLETED") continue;
+    if (!opensNextSlot(ins.status) || ins.status === "SKIPPED") continue;
     const nextType = getNextSlot(ins.product.process, ins.type);
     if (!nextType) continue;
     // 다음 시점이 이미 시작/완료/SKIPPED 됐으면 후보 아님.

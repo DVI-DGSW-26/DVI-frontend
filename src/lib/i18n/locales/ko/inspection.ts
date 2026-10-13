@@ -37,8 +37,6 @@ export default {
     errors: {
       alreadyExists: "이미 시작된 검사입니다. 목록을 새로고침해주세요.",
       previousNotCompleted: "이전 시점을 먼저 완료해주세요.",
-      previousInReview:
-        "앞 시점의 미완료 건이 품질관리자 승인을 기다리고 있어 아직 시작할 수 없습니다.",
       notAssigned: "이 작업지시에 배정된 작업자가 아닙니다.",
       orderNotFound: "작업지시를 찾을 수 없습니다. 목록을 새로고침해주세요.",
       orderFinished: "이미 마감된 작업지시입니다.",
@@ -59,7 +57,6 @@ export default {
       incompleteApproved: "미완료 승인됨",
       skipped: "건너뜀",
       locked: "이전 시점 완료 필요",
-      lockedReview: "앞 시점 미완료 승인 대기 중",
     },
     timeUnset: "시각 미지정",
     openMenu: "메뉴 열기",
@@ -235,7 +232,7 @@ export default {
       nextValueNoReason: "순회검사자가 사유를 적고 품질관리자가 승인하면 종결",
       after: "그 뒤",
       afterValue: "{{items}}을(를) 다시 채울 수 있습니다",
-      blocksNext: "승인될 때까지 다음 시점을 시작할 수 없습니다.",
+      nextOpen: "다음 시점은 바로 시작할 수 있습니다. 미완료 승인은 종 결재 전까지 받으면 됩니다.",
       back: "돌아가기",
     },
     completeSubmit: "검사 완료",
