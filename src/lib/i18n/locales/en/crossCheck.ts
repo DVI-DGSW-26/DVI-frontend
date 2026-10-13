@@ -50,6 +50,20 @@ export default {
   cancelError: {
     default: "An error occurred while handing over.",
   },
+  // Inspections blocking last-off approval (GET /cross-check/{id}/blocking-inspections).
+  blocking: {
+    title: "Some rounds aren't finished yet, so this can't be approved",
+    hint: "Try again once the inspections below are done.",
+    loading: "Loading blocking inspections...",
+    loadError: "Failed to load blocking inspections.",
+    none: "Nothing is blocking it now. Please try again.",
+    selfInProgress: "Self-inspection in progress",
+    incomplete: "Incomplete — awaiting reason/approval",
+    patrolNotStarted: "Patrol inspection not started",
+    patrolInProgress: "Patrol inspection in progress · {{name}}",
+    patrolRejected: "Patrol inspection rejected · {{name}}",
+    noChecker: "Unassigned",
+  },
   autoRelease: {
     soonTitle: "Hands over to another inspector automatically in {{minutes}} min",
     soonBody: "Ownership is released after 15 minutes without saving. Saving a measurement adds another 15 minutes.",

@@ -25,6 +25,8 @@ import { toBackendImageUrl } from "../../../lib/imageUrl";
 import { formatDate } from "../../../lib/datetime";
 import { slotLabelText } from "../../../lib/slotLabel";
 import { AutoReleaseNotice } from "./AutoReleaseNotice";
+import BlockingInspections from "./BlockingInspections";
+import { isRequiredSlotsError } from "../lib/blocking";
 
 const STAGE_ORDER = { INITIAL: 1, MIDDLE: 2, FINAL: 3 } as const;
 
@@ -120,6 +122,8 @@ export default function CrossCheckResultPage() {
   const [note, setNote] = useState<string>("");
   const [hardness, setHardness] = useState<string>("");
   const [toast, setToast] = useState<string | null>(null);
+  // 결재 요청이 남은 차수 때문에 막혔을 때(REQUIRED_SLOTS_NOT_COMPLETE) 막는 검사 목록을 편다.
+  const [showBlocking, setShowBlocking] = useState(false);
   // 카드별 인라인 수정값. dimNo → 새 측정값. 저장 성공 후에만 채워진다.
   const [editedValues, setEditedValues] = useState<Record<number, number>>({});
 
@@ -266,6 +270,8 @@ export default function CrossCheckResultPage() {
       );
       setTimeout(() => navigate("/cross-checks", { replace: true }), 1200);
     } catch (err) {
+      // 남은 차수 때문에 결재 요청이 막혔으면 무엇이 막고 있는지 목록으로 보여 준다.
+      if (isRequiredSlotsError(err)) setShowBlocking(true);
       setToast(toErrorMessage(err, t));
     }
   };
@@ -490,6 +496,12 @@ export default function CrossCheckResultPage() {
           </div>
         )}
       </section>
+
+      {showBlocking && (
+        <div className="px-4 pt-3">
+          <BlockingInspections crossCheckId={crossCheckId} />
+        </div>
+      )}
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white p-4 md:left-60">
         <button

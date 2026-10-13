@@ -22,6 +22,8 @@ import SkipAllModal from "./SkipAllModal";
 import PhotoCompareModal from "../../../components/shared/PhotoCompareModal";
 import { formatDateTime } from "../../../lib/datetime";
 import { slotLabelWithShift } from "../../../lib/slotLabel";
+import BlockingInspections from "./BlockingInspections";
+import { isRequiredSlotsError } from "../lib/blocking";
 
 function isWithinTolerance(
   value: number,
@@ -88,6 +90,8 @@ export default function CrossCheckApprovalDetailPage() {
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // 승인이 남은 차수 때문에 막혔을 때(REQUIRED_SLOTS_NOT_COMPLETE) 막는 검사 목록을 편다.
+  const [showBlocking, setShowBlocking] = useState(false);
   const [photoRow, setPhotoRow] = useState<CrossCheckResultInfo | null>(null);
   const [showCancelSkipAll, setShowCancelSkipAll] = useState(false);
   const [cancelSkipAllError, setCancelSkipAllError] = useState<string | null>(
@@ -126,6 +130,7 @@ export default function CrossCheckApprovalDetailPage() {
       });
       goBack();
     } catch (err) {
+      if (isRequiredSlotsError(err)) setShowBlocking(true);
       setError(toErrorMessage(err, t));
     }
   };
@@ -440,6 +445,7 @@ export default function CrossCheckApprovalDetailPage() {
           {error}
         </div>
       )}
+      {showBlocking && <BlockingInspections crossCheckId={detail.crossCheckId} />}
 
       {canDecide && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white p-4 md:left-60">

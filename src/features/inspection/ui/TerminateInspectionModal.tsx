@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Icon } from "@iconify/react";
+import { REASON_MAX_LENGTH } from "../lib/incompleteReasons";
 
 interface Props {
   open: boolean;
@@ -71,6 +72,7 @@ export default function TerminateInspectionModal({
             onChange={(e) => setReason(e.target.value)}
             placeholder={t("modals.terminate.reasonPlaceholder")}
             rows={3}
+            maxLength={REASON_MAX_LENGTH}
             disabled={isSubmitting}
             className="mt-1 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
           />

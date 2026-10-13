@@ -30,6 +30,7 @@ import { useHeaderBackHandler } from "../../../lib/headerBack";
 import {
   OTHER_REASON,
   REASON_LABEL_KEYS,
+  REASON_MAX_LENGTH,
   REASON_OPTIONS,
   joinReason,
   splitReason,
@@ -483,6 +484,7 @@ export default function InspectionResultPage() {
               <textarea
                 value={customReason}
                 onChange={(e) => setCustomReason(e.target.value)}
+                maxLength={REASON_MAX_LENGTH}
                 placeholder={t("result.customReasonPlaceholder")}
                 disabled={isBusy}
                 rows={3}

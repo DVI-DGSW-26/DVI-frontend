@@ -76,6 +76,11 @@ export interface MyInspection {
   createdAt?: string;
   updatedAt?: string;
   completedAt?: string;
+  // 다시 재야 하는 이유 — 자주검사가 DRAFT 로 돌아왔을 때만 값이 있다(2026-10-12 배포).
+  // CROSS_CHECK_REJECTED = 순회검사자가 반려해 재측정 요청 / INCOMPLETE_REJECTED = 미완료가 반려됨.
+  rejectReason?: string | null;
+  rejectedAt?: string | null;
+  rejectSource?: "CROSS_CHECK_REJECTED" | "INCOMPLETE_REJECTED" | null;
 }
 
 export type MyInspectionListResponse = ApiResponse<MyInspection[]>;

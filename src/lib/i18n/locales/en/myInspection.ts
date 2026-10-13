@@ -15,6 +15,10 @@ export default {
     inProgressSection: "In-progress inspections",
     count: "{{n}}",
     startedAt: "Started: {{date}}",
+    remeasureNote: {
+      crossCheckRejected: "The patrol inspector asked you to re-measure",
+      incompleteRejected: "Incomplete was rejected — please measure again",
+    },
     resume: "Resume",
     noOrdersTitle: "No inspection orders assigned for this work day",
     noOrdersDesc:
@@ -55,8 +59,6 @@ export default {
     notDeletable: "An already-processed inspection cannot be deleted.",
     deleteNotOwner: "You can only delete inspections you started.",
     deleteFailed: "Failed to delete the inspection.",
-    restartNoOrder: "Cannot restart: work order information is missing.",
-    restartFailed: "Failed to start the re-inspection.",
   },
   history: {
     incompleteAlwaysShown: "Incomplete always shown",
@@ -79,7 +81,7 @@ export default {
     next: "Next:",
     starting: "Starting...",
     startNext: "Start next slot",
-    restart: "Start re-inspection",
+    restart: "Re-measure",
   },
   latestCard: {
     typeCompleted: "{{type}} completed",
