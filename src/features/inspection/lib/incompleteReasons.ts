@@ -21,6 +21,10 @@ export const REASON_LABEL_KEYS: Record<string, string> = {
 
 export const OTHER_REASON = "기타";
 
+// 미완료·건너뛰기·조기 마감 사유는 서버에서 varchar(255) 한 칸을 같이 쓴다.
+// 넘기면 400 INCOMPLETE_REASON_TOO_LONG(2026-10-12 배포) — 입력 단계에서 막는다.
+export const REASON_MAX_LENGTH = 255;
+
 /** 저장된 사유를 선택지 + 직접 입력으로 나눈다. 선택지에 없으면 "기타" + 원문. */
 export function splitReason(reason: string | null | undefined): {
   key: string;

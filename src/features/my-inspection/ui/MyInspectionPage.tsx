@@ -9,10 +9,11 @@ import {
   type DeleteInspectionErrorData,
 } from "../api";
 import {
+  useReopenInspection,
   useSlotSequences,
-  useStartInspection,
   useStartNextInspection,
 } from "../../inspection/api";
+import { reopenErrorMessage } from "../lib/reopenError";
 import type { StartNextInspectionErrorData } from "../../inspection/type/types";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { useViewState } from "../../../lib/viewState";
@@ -70,7 +71,7 @@ export default function MyInspectionPage() {
     null,
   );
   // 완료된 검사를 같은 슬롯으로 "다시 검사" 시작 (새 레코드 생성, 이전 건은 보존).
-  const startInspectionMutation = useStartInspection();
+  const reopenMutation = useReopenInspection();
   const [pendingRestartId, setPendingRestartId] = useState<number | null>(null);
 
   const myInspections = useMemo(
@@ -165,29 +166,20 @@ export default function MyInspectionPage() {
 
   const handleRestart = async (inspection: MyInspection) => {
     if (pendingRestartId !== null) return;
-    // 검사 시작은 작업지시 기준이라 orderId 가 없으면 다시 시작할 수 없다.
-    const orderId = inspection.orderId;
-    if (orderId == null) {
-      setToast(t("toast.restartNoOrder"));
-      return;
-    }
     setPendingRestartId(inspection.inspectionId);
     try {
-      // 완료돼 있어도 같은 (지시·차수)로 새 검사 생성 — 백엔드가 허용(이전 건 보존).
-      const created = await startInspectionMutation.mutateAsync({
-        orderId,
-        type: inspection.type,
-      });
-      navigate(`/inspection/${created.inspectionId}/measure`, {
-        state: { inspection: created },
+      // 같은 차수에 새 검사를 만들면 서버가 거부한다(409 INSPECTION_ALREADY_EXISTS, 2026-10-12 배포 —
+      // 같은 차수 두 건이 종 결재를 영구히 막던 문제). 다시 재야 하면 같은 검사를 재오픈한다.
+      // 측정값은 남아 있으므로 홈 '다시 채우기'처럼 editMode 로 들어가 고칠 항목을 고른다.
+      await reopenMutation.mutateAsync(inspection.inspectionId);
+      navigate(`/inspection/${inspection.inspectionId}/measure`, {
+        state: {
+          inspection: { ...inspection, status: "DRAFT" },
+          editMode: true,
+        },
       });
     } catch (err) {
-      const msg =
-        err instanceof AxiosError
-          ? ((err.response?.data as { message?: string } | undefined)
-              ?.message ?? t("toast.restartFailed"))
-          : t("toast.restartFailed");
-      setToast(msg);
+      setToast(reopenErrorMessage(err, t));
     } finally {
       setPendingRestartId(null);
     }
@@ -303,7 +295,7 @@ export default function MyInspectionPage() {
                 }
                 onRestart={handleRestart}
                 isRestarting={
-                  startInspectionMutation.isPending &&
+                  reopenMutation.isPending &&
                   pendingRestartId === inspection.inspectionId
                 }
               />

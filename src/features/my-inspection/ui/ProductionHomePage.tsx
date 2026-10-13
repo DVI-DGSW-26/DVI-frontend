@@ -36,13 +36,14 @@ import {
   skipErrorMessage,
   SKIP_DELETE_DRAFT_ERROR,
 } from "../../inspection/lib/skipError";
-import { formatDate } from "../../../lib/datetime";
+import { formatDate, formatShortDateTime } from "../../../lib/datetime";
 import ShiftBadge from "../../../components/shared/ShiftBadge";
 import LatestCompletedCard from "./LatestCompletedCard";
 import SkipModal from "../../inspection/ui/SkipModal";
 import TerminateInspectionModal from "../../inspection/ui/TerminateInspectionModal";
 import Toast from "../../inspection/ui/Toast";
 import { slotLabelText } from "../../../lib/slotLabel";
+import { reopenErrorMessage } from "../lib/reopenError";
 
 // 건너뛰기 모달 대상 — latestDraft(DRAFT 인 검사 자체 건너뛰기) 와
 // nextEligible(다음 시점을 건너뛰기) 둘 다 같은 모양으로 처리.
@@ -196,20 +197,7 @@ export default function ProductionHomePage() {
         },
       });
     } catch (err) {
-      if (err instanceof AxiosError) {
-        const code = (err.response?.data as { code?: string } | undefined)?.code;
-        if (code === "INSPECTION_NOT_REOPENABLE") {
-          setToast(t("toast.notReopenable"));
-        } else if (code === "INSPECTION_HAS_CROSS_CHECK") {
-          setToast(t("toast.hasCrossCheck"));
-        } else if (code === "NOT_OWNER") {
-          setToast(t("toast.reopenNotOwner"));
-        } else {
-          setToast(t("toast.reopenFailed"));
-        }
-      } else {
-        setToast(t("toast.reopenFailed"));
-      }
+      setToast(reopenErrorMessage(err, t));
     } finally {
       setPendingReopenId(null);
     }
@@ -372,6 +360,7 @@ export default function ProductionHomePage() {
                 {t("home.skip")}
               </button>
             </div>
+            <RemeasureNote inspection={latestDraft} />
             {isTerminableInspection(latestDraft) && (
               <TerminateButton
                 onClick={() => setTerminateTarget(latestDraft)}
@@ -493,6 +482,7 @@ export default function ProductionHomePage() {
                     </div>
                   )}
                 </div>
+                <RemeasureNote inspection={i} />
                 <button
                   type="button"
                   onClick={() => handleResume(i)}
@@ -822,6 +812,31 @@ export default function ProductionHomePage() {
  * 날짜 지시가 보이는 게 고장처럼 읽힌다. 지금 보는 목록이 언제부터 언제까지인지 적어 둔다.
  * 경계 시각은 작업지시 목록과 같은 값(ORDER_WORK_DAY_START_HOUR)을 따른다.
  */
+/**
+ * 다시 재야 하는 이유. 순회검사자 반려·미완료 반려로 DRAFT 가 된 검사는 그냥 "하던 검사"처럼
+ * 보여서 왜 돌아왔는지, 무엇을 고쳐야 하는지 몰랐다. 서버가 사유·출처·시각을 준다.
+ */
+function RemeasureNote({ inspection }: { inspection: MyInspection }) {
+  const { t } = useTranslation("myInspection");
+  if (!inspection.rejectReason?.trim()) return null;
+  const when = formatShortDateTime(inspection.rejectedAt);
+  return (
+    <div className="mt-2 rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-3 py-2">
+      <div className="text-xs font-semibold text-[#B91C1C]">
+        {inspection.rejectSource === "INCOMPLETE_REJECTED"
+          ? t("home.remeasureNote.incompleteRejected")
+          : t("home.remeasureNote.crossCheckRejected")}
+        {when && (
+          <span className="ml-1 font-normal text-[#6B7280]">· {when}</span>
+        )}
+      </div>
+      <div className="mt-0.5 wrap-break-word text-xs text-[#212121]">
+        {inspection.rejectReason}
+      </div>
+    </div>
+  );
+}
+
 function WorkDayBanner() {
   const { t } = useTranslation("myInspection");
   const now = new Date();

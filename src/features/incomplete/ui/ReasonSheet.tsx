@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
   OTHER_REASON,
   REASON_LABEL_KEYS,
+  REASON_MAX_LENGTH,
   REASON_OPTIONS,
   joinReason,
   splitReason,
@@ -109,7 +110,7 @@ export default function ReasonSheet({
             placeholder={tInspection("result.customReasonPlaceholder")}
             disabled={write.isPending}
             rows={3}
-            maxLength={500}
+            maxLength={REASON_MAX_LENGTH}
             className="mt-3 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
           />
         )}

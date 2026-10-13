@@ -2,6 +2,7 @@ import { http } from "../../../lib/http";
 import type { ApiResponse } from "../../auth/type/types";
 import type {
   AssignedInspection,
+  BlockingInspection,
   CreateCrossCheckRequest,
   CrossCheckDetail,
   CrossCheckSummary,
@@ -168,4 +169,13 @@ export async function cancelSkipAllCrossCheck(
   await http.post<ApiResponse<Record<string, never>>>(
     `/cross-check/${crossCheckId}/skip-all/cancle`,
   );
+}
+
+export async function getBlockingInspections(
+  crossCheckId: number,
+): Promise<BlockingInspection[]> {
+  const { data } = await http.get<ApiResponse<BlockingInspection[]>>(
+    `/cross-check/${crossCheckId}/blocking-inspections`,
+  );
+  return data.data ?? [];
 }
