@@ -28,7 +28,8 @@ export function useNotificationAlerts(): void {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: unreadCount } = useUnreadCount();
+  // 로그인 전(로그인·가입 화면)엔 조회하지 않는다 — 운영 서버에 401 만 쌓인다.
+  const { data: unreadCount } = useUnreadCount(!!user);
 
   const webPushActive = useSyncExternalStore(
     subscribeWebPushActive,
@@ -97,6 +98,9 @@ export function useNotificationAlerts(): void {
     previousUnread.current = unreadCount;
     if (previous === null || unreadCount <= previous) return;
 
+    // 새 알림이 왔다 — 목록도 다시 받게 한다. 안 그러면 벨엔 점이 떴는데 목록엔 없다.
+    void queryClient.invalidateQueries({ queryKey: notificationKeys.my() });
+
     void (async () => {
       try {
         // 첫 페이지만 본다 — 방금 늘어난 미확인 알림은 항상 맨 앞에 있다.
@@ -113,7 +117,7 @@ export function useNotificationAlerts(): void {
         // 알림 표시 실패는 무시한다 — 앱 안 뱃지는 그대로 동작한다.
       }
     })();
-  }, [unreadCount, user, webPushActive]);
+  }, [unreadCount, user, webPushActive, queryClient]);
 
   // 로그아웃하면 기준값을 버린다. 다음 로그인의 첫 조회가 알림으로 새지 않도록.
   useEffect(() => {

@@ -15,6 +15,9 @@ const PERSIST_KEY = "auth-persist";
 const ACCOUNTS_KEY = "auth-accounts";
 const ACTIVE_KEY = "auth-active";
 
+/** tokenStorage.clear() 로 지금 세션이 버려졌을 때 window 에 쏘는 이벤트. */
+export const SESSION_CLEARED_EVENT = "auth:session-cleared";
+
 /** 기기에 저장된 계정 하나. 전환 시 비밀번호 없이 이 토큰으로 바로 복귀한다. */
 export interface StoredAccount {
   loginId: string;
@@ -177,6 +180,8 @@ export const tokenStorage = {
     // 남은 계정이 없을 때만 "로그인 유지" 설정도 초기화한다. 계정이 남아 있는데
     // 지우면 다음 저장이 엉뚱한 storage 로 가서 목록과 토큰이 흩어진다.
     if (rest.length === 0) removeRaw(PERSIST_KEY);
+    // 인터셉터가 지운 경우 화면(AuthContext)은 아직 로그인 상태다 — 알려서 로그인으로 보낸다.
+    window.dispatchEvent(new Event(SESSION_CLEARED_EVENT));
   },
   /** 이 기기에서 완전히 로그아웃 — 저장된 계정 전부 삭제. */
   clearAll() {

@@ -1,7 +1,11 @@
 export { signup, login, reissue } from "./authApi";
 export { getMe, changeMyPassword, updateMyLanguage } from "./userApi";
 export type { ChangePasswordRequest } from "./userApi";
-export { tokenStorage, accountStorage } from "./tokenStorage";
+export {
+  tokenStorage,
+  accountStorage,
+  SESSION_CLEARED_EVENT,
+} from "./tokenStorage";
 export type { StoredAccount } from "./tokenStorage";
 export { installAuthInterceptors, refreshAccessToken } from "./interceptors";
 export { AuthError } from "../type/types";

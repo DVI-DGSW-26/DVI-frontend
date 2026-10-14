@@ -237,9 +237,13 @@ export default function ProductFormDrawer({
   // 다른 화면이 같은 제품을 부르는 등) detail 이 새 객체로 바뀌는데, 그때마다 다시 채우면
   // 입력 중이던 치수가 서버 값으로 덮여 "적은 게 사라졌다"가 된다.
   const hydratedProductRef = useRef<number | null>(null);
+  // 서랍을 닫을 때마다 바뀌는 번호. 닫은 뒤 끝난 사진 업로드가 다음에 연 제품 폼에
+  // 들어가지 않도록, 업로드를 시작한 회차와 같을 때만 결과를 반영한다.
+  const openSessionRef = useRef(0);
   useEffect(() => {
     if (!open) {
       hydratedProductRef.current = null;
+      openSessionRef.current += 1;
       return;
     }
     if (!isEdit) {
@@ -303,9 +307,15 @@ export default function ProductFormDrawer({
     }
     setSketchError(null);
     // 저장 버튼과 무관하게 즉시 올리고, 받은 URL 을 sketchUrl 에 담아둔다.
+    const session = openSessionRef.current;
     uploadSketch(file, {
-      onSuccess: (url) => setSketchUrl(url),
-      onError: () => setSketchError(t("form.sketch.uploadFailed")),
+      onSuccess: (url) => {
+        if (session === openSessionRef.current) setSketchUrl(url);
+      },
+      onError: () => {
+        if (session === openSessionRef.current)
+          setSketchError(t("form.sketch.uploadFailed"));
+      },
     });
   };
 

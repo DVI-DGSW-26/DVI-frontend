@@ -64,7 +64,7 @@ export default function MyInspectionPage() {
 
   const inspectionsQuery = useMyInspectionList({ includeFinished: true });
   // 백엔드 실제 슬롯 순서 기반 "다음 시점" 계산기 — 하드코딩 시퀀스와 어긋나도 정확.
-  const { getNextSlot } = useSlotSequences();
+  const { getNextSlot, getSlotLabel } = useSlotSequences();
   const deleteMutation = useDeleteInspection();
   const startNextMutation = useStartNextInspection();
   const [pendingNextPrevId, setPendingNextPrevId] = useState<number | null>(
@@ -106,11 +106,12 @@ export default function MyInspectionPage() {
     { onRefresh: () => inspectionsQuery.refetch() },
   );
 
-  // 같은 (productId, equipmentId, type) 조합이 이미 있는 경우(=다음 시점 이미 시작/SKIPPED) "다음 시점 시작" 노출 안 함.
+  // 같은 작업지시에 다음 시점이 이미 있으면(=시작/SKIPPED) "다음 시점 시작" 노출 안 함.
+  // 제품·설비로 묶으면 다른 날(다른 작업지시) 검사 때문에 버튼이 사라진다 — nextEligible 과 같은 기준.
   const occupiedSlotKeys = useMemo(() => {
     const set = new Set<string>();
     for (const i of myInspections) {
-      set.add(`${i.product.id}-${i.equipment.id}-${i.type}`);
+      set.add(`${i.orderId}-${i.type}`);
     }
     return set;
   }, [myInspections]);
@@ -129,9 +130,14 @@ export default function MyInspectionPage() {
     const next = getNextSlot(i.product.process, i.type);
     if (!next) return null;
     // 이미 다음 시점이 시작되어 있으면 노출하지 않음.
-    if (occupiedSlotKeys.has(`${i.product.id}-${i.equipment.id}-${next}`))
+    if (occupiedSlotKeys.has(`${i.orderId}-${next}`))
       return null;
     return next;
+  };
+
+  const getNextLabelFor = (i: MyInspection): string | null => {
+    const next = getNextTypeFor(i);
+    return next ? getSlotLabel(i.product.process, next) : null;
   };
 
   const handleStartNext = async (previous: MyInspection) => {
@@ -261,7 +267,10 @@ export default function MyInspectionPage() {
           <div className="mb-3">
             <LatestCompletedCard
               previous={latestCompleted.previous}
-              nextType={latestCompleted.nextType}
+              nextLabel={getSlotLabel(
+                latestCompleted.previous.product.process,
+                latestCompleted.nextType,
+              )}
               onStartNext={handleStartNext}
               isStartingNext={
                 startNextMutation.isPending &&
@@ -287,7 +296,7 @@ export default function MyInspectionPage() {
                 key={inspection.inspectionId}
                 inspection={inspection}
                 onRequestDelete={handleRequestDelete}
-                nextType={getNextTypeFor(inspection)}
+                nextLabel={getNextLabelFor(inspection)}
                 onStartNext={handleStartNext}
                 isStartingNext={
                   startNextMutation.isPending &&

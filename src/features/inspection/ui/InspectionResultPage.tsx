@@ -116,10 +116,10 @@ export default function InspectionResultPage() {
 
   // 검사 완료/미완료가 끝났는지 — 끝나면 "다음 시점 시작" 또는 "홈으로" 선택 UI 로 전환.
   const [postSubmitMode, setPostSubmitMode] = useState<
-    "complete" | "incomplete" | null
+    "complete" | "incomplete" | "terminated" | null
   >(null);
 
-  const { getNextSlot } = useSlotSequences();
+  const { getNextSlot, getSlotLabel } = useSlotSequences();
 
   // 다음 시점이 존재하는지 — 공정 스케줄(서버 슬롯 순서) 기준.
   const nextType = useMemo(() => {
@@ -157,6 +157,9 @@ export default function InspectionResultPage() {
       detail.status === "SKIPPED"
     ) {
       setPostSubmitMode("incomplete");
+    } else if (detail.status === "TERMINATED") {
+      // 금형교체 등 조기마감 — 재검사는 새 초품으로 따로 시작되므로 다음 시점 없이 홈으로만.
+      setPostSubmitMode("terminated");
     }
     hydratedFromDetail.current = true;
   }, [detail]);
@@ -446,7 +449,8 @@ export default function InspectionResultPage() {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder={t("result.notePlaceholder")}
-            disabled={isBusy}
+            // 제출 뒤엔 고쳐도 저장되지 않는다 — 화면만 바뀌어 접수된 값과 어긋나므로 잠근다.
+            disabled={isBusy || postSubmitMode !== null}
             rows={3}
             maxLength={500}
             className="mt-2 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
@@ -465,7 +469,7 @@ export default function InspectionResultPage() {
               id="incomplete-reason"
               value={reasonKey}
               onChange={(e) => setReasonKey(e.target.value)}
-              disabled={isBusy}
+              disabled={isBusy || postSubmitMode !== null}
               className="mt-1 h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
             >
               <option value="">{t("result.noReason")}</option>
@@ -486,7 +490,7 @@ export default function InspectionResultPage() {
                 onChange={(e) => setCustomReason(e.target.value)}
                 maxLength={REASON_MAX_LENGTH}
                 placeholder={t("result.customReasonPlaceholder")}
-                disabled={isBusy}
+                disabled={isBusy || postSubmitMode !== null}
                 rows={3}
                 className="mt-2 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
               />
@@ -500,7 +504,7 @@ export default function InspectionResultPage() {
           // 완료/미완료 처리 후 — 다음 시점이 있으면 그쪽 진입, 없으면 홈으로 이동.
           // 미완료도 승인 전에 다음 시점을 열 수 있다(서버 규칙 2026-10).
           <div className="flex flex-col gap-2">
-            {nextType && (
+            {nextType && postSubmitMode !== "terminated" && (
               <button
                 type="button"
                 onClick={handleStartNext}
@@ -509,14 +513,16 @@ export default function InspectionResultPage() {
               >
                 {startNextMut.isPending
                   ? t("result.startingNext")
-                  : t("result.startNext", { type: nextType })}
+                  : t("result.startNext", {
+                      type: getSlotLabel(detail?.product.process ?? "", nextType),
+                    })}
               </button>
             )}
             <button
               type="button"
               onClick={() => navigate("/", { replace: true })}
               className={`h-12 w-full rounded-md text-base font-semibold transition-colors ${
-                nextType
+                nextType && postSubmitMode !== "terminated"
                   ? "border border-[#E5E7EB] bg-white text-[#6B7280] hover:bg-[#F9FAFB]"
                   : "bg-[#931B82] text-white hover:bg-[#6A0F5D]"
               }`}

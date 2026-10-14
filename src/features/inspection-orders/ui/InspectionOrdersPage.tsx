@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -81,6 +81,15 @@ function statusBadge(status: InspectionOrderStatus, t: TFunction) {
   );
 }
 
+// 어제 지시 복사의 기준 날짜(KST 달력 날짜).
+function copyDatesNow() {
+  const now = new Date();
+  return {
+    today: kstDateKey(now),
+    yesterday: kstDateKey(new Date(now.getTime() - 24 * 60 * 60 * 1000)),
+  };
+}
+
 export default function InspectionOrdersPage() {
   const { t } = useTranslation("inspectionOrders");
   const [open, setOpen] = useState(false);
@@ -94,14 +103,16 @@ export default function InspectionOrdersPage() {
   const { mutate: copyOrders, isPending: isCopying } = useCopyInspectionOrders();
 
   // 어제 지시를 오늘로 그대로 옮겨 등록하는 기능용 (KST 기준 달력 날짜).
-  // 화면 진입 시점에 한 번만 계산한다 — 렌더 중 현재시각을 읽지 않기 위해.
-  const [{ today, yesterday }] = useState(() => {
-    const now = new Date();
-    return {
-      today: kstDateKey(now),
-      yesterday: kstDateKey(new Date(now.getTime() - 24 * 60 * 60 * 1000)),
-    };
-  });
+  // 렌더 중 현재시각을 읽지 않도록 상태로 들고, 1분마다 다시 계산한다 — 화면을 띄워 둔
+  // 채 날이 바뀌면 그제 지시를 어제 날짜로 복사하게 된다.
+  const [{ today, yesterday }, setCopyDates] = useState(copyDatesNow);
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const next = copyDatesNow();
+      setCopyDates((prev) => (prev.today === next.today ? prev : next));
+    }, 60_000);
+    return () => window.clearInterval(id);
+  }, []);
   const yesterdayOrders = useMemo(
     () => orders.filter((o) => o.targetDate?.slice(0, 10) === yesterday),
     [orders, yesterday],

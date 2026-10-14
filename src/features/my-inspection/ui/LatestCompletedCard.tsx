@@ -5,8 +5,8 @@ import { slotLabelText } from "../../../lib/slotLabel";
 interface Props {
   /** 가장 최근 완료된 직전 검사 — 클릭 시 이 검사의 다음 시점을 시작. */
   previous: MyInspection;
-  /** 시작될 다음 시점 type 코드. */
-  nextType: string;
+  /** 시작될 다음 시점 이름(표시용). type 코드가 아니다. */
+  nextLabel: string;
   onStartNext: (previous: MyInspection) => void;
   isStartingNext: boolean;
 }
@@ -15,7 +15,7 @@ interface Props {
 // 기존 목록형 "다음 시점 시작" 버튼과 별개로, 마지막으로 끝낸 1건만 눈에 띄게 노출한다.
 export default function LatestCompletedCard({
   previous,
-  nextType,
+  nextLabel,
   onStartNext,
   isStartingNext,
 }: Props) {
@@ -37,7 +37,7 @@ export default function LatestCompletedCard({
         </span>
         <span className="text-[#D1D5DB]">›</span>
         <span className="font-medium text-[#931B82]">
-          {t("latestCard.typeStart", { type: nextType })}
+          {t("latestCard.typeStart", { type: nextLabel })}
         </span>
       </div>
 

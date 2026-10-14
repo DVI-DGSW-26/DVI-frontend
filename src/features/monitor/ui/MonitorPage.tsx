@@ -11,7 +11,8 @@ import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMonitorStream } from "../api/useMonitorStream";
 import type { MonitorStream } from "../api/useMonitorStream";
-import { formatClock, formatDateLabel, kstToday, useNow } from "../lib/time";
+import { formatClock, formatDateLabel, useNow } from "../lib/time";
+import { kstWorkDayKey } from "../../../lib/datetime";
 import { T } from "../lib/tokens";
 import { formatRemaining, useAutoRelease } from "../lib/useAutoRelease";
 import { CARD_SHADOW, ConnectionBadge } from "./parts";
@@ -168,8 +169,9 @@ export default function MonitorPage() {
   const stream = useMonitorStream();
   const now = useNow();
   const today = useMemo(
-    () => kstToday(now),
-    // 자정을 넘겨도 날짜가 따라가되 초마다 재계산하지는 않는다.
+    // 서버 date 는 작업지시의 targetDate(야간조는 시작한 날)라 06:00 경계 작업일을 보낸다.
+    // 달력 날짜를 보내면 00~06시에 야간조 기록이 통째로 빠진다. 초마다 재계산하지는 않는다.
+    () => kstWorkDayKey(now),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [Math.floor(now.getTime() / 60000)],
   );

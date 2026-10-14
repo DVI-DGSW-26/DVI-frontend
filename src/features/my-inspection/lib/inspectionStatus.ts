@@ -87,6 +87,12 @@ export const STATUS_BADGE: Record<string, StatusBadge> = {
     text: "text-[#6B7280]",
     dot: "bg-[#9CA3AF]",
   },
+  // 금형교체 등 조기 마감 — 보고서는 발행됐고 재검사는 새 초품으로 따로 시작된다.
+  TERMINATED: {
+    label: "status.terminated",
+    text: "text-[#B91C1C]",
+    dot: "bg-[#EF4444]",
+  },
 };
 
 export const FALLBACK_BADGE: StatusBadge = {

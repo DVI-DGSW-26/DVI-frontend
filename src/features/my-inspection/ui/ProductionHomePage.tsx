@@ -33,8 +33,10 @@ import {
 } from "../lib/nextEligible";
 import { formatSlotTime } from "../../inspection/lib/format";
 import {
+  SkipDeleteDraftError,
+  skipDeleteDraftErrorMessage,
   skipErrorMessage,
-  SKIP_DELETE_DRAFT_ERROR,
+  skipOverDraft,
 } from "../../inspection/lib/skipError";
 import { formatDate, formatShortDateTime } from "../../../lib/datetime";
 import ShiftBadge from "../../../components/shared/ShiftBadge";
@@ -64,7 +66,7 @@ export default function ProductionHomePage() {
 
   const inspectionsQuery = useMyInspectionList({ includeFinished: true });
   // 백엔드 실제 슬롯 순서 기반 "다음 시점" 계산기 — 하드코딩 시퀀스와 어긋나도 정확.
-  const { getNextSlot } = useSlotSequences();
+  const { getNextSlot, getSlotLabel } = useSlotSequences();
   const startNextMutation = useStartNextInspection();
   const skipMutation = useSkipInspection();
   const deleteMutation = useDeleteInspection();
@@ -224,7 +226,7 @@ export default function ProductionHomePage() {
       return;
     }
     setSkipTarget({
-      label: `${previous.product.name} (${nextType})`,
+      label: `${previous.product.name} (${getSlotLabel(previous.product.process, nextType)})`,
       orderId,
       type: nextType,
     });
@@ -234,27 +236,26 @@ export default function ProductionHomePage() {
     if (!skipTarget) return;
     const target = skipTarget;
     try {
-      // DRAFT 가 이미 있으면 백엔드가 INSPECTION_ALREADY_EXISTS 를 던지므로,
-      // skip 호출 전 DRAFT 를 먼저 삭제해 NONE 상태로 되돌린다.
-      if (target.draftInspectionIdToDelete != null) {
-        try {
-          await deleteMutation.mutateAsync(target.draftInspectionIdToDelete);
-        } catch {
-          setSkipTarget(null);
-          setToast(SKIP_DELETE_DRAFT_ERROR);
-          return;
-        }
-      }
-      await skipMutation.mutateAsync({
-        orderId: target.orderId,
-        type: target.type,
-        ...(reason ? { reason } : {}),
-      });
+      // DRAFT 가 있으면 서버가 그 검사를 SKIPPED 로 바꾼다 — skipOverDraft 참고.
+      await skipOverDraft(
+        () =>
+          skipMutation.mutateAsync({
+            orderId: target.orderId,
+            type: target.type,
+            ...(reason ? { reason } : {}),
+          }),
+        target.draftInspectionIdToDelete,
+        (id) => deleteMutation.mutateAsync(id),
+      );
       setSkipTarget(null);
       setToast(t("toast.skipped", { label: target.label }));
     } catch (err) {
       setSkipTarget(null);
-      setToast(skipErrorMessage(err));
+      setToast(
+        err instanceof SkipDeleteDraftError
+          ? skipDeleteDraftErrorMessage()
+          : skipErrorMessage(err),
+      );
     }
   };
 
@@ -394,7 +395,10 @@ export default function ProductionHomePage() {
             <div className="mt-2">
               <LatestCompletedCard
                 previous={latestCompleted.previous}
-                nextType={latestCompleted.nextType}
+                nextLabel={getSlotLabel(
+                  latestCompleted.previous.product.process,
+                  latestCompleted.nextType,
+                )}
                 onStartNext={handleStartNext}
                 isStartingNext={
                   startNextMutation.isPending &&
@@ -590,7 +594,7 @@ export default function ProductionHomePage() {
                 startNextMutation.isPending &&
                 pendingPrevId === previous.inspectionId;
               const nextLabel =
-                resolveNextLabel(previous, nextType) ?? nextType;
+                getSlotLabel(previous.product.process, nextType);
               return (
                 <li
                   key={previous.inspectionId}
@@ -952,16 +956,3 @@ function TerminateButton({
   );
 }
 
-// "다음 시점" 라벨은 typeLabel 매핑이 응답에 따로 안 오므로,
-// 같은 (productId, equipmentId) 의 다른 검사 데이터를 활용해 type → label 매핑을
-// 시도하고, 못 찾으면 type 코드 그대로 보여준다.
-function resolveNextLabel(
-  previous: MyInspection,
-  nextType: string,
-): string | null {
-  // 같은 type 라벨이 일관되게 부여되어 있으므로, 같은 type 의 검사가 있다면 거기서 빌려옴.
-  // 여기서는 정보가 충분하지 않으므로 null 반환 — 호출부에서 type 코드 그대로 사용한다.
-  void previous;
-  void nextType;
-  return null;
-}

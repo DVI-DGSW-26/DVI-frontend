@@ -127,6 +127,8 @@ export function useSaveCrossCheckResults(crossCheckId: number) {
       // 가 발생하면 로컬 sessionResults 와 refetch 된 startIdx 가 동시에 진행도를
       // 카운트해 stepIndex 가 두 칸 점프하는 버그가 발생한다. detail 은 staleTime:0
       // 이라 다음 마운트(새로고침/재진입) 때 자연스럽게 갱신됨.
+      // 대신 저장 시각을 적어 두어 15분 자동 넘기기 기한을 화면에서 연장한다.
+      markCrossCheckSaved(crossCheckId);
       qc.invalidateQueries({ queryKey: crossCheckKeys.myAll() });
     },
   });
@@ -192,6 +194,8 @@ export function useDeleteCrossCheck(crossCheckId: number) {
     mutationFn: () => deleteCrossCheck(crossCheckId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: crossCheckKeys.all });
+      // 결재 대기 건을 지우면 메뉴 결재 건수도 바로 줄어야 한다.
+      qc.invalidateQueries({ queryKey: approvalKeys.pendingCounts });
     },
   });
 }
@@ -204,6 +208,7 @@ export function useDeleteCrossCheckById() {
     mutationFn: (crossCheckId: number) => deleteCrossCheck(crossCheckId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: crossCheckKeys.all });
+      qc.invalidateQueries({ queryKey: approvalKeys.pendingCounts });
     },
   });
 }
