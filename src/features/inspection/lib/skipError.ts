@@ -45,3 +45,39 @@ export function skipDeleteDraftErrorMessage(): string {
 export const SKIP_DELETE_DRAFT_ERROR = i18n.t(
   "inspection:skipError.deleteDraftFailed",
 );
+
+/** skip 을 위해 지운 DRAFT 삭제가 실패했다 — skip 자체 실패와 구분하려는 표식. */
+export class SkipDeleteDraftError extends Error {}
+
+/**
+ * 작성 중(DRAFT) 검사가 있는 시점을 건너뛴다.
+ *
+ * 서버가 같은 시점의 내 DRAFT 를 그대로 SKIPPED 로 바꿔 주기로 했다(10-14 백엔드 답변).
+ * 그래서 skip 을 먼저 부른다 — 삭제를 먼저 하면 skip 이 실패했을 때 측정값만 날아간다.
+ * 그 변경이 아직 안 올라간 서버는 INSPECTION_ALREADY_EXISTS 로 막으므로, 그때만 예전처럼
+ * DRAFT 를 지우고 한 번 더 부른다. 서버 반영이 확인되면 이 폴백은 지워도 된다.
+ */
+export async function skipOverDraft(
+  skip: () => Promise<unknown>,
+  draftInspectionId: number | null | undefined,
+  deleteDraft: (inspectionId: number) => Promise<unknown>,
+): Promise<void> {
+  try {
+    await skip();
+    return;
+  } catch (err) {
+    const code =
+      err instanceof AxiosError
+        ? (err.response?.data as SkipInspectionErrorData | undefined)?.code
+        : undefined;
+    if (draftInspectionId == null || code !== "INSPECTION_ALREADY_EXISTS") {
+      throw err;
+    }
+  }
+  try {
+    await deleteDraft(draftInspectionId);
+  } catch {
+    throw new SkipDeleteDraftError();
+  }
+  await skip();
+}

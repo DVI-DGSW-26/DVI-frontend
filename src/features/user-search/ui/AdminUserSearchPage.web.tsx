@@ -6,14 +6,7 @@ import { useReportList } from "../../report/api";
 import { DEPARTMENT_LABEL_KEY } from "../lib/userLabels";
 import CreateUserModal from "./CreateUserModal";
 import UserCard from "./UserCard";
-
-function todayISO() {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-}
+import { kstWorkDayKey } from "../../../lib/datetime";
 
 type FilterKey = "ALL" | "PRODUCTION" | "QUALITY" | "ACTIVE" | "INACTIVE";
 
@@ -36,7 +29,8 @@ const AdminUserSearchPageWeb = () => {
   const [createOpen, setCreateOpen] = useState(false);
 
   const completedSlotsByName = useMemo(() => {
-    const today = todayISO();
+    // targetDate 는 작업일(06:00 경계)이다 — 새벽 야간조도 전날 지시로 센다.
+    const today = kstWorkDayKey(new Date());
     const map = new Map<string, Set<string>>();
     for (const r of reports) {
       if (r.targetDate !== today) continue;

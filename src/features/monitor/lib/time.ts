@@ -43,12 +43,6 @@ export function formatHm(d: Date): string {
   return `${hh}:${mi}`;
 }
 
-/** KST 기준 오늘 (yyyy-MM-dd) — 서버 date 파라미터용. */
-export function kstToday(now: Date): string {
-  const { yyyy, mm, dd } = kstParts(now);
-  return `${yyyy}-${mm}-${dd}`;
-}
-
 // 아래 문구는 전부 앱 언어를 따른다. 화면이 매초 다시 그려지므로 언어를 바꾸면 바로 따라온다.
 const mt = (key: string, opts?: Record<string, unknown>) =>
   i18n.t(key, { ns: "monitor", ...opts });

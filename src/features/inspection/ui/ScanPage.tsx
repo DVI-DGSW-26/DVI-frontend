@@ -18,7 +18,11 @@ import {
   useMyInspectionList,
 } from "../../my-inspection/api";
 import { getRecentInspectionId } from "../lib/recentInspection";
-import { skipErrorMessage } from "../lib/skipError";
+import {
+  SkipDeleteDraftError,
+  skipErrorMessage,
+  skipOverDraft,
+} from "../lib/skipError";
 import { opensNextSlot } from "../../my-inspection/lib/nextEligible";
 import SlotItem, { type SlotStatus } from "./SlotItem";
 import SkipModal from "./SkipModal";
@@ -261,23 +265,18 @@ export default function ScanPage() {
     if (!orderId || !skipTargetType) return;
     const type = skipTargetType;
     try {
-      // 작성 중(DRAFT) 인 검사가 이미 존재하면 백엔드가 INSPECTION_ALREADY_EXISTS 를
-      // 던지므로, skip 호출 전 해당 DRAFT 를 먼저 삭제해서 NONE 상태로 되돌린다.
+      // 작성 중(DRAFT) 인 검사가 있으면 서버가 그 검사를 SKIPPED 로 바꾼다 — skipOverDraft 참고.
       const existing = inspectionByType.get(type);
-      if (existing && existing.status === "DRAFT") {
-        try {
-          await deleteMutation.mutateAsync(existing.inspectionId);
-        } catch {
-          setSkipTargetType(null);
-          setToast({ message: t("skipError.deleteDraftFailed") });
-          return;
-        }
-      }
-      await skipMutation.mutateAsync({
-        orderId,
-        type,
-        ...(reason ? { reason } : {}),
-      });
+      await skipOverDraft(
+        () =>
+          skipMutation.mutateAsync({
+            orderId,
+            type,
+            ...(reason ? { reason } : {}),
+          }),
+        existing?.status === "DRAFT" ? existing.inspectionId : null,
+        (id) => deleteMutation.mutateAsync(id),
+      );
       // 서버 목록 반영 여부와 무관하게 배지를 즉시 "건너뜀"으로 고정.
       setSkippedTypes((prev) => {
         const next = new Set(prev);
@@ -289,7 +288,12 @@ export default function ScanPage() {
       setToast({ message: t("scan.skippedToast", { label }) });
     } catch (err) {
       setSkipTargetType(null);
-      setToast({ message: skipErrorMessage(err) });
+      setToast({
+        message:
+          err instanceof SkipDeleteDraftError
+            ? t("skipError.deleteDraftFailed")
+            : skipErrorMessage(err),
+      });
     }
   };
 
