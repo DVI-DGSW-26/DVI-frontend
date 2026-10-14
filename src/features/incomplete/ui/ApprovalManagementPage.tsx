@@ -31,6 +31,9 @@ function ApprovalManagementPage() {
           setChecked(new Set());
         },
         onError: (err) => {
+          // 일부는 이미 승인됐을 수 있다 — 체크를 남기면 다시 눌렀을 때 그 건들이 또 실패한다.
+          // 목록은 새로 받으므로 남은 건을 다시 고르게 한다.
+          setChecked(new Set());
           if (err instanceof AxiosError) {
             const code = (
               err.response?.data as { code?: string } | undefined

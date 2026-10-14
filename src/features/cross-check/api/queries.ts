@@ -192,6 +192,8 @@ export function useDeleteCrossCheck(crossCheckId: number) {
     mutationFn: () => deleteCrossCheck(crossCheckId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: crossCheckKeys.all });
+      // 결재 대기 건을 지우면 메뉴 결재 건수도 바로 줄어야 한다.
+      qc.invalidateQueries({ queryKey: approvalKeys.pendingCounts });
     },
   });
 }
@@ -204,6 +206,7 @@ export function useDeleteCrossCheckById() {
     mutationFn: (crossCheckId: number) => deleteCrossCheck(crossCheckId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: crossCheckKeys.all });
+      qc.invalidateQueries({ queryKey: approvalKeys.pendingCounts });
     },
   });
 }

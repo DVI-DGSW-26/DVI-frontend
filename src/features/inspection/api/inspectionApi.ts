@@ -63,14 +63,6 @@ export async function getInspectionDetail(
 export async function startInspection(
   body: StartInspectionRequest,
 ): Promise<StartInspectionResponse> {
-  // TEMP DEBUG: 검사 시작 요청 원인 파악용. 정상화되면 제거.
-  console.log("[startInspection] request body:", body);
-  console.log(
-    "[startInspection] field types:",
-    Object.fromEntries(
-      Object.entries(body).map(([k, v]) => [k, `${typeof v} (${JSON.stringify(v)})`]),
-    ),
-  );
   try {
     const { data } = await http.post<StartInspectionApiResponse>(
       "/inspection",

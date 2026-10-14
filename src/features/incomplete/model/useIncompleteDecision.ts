@@ -17,7 +17,8 @@ export function useIncompleteDecision() {
       Promise.all(
         inspectionIds.map((id) => postIncompleteDecision(id, decision)),
       ),
-    onSuccess: () => {
+    // 여러 건 중 일부만 실패해도 이미 처리된 건은 목록에서 빠져야 한다 — 성공·실패 모두 갱신.
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: incompleteQueryKey });
       queryClient.invalidateQueries({ queryKey: approvalKeys.pendingCounts });
     },

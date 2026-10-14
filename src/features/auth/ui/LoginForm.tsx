@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, type Location } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import LanguageToggle from "../../../components/layout/LanguageToggle";
@@ -26,6 +26,7 @@ export default function Login() {
   const { t } = useTranslation("auth");
   const isMobile = useMediaQuery("(max-width: 767px)");
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
 
   const handleSubmit = async (keepLoggedIn: boolean) => {
@@ -37,7 +38,15 @@ export default function Login() {
         },
         keepLoggedIn,
       );
-      navigate(ROLE_HOME[me.role] ?? "/");
+      // 세션이 끊겨 RouteGuard 가 보낸 경우(알림 링크 등) 원래 가려던 화면으로 돌려보낸다.
+      // 권한이 없는 화면이면 RouteGuard 가 다시 홈으로 보낸다. 뒤로가기로 로그인 폼이
+      // 다시 나오지 않도록 replace.
+      const from = (location.state as { from?: Location } | null)?.from;
+      const target =
+        from && from.pathname !== "/" && from.pathname !== "/login"
+          ? `${from.pathname}${from.search}${from.hash}`
+          : (ROLE_HOME[me.role] ?? "/");
+      navigate(target, { replace: true });
     } catch (err) {
       if (err instanceof AuthError) {
         alert(err.message);
