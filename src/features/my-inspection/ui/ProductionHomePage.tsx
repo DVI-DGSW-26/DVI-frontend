@@ -33,8 +33,10 @@ import {
 } from "../lib/nextEligible";
 import { formatSlotTime } from "../../inspection/lib/format";
 import {
+  SkipDeleteDraftError,
+  skipDeleteDraftErrorMessage,
   skipErrorMessage,
-  SKIP_DELETE_DRAFT_ERROR,
+  skipOverDraft,
 } from "../../inspection/lib/skipError";
 import { formatDate, formatShortDateTime } from "../../../lib/datetime";
 import ShiftBadge from "../../../components/shared/ShiftBadge";
@@ -234,27 +236,26 @@ export default function ProductionHomePage() {
     if (!skipTarget) return;
     const target = skipTarget;
     try {
-      // DRAFT 가 이미 있으면 백엔드가 INSPECTION_ALREADY_EXISTS 를 던지므로,
-      // skip 호출 전 DRAFT 를 먼저 삭제해 NONE 상태로 되돌린다.
-      if (target.draftInspectionIdToDelete != null) {
-        try {
-          await deleteMutation.mutateAsync(target.draftInspectionIdToDelete);
-        } catch {
-          setSkipTarget(null);
-          setToast(SKIP_DELETE_DRAFT_ERROR);
-          return;
-        }
-      }
-      await skipMutation.mutateAsync({
-        orderId: target.orderId,
-        type: target.type,
-        ...(reason ? { reason } : {}),
-      });
+      // DRAFT 가 있으면 서버가 그 검사를 SKIPPED 로 바꾼다 — skipOverDraft 참고.
+      await skipOverDraft(
+        () =>
+          skipMutation.mutateAsync({
+            orderId: target.orderId,
+            type: target.type,
+            ...(reason ? { reason } : {}),
+          }),
+        target.draftInspectionIdToDelete,
+        (id) => deleteMutation.mutateAsync(id),
+      );
       setSkipTarget(null);
       setToast(t("toast.skipped", { label: target.label }));
     } catch (err) {
       setSkipTarget(null);
-      setToast(skipErrorMessage(err));
+      setToast(
+        err instanceof SkipDeleteDraftError
+          ? skipDeleteDraftErrorMessage()
+          : skipErrorMessage(err),
+      );
     }
   };
 

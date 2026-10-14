@@ -118,11 +118,12 @@ export function buildProgressRows(
     }
   }
 
-  // 작업자·제품·설비가 같으면 한 줄. 같은 조합에 여러 시점 기록이 붙는다.
+  // 작업자·제품·설비·교대가 같으면 한 줄. 같은 조합에 여러 시점 기록이 붙는다.
+  // 교대를 키에 넣는 건 같은 사람이 주간·야간 지시를 다 맡았을 때 두 줄로 나누기 위해서다.
   const groups = new Map<string, AdminInspection[]>();
   for (const ins of inspections) {
     const worker = ins.production?.name ?? unassignedLabel;
-    const key = `${worker}|${ins.product.id}|${ins.equipment.id}`;
+    const key = `${worker}|${ins.product.id}|${ins.equipment.id}|${ins.shift ?? ""}`;
     const bucket = groups.get(key);
     if (bucket) bucket.push(ins);
     else groups.set(key, [ins]);
@@ -132,7 +133,12 @@ export function buildProgressRows(
 
   for (const [key, group] of groups) {
     const first = group[0];
-    const slots = slotsByProcess[first.product.process];
+    // 슬롯 목록은 공정 템플릿 전체라 주간·야간이 함께 온다. 줄의 교대 칸만 남긴다 —
+    // 안 거르면 주간 줄에 야간 칸이 붙어 남은 시점·지연이 부풀려진다(10-14 백엔드 답변).
+    // 교대를 모르는 줄은 거르지 않는다.
+    const slots = slotsByProcess[first.product.process]?.filter(
+      (s) => !first.shift || !s.shift || s.shift === first.shift,
+    );
     // 슬롯을 아직 못 받았으면 이 줄은 그릴 수 없다 (칸 개수를 모름).
     if (!slots || slots.length === 0) continue;
 
