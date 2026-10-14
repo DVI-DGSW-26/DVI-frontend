@@ -116,7 +116,7 @@ export default function InspectionResultPage() {
 
   // 검사 완료/미완료가 끝났는지 — 끝나면 "다음 시점 시작" 또는 "홈으로" 선택 UI 로 전환.
   const [postSubmitMode, setPostSubmitMode] = useState<
-    "complete" | "incomplete" | null
+    "complete" | "incomplete" | "terminated" | null
   >(null);
 
   const { getNextSlot } = useSlotSequences();
@@ -157,6 +157,9 @@ export default function InspectionResultPage() {
       detail.status === "SKIPPED"
     ) {
       setPostSubmitMode("incomplete");
+    } else if (detail.status === "TERMINATED") {
+      // 금형교체 등 조기마감 — 재검사는 새 초품으로 따로 시작되므로 다음 시점 없이 홈으로만.
+      setPostSubmitMode("terminated");
     }
     hydratedFromDetail.current = true;
   }, [detail]);
@@ -500,7 +503,7 @@ export default function InspectionResultPage() {
           // 완료/미완료 처리 후 — 다음 시점이 있으면 그쪽 진입, 없으면 홈으로 이동.
           // 미완료도 승인 전에 다음 시점을 열 수 있다(서버 규칙 2026-10).
           <div className="flex flex-col gap-2">
-            {nextType && (
+            {nextType && postSubmitMode !== "terminated" && (
               <button
                 type="button"
                 onClick={handleStartNext}
@@ -516,7 +519,7 @@ export default function InspectionResultPage() {
               type="button"
               onClick={() => navigate("/", { replace: true })}
               className={`h-12 w-full rounded-md text-base font-semibold transition-colors ${
-                nextType
+                nextType && postSubmitMode !== "terminated"
                   ? "border border-[#E5E7EB] bg-white text-[#6B7280] hover:bg-[#F9FAFB]"
                   : "bg-[#931B82] text-white hover:bg-[#6A0F5D]"
               }`}

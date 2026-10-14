@@ -14,6 +14,9 @@ import type {
 // 보다는 5초 지연이라도 계속 갱신되는 쪽이 낫다.
 const FAILURES_BEFORE_POLLING = 3;
 const POLL_INTERVAL_MS = 5000;
+// 폴링으로 내려앉은 뒤 스트림을 다시 시도하기까지. 재배포처럼 잠깐 끊긴 경우에도
+// 새로고침 전까지 폴링에 머물지 않도록 주기적으로 스트림 복귀를 노린다.
+const POLL_BEFORE_STREAM_RETRY_MS = 60_000;
 // 재연결 백오프 — 서버가 30분마다 커넥션을 정리하므로 정상 종료도 여기를 지난다.
 const RECONNECT_MIN_MS = 1000;
 const RECONNECT_MAX_MS = 15000;
@@ -111,10 +114,15 @@ export function useMonitorStream(): MonitorStream {
     void fetchAll();
 
     let failures = 0;
+    // 직전 401 에서 재발급을 받았는지. 새 토큰으로도 401 이면 실패로 센다 — 아니면
+    // 재발급·재연결이 쉬지 않고 반복된다.
+    let refreshedForLast401 = false;
 
-    async function poll() {
+    /** 정해진 시간 동안 폴링한다. 끝나면 호출부가 스트림을 다시 시도한다. */
+    async function poll(durationMs: number) {
       setConnection("polling");
-      while (!signal.aborted) {
+      const until = Date.now() + durationMs;
+      while (!signal.aborted && Date.now() < until) {
         const results = await fetchAll();
         if (signal.aborted) return;
         // 하나라도 받았으면 화면은 갱신되고 있다 — 전멸일 때만 끊김으로 본다.
@@ -146,6 +154,7 @@ export function useMonitorStream(): MonitorStream {
                 throw new Error(`monitor stream failed: ${res.status}`);
               }
               failures = 0;
+              refreshedForLast401 = false;
               setConnection("live");
             },
             onmessage: (ev) => {
@@ -176,9 +185,10 @@ export function useMonitorStream(): MonitorStream {
         } catch (err) {
           if (signal.aborted) return;
 
-          if (err instanceof UnauthorizedError) {
+          if (err instanceof UnauthorizedError && !refreshedForLast401) {
             try {
               await refreshAccessToken();
+              refreshedForLast401 = true;
               // 재발급 성공 — 실패 횟수를 늘리지 않고 새 토큰으로 즉시 재연결.
               continue;
             } catch {
@@ -191,9 +201,14 @@ export function useMonitorStream(): MonitorStream {
           }
 
           if (failures >= FAILURES_BEFORE_POLLING) {
-            // 스트림이 막힌 환경(중계 버퍼링 등)으로 보고 폴링으로 내려앉는다.
-            await poll();
-            return;
+            // 스트림이 막힌 환경(중계 버퍼링 등)으로 보고 잠시 폴링으로 내려앉았다가
+            // 스트림을 다시 시도한다. 또 실패하면 한 번 만에 폴링으로 돌아온다.
+            await poll(POLL_BEFORE_STREAM_RETRY_MS);
+            if (signal.aborted) return;
+            failures = FAILURES_BEFORE_POLLING - 1;
+            refreshedForLast401 = false;
+            setConnection("connecting");
+            continue;
           }
           setConnection("connecting");
         }
