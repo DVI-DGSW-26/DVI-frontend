@@ -31,6 +31,7 @@ import type { MyInspection } from "../../my-inspection/type/types";
 import { myInspectionKeys } from "../../my-inspection/api";
 import { reportKeys } from "../../report/api";
 import { useProcessList } from "../../process/api";
+import { slotLabelText } from "../../../lib/slotLabel";
 
 // 새 inspection 이 만들어진 직후 invalidate 만 호출하면 refetch 가 완료되기 전에 화면이
 // 잠깐 OLD 상태로 보일 수 있다 (사용자가 빠르게 navigate/back 한 경우 "이어 작업하기" 카드가
@@ -148,7 +149,20 @@ export function useSlotSequences() {
     [seqByProcess],
   );
 
-  return { getNextSlot };
+  // 화면에 보일 시점 이름. type(DAY_2 ...) 은 내부 값이라 그대로 보이면 안 된다.
+  // 슬롯을 아직 못 받았으면 type 을 그대로 돌려준다.
+  const getSlotLabel = useMemo(
+    () =>
+      (process: string, type: string): string => {
+        const label = seqByProcess
+          .get(process)
+          ?.find((s) => s.type === type)?.label;
+        return label ? slotLabelText(label) : type;
+      },
+    [seqByProcess],
+  );
+
+  return { getNextSlot, getSlotLabel };
 }
 
 export function useStartInspection() {

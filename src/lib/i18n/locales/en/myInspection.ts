@@ -114,5 +114,6 @@ export default {
     pendingReview: "Awaiting QA approval",
     incompleteApproved: "Incomplete approved",
     skipped: "Skipped",
+    terminated: "Finalized Early",
   },
 } as const;

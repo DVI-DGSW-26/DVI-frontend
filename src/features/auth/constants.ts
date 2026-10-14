@@ -11,13 +11,14 @@ export const ROLE_LABEL: Record<Role, string> = {
 
 // 로그인/계정 전환 직후 이동할 첫 화면. 역할마다 접근 가능한 라우트가 다르므로
 // 전환 시에도 반드시 이 경로로 보내야 RouteGuard 에 튕기지 않는다.
+// 관리자 대시보드는 "/" 다 — 메뉴·헤더 제목이 "/" 로 대시보드를 알아본다.
 export const ROLE_HOME: Record<Role, string> = {
-  ADMIN: "/dashboard",
+  ADMIN: "/",
   QUALITY_ADMIN: "/approval-management",
   PRODUCTION: "/",
   PRODUCTION_MANAGER: "/inspection-orders",
   QUALITY: "/",
-  TEST: "/dashboard",
+  TEST: "/",
 };
 
 /**

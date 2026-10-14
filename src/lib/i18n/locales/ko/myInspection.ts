@@ -115,5 +115,6 @@ export default {
     pendingReview: "품질관리자 승인 대기",
     incompleteApproved: "미완료 승인됨",
     skipped: "건너뜀",
+    terminated: "조기종료",
   },
 } as const;

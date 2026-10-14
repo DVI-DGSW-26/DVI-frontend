@@ -119,7 +119,7 @@ export default function InspectionResultPage() {
     "complete" | "incomplete" | null
   >(null);
 
-  const { getNextSlot } = useSlotSequences();
+  const { getNextSlot, getSlotLabel } = useSlotSequences();
 
   // 다음 시점이 존재하는지 — 공정 스케줄(서버 슬롯 순서) 기준.
   const nextType = useMemo(() => {
@@ -509,7 +509,9 @@ export default function InspectionResultPage() {
               >
                 {startNextMut.isPending
                   ? t("result.startingNext")
-                  : t("result.startNext", { type: nextType })}
+                  : t("result.startNext", {
+                      type: getSlotLabel(detail?.product.process ?? "", nextType),
+                    })}
               </button>
             )}
             <button
