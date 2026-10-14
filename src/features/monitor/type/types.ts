@@ -1,3 +1,4 @@
+import type { Shift } from "../../inspection-schedule/api";
 import type { WorkType } from "../../auth/type/types";
 
 // GET /monitor/snapshot, GET /monitor/stream (event: snapshot) 공통 페이로드.
@@ -159,4 +160,55 @@ export interface MonitorQualityBoard {
   defects: MonitorDefect[];
   terminated: MonitorTerminated[];
   summary: MonitorQualitySummary;
+}
+
+/* ── 작업지시별 슬롯 칸 (GET /monitor/schedule) ─────────────────────────────
+ *
+ * 오늘 작업지시(행) × 그 지시의 실제 슬롯(칸). 현황판은 줄을 "작업자 × 제품·설비"로
+ * 묶어 그리므로 이 응답의 행을 그대로 쓰지 않고, 각 줄의 칸 구성만 여기서 가져온다 —
+ * 공정 기본 슬롯은 제품별 템플릿·교대를 모른다(10-14 백엔드 답변).
+ */
+
+/** 슬롯 한 칸의 진행 상태. */
+export type MonitorSlotState =
+  | "NOT_STARTED"
+  | "IN_PROGRESS"
+  | "DONE"
+  | "INCOMPLETE"
+  | "SKIPPED"
+  | "TERMINATED";
+
+export interface MonitorScheduleSlot {
+  /** 1부터. 서버가 이 순서로 정렬해 내려준다. */
+  slotOrder: number;
+  /** "초/중/종" 또는 "08:00". 한 작업지시 안에서는 겹치지 않는다. */
+  label: string;
+  /** HH:mm. 시각이 없는 초/중/종은 null. */
+  time: string | null;
+  shift: Shift | null;
+  state: MonitorSlotState;
+  /** 슬롯 시각이 지났는데 아직 완료되지 않음(미시작·진행중). */
+  overdue: boolean;
+}
+
+export interface MonitorScheduleOrder {
+  orderId: number;
+  productName: string;
+  equipmentName: string;
+  customerName: string;
+  /** 단일교대 제품은 null. */
+  shift: Shift | null;
+  slots: MonitorScheduleSlot[];
+  doneCount: number;
+  totalCount: number;
+}
+
+export interface MonitorScheduleBoard {
+  orders: MonitorScheduleOrder[];
+  summary: {
+    orderCount: number;
+    totalSlots: number;
+    doneSlots: number;
+    overdueSlots: number;
+  };
 }

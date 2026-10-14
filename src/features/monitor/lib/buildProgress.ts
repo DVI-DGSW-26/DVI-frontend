@@ -5,6 +5,7 @@ import {
   type MonitorCrossCheck,
   type MonitorCrossCheckStatus,
   type MonitorLiveCrossCheckStatus,
+  type MonitorScheduleOrder,
 } from "../type/types";
 
 // 한 칸의 상태. NONE 은 "아직 기록이 없는 시점"(미시작).
@@ -95,10 +96,10 @@ export interface ProgressRow {
 }
 
 /**
- * GET /inspection/all?date=오늘 + GET /inspection/slots + 모니터 스냅샷의 순회검사를
- * 합쳐 "작업자 × 제품·설비" 한 줄마다 시점별 진행 상태를 만든다.
+ * GET /inspection/all?date=오늘 + 칸 구성(GET /monitor/schedule, 없으면 GET /inspection/slots)
+ * + 모니터 스냅샷의 순회검사를 합쳐 "작업자 × 작업지시" 한 줄마다 시점별 진행 상태를 만든다.
  *
- * 검사 기록은 진행된 시점에만 존재하므로, 슬롯 목록을 기준으로 놓고 기록을 얹는다.
+ * 검사 기록은 진행된 시점에만 존재하므로, 칸 목록을 기준으로 놓고 기록을 얹는다.
  * 기록이 없는 시점이 곧 미시작(NONE).
  */
 export function buildProgressRows(
@@ -107,6 +108,8 @@ export function buildProgressRows(
   crossChecks: MonitorCrossCheck[] = [],
   /** 담당 작업자가 없는 줄의 표시 이름 — 호출부가 번역해서 넘긴다. */
   unassignedLabel = "미배정",
+  /** GET /monitor/schedule 의 작업지시 행 — 줄의 칸 구성을 여기서 가져온다. */
+  scheduleOrders: MonitorScheduleOrder[] = [],
 ): ProgressRow[] {
   // 진행중 순회검사를 대상 자주검사 id 로 색인한다. 한 검사에 한 건이 정상이지만,
   // 겹쳐 오면 가장 최근 것을 그 칸의 상태로 본다.
@@ -118,12 +121,12 @@ export function buildProgressRows(
     }
   }
 
-  // 작업자·제품·설비·교대가 같으면 한 줄. 같은 조합에 여러 시점 기록이 붙는다.
-  // 교대를 키에 넣는 건 같은 사람이 주간·야간 지시를 다 맡았을 때 두 줄로 나누기 위해서다.
+  // 작업자·작업지시가 같으면 한 줄. 같은 조합에 여러 시점 기록이 붙는다.
+  // 작업지시가 제품·설비·교대를 정하므로, 같은 사람이 주간·야간 지시를 다 맡으면 두 줄이 된다.
   const groups = new Map<string, AdminInspection[]>();
   for (const ins of inspections) {
     const worker = ins.production?.name ?? unassignedLabel;
-    const key = `${worker}|${ins.product.id}|${ins.equipment.id}|${ins.shift ?? ""}`;
+    const key = `${worker}|${ins.orderId}`;
     const bucket = groups.get(key);
     if (bucket) bucket.push(ins);
     else groups.set(key, [ins]);
@@ -131,16 +134,12 @@ export function buildProgressRows(
 
   const rows: ProgressRow[] = [];
 
+  const scheduleByOrder = new Map(
+    scheduleOrders.map((o) => [o.orderId, o] as const),
+  );
+
   for (const [key, group] of groups) {
     const first = group[0];
-    // 슬롯 목록은 공정 템플릿 전체라 주간·야간이 함께 온다. 줄의 교대 칸만 남긴다 —
-    // 안 거르면 주간 줄에 야간 칸이 붙어 남은 시점·지연이 부풀려진다(10-14 백엔드 답변).
-    // 교대를 모르는 줄은 거르지 않는다.
-    const slots = slotsByProcess[first.product.process]?.filter(
-      (s) => !first.shift || !s.shift || s.shift === first.shift,
-    );
-    // 슬롯을 아직 못 받았으면 이 줄은 그릴 수 없다 (칸 개수를 모름).
-    if (!slots || slots.length === 0) continue;
 
     // 한 시점에 기록이 여러 개일 수 있다(재검사 등). 가장 최근 것이 현재 상태.
     const latestByType = new Map<string, AdminInspection>();
@@ -149,15 +148,20 @@ export function buildProgressRows(
       if (!prev || recordTs(ins) > recordTs(prev)) latestByType.set(ins.type, ins);
     }
 
-    const cells: ProgressCell[] = slots.map((slot) => {
-      const rec = latestByType.get(slot.type);
+    const defs =
+      scheduleCells(scheduleByOrder.get(first.orderId), latestByType) ??
+      processCells(slotsByProcess[first.product.process], first, latestByType);
+    // 칸 구성을 아직 못 받았으면 이 줄은 그릴 수 없다 (칸 개수를 모름).
+    if (!defs || defs.length === 0) continue;
+
+    const cells: ProgressCell[] = defs.map(({ type, label, time, rec }) => {
       const status = (rec?.status as CellStatus) ?? "NONE";
       const live = rec ? (liveByInspection.get(rec.inspectionId) ?? null) : null;
       return {
-        type: slot.type,
+        type,
         inspectionId: rec?.inspectionId ?? null,
-        label: slot.label || slot.type,
-        time: slot.time ?? null,
+        label,
+        time,
         status,
         cross: crossCellStatus(status, rec?.hasCrossCheck, live),
         crossCheck: live,
@@ -203,6 +207,66 @@ export function buildProgressRows(
       a.settled / a.cells.length - b.settled / b.cells.length ||
       a.workerName.localeCompare(b.workerName),
   );
+}
+
+/** 한 칸의 뼈대 — 칸 목록 출처와 무관하게 같은 모양으로 맞춘다. */
+interface CellDef {
+  /** 슬롯 코드. schedule 칸은 코드가 없어 기록이 없으면 "#순서"로 둔다(렌더 key 용). */
+  type: string;
+  label: string;
+  time: string | null;
+  rec: AdminInspection | undefined;
+}
+
+/**
+ * 작업지시의 실제 슬롯 칸(GET /monitor/schedule). 제품별 템플릿과 교대가 반영돼 있다.
+ *
+ * 이 응답의 칸에는 슬롯 코드가 없어 기록과는 라벨로 맞춘다 — 한 작업지시 안에서
+ * 라벨은 겹치지 않는다. 기록 하나라도 칸을 못 찾으면 칸 구성이 어긋난 것이라 null 을
+ * 돌려 공정 슬롯으로 그리게 한다. 기록을 빠뜨린 채 그리는 것보다 낫다.
+ */
+function scheduleCells(
+  order: MonitorScheduleOrder | undefined,
+  latestByType: Map<string, AdminInspection>,
+): CellDef[] | null {
+  if (!order || order.slots.length === 0) return null;
+  const byLabel = new Map<string, AdminInspection>();
+  for (const rec of latestByType.values()) {
+    if (!order.slots.some((s) => s.label === rec.typeLabel)) return null;
+    byLabel.set(rec.typeLabel, rec);
+  }
+  return order.slots.map((slot) => {
+    const rec = byLabel.get(slot.label);
+    return {
+      type: rec?.type ?? `#${slot.slotOrder}`,
+      label: slot.label,
+      time: slot.time ?? null,
+      rec,
+    };
+  });
+}
+
+/**
+ * 공정 기본 슬롯(GET /inspection/slots) — schedule 을 못 받았거나 맞지 않을 때의 대안.
+ *
+ * 공정 템플릿 전체라 주간·야간이 함께 온다. 줄의 교대 칸만 남긴다 — 안 거르면 주간
+ * 줄에 야간 칸이 붙어 남은 시점·지연이 부풀려진다. 교대를 모르는 줄은 거르지 않는다.
+ * 제품별 템플릿이 있는 제품은 칸 구성이 실제와 다를 수 있다.
+ */
+function processCells(
+  slots: InspectionSlot[] | undefined,
+  first: AdminInspection,
+  latestByType: Map<string, AdminInspection>,
+): CellDef[] | null {
+  if (!slots) return null;
+  return slots
+    .filter((s) => !first.shift || !s.shift || s.shift === first.shift)
+    .map((slot) => ({
+      type: slot.type,
+      label: slot.label || slot.type,
+      time: slot.time ?? null,
+      rec: latestByType.get(slot.type),
+    }));
 }
 
 /** 줄에 걸린 진행중 순회검사 중 가장 급한 것. 하나도 없으면 맨 뒤. */

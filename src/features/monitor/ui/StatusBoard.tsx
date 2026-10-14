@@ -2,6 +2,7 @@ import { useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "axios";
 import { useAllSlots } from "../api/useAllSlots";
+import { useMonitorSchedule } from "../api/useMonitorSchedule";
 import { useTodayInspections } from "../api/useTodayInspections";
 import { buildProgressRows } from "../lib/buildProgress";
 import type {
@@ -77,6 +78,7 @@ export default function StatusBoard({
   today: string;
 }) {
   const { t } = useTranslation("monitor");
+  const { data: schedule } = useMonitorSchedule();
   const slotsByProcess = useAllSlots();
   const inspectionsQuery = useTodayInspections(today);
   const { data: inspections } = inspectionsQuery;
@@ -106,9 +108,10 @@ export default function StatusBoard({
             slotsByProcess,
             crossChecks,
             t("worker.unassigned"),
+            schedule?.orders,
           )
         : [],
-    [inspections, slotsByProcess, crossChecks, t],
+    [inspections, slotsByProcess, crossChecks, t, schedule?.orders],
   );
 
   // 접속 여부는 모니터 스냅샷(SSE)에서 온다 — 진행도와 출처가 다르다.
