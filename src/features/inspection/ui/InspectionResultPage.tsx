@@ -449,7 +449,8 @@ export default function InspectionResultPage() {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder={t("result.notePlaceholder")}
-            disabled={isBusy}
+            // 제출 뒤엔 고쳐도 저장되지 않는다 — 화면만 바뀌어 접수된 값과 어긋나므로 잠근다.
+            disabled={isBusy || postSubmitMode !== null}
             rows={3}
             maxLength={500}
             className="mt-2 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
@@ -468,7 +469,7 @@ export default function InspectionResultPage() {
               id="incomplete-reason"
               value={reasonKey}
               onChange={(e) => setReasonKey(e.target.value)}
-              disabled={isBusy}
+              disabled={isBusy || postSubmitMode !== null}
               className="mt-1 h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
             >
               <option value="">{t("result.noReason")}</option>
@@ -489,7 +490,7 @@ export default function InspectionResultPage() {
                 onChange={(e) => setCustomReason(e.target.value)}
                 maxLength={REASON_MAX_LENGTH}
                 placeholder={t("result.customReasonPlaceholder")}
-                disabled={isBusy}
+                disabled={isBusy || postSubmitMode !== null}
                 rows={3}
                 className="mt-2 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
               />

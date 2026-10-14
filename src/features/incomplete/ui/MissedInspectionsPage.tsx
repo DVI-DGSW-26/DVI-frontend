@@ -92,6 +92,12 @@ export default function MissedInspectionsPage() {
       {!isLoading && !isError && empty && (
         <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
           {t("missed.empty")}
+          {/* 시작 안 한 시점이 모두 오래돼 빠졌으면 섹션이 통째로 숨으니 여기서 알린다. */}
+          {groups.notStartedOlder > 0 && (
+            <span className="mt-1 block text-xs">
+              {t("missed.notStartedOlder", { n: groups.notStartedOlder })}
+            </span>
+          )}
         </p>
       )}
 

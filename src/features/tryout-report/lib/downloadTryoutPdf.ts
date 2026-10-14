@@ -108,22 +108,32 @@ function bodyRows(sorted: TryoutItem[], photos: Photo[]): string {
     .join("");
 }
 
+// 한 쪽에 사진 한 줄(2장)만 둔다. 칸 높이가 150mm 라 두 줄이면 쪽이 넘쳐 통째로 줄어든다.
+const PHOTOS_PER_SHEET = 2;
+// 사진 하나를 기다리는 최대 시간.
+const IMAGE_LOAD_TIMEOUT_MS = 20_000;
+
 function photoPage(r: TryoutReportDetail, photos: Photo[]): string {
   if (photos.length === 0) return "";
   const t = i18n.getFixedT(null, "tryoutReport");
-  const figures = photos
-    .map(
-      (p, i) => `<figure>
+  const figure = (p: Photo, i: number) => `<figure>
         <figcaption><b>${escapeHtml(t("print.photoRef", { n: i + 1 }))}</b> ${escapeHtml(p.caption)} ${resultMark(p.item.result)}</figcaption>
         <div class="frame"><img src="${escapeHtml(toSameOriginImageUrl(p.item.imageUrl))}" alt="${escapeHtml(p.caption)}" /></div>
         ${p.item.note ? `<p class="note">${escapeHtml(p.item.note)}</p>` : ""}
-      </figure>`,
-    )
-    .join("");
-  return `<section class="sheet photos">
-    <h2>${escapeHtml(t("roundTitle", { n: r.roundNo }))} · ${escapeHtml(r.productCode)} — ${escapeHtml(t("print.photoTitle"))}</h2>
+      </figure>`;
+  const title = `${escapeHtml(t("roundTitle", { n: r.roundNo }))} · ${escapeHtml(r.productCode)} — ${escapeHtml(t("print.photoTitle"))}`;
+  const sheets: string[] = [];
+  for (let start = 0; start < photos.length; start += PHOTOS_PER_SHEET) {
+    const figures = photos
+      .slice(start, start + PHOTOS_PER_SHEET)
+      .map((p, j) => figure(p, start + j))
+      .join("");
+    sheets.push(`<section class="sheet photos">
+    <h2>${title}</h2>
     <div class="figures">${figures}</div>
-  </section>`;
+  </section>`);
+  }
+  return sheets.join("");
 }
 
 function buildHtml(r: TryoutReportDetail): string {
@@ -282,15 +292,26 @@ async function renderInFrame(html: string): Promise<HTMLIFrameElement> {
     Array.from(doc.images).map(
       (img) =>
         new Promise<void>((resolve) => {
+          let settled = false;
+          const done = () => {
+            settled = true;
+            clearTimeout(timer);
+            resolve();
+          };
           const broken = () => {
+            if (settled) return;
             const note = doc.createElement("span");
             note.className = "broken";
             note.textContent = failed;
             img.replaceWith(note);
-            resolve();
+            done();
           };
-          if (img.complete) return img.naturalWidth > 0 ? resolve() : broken();
-          img.addEventListener("load", () => resolve());
+          // 응답이 오지 않는 사진 하나 때문에 다운로드가 끝없이 "다운로드 중"에 머물지 않게.
+          const timer = setTimeout(broken, IMAGE_LOAD_TIMEOUT_MS);
+          if (img.complete) return img.naturalWidth > 0 ? done() : broken();
+          img.addEventListener("load", () => {
+            if (!settled) done();
+          });
           img.addEventListener("error", broken);
         }),
     ),

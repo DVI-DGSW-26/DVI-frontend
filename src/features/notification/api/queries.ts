@@ -47,10 +47,11 @@ export function useNotifications() {
   };
 }
 
-export function useUnreadCount() {
+export function useUnreadCount(enabled = true) {
   return useQuery({
     queryKey: notificationKeys.unreadCount(),
     queryFn: getUnreadCount,
+    enabled,
     refetchInterval: 30_000,
   });
 }

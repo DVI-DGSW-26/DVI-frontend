@@ -148,25 +148,6 @@ export default function InspectionMeasurePage() {
     return map;
   }, [productDetailQuery.data]);
 
-  // TEMP DEBUG: 흰 화면 / 빈 results 원인 추적용.
-  console.log("🟠 측정 페이지 진입 inspectionId:", inspectionId);
-  console.log("🟠 location.state:", location.state);
-  console.log(
-    "🟠 detailQuery 상태:",
-    detailQuery.status,
-    "isLoading:",
-    detailQuery.isLoading,
-    "isFetching:",
-    detailQuery.isFetching,
-  );
-  console.log(
-    "🟠 detail.results:",
-    detail?.results,
-    "length:",
-    detail?.results?.length,
-  );
-  console.log("🟠 detail.product:", detail?.product);
-
   // 1차: GET /inspection/{id}.results 가 single source of truth.
   // 신규 검사도 백엔드가 results 를 미리 채워서 내려주는 게 정상.
   // 2차 폴백: results 가 비어있으면 POST /inspection 응답(state.inspection)의 dims 를 사용.
@@ -541,7 +522,6 @@ export default function InspectionMeasurePage() {
   };
 
   const handleCropConfirm = async (blob: Blob) => {
-    console.log("🟠 handleCropConfirm 진입 blob:", blob);
     console.info("[crop] confirm — blob size:", blob.size, "type:", blob.type);
     setCroppedBlob(blob);
     setUploadedImageUrl(null);
