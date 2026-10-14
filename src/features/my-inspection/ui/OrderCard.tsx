@@ -15,8 +15,8 @@ interface Props {
   inspection: MyInspection;
   /** DRAFT·SKIPPED 검사 한정 — ⋮ 메뉴에 "삭제" 항목 노출. */
   onRequestDelete?: (inspection: MyInspection) => void;
-  /** COMPLETED 검사 한정 — 다음 시점 시작 액션. 마지막 시점이면 부모가 nextType 을 안 넘김. */
-  nextType?: string | null;
+  /** COMPLETED 검사 한정 — 다음 시점 시작 액션. 마지막 시점이면 부모가 nextLabel 을 안 넘김. 값은 표시용 시점 이름. */
+  nextLabel?: string | null;
   onStartNext?: (inspection: MyInspection) => void;
   isStartingNext?: boolean;
   /** COMPLETED 검사 한정 — 같은 슬롯으로 새 검사("다시 검사") 시작. */
@@ -27,7 +27,7 @@ interface Props {
 export default function OrderCard({
   inspection,
   onRequestDelete,
-  nextType,
+  nextLabel,
   onStartNext,
   isStartingNext,
   onRestart,
@@ -40,7 +40,7 @@ export default function OrderCard({
     !!onRequestDelete &&
     (inspection.status === "DRAFT" || inspection.status === "SKIPPED");
   const showNext =
-    !!nextType && !!onStartNext && opensNextSlot(inspection.status);
+    !!nextLabel && !!onStartNext && opensNextSlot(inspection.status);
   // 다시 재기 = 같은 검사 재오픈. 순회검사가 시작된 건은 서버가 막으므로(반려로만 되돌림) 숨긴다.
   const canRestart =
     !!onRestart && inspection.status === "COMPLETED" && !inspection.hasCrossCheck;
@@ -166,7 +166,7 @@ export default function OrderCard({
                   className="text-[#931B82]"
                 />
                 <span>{t("orderCard.next")}</span>
-                <span className="font-medium text-[#212121]">{nextType}</span>
+                <span className="font-medium text-[#212121]">{nextLabel}</span>
               </div>
               <button
                 type="button"

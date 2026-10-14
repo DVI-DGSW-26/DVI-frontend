@@ -9,6 +9,8 @@ import type {
   ReportStageInfo,
 } from "../api/types";
 import { getReportDetail } from "../api/reportApi";
+import { getProcesses } from "../../process/api/processApi";
+import { processDisplayName } from "../../process/lib/processLookup";
 import {
   collectStageColumns,
   findMeasurement,
@@ -379,7 +381,7 @@ function shiftRow(detail: ReportDetail): string {
   return `<div><span class="label">${escapeHtml(tr("pdfDoc.shift"))}</span> ${escapeHtml(tr(`shift.${shift}`))}</div>`;
 }
 
-function buildHtml(detail: ReportDetail): string {
+function buildHtml(detail: ReportDetail, processLabel: string): string {
   // 차수 열이 붙은 통합 보고서는 표가 넓어 A4 세로로는 잘린다.
   const wide =
     hasStageMeasurements(detail.results) || orderedStageInfos(detail).length > 1;
@@ -443,7 +445,7 @@ function buildHtml(detail: ReportDetail): string {
   <div class="grid">
     <div><span class="label">${escapeHtml(tr("pdfDoc.customer"))}</span> ${escapeHtml(detail.customerName)}</div>
     <div><span class="label">${escapeHtml(tr("pdfDoc.product"))}</span> ${escapeHtml(detail.productName)} (${escapeHtml(detail.productCode)})</div>
-    <div><span class="label">${escapeHtml(tr("pdfDoc.process"))}</span> ${escapeHtml(detail.process)}</div>
+    <div><span class="label">${escapeHtml(tr("pdfDoc.process"))}</span> ${escapeHtml(processLabel)}</div>
     <div><span class="label">${escapeHtml(tr("pdfDoc.equipment"))}</span> ${escapeHtml(detail.equipmentName)}</div>
     <div><span class="label">${escapeHtml(tr("pdfDoc.inspectionRound"))}</span> ${escapeHtml(inspectionLabelText(detail))}</div>
     ${shiftRow(detail)}
@@ -497,9 +499,17 @@ export async function downloadReportPdf(reportId: number): Promise<void> {
     `<!doctype html><html><body style="font-family:sans-serif;padding:24px;color:#6B7280">${i18n.t("report:pdf.loading")}</body></html>`,
   );
   try {
-    const detail = await getReportDetail(reportId);
+    // 공정은 코드로 오므로 화면처럼 표시명으로 바꾼다. 목록을 못 받으면 코드 그대로.
+    const [detail, processes] = await Promise.all([
+      getReportDetail(reportId),
+      getProcesses(true).catch(() => []),
+    ]);
+    const processInfo = processes.find((p) => p.code === detail.process);
+    const processLabel = processInfo
+      ? processDisplayName(processInfo.code, processInfo.label)
+      : detail.process;
     w.document.open();
-    w.document.write(buildHtml(detail));
+    w.document.write(buildHtml(detail, processLabel));
     w.document.close();
     w.focus();
   } catch {

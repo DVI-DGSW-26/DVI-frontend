@@ -51,6 +51,11 @@ export default function ProductScheduleDrawer({
   const { mutate: save, isPending: isSaving } = useUpdateProductSchedule();
   const { mutate: remove, isPending: isDeleting } = useDeleteProductSchedule();
   const [saveError, setSaveError] = useState<string | null>(null);
+  // 닫을 때 실패 문구를 지운다 — 남겨 두면 다음에 연 다른 항목 폼에 그대로 뜬다.
+  const handleClose = () => {
+    setSaveError(null);
+    onClose();
+  };
 
   const hasOverride = !!override;
   const seed = override ?? base ?? null;
@@ -116,7 +121,7 @@ export default function ProductScheduleDrawer({
   return (
     <ScheduleDrawer
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       title={t("product.title", { name: productName })}
       subtitle={
         hasOverride

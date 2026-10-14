@@ -44,6 +44,8 @@ import TryoutReportFormPage from "./features/tryout-report/ui/TryoutReportFormPa
 
 import { useTranslation } from "react-i18next";
 import { useAuth } from "./features/auth/AuthContext";
+import { ROLE_HOME } from "./features/auth/constants";
+import { Navigate } from "react-router-dom";
 import { useNotificationAlerts } from "./features/notification/model/useNotificationAlerts";
 import ServerStatusOverlay from "./components/shared/ServerStatusOverlay";
 
@@ -71,6 +73,10 @@ function HomePage() {
   // 보이는 관리자 대시보드로 둔다. 다른 역할 화면은 메뉴로 들어간다.
   if (user?.role === "ADMIN" || user?.role === "TEST") return <DashboardPage />;
   if (user?.role === "QUALITY") return <QualityHomePage />;
+  // 품질관리자는 "/" 에 화면이 없다 — 권한 밖 링크·404 "홈으로"가 모두 "/" 로 보내므로
+  // 실제 첫 화면(ROLE_HOME)으로 넘긴다.
+  if (user?.role === "QUALITY_ADMIN")
+    return <Navigate to={ROLE_HOME.QUALITY_ADMIN} replace />;
 
   return <div className="p-6">{t("home", { ns: "shared" })}</div>;
 }
@@ -110,7 +116,8 @@ function App() {
             />
 
             <Route element={<RouteGuard roles={["ADMIN"]} />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
+              {/* 예전 첫 화면 주소 — 대시보드는 "/" 로 합쳤다(메뉴 선택·헤더 제목이 "/" 기준). */}
+              <Route path="/dashboard" element={<Navigate to="/" replace />} />
 
               {/* 계정(가입 요청) 승인 — 대시보드 "빠른 승인 대기"의 전체보기 진입점. */}
               <Route path="/approval" element={<AccountApprovalPage />} />

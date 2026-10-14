@@ -28,6 +28,11 @@ export default function ProcessScheduleDrawer({ open, onClose, process }: Props)
   } = useProcessSchedule(open ? process?.code : null);
   const { mutate: save, isPending } = useUpdateProcessSchedule();
   const [saveError, setSaveError] = useState<string | null>(null);
+  // 닫을 때 실패 문구를 지운다 — 남겨 두면 다음에 연 다른 항목 폼에 그대로 뜬다.
+  const handleClose = () => {
+    setSaveError(null);
+    onClose();
+  };
 
   const handleSubmit = (body: UpdateInspectionScheduleRequest) => {
     if (!process) return;
@@ -50,7 +55,7 @@ export default function ProcessScheduleDrawer({ open, onClose, process }: Props)
   return (
     <ScheduleDrawer
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       title={
         process
           ? t("scheduleDrawer.title", { name: process.label })
