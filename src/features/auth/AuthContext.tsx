@@ -13,6 +13,7 @@ import {
   accountStorage,
   getMe,
   login as loginApi,
+  SESSION_CLEARED_EVENT,
   tokenStorage,
   updateMyLanguage,
 } from "./api";
@@ -136,6 +137,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     refresh().finally(() => setLoading(false));
   }, [refresh]);
+
+  // 쓰는 도중 refresh 토큰까지 만료되면 인터셉터가 토큰만 지운다. 화면이 로그인된 채
+  // 모든 요청이 실패하지 않도록 사용자도 비워 RouteGuard 가 로그인으로 보내게 한다.
+  // 한 틱 미룬다 — 계정 전환이 실패하면 지운 직후 이전 계정을 다시 올리기 때문.
+  useEffect(() => {
+    let timer: number | undefined;
+    const onCleared = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        if (tokenStorage.getAccess()) return;
+        queryClient.clear();
+        setUser(null);
+        setAccounts(accountStorage.list());
+      }, 0);
+    };
+    window.addEventListener(SESSION_CLEARED_EVENT, onCleared);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener(SESSION_CLEARED_EVENT, onCleared);
+    };
+  }, [queryClient]);
 
   // 화면 언어(이 기기에서 고른 값)를 서버에도 맞춘다 — 서버가 보내는 에러·알림 문구가
   // 그 언어로 온다. 로그인·계정 전환 때 한 번, 그리고 언어를 바꿀 때마다.

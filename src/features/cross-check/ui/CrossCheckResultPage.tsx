@@ -142,13 +142,25 @@ export default function CrossCheckResultPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [detail]);
 
+  // 이 화면에서 건너뜀을 푼 항목. 측정 화면에서 넘어온 state 결과는 refetch 로
+  // 바뀌지 않고, 값 없이 풀린 항목은 fallback 에서도 건너뜀으로 보이므로 직접 덮는다.
+  // 결재 요청을 마쳤는지. 성공 뒤 목록으로 넘어갈 때까지 버튼을 다시 막는다.
+  const [submitted, setSubmitted] = useState(false);
+  const [unskippedDimNos, setUnskippedDimNos] = useState<Set<number>>(
+    () => new Set(),
+  );
+
   const results = useMemo<StepResult[]>(() => {
-    return baseResults.map((r) =>
-      editedValues[r.dimNo] != null
-        ? { ...r, measuredValue: editedValues[r.dimNo] }
-        : r,
-    );
-  }, [baseResults, editedValues]);
+    return baseResults.map((r) => {
+      const next: StepResult =
+        r.status === "skipped" && unskippedDimNos.has(r.dimNo)
+          ? { ...r, status: "completed" }
+          : r;
+      return editedValues[r.dimNo] != null
+        ? { ...next, measuredValue: editedValues[r.dimNo] }
+        : next;
+    });
+  }, [baseResults, editedValues, unskippedDimNos]);
 
   const hasSkipped = useMemo(
     () => results.some((r) => r.status === "skipped"),
@@ -256,6 +268,10 @@ export default function CrossCheckResultPage() {
       });
       // 저장 직후 제출 — 마지막 차수는 결재 대기(PENDING_APPROVAL), 그 앞은 바로 COMPLETED.
       await completeMut.mutateAsync();
+      // 제출은 끝났다 — 목록으로 넘어가기 전 상태 확인·안내 동안 다시 누르지 못하게.
+      setSubmitted(true);
+      // 제출은 끝났다 — 목록으로 넘어가기 전 상태 확인·안내 동안 다시 누르지 못하게.
+      setSubmitted(true);
       // 안내는 예측이 아니라 서버가 실제로 바꾼 상태로 고른다. 못 읽으면 예측값.
       const fresh = await getCrossCheckDetail(crossCheckId).catch(() => null);
       const sentToApproval = fresh
@@ -291,6 +307,7 @@ export default function CrossCheckResultPage() {
       await saveMut.mutateAsync({
         results: [{ resultId: meta.resultId, skipped: false }],
       });
+      setUnskippedDimNos((prev) => new Set(prev).add(dimNo));
       await detailQuery.refetch();
       setToast(t("result.skipCancelled"));
     } catch (err) {
@@ -507,7 +524,9 @@ export default function CrossCheckResultPage() {
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={!canSubmit || saveMut.isPending || completeMut.isPending}
+          disabled={
+            !canSubmit || submitted || saveMut.isPending || completeMut.isPending
+          }
           className="h-12 w-full rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
         >
           {saveMut.isPending || completeMut.isPending

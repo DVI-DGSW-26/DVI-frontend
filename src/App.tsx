@@ -1,5 +1,5 @@
 import SignupForm from "./features/auth/ui/SignupForm";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useParams } from "react-router-dom";
 import LoginForm from "./features/auth/ui/LoginForm";
 import MyPage from "./features/auth/ui/MyPage";
 import Layout from "./components/layout/Layout";
@@ -52,6 +52,13 @@ import ServerStatusOverlay from "./components/shared/ServerStatusOverlay";
 function NotificationAlerts() {
   useNotificationAlerts();
   return null;
+}
+
+// 측정 화면에서 조기 마감하면 같은 라우트의 새 검사(재검사 초품)로 이동한다.
+// 검사 id 로 key 를 걸어 화면을 새로 만든다 — 아니면 이전 검사의 진행 위치·사진이 남는다.
+function InspectionMeasureRoute() {
+  const { inspectionId } = useParams();
+  return <InspectionMeasurePage key={inspectionId} />;
 }
 
 function HomePage() {
@@ -205,7 +212,7 @@ function App() {
 
               <Route
                 path="/inspection/:inspectionId/measure"
-                element={<InspectionMeasurePage />}
+                element={<InspectionMeasureRoute />}
               />
 
               <Route
