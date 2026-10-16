@@ -80,10 +80,17 @@ const AdminReportCard = ({ report, onClick }: Props) => {
       className="flex cursor-pointer items-stretch gap-4 rounded-2xl bg-white px-5 py-4 text-left shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#931B82]"
     >
       <div className="flex min-w-0 flex-1 flex-col gap-2">
-      <div className="flex items-center gap-3">
-        <span className="truncate text-base font-bold text-[#212121]">
-          {report.reportNumber}
-        </span>
+      {/* 보고서 번호는 한 줄을 다 쓴다 — 3열 목록에서 판정 배지와 같은 줄이면 끝이 잘렸다. */}
+      <span className="truncate text-base font-bold text-[#212121]">
+        {report.reportNumber}
+      </span>
+
+      <div className="flex min-w-0 items-center gap-2">
+        {report.productName && (
+          <span className="truncate text-sm font-medium text-[#212121]">
+            {report.productName}
+          </span>
+        )}
         <span
           className={`flex shrink-0 items-center gap-1 text-xs font-medium ${
             isPass ? "text-[#22C55E]" : "text-[#EF4444]"
@@ -97,12 +104,6 @@ const AdminReportCard = ({ report, onClick }: Props) => {
           {isPass ? t("result.pass") : t("result.fail")}
         </span>
       </div>
-
-      {report.productName && (
-        <p className="truncate text-sm font-medium text-[#212121]">
-          {report.productName}
-        </p>
-      )}
 
       <p className="text-sm text-[#6B7280]">
         {processLabel}
@@ -134,20 +135,30 @@ const AdminReportCard = ({ report, onClick }: Props) => {
       </p>
       </div>
 
-      {/* 목록에서 바로 파일로 저장 — 카드 오른쪽 높이에 맞춘 큰 버튼(UX 13). */}
+      {/* 목록에서 바로 파일로 저장 — 카드 오른쪽 높이에 맞춘 큰 버튼(UX 13).
+          목록이 3열 격자라 카드가 좁다 — 화살표를 글자 위로 올려 폭을 줄이고 보고서 번호
+          자리를 남긴다(옆으로 늘어놓으면 번호가 "DV-AL-IR-..."로 잘렸다). */}
       <button
         type="button"
         onClick={handleDownload}
         disabled={downloading}
-        className="flex w-32 shrink-0 items-center justify-center gap-1.5 self-stretch rounded-xl bg-[#931B82] px-3 text-base font-bold text-white transition-colors hover:bg-[#6A0F5D] disabled:cursor-not-allowed disabled:opacity-60 sm:w-40"
+        className="flex w-[5.5rem] shrink-0 flex-col items-center justify-center gap-1 self-stretch rounded-xl bg-[#931B82] px-2 text-sm font-bold text-white transition-colors hover:bg-[#6A0F5D] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <Icon
-          icon={downloading ? "mdi:loading" : "mdi:arrow-down"}
-          width={20}
-          height={20}
-          className={downloading ? "animate-spin" : undefined}
-        />
-        {downloading ? t("card.savingPdf") : t("card.savePdf")}
+        {downloading ? (
+          <Icon
+            icon="mdi:loading"
+            width={22}
+            height={22}
+            className="animate-spin"
+          />
+        ) : (
+          <span aria-hidden className="text-xl leading-none">
+            ↓
+          </span>
+        )}
+        <span className="whitespace-nowrap">
+          {downloading ? t("card.savingPdf") : t("card.savePdf")}
+        </span>
       </button>
     </div>
   );
