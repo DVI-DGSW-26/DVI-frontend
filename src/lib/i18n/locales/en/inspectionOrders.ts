@@ -68,11 +68,17 @@ export default {
     shift: "Shift",
     shiftDay: "Day",
     shiftNight: "Night",
-    shiftBoth: "Both",
-    shiftBothDesc: "Registers 2 orders: one for day shift and one for night shift.",
-    shiftChoiceDesc:
-      "This product has both day and night schedules, so a shift must be selected.",
+    shiftDefaultDesc:
+      "Day is preselected from 06:00 to 17:00, night from 17:00 to 06:00. If the start time is unknown, select both.",
+    shiftBothDesc:
+      "Registers a day order and a night order together. If either fails, neither is registered.",
+    shiftLocked: "The shift of a registered order cannot be changed.",
+    nightFromDaySchedule:
+      "This product has no night schedule, so night initial/middle/final rounds are created without set times. Time reminders and delay indicators on the status board will not work. If night work is regular, ask a quality manager to register a night schedule.",
+    dayMissing: "This product has no day schedule. Please check the shift.",
     workers: "Self-Inspection Workers (Production)",
+    dayWorkers: "Day Shift Workers (Production)",
+    nightWorkers: "Night Shift Workers (Production)",
     workersDesc: "Multiple co-workers can be selected.",
     workersSelected: "{{n}} selected",
     noWorkers: "No workers available for assignment.",
@@ -82,6 +88,5 @@ export default {
     submitEditing: "Saving...",
     createError: "An error occurred while registering.",
     updateError: "An error occurred while updating the inspection order.",
-    partialCreated: "{{n}} order(s) were registered.",
   },
 } as const;

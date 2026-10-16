@@ -3,6 +3,7 @@ import { getEquipment } from "./equipmentApi";
 import { getProducts } from "./productApi";
 import {
   copyInspectionOrders,
+  createDayNightInspectionOrder,
   createInspectionOrder,
   deleteInspectionOrder,
   getInspectionOrderDetail,
@@ -107,6 +108,16 @@ export function useCreateInspectionOrder() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: createInspectionOrder,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: inspectionOrderKeys.list() });
+    },
+  });
+}
+
+export function useCreateDayNightInspectionOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: createDayNightInspectionOrder,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: inspectionOrderKeys.list() });
     },

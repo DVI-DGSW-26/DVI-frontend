@@ -13,6 +13,7 @@ import type { InspectionOrder, InspectionOrderStatus } from "../api";
 import { orderWorkers, workerNames } from "../lib/orderWorkers";
 import { kstDateKey } from "../../../lib/datetime";
 import { useViewState } from "../../../lib/viewState";
+import ShiftBadge from "../../../components/shared/ShiftBadge";
 
 // 상태 코드 → inspectionOrders 네임스페이스 i18n 키
 const STATUS_LABEL_KEY: Record<string, string> = {
@@ -378,7 +379,13 @@ function DesktopTable({ orders, isLoading, isError, isDeleting, onEdit, onDelete
           )}
           {orders.map((order) => (
             <tr key={order.id} className="hover:bg-gray-50">
-              <td className="px-4 py-3 whitespace-nowrap">{order.targetDate}</td>
+              {/* 주·야 동시 등록이면 같은 제품·설비·날짜 행이 2개라 교대로 구분한다. */}
+              <td className="px-4 py-3 whitespace-nowrap">
+                <span className="inline-flex items-center gap-1.5">
+                  {order.targetDate}
+                  <ShiftBadge shift={order.shift} compact />
+                </span>
+              </td>
               <td className="px-4 py-3">{order.product?.name ?? "-"}</td>
               <td className="px-4 py-3">{order.equipment?.name ?? "-"}</td>
               <td className="px-4 py-3">{order.customer?.name ?? "-"}</td>
@@ -446,8 +453,11 @@ function MobileList({ orders, isLoading, isError, isDeleting, onEdit, onDelete }
         >
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <div className="truncate text-base font-semibold text-[#212121]">
-                {order.product?.name ?? "-"}
+              <div className="flex min-w-0 items-center gap-1.5">
+                <span className="truncate text-base font-semibold text-[#212121]">
+                  {order.product?.name ?? "-"}
+                </span>
+                <ShiftBadge shift={order.shift} compact />
               </div>
               <div className="mt-0.5 truncate text-xs text-[#6B7280]">
                 {order.customer?.name ?? "-"} · {order.equipment?.name ?? "-"}

@@ -3,6 +3,7 @@ import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
 import { useTranslation } from "react-i18next";
 import {
+  useCreateDayNightInspectionOrder,
   useCreateInspectionOrder,
   useEquipmentList,
   useProductList,
@@ -11,6 +12,7 @@ import {
 } from "../api";
 import type { InspectionOrder } from "../api";
 import { orderWorkers } from "../lib/orderWorkers";
+import { defaultOrderShift, orderWorkDayKey } from "../lib/orderWorkDay";
 import { useAuth } from "../../auth/AuthContext";
 import type { User, WorkType } from "../../auth/type/types";
 import { useProductSlots } from "../../inspection/api";
@@ -41,22 +43,17 @@ function resolveManagerWorkType(user: User | null): WorkType | null {
   return null;
 }
 
-// 교대 선택. "둘 다" 는 POST 를 주간·야간으로 두 번 보내 지시 2건을 만든다
-// (서버는 요청 1건당 교대 1개만 받는다).
-type ShiftChoice = Shift | "BOTH";
-
-const SHIFT_CHOICES: { value: ShiftChoice; labelKey: string }[] = [
+// 교대는 주간·야간을 따로 켜고 끈다. 둘 다 켜면 주·야 지시 2건을 한 번에 만든다
+// (POST /inspection-order/day-night). 한쪽만 켜면 기존 단건 등록에 shift 를 실어 보낸다.
+const SHIFTS: { value: Shift; labelKey: string }[] = [
   { value: "DAY", labelKey: "drawer.shiftDay" },
   { value: "NIGHT", labelKey: "drawer.shiftNight" },
-  { value: "BOTH", labelKey: "drawer.shiftBoth" },
 ];
 
-function todayISO() {
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
-  const dd = String(now.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+// 기본 날짜는 기기 달력이 아니라 KST 작업일(06:00 경계)이다 — 새벽에 열면 전날이
+// 잡혀야 작업자 화면의 "오늘 지시"와 맞는다. 교대 기본값도 같은 경계를 쓴다.
+function defaultTargetDate() {
+  return orderWorkDayKey(new Date());
 }
 
 export default function CreateInspectionOrderDrawer({
@@ -66,12 +63,19 @@ export default function CreateInspectionOrderDrawer({
 }: Props) {
   const { t } = useTranslation("inspectionOrders");
   const isEdit = !!order;
-  const [targetDate, setTargetDate] = useState(todayISO);
+  const [targetDate, setTargetDate] = useState(defaultTargetDate);
   const [equipmentId, setEquipmentId] = useState<number | "">("");
   const [productId, setProductId] = useState<number | "">("");
-  // 공동 작업자 — 인원 제한 없이 여러 명 배정 가능(1명이어도 배열로 보낸다).
-  const [workerIds, setWorkerIds] = useState<number[]>([]);
-  const [shiftChoice, setShiftChoice] = useState<ShiftChoice>("DAY");
+  // 켜 둔 교대. 최소 하나는 켜져 있다.
+  const [shifts, setShifts] = useState<Shift[]>(() => [
+    defaultOrderShift(new Date()),
+  ]);
+  // 교대별 공동 작업자 — 인원 제한 없이 여러 명(1명이어도 배열로 보낸다).
+  // 같은 사람을 주간·야간 양쪽에 넣어도 된다(서버도 같은 교대 안의 중복만 막는다).
+  const [workerIds, setWorkerIds] = useState<Record<Shift, number[]>>({
+    DAY: [],
+    NIGHT: [],
+  });
 
   // 드로어가 열릴 때(등록/수정 대상이 바뀔 때) 폼을 초기화한다.
   // effect 가 아니라 "렌더 중 state 조정" 패턴 — 열자마자 빈 폼을 한 번 그린 뒤
@@ -81,11 +85,17 @@ export default function CreateInspectionOrderDrawer({
   if (sessionKey !== prevSessionKey) {
     setPrevSessionKey(sessionKey);
     if (sessionKey !== null) {
-      setTargetDate(order ? order.targetDate : todayISO());
+      // 교대가 없는 예전 지시는 작업자 목록을 주간 칸에 담아 둔다.
+      const shift = order ? (order.shift ?? "DAY") : defaultOrderShift(new Date());
+      setTargetDate(order ? order.targetDate : defaultTargetDate());
       setEquipmentId(order ? order.equipment.id : "");
       setProductId(order ? order.product.id : "");
-      setWorkerIds(order ? orderWorkers(order).map((w) => w.id) : []);
-      setShiftChoice(order?.shift ?? "DAY");
+      setShifts([shift]);
+      setWorkerIds({
+        DAY: [],
+        NIGHT: [],
+        [shift]: order ? orderWorkers(order).map((w) => w.id) : [],
+      });
     }
   }
 
@@ -94,10 +104,11 @@ export default function CreateInspectionOrderDrawer({
   const { data: productionUsers = [], isLoading: loadingProduction } =
     useUsersByRole("PRODUCTION");
   const { user } = useAuth();
-  const { mutateAsync: createAsync, isPending: isCreating } =
-    useCreateInspectionOrder();
+  const { mutate: create, isPending: isCreating } = useCreateInspectionOrder();
+  const { mutate: createDayNight, isPending: isCreatingDayNight } =
+    useCreateDayNightInspectionOrder();
   const { mutate: update, isPending: isUpdating } = useUpdateInspectionOrder();
-  const isPending = isCreating || isUpdating;
+  const isPending = isCreating || isCreatingDayNight || isUpdating;
 
   // 로그인한 관리자의 담당 구분(ST/AL). 이 값으로 설비·제품·작업자를 제한해
   // 관리자가 다룰 수 없는(백엔드가 WORK_TYPE_MISMATCH 로 막는) 조합을 예방한다.
@@ -114,20 +125,32 @@ export default function CreateInspectionOrderDrawer({
       )
     : equipment;
 
-  // 선택한 제품의 실제 검사 슬롯 — 주간·야간이 둘 다 있으면 교대를 골라야 한다.
-  // (둘 다 있는데 shift 를 안 보내면 서버가 400 SHIFT_SELECTION_REQUIRED 로 막는다.)
+  // 선택한 제품에 야간 슬롯이 있는지 — 없는데 야간을 켜면 서버가 주간 구성을 본떠
+  // 시각 없는 야간 차수를 만든다는 안내를 띄우는 데만 쓴다(교대 선택은 항상 열려 있다).
   //
   // 공정 스케줄이 아니라 제품 슬롯을 보는 이유 두 가지 —
   //   1. 제품 전용 스케줄이 걸려 있으면 공정 기본과 주·야 구성이 다르다.
   //   2. 스케줄 API 는 QUALITY_ADMIN 전용이라 이 화면 주인(PRODUCTION_MANAGER)이
   //      부르면 403 이다. 슬롯 API 는 전 역할이 부를 수 있다.
-  const { data: productSlots = [] } = useProductSlots(
-    productId === "" ? null : productId,
-  );
-  const hasDaySlots = productSlots.some((s) => s.shift === "DAY");
-  const hasNightSlots = productSlots.some((s) => s.shift === "NIGHT");
-  // 수정에는 교대 변경이 없다 — 서버 수정 API 가 shift 를 받지 않는다.
-  const needsShiftChoice = !isEdit && hasDaySlots && hasNightSlots;
+  const { data: productSlots = [], isSuccess: productSlotsLoaded } =
+    useProductSlots(productId === "" ? null : productId);
+  const nightFromDaySchedule =
+    !isEdit &&
+    shifts.includes("NIGHT") &&
+    productSlotsLoaded &&
+    !productSlots.some((s) => s.shift === "NIGHT");
+  // 야간 일정만 있는 제품에 주간을 고른 경우. 서버가 야간 → 주간 본뜨기를 해 준다는
+  // 안내는 없어서, 막지는 않고 교대를 다시 보라고만 알린다.
+  const dayMissing =
+    !isEdit &&
+    shifts.includes("DAY") &&
+    productSlotsLoaded &&
+    productSlots.length > 0 &&
+    !productSlots.some((s) => s.shift === "DAY");
+  const isBoth = shifts.length === 2;
+  // 교대 필수 이전에 만든 예전 지시는 교대를 모른다 — 수정 화면에서 주간으로 지어
+  // 보여 주지 않게 교대 칸을 숨긴다.
+  const shiftUnknown = isEdit && !order?.shift;
 
   // 제품 드롭다운: 선택한 설비 공정과 같은 제품만(제품 공정 = 설비 공정).
   const selectedEquipment = equipment.find((e) => e.id === equipmentId);
@@ -146,13 +169,36 @@ export default function CreateInspectionOrderDrawer({
           (u) =>
             u.workType === managerWorkType ||
             u.role === "TEST" ||
-            workerIds.includes(u.id),
+            workerIds.DAY.includes(u.id) ||
+            workerIds.NIGHT.includes(u.id),
         )
       : productionUsers;
 
-  const toggleWorker = (id: number) => {
-    setWorkerIds((prev) =>
-      prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id],
+  const toggleWorker = (shift: Shift, id: number) => {
+    setWorkerIds((prev) => ({
+      ...prev,
+      [shift]: prev[shift].includes(id)
+        ? prev[shift].filter((v) => v !== id)
+        : [...prev[shift], id],
+    }));
+  };
+
+  // 마지막 남은 교대는 끌 수 없다 — 교대 없는 지시는 만들 수 없다.
+  // 수정에서는 바꿀 수 없다(서버 수정 API 가 shift 를 받지 않는다).
+  // 끈 교대의 작업자 선택은 비운다 — 숨은 채 남아 있으면 담당 구분 필터를 넓히고,
+  // 다시 켰을 때 예전 선택이 말없이 되살아난다.
+  const toggleShift = (shift: Shift) => {
+    if (isEdit) return;
+    if (shifts.includes(shift)) {
+      if (shifts.length === 1) return;
+      setShifts(shifts.filter((s) => s !== shift));
+      setWorkerIds((prev) => ({ ...prev, [shift]: [] }));
+      return;
+    }
+    setShifts(
+      SHIFTS.map((s) => s.value).filter(
+        (s) => s === shift || shifts.includes(s),
+      ),
     );
   };
 
@@ -160,7 +206,8 @@ export default function CreateInspectionOrderDrawer({
     !!targetDate &&
     equipmentId !== "" &&
     productId !== "" &&
-    workerIds.length > 0 &&
+    shifts.length > 0 &&
+    shifts.every((s) => workerIds[s].length > 0) &&
     !isPending;
 
   // 백엔드가 준 실제 사유(예: WORK_TYPE_MISMATCH — 담당 업무 구분 불일치)를 그대로
@@ -170,19 +217,18 @@ export default function CreateInspectionOrderDrawer({
       ? (err.response?.data as { message?: string } | undefined)?.message
       : undefined;
 
-  const handleSubmit = async (e: { preventDefault: () => void }) => {
+  const handleSubmit = (e: { preventDefault: () => void }) => {
     e.preventDefault();
     if (!canSubmit) return;
     const base = {
       productId: productId as number,
       equipmentId: equipmentId as number,
-      workerIds,
       targetDate,
     };
 
     if (isEdit && order) {
       update(
-        { orderId: order.id, body: base },
+        { orderId: order.id, body: { ...base, workerIds: workerIds[shifts[0]] } },
         {
           onSuccess: () => onClose(),
           onError: (err: unknown) =>
@@ -192,37 +238,23 @@ export default function CreateInspectionOrderDrawer({
       return;
     }
 
-    // 교대를 고르지 않아도 되는 제품(주간만/야간만)은 shift 없이 한 번만 보낸다.
-    const shifts: (Shift | undefined)[] = !needsShiftChoice
-      ? [undefined]
-      : shiftChoice === "BOTH"
-        ? ["DAY", "NIGHT"]
-        : [shiftChoice];
+    const callbacks = {
+      onSuccess: () => onClose(),
+      onError: (err: unknown) =>
+        alert(serverMessageOf(err) ?? t("drawer.createError")),
+    };
 
-    const failed: string[] = [];
-    for (const shift of shifts) {
-      try {
-        await createAsync({ ...base, ...(shift ? { shift } : {}) });
-      } catch (err) {
-        const label =
-          shift === "NIGHT"
-            ? t("drawer.shiftNight")
-            : shift === "DAY"
-              ? t("drawer.shiftDay")
-              : "";
-        const reason = serverMessageOf(err) ?? t("drawer.createError");
-        failed.push(label ? `${label}: ${reason}` : reason);
-      }
-    }
-
-    if (failed.length === 0) {
-      onClose();
+    // 주·야 동시 등록은 서버가 한 번에 처리한다 — 하나라도 실패하면 둘 다 안 만든다.
+    if (isBoth) {
+      createDayNight(
+        { ...base, dayWorkerIds: workerIds.DAY, nightWorkerIds: workerIds.NIGHT },
+        callbacks,
+      );
       return;
     }
-    // 둘 중 하나만 실패하면 성공한 지시는 그대로 두고, 무엇이 왜 실패했는지 알린다.
-    const madeCount = shifts.length - failed.length;
-    const prefix = madeCount > 0 ? t("drawer.partialCreated", { n: madeCount }) : "";
-    alert([prefix, ...failed].filter(Boolean).join("\n"));
+
+    const shift = shifts[0];
+    create({ ...base, workerIds: workerIds[shift], shift }, callbacks);
   };
 
   const title = isEdit ? t("drawer.editTitle") : t("drawer.createTitle");
@@ -337,86 +369,83 @@ export default function CreateInspectionOrderDrawer({
               ))}
             </select>
           </label>
-          {needsShiftChoice && (
-            <div className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-[#212121]">{t("drawer.shift")}</span>
-              <div className="grid grid-cols-3 gap-2">
-                {SHIFT_CHOICES.map((opt) => {
-                  const selected = shiftChoice === opt.value;
+          {!shiftUnknown && (
+            <fieldset className="flex flex-col gap-1.5">
+              <legend className="mb-1.5 text-sm font-medium text-[#212121]">
+                {t("drawer.shift")}
+              </legend>
+              <div className="grid grid-cols-2 gap-2">
+                {/* 버튼 모양이지만 실제 체크박스다 — 변경 이벤트가 올라가야 닫기 확인
+                    (useDiscardGuard)이 교대만 바꾼 경우도 센다. */}
+                {SHIFTS.map((opt) => {
+                  const selected = shifts.includes(opt.value);
+                  const locked = isEdit || (selected && shifts.length === 1);
                   return (
-                    <button
+                    <label
                       key={opt.value}
-                      type="button"
-                      onClick={() => setShiftChoice(opt.value)}
-                      className={`h-10 rounded-lg border text-sm font-medium transition-colors ${
+                      className={`flex h-11 items-center justify-center gap-1.5 rounded-lg border text-sm font-medium transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#931B82]/40 ${
                         selected
                           ? "border-[#931B82] bg-[#931B82] text-white"
                           : "border-gray-300 bg-white text-[#6B7280] hover:bg-gray-50"
+                      } ${isEdit && !selected ? "opacity-40" : ""} ${
+                        locked ? "cursor-default" : "cursor-pointer"
                       }`}
                     >
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => toggleShift(opt.value)}
+                        disabled={isEdit}
+                        className="sr-only"
+                      />
+                      <Icon
+                        icon={
+                          selected
+                            ? "mdi:checkbox-marked"
+                            : "mdi:checkbox-blank-outline"
+                        }
+                        width={18}
+                        height={18}
+                      />
                       {t(opt.labelKey)}
-                    </button>
+                    </label>
                   );
                 })}
               </div>
               <span className="text-xs text-[#6B7280]">
-                {shiftChoice === "BOTH"
-                  ? t("drawer.shiftBothDesc")
-                  : t("drawer.shiftChoiceDesc")}
+                {isEdit
+                  ? t("drawer.shiftLocked")
+                  : isBoth
+                    ? t("drawer.shiftBothDesc")
+                    : t("drawer.shiftDefaultDesc")}
               </span>
-            </div>
-          )}
-
-          <fieldset className="flex flex-col gap-1.5">
-            <legend className="text-sm font-medium text-[#212121]">
-              {t("drawer.workers")}
-            </legend>
-            <p className="text-xs text-[#6B7280]">
-              {t("drawer.workersDesc")}
-              {workerIds.length > 0 && (
-                <span className="ml-1 font-medium text-[#931B82]">
-                  {t("drawer.workersSelected", { n: workerIds.length })}
+              {nightFromDaySchedule && (
+                <span className="text-xs text-[#B45309]">
+                  {t("drawer.nightFromDaySchedule")}
                 </span>
               )}
-            </p>
-            <div className="max-h-56 overflow-y-auto rounded-lg border border-gray-300">
-              {loadingProduction ? (
-                <p className="px-3 py-4 text-sm text-[#A8A8A8]">{t("drawer.loading")}</p>
-              ) : assignableWorkers.length === 0 ? (
-                <p className="px-3 py-4 text-sm text-[#A8A8A8]">
-                  {t("drawer.noWorkers")}
-                </p>
-              ) : (
-                <ul className="divide-y divide-gray-100">
-                  {assignableWorkers.map((u) => {
-                    const checked = workerIds.includes(u.id);
-                    return (
-                      <li key={u.id}>
-                        <label
-                          className={`flex cursor-pointer items-center gap-3 px-3 py-2.5 text-sm transition-colors hover:bg-[#FAF5FB] ${
-                            checked ? "bg-[#FAF5FB]" : ""
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => toggleWorker(u.id)}
-                            className="h-4 w-4 shrink-0 accent-[#931B82]"
-                          />
-                          <span className="min-w-0 truncate text-[#212121]">
-                            {u.name}
-                            <span className="ml-1 text-xs text-[#6B7280]">
-                              ({u.loginId})
-                            </span>
-                          </span>
-                        </label>
-                      </li>
-                    );
-                  })}
-                </ul>
+              {dayMissing && (
+                <span className="text-xs text-[#B45309]">
+                  {t("drawer.dayMissing")}
+                </span>
               )}
-            </div>
-          </fieldset>
+            </fieldset>
+          )}
+
+          {shifts.map((shift) => (
+            <WorkerPicker
+              key={shift}
+              legend={
+                isBoth
+                  ? t(shift === "DAY" ? "drawer.dayWorkers" : "drawer.nightWorkers")
+                  : t("drawer.workers")
+              }
+              workers={assignableWorkers}
+              loading={loadingProduction}
+              selectedIds={workerIds[shift]}
+              onToggle={(id) => toggleWorker(shift, id)}
+            />
+          ))}
 
           <div className="mt-auto flex gap-2 pt-4">
             <button
@@ -438,5 +467,67 @@ export default function CreateInspectionOrderDrawer({
       </aside>
       {guard.dialog}
     </>
+  );
+}
+
+function WorkerPicker({
+  legend,
+  workers,
+  loading,
+  selectedIds,
+  onToggle,
+}: {
+  legend: string;
+  workers: User[];
+  loading: boolean;
+  selectedIds: number[];
+  onToggle: (id: number) => void;
+}) {
+  const { t } = useTranslation("inspectionOrders");
+  return (
+    <fieldset className="flex flex-col gap-1.5">
+      <legend className="text-sm font-medium text-[#212121]">{legend}</legend>
+      <p className="text-xs text-[#6B7280]">
+        {t("drawer.workersDesc")}
+        {selectedIds.length > 0 && (
+          <span className="ml-1 font-medium text-[#931B82]">
+            {t("drawer.workersSelected", { n: selectedIds.length })}
+          </span>
+        )}
+      </p>
+      <div className="max-h-56 overflow-y-auto rounded-lg border border-gray-300">
+        {loading ? (
+          <p className="px-3 py-4 text-sm text-[#A8A8A8]">{t("drawer.loading")}</p>
+        ) : workers.length === 0 ? (
+          <p className="px-3 py-4 text-sm text-[#A8A8A8]">{t("drawer.noWorkers")}</p>
+        ) : (
+          <ul className="divide-y divide-gray-100">
+            {workers.map((u) => {
+              const checked = selectedIds.includes(u.id);
+              return (
+                <li key={u.id}>
+                  <label
+                    className={`flex cursor-pointer items-center gap-3 px-3 py-2.5 text-sm transition-colors hover:bg-[#FAF5FB] ${
+                      checked ? "bg-[#FAF5FB]" : ""
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => onToggle(u.id)}
+                      className="h-4 w-4 shrink-0 accent-[#931B82]"
+                    />
+                    <span className="min-w-0 truncate text-[#212121]">
+                      {u.name}
+                      <span className="ml-1 text-xs text-[#6B7280]">({u.loginId})</span>
+                    </span>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </fieldset>
   );
 }

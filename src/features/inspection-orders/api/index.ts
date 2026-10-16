@@ -3,6 +3,7 @@ export { getProducts } from "./productApi";
 export { getUsers } from "./userApi";
 export {
   copyInspectionOrders,
+  createDayNightInspectionOrder,
   createInspectionOrder,
   updateInspectionOrder,
   deleteInspectionOrder,
@@ -20,6 +21,7 @@ export {
   useInspectionOrderDetail,
   useProductionInspectionOrders,
   useCreateInspectionOrder,
+  useCreateDayNightInspectionOrder,
   useUpdateInspectionOrder,
   useCopyInspectionOrders,
   useDeleteInspectionOrder,
@@ -33,6 +35,7 @@ export type {
   Product,
   ProductCustomer,
   CreateInspectionOrderRequest,
+  CreateDayNightInspectionOrderRequest,
   InspectionOrder,
   InspectionOrderStatus,
   InspectionOrderUserRef,
