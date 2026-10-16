@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Icon } from "@iconify/react";
 import { useTranslation } from "react-i18next";
 import type { ReportSummary } from "../api/types";
-import { downloadReportPdf } from "../lib/downloadReportPdf";
+import { saveReportPdf } from "../lib/downloadReportPdf";
 import { resolveSummaryShift } from "../lib/shift";
 import { formatDate } from "../../../lib/datetime";
 import { useProcessLabel } from "../../process";
@@ -58,7 +59,8 @@ const AdminReportCard = ({ report, onClick }: Props) => {
     if (downloading) return;
     setDownloading(true);
     try {
-      await downloadReportPdf(report.id);
+      // 목록에서 바로 파일로 저장한다 — 상세에 들어가지 않아도 되게.
+      await saveReportPdf(report.id);
     } finally {
       setDownloading(false);
     }
@@ -75,34 +77,25 @@ const AdminReportCard = ({ report, onClick }: Props) => {
           handleCardClick();
         }
       }}
-      className="flex cursor-pointer flex-col gap-2 rounded-2xl bg-white px-5 py-4 text-left shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#931B82]"
+      className="flex cursor-pointer items-stretch gap-4 rounded-2xl bg-white px-5 py-4 text-left shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#931B82]"
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+      <div className="flex items-center gap-3">
         <span className="truncate text-base font-bold text-[#212121]">
           {report.reportNumber}
         </span>
-        <div className="flex shrink-0 items-center gap-2">
+        <span
+          className={`flex shrink-0 items-center gap-1 text-xs font-medium ${
+            isPass ? "text-[#22C55E]" : "text-[#EF4444]"
+          }`}
+        >
           <span
-            className={`flex items-center gap-1 text-xs font-medium ${
-              isPass ? "text-[#22C55E]" : "text-[#EF4444]"
+            className={`inline-block h-1.5 w-1.5 rounded-full ${
+              isPass ? "bg-[#22C55E]" : "bg-[#EF4444]"
             }`}
-          >
-            <span
-              className={`inline-block h-1.5 w-1.5 rounded-full ${
-                isPass ? "bg-[#22C55E]" : "bg-[#EF4444]"
-              }`}
-            />
-            {isPass ? t("result.pass") : t("result.fail")}
-          </span>
-          <button
-            type="button"
-            onClick={handleDownload}
-            disabled={downloading}
-            className="rounded-md bg-[#931B82] px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-[#6A0F5D] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {downloading ? "..." : "PDF"}
-          </button>
-        </div>
+          />
+          {isPass ? t("result.pass") : t("result.fail")}
+        </span>
       </div>
 
       {report.productName && (
@@ -139,6 +132,23 @@ const AdminReportCard = ({ report, onClick }: Props) => {
           </>
         )}
       </p>
+      </div>
+
+      {/* 목록에서 바로 파일로 저장 — 카드 오른쪽 높이에 맞춘 큰 버튼(UX 13). */}
+      <button
+        type="button"
+        onClick={handleDownload}
+        disabled={downloading}
+        className="flex w-32 shrink-0 items-center justify-center gap-1.5 self-stretch rounded-xl bg-[#931B82] px-3 text-base font-bold text-white transition-colors hover:bg-[#6A0F5D] disabled:cursor-not-allowed disabled:opacity-60 sm:w-40"
+      >
+        <Icon
+          icon={downloading ? "mdi:loading" : "mdi:arrow-down"}
+          width={20}
+          height={20}
+          className={downloading ? "animate-spin" : undefined}
+        />
+        {downloading ? t("card.savingPdf") : t("card.savePdf")}
+      </button>
     </div>
   );
 };

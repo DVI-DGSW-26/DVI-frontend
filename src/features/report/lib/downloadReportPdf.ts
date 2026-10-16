@@ -381,7 +381,13 @@ function shiftRow(detail: ReportDetail): string {
   return `<div><span class="label">${escapeHtml(tr("pdfDoc.shift"))}</span> ${escapeHtml(tr(`shift.${shift}`))}</div>`;
 }
 
-function buildHtml(detail: ReportDetail, processLabel: string): string {
+// forFile: 파일로 바로 저장할 때(saveReportPdf) — 인쇄를 띄우는 스크립트와 "인쇄 대화상자에서
+// PDF로 저장" 안내를 뺀다. 인쇄 창 경로(downloadReportPdf)는 그대로 둔다.
+function buildHtml(
+  detail: ReportDetail,
+  processLabel: string,
+  forFile = false,
+): string {
   // 차수 열이 붙은 통합 보고서는 표가 넓어 A4 세로로는 잘린다.
   const wide =
     hasStageMeasurements(detail.results) || orderedStageInfos(detail).length > 1;
@@ -463,9 +469,9 @@ function buildHtml(detail: ReportDetail, processLabel: string): string {
   ${hardnessSection(detail)}
   ${remarksSection(detail)}
 
-  <div class="footer">${escapeHtml(tr("pdfDoc.footerHint"))}</div>
+  ${forFile ? "" : `<div class="footer">${escapeHtml(tr("pdfDoc.footerHint"))}</div>`}
 
-  <script>
+  ${forFile ? "" : `<script>
     // 이미지가 모두 로드된 뒤 인쇄해야 PDF 에 사진이 포함된다.
     window.onload = function () {
       var imgs = Array.prototype.slice.call(document.images);
@@ -484,7 +490,7 @@ function buildHtml(detail: ReportDetail, processLabel: string): string {
         img.addEventListener("error", done);
       });
     };
-  </script>
+  </script>`}
 </body>
 </html>`;
 }
@@ -499,15 +505,7 @@ export async function downloadReportPdf(reportId: number): Promise<void> {
     `<!doctype html><html><body style="font-family:sans-serif;padding:24px;color:#6B7280">${i18n.t("report:pdf.loading")}</body></html>`,
   );
   try {
-    // 공정은 코드로 오므로 화면처럼 표시명으로 바꾼다. 목록을 못 받으면 코드 그대로.
-    const [detail, processes] = await Promise.all([
-      getReportDetail(reportId),
-      getProcesses(true).catch(() => []),
-    ]);
-    const processInfo = processes.find((p) => p.code === detail.process);
-    const processLabel = processInfo
-      ? processDisplayName(processInfo.code, processInfo.label)
-      : detail.process;
+    const { detail, processLabel } = await loadReport(reportId);
     w.document.open();
     w.document.write(buildHtml(detail, processLabel));
     w.document.close();
@@ -515,5 +513,164 @@ export async function downloadReportPdf(reportId: number): Promise<void> {
   } catch {
     w.close();
     alert(i18n.t("report:pdf.loadFailed"));
+  }
+}
+
+// 보고서 상세 + 공정 표시명. 공정은 코드로 오므로 화면처럼 표시명으로 바꾼다. 목록을 못 받으면 코드 그대로.
+async function loadReport(
+  reportId: number,
+): Promise<{ detail: ReportDetail; processLabel: string }> {
+  const [detail, processes] = await Promise.all([
+    getReportDetail(reportId),
+    getProcesses(true).catch(() => []),
+  ]);
+  const processInfo = processes.find((p) => p.code === detail.process);
+  const processLabel = processInfo
+    ? processDisplayName(processInfo.code, processInfo.label)
+    : detail.process;
+  return { detail, processLabel };
+}
+
+// 사진 하나가 응답하지 않아도 저장이 끝없이 "준비 중"에 머물지 않게.
+const IMAGE_LOAD_TIMEOUT_MS = 15_000;
+
+// 보이지 않는 iframe 에 문서를 그리고 사진·글꼴이 다 올라올 때까지 기다린다.
+async function renderInFrame(
+  html: string,
+  widthPx: number,
+): Promise<HTMLIFrameElement> {
+  const frame = document.createElement("iframe");
+  frame.setAttribute("aria-hidden", "true");
+  frame.tabIndex = -1;
+  Object.assign(frame.style, {
+    position: "fixed",
+    left: "-10000px",
+    top: "0",
+    width: `${widthPx}px`,
+    height: "1200px",
+    border: "0",
+  });
+  document.body.appendChild(frame);
+  const doc = frame.contentDocument;
+  if (!doc) throw new Error("pdf frame unavailable");
+  doc.open();
+  doc.write(html);
+  doc.close();
+  await Promise.all(
+    Array.from(doc.images).map(
+      (img) =>
+        new Promise<void>((resolve) => {
+          if (img.complete) return resolve();
+          const timer = setTimeout(resolve, IMAGE_LOAD_TIMEOUT_MS);
+          const done = () => {
+            clearTimeout(timer);
+            resolve();
+          };
+          img.addEventListener("load", done);
+          img.addEventListener("error", done);
+        }),
+    ),
+  );
+  await doc.fonts?.ready;
+  return frame;
+}
+
+// 쪽을 나눌 자리(문서 위에서부터의 px). 섹션이 쪽 경계에 걸리면 그 섹션 앞에서 넘겨
+// 표 행이 반으로 잘리지 않게 한다. 한 섹션이 한 쪽보다 길면 그 안에서는 잘라 넘긴다.
+function pageBreaks(doc: Document, pageHeightPx: number): number[] {
+  const total = doc.documentElement.scrollHeight;
+  const blocks = Array.from(doc.body.children)
+    .filter((el) => el.tagName !== "SCRIPT")
+    .map((el) => {
+      const r = el.getBoundingClientRect();
+      return { top: r.top + doc.documentElement.scrollTop, bottom: r.bottom };
+    });
+  const breaks = [0];
+  let pageTop = 0;
+  for (const b of blocks) {
+    while (b.bottom - pageTop > pageHeightPx) {
+      // 섹션이 이 쪽 중간에서 시작했고 다음 쪽에 통째로 들어가면 그 앞에서 넘긴다.
+      const next =
+        b.top > pageTop && b.bottom - b.top <= pageHeightPx
+          ? b.top
+          : pageTop + pageHeightPx;
+      breaks.push(next);
+      pageTop = next;
+    }
+  }
+  if (total - pageTop > 1) breaks.push(total);
+  else breaks[breaks.length - 1] = total;
+  return breaks;
+}
+
+/**
+ * 보고서를 PDF 파일로 바로 저장한다(목록의 PDF 버튼).
+ * 인쇄 창을 띄우지 않고 jsPDF 로 파일을 만들어 내려받는다 — 팝업 차단이나 인쇄 대화상자를
+ * 거치지 않는다. 실패하면 이유를 알린다.
+ */
+export async function saveReportPdf(reportId: number): Promise<void> {
+  let frame: HTMLIFrameElement | null = null;
+  try {
+    // 무거운 라이브러리라 누를 때만 불러온다.
+    const [{ jsPDF }, { default: html2canvas }, { detail, processLabel }] =
+      await Promise.all([
+        import("jspdf"),
+        import("html2canvas-pro"),
+        loadReport(reportId),
+      ]);
+    const wide =
+      hasStageMeasurements(detail.results) ||
+      orderedStageInfos(detail).length > 1;
+    const pdf = new jsPDF({
+      orientation: wide ? "landscape" : "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    // A4 폭을 96dpi 로 옮긴 너비 — 인쇄할 때와 같은 줄바꿈이 나오게.
+    const widthPx = Math.round((pageW / 25.4) * 96);
+    frame = await renderInFrame(buildHtml(detail, processLabel, true), widthPx);
+    const doc = frame.contentDocument!;
+    const pageHeightPx = widthPx * (pageH / pageW);
+    const breaks = pageBreaks(doc, pageHeightPx);
+
+    const scale = 2;
+    const canvas = await html2canvas(doc.documentElement, {
+      scale,
+      backgroundColor: "#ffffff",
+      logging: false,
+      useCORS: true,
+      width: widthPx,
+      windowWidth: widthPx,
+    });
+    for (let i = 0; i < breaks.length - 1; i += 1) {
+      const top = Math.round(breaks[i] * scale);
+      const height = Math.min(
+        Math.round((breaks[i + 1] - breaks[i]) * scale),
+        canvas.height - top,
+      );
+      if (height <= 0) continue;
+      const slice = document.createElement("canvas");
+      slice.width = canvas.width;
+      slice.height = height;
+      slice
+        .getContext("2d")!
+        .drawImage(canvas, 0, top, canvas.width, height, 0, 0, canvas.width, height);
+      if (i > 0) pdf.addPage();
+      pdf.addImage(
+        slice.toDataURL("image/jpeg", 0.92),
+        "JPEG",
+        0,
+        0,
+        pageW,
+        (height / canvas.width) * pageW,
+      );
+    }
+    pdf.save(`${detail.reportNumber}.pdf`);
+  } catch {
+    alert(i18n.t("report:pdf.saveFailed"));
+  } finally {
+    frame?.remove();
   }
 }
