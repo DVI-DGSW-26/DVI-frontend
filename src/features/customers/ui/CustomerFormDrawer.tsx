@@ -1,10 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Icon } from "@iconify/react";
 import { useTranslation } from "react-i18next";
 import { useCreateCustomer, useUpdateCustomer } from "../api";
 import type { Customer } from "../api";
 
 import { useDiscardGuard } from "../../../components/shared/useDiscardGuard";
+import FieldError from "../../../components/shared/FieldError";
+import {
+  fieldBorder,
+  useFormError,
+} from "../../../components/shared/useFormError";
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -15,7 +20,8 @@ export default function CustomerFormDrawer({ open, onClose, customer }: Props) {
   const { t } = useTranslation(["customers", "common"]);
   const isEdit = !!customer;
   const [name, setName] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const formError = useFormError(formRef);
 
   const { mutate: create, isPending: isCreating } = useCreateCustomer();
   const { mutate: update, isPending: isUpdating } = useUpdateCustomer();
@@ -24,19 +30,22 @@ export default function CustomerFormDrawer({ open, onClose, customer }: Props) {
   useEffect(() => {
     if (!open) return;
     setName(customer ? customer.name : "");
-    setError(null);
+    formError.clear();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, customer]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    formError.clear();
     const trimmed = name.trim();
-    if (!trimmed) return setError(t("form.nameRequired"));
+    if (!trimmed) return formError.fail("name", t("form.nameRequired"));
 
     const handlers = {
       onSuccess: () => onClose(),
       onError: () => {
-        setError(isEdit ? t("form.updateError") : t("form.createError"));
+        formError.setError(
+          isEdit ? t("form.updateError") : t("form.createError"),
+        );
       },
     };
 
@@ -91,6 +100,7 @@ export default function CustomerFormDrawer({ open, onClose, customer }: Props) {
         </header>
 
         <form
+          ref={formRef}
           onSubmit={handleSubmit}
           className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-5"
         >
@@ -104,13 +114,16 @@ export default function CustomerFormDrawer({ open, onClose, customer }: Props) {
               onChange={(e) => setName(e.target.value)}
               placeholder={t("form.namePlaceholder")}
               autoFocus
-              className="h-11 rounded-lg border border-gray-300 px-3 text-sm focus:border-[#931B82] focus:outline-none"
+              data-field="name"
+              aria-invalid={!!formError.errorFor("name") || undefined}
+              className={`h-11 rounded-lg border px-3 text-sm focus:border-[#931B82] focus:outline-none ${fieldBorder(!!formError.errorFor("name"))}`}
             />
+            <FieldError message={formError.errorFor("name")} />
           </label>
 
-          {error && (
+          {formError.generalError && (
             <div className="rounded-md border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 text-xs text-[#B91C1C]">
-              {error}
+              {formError.generalError}
             </div>
           )}
 
