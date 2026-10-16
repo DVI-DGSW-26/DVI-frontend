@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Icon } from "@iconify/react";
 import { useTranslation } from "react-i18next";
 import type { ReportSummary } from "../api/types";
-import { downloadReportPdf } from "../lib/downloadReportPdf";
+import { saveReportPdf } from "../lib/downloadReportPdf";
 import { resolveSummaryShift } from "../lib/shift";
 import { formatDate } from "../../../lib/datetime";
 import { useProcessLabel } from "../../process";
@@ -58,7 +59,8 @@ const AdminReportCard = ({ report, onClick }: Props) => {
     if (downloading) return;
     setDownloading(true);
     try {
-      await downloadReportPdf(report.id);
+      // 목록에서 바로 파일로 저장한다 — 상세에 들어가지 않아도 되게.
+      await saveReportPdf(report.id);
     } finally {
       setDownloading(false);
     }
@@ -75,41 +77,33 @@ const AdminReportCard = ({ report, onClick }: Props) => {
           handleCardClick();
         }
       }}
-      className="flex cursor-pointer flex-col gap-2 rounded-2xl bg-white px-5 py-4 text-left shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#931B82]"
+      className="flex cursor-pointer items-stretch gap-4 rounded-2xl bg-white px-5 py-4 text-left shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#931B82]"
     >
-      <div className="flex items-start justify-between gap-3">
-        <span className="truncate text-base font-bold text-[#212121]">
-          {report.reportNumber}
-        </span>
-        <div className="flex shrink-0 items-center gap-2">
-          <span
-            className={`flex items-center gap-1 text-xs font-medium ${
-              isPass ? "text-[#22C55E]" : "text-[#EF4444]"
-            }`}
-          >
-            <span
-              className={`inline-block h-1.5 w-1.5 rounded-full ${
-                isPass ? "bg-[#22C55E]" : "bg-[#EF4444]"
-              }`}
-            />
-            {isPass ? t("result.pass") : t("result.fail")}
-          </span>
-          <button
-            type="button"
-            onClick={handleDownload}
-            disabled={downloading}
-            className="rounded-md bg-[#931B82] px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-[#6A0F5D] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {downloading ? "..." : "PDF"}
-          </button>
-        </div>
-      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+      {/* 보고서 번호는 한 줄을 다 쓴다 — 3열 목록에서 판정 배지와 같은 줄이면 끝이 잘렸다. */}
+      <span className="truncate text-base font-bold text-[#212121]">
+        {report.reportNumber}
+      </span>
 
-      {report.productName && (
-        <p className="truncate text-sm font-medium text-[#212121]">
-          {report.productName}
-        </p>
-      )}
+      <div className="flex min-w-0 items-center gap-2">
+        {report.productName && (
+          <span className="truncate text-sm font-medium text-[#212121]">
+            {report.productName}
+          </span>
+        )}
+        <span
+          className={`flex shrink-0 items-center gap-1 text-xs font-medium ${
+            isPass ? "text-[#22C55E]" : "text-[#EF4444]"
+          }`}
+        >
+          <span
+            className={`inline-block h-1.5 w-1.5 rounded-full ${
+              isPass ? "bg-[#22C55E]" : "bg-[#EF4444]"
+            }`}
+          />
+          {isPass ? t("result.pass") : t("result.fail")}
+        </span>
+      </div>
 
       <p className="text-sm text-[#6B7280]">
         {processLabel}
@@ -139,6 +133,33 @@ const AdminReportCard = ({ report, onClick }: Props) => {
           </>
         )}
       </p>
+      </div>
+
+      {/* 목록에서 바로 파일로 저장 — 카드 오른쪽 높이에 맞춘 큰 버튼(UX 13).
+          목록이 3열 격자라 카드가 좁다 — 화살표를 글자 위로 올려 폭을 줄이고 보고서 번호
+          자리를 남긴다(옆으로 늘어놓으면 번호가 "DV-AL-IR-..."로 잘렸다). */}
+      <button
+        type="button"
+        onClick={handleDownload}
+        disabled={downloading}
+        className="flex w-[5.5rem] shrink-0 flex-col items-center justify-center gap-1 self-stretch rounded-xl bg-[#931B82] px-2 text-sm font-bold text-white transition-colors hover:bg-[#6A0F5D] disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {downloading ? (
+          <Icon
+            icon="mdi:loading"
+            width={22}
+            height={22}
+            className="animate-spin"
+          />
+        ) : (
+          <span aria-hidden className="text-xl leading-none">
+            ↓
+          </span>
+        )}
+        <span className="whitespace-nowrap">
+          {downloading ? t("card.savingPdf") : t("card.savePdf")}
+        </span>
+      </button>
     </div>
   );
 };

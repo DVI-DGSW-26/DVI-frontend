@@ -30,7 +30,7 @@ export default {
   },
   titles: {
     // 메뉴 이름을 바꿔도 화면 제목은 그대로 둔다.
-    approvalManagement: "승인관리",
+    approvalManagement: "자주검사 미완료 결재",
     qmReports: "보고서",
     notifications: "알림",
     home: "홈",
