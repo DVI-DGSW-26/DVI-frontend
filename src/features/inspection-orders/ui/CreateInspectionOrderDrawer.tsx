@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
 import { useTranslation } from "react-i18next";
@@ -17,6 +17,11 @@ import { useProductSlots } from "../../inspection/api";
 import type { Shift } from "../../inspection-schedule/api";
 
 import { useDiscardGuard } from "../../../components/shared/useDiscardGuard";
+import FieldError from "../../../components/shared/FieldError";
+import {
+  fieldBorder,
+  useFormError,
+} from "../../../components/shared/useFormError";
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -41,14 +46,12 @@ function resolveManagerWorkType(user: User | null): WorkType | null {
   return null;
 }
 
-// 교대 선택. "둘 다" 는 POST 를 주간·야간으로 두 번 보내 지시 2건을 만든다
-// (서버는 요청 1건당 교대 1개만 받는다).
-type ShiftChoice = Shift | "BOTH";
-
-const SHIFT_CHOICES: { value: ShiftChoice; labelKey: string }[] = [
+// 교대 선택 — 주간·야간 두 버튼을 각각 켜고 끈다. 둘 다 켜면 POST 를 주간·야간으로
+// 두 번 보내 지시 2건을 만든다(서버는 요청 1건당 교대 1개만 받는다).
+// 예전엔 "둘 다" 버튼이 따로 있어 그게 지시 몇 건인지 읽히지 않았다(UX 4).
+const SHIFT_OPTIONS: { value: Shift; labelKey: string }[] = [
   { value: "DAY", labelKey: "drawer.shiftDay" },
   { value: "NIGHT", labelKey: "drawer.shiftNight" },
-  { value: "BOTH", labelKey: "drawer.shiftBoth" },
 ];
 
 function todayISO() {
@@ -71,7 +74,9 @@ export default function CreateInspectionOrderDrawer({
   const [productId, setProductId] = useState<number | "">("");
   // 공동 작업자 — 인원 제한 없이 여러 명 배정 가능(1명이어도 배열로 보낸다).
   const [workerIds, setWorkerIds] = useState<number[]>([]);
-  const [shiftChoice, setShiftChoice] = useState<ShiftChoice>("DAY");
+  const [shifts, setShifts] = useState<Shift[]>(["DAY"]);
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const formError = useFormError(formRef);
 
   // 드로어가 열릴 때(등록/수정 대상이 바뀔 때) 폼을 초기화한다.
   // effect 가 아니라 "렌더 중 state 조정" 패턴 — 열자마자 빈 폼을 한 번 그린 뒤
@@ -85,7 +90,8 @@ export default function CreateInspectionOrderDrawer({
       setEquipmentId(order ? order.equipment.id : "");
       setProductId(order ? order.product.id : "");
       setWorkerIds(order ? orderWorkers(order).map((w) => w.id) : []);
-      setShiftChoice(order?.shift ?? "DAY");
+      setShifts([order?.shift ?? "DAY"]);
+      formError.clear();
     }
   }
 
@@ -156,12 +162,6 @@ export default function CreateInspectionOrderDrawer({
     );
   };
 
-  const canSubmit =
-    !!targetDate &&
-    equipmentId !== "" &&
-    productId !== "" &&
-    workerIds.length > 0 &&
-    !isPending;
 
   // 백엔드가 준 실제 사유(예: WORK_TYPE_MISMATCH — 담당 업무 구분 불일치)를 그대로
   // 노출한다. 없을 때만 일반 메시지로 폴백.
@@ -172,7 +172,16 @@ export default function CreateInspectionOrderDrawer({
 
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    if (!canSubmit) return;
+    if (isPending) return;
+    // 빈 칸이 있으면 버튼만 꺼 두지 않고 어느 칸인지 그 아래에 알려 준다.
+    formError.clear();
+    if (!targetDate) return formError.fail("date", t("drawer.dateRequired"));
+    if (equipmentId === "")
+      return formError.fail("equipment", t("drawer.equipmentRequired"));
+    if (productId === "")
+      return formError.fail("product", t("drawer.productRequired"));
+    if (workerIds.length === 0)
+      return formError.fail("workers", t("drawer.workersRequired"));
     const base = {
       productId: productId as number,
       equipmentId: equipmentId as number,
@@ -186,21 +195,19 @@ export default function CreateInspectionOrderDrawer({
         {
           onSuccess: () => onClose(),
           onError: (err: unknown) =>
-            alert(serverMessageOf(err) ?? t("drawer.updateError")),
+            formError.setError(serverMessageOf(err) ?? t("drawer.updateError")),
         },
       );
       return;
     }
 
     // 교대를 고르지 않아도 되는 제품(주간만/야간만)은 shift 없이 한 번만 보낸다.
-    const shifts: (Shift | undefined)[] = !needsShiftChoice
+    const sendShifts: (Shift | undefined)[] = !needsShiftChoice
       ? [undefined]
-      : shiftChoice === "BOTH"
-        ? ["DAY", "NIGHT"]
-        : [shiftChoice];
+      : SHIFT_OPTIONS.map((o) => o.value).filter((v) => shifts.includes(v));
 
     const failed: string[] = [];
-    for (const shift of shifts) {
+    for (const shift of sendShifts) {
       try {
         await createAsync({ ...base, ...(shift ? { shift } : {}) });
       } catch (err) {
@@ -220,9 +227,9 @@ export default function CreateInspectionOrderDrawer({
       return;
     }
     // 둘 중 하나만 실패하면 성공한 지시는 그대로 두고, 무엇이 왜 실패했는지 알린다.
-    const madeCount = shifts.length - failed.length;
+    const madeCount = sendShifts.length - failed.length;
     const prefix = madeCount > 0 ? t("drawer.partialCreated", { n: madeCount }) : "";
-    alert([prefix, ...failed].filter(Boolean).join("\n"));
+    formError.setError([prefix, ...failed].filter(Boolean).join("\n"));
   };
 
   const title = isEdit ? t("drawer.editTitle") : t("drawer.createTitle");
@@ -269,6 +276,7 @@ export default function CreateInspectionOrderDrawer({
         </header>
 
         <form
+          ref={formRef}
           onSubmit={handleSubmit}
           className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-5"
         >
@@ -278,9 +286,11 @@ export default function CreateInspectionOrderDrawer({
               type="date"
               value={targetDate}
               onChange={(e) => setTargetDate(e.target.value)}
-              required
-              className="h-11 rounded-lg border border-gray-300 px-3 text-sm focus:border-[#931B82] focus:outline-none"
+              data-field="date"
+              aria-invalid={!!formError.errorFor("date") || undefined}
+              className={`h-11 rounded-lg border px-3 text-sm focus:border-[#931B82] focus:outline-none ${fieldBorder(!!formError.errorFor("date"))}`}
             />
+            <FieldError message={formError.errorFor("date")} />
           </label>
 
           <label className="flex flex-col gap-1.5">
@@ -297,9 +307,10 @@ export default function CreateInspectionOrderDrawer({
                   setProductId("");
                 }
               }}
-              required
               disabled={loadingEquipment}
-              className="h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none disabled:bg-gray-50"
+              data-field="equipment"
+              aria-invalid={!!formError.errorFor("equipment") || undefined}
+              className={`h-11 rounded-lg border bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none disabled:bg-gray-50 ${fieldBorder(!!formError.errorFor("equipment"))}`}
             >
               <option value="">
                 {loadingEquipment ? t("drawer.loading") : t("drawer.equipmentPlaceholder")}
@@ -310,6 +321,7 @@ export default function CreateInspectionOrderDrawer({
                 </option>
               ))}
             </select>
+            <FieldError message={formError.errorFor("equipment")} />
           </label>
 
           <label className="flex flex-col gap-1.5">
@@ -319,9 +331,10 @@ export default function CreateInspectionOrderDrawer({
               onChange={(e) =>
                 setProductId(e.target.value === "" ? "" : Number(e.target.value))
               }
-              required
               disabled={loadingProducts || equipmentId === ""}
-              className="h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none disabled:bg-gray-50"
+              data-field="product"
+              aria-invalid={!!formError.errorFor("product") || undefined}
+              className={`h-11 rounded-lg border bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none disabled:bg-gray-50 ${fieldBorder(!!formError.errorFor("product"))}`}
             >
               <option value="">
                 {equipmentId === ""
@@ -336,18 +349,29 @@ export default function CreateInspectionOrderDrawer({
                 </option>
               ))}
             </select>
+            <FieldError message={formError.errorFor("product")} />
           </label>
           {needsShiftChoice && (
             <div className="flex flex-col gap-1.5">
               <span className="text-sm font-medium text-[#212121]">{t("drawer.shift")}</span>
-              <div className="grid grid-cols-3 gap-2">
-                {SHIFT_CHOICES.map((opt) => {
-                  const selected = shiftChoice === opt.value;
+              <div className="grid grid-cols-2 gap-2">
+                {SHIFT_OPTIONS.map((opt) => {
+                  const selected = shifts.includes(opt.value);
                   return (
                     <button
                       key={opt.value}
                       type="button"
-                      onClick={() => setShiftChoice(opt.value)}
+                      aria-pressed={selected}
+                      // 하나는 늘 켜 둔다 — 마지막 하나를 끄면 만들 지시가 없어진다.
+                      onClick={() =>
+                        setShifts((prev) =>
+                          prev.includes(opt.value)
+                            ? prev.length > 1
+                              ? prev.filter((v) => v !== opt.value)
+                              : prev
+                            : [...prev, opt.value],
+                        )
+                      }
                       className={`h-10 rounded-lg border text-sm font-medium transition-colors ${
                         selected
                           ? "border-[#931B82] bg-[#931B82] text-white"
@@ -359,11 +383,33 @@ export default function CreateInspectionOrderDrawer({
                   );
                 })}
               </div>
-              <span className="text-xs text-[#6B7280]">
-                {shiftChoice === "BOTH"
-                  ? t("drawer.shiftBothDesc")
-                  : t("drawer.shiftChoiceDesc")}
-              </span>
+              {shifts.length > 1 ? (
+                <p className="rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2 text-xs text-[#1D4ED8]">
+                  {t("drawer.shiftBothDesc")}
+                </p>
+              ) : (
+                <span className="text-xs text-[#6B7280]">
+                  {t("drawer.shiftChoiceDesc")}
+                </span>
+              )}
+            </div>
+          )}
+          {/* 교대를 고를 수 없는 경우에도 줄을 통째로 숨기지 않고 이유를 적는다. */}
+          {!isEdit && !needsShiftChoice && productId !== "" && (hasDaySlots || hasNightSlots) && (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium text-[#212121]">{t("drawer.shift")}</span>
+              <p className="rounded-lg border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
+                {hasDaySlots ? t("drawer.shiftDayOnly") : t("drawer.shiftNightOnly")}
+              </p>
+            </div>
+          )}
+          {isEdit && order?.shift && (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium text-[#212121]">{t("drawer.shift")}</span>
+              <div className="flex h-10 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm text-[#6B7280]">
+                {order.shift === "NIGHT" ? t("drawer.shiftNight") : t("drawer.shiftDay")}
+              </div>
+              <span className="text-xs text-[#6B7280]">{t("drawer.shiftEditNote")}</span>
             </div>
           )}
 
@@ -379,7 +425,11 @@ export default function CreateInspectionOrderDrawer({
                 </span>
               )}
             </p>
-            <div className="max-h-56 overflow-y-auto rounded-lg border border-gray-300">
+            <div
+              data-field="workers"
+              tabIndex={-1}
+              className={`max-h-56 overflow-y-auto rounded-lg border focus:outline-none ${fieldBorder(!!formError.errorFor("workers"))}`}
+            >
               {loadingProduction ? (
                 <p className="px-3 py-4 text-sm text-[#A8A8A8]">{t("drawer.loading")}</p>
               ) : assignableWorkers.length === 0 ? (
@@ -416,7 +466,14 @@ export default function CreateInspectionOrderDrawer({
                 </ul>
               )}
             </div>
+            <FieldError message={formError.errorFor("workers")} />
           </fieldset>
+
+          {formError.generalError && (
+            <div className="whitespace-pre-line rounded-md border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 text-xs text-[#B91C1C]">
+              {formError.generalError}
+            </div>
+          )}
 
           <div className="mt-auto flex gap-2 pt-4">
             <button
@@ -428,7 +485,7 @@ export default function CreateInspectionOrderDrawer({
             </button>
             <button
               type="submit"
-              disabled={!canSubmit}
+              disabled={isPending}
               className="h-11 flex-1 rounded-lg bg-[#931B82] text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D] disabled:cursor-not-allowed disabled:opacity-40"
             >
               {submitLabel}
