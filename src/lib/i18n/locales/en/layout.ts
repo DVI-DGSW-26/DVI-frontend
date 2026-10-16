@@ -27,7 +27,7 @@ export default {
     master: "Master Data",
   },
   titles: {
-    approvalManagement: "Approvals",
+    approvalManagement: "Incomplete Self-Inspection Approval",
     qmReports: "Reports",
     notifications: "Notifications",
     home: "Home",
