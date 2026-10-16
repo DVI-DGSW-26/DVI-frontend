@@ -68,10 +68,17 @@ export default {
     shift: "교대",
     shiftDay: "주간",
     shiftNight: "야간",
-    shiftBoth: "둘 다",
-    shiftBothDesc: "주간·야간 지시를 각각 1건씩, 총 2건 등록합니다.",
-    shiftChoiceDesc: "이 제품은 주간·야간 스케줄이 모두 있어 교대를 골라야 합니다.",
+    shiftDefaultDesc:
+      "06~17시에는 주간, 17시~다음날 06시에는 야간이 먼저 선택됩니다. 작업 시작 시각을 모르면 둘 다 선택하세요.",
+    shiftBothDesc:
+      "주간·야간 지시 2건을 함께 등록합니다. 하나라도 실패하면 둘 다 등록되지 않습니다.",
+    shiftLocked: "등록된 지시의 교대는 바꿀 수 없습니다.",
+    nightFromDaySchedule:
+      "이 제품은 야간 일정이 없어 야간 초·중·종이 정해진 시각 없이 만들어집니다. 시각 알림과 현황판 지연 표시가 빠집니다. 야간 작업이 정기적이면 품질관리자에게 야간 일정 등록을 요청하세요.",
+    dayMissing: "이 제품은 주간 일정이 없습니다. 교대를 다시 확인하세요.",
     workers: "자주검사 작업자 (생산부)",
+    dayWorkers: "주간 작업자 (생산부)",
+    nightWorkers: "야간 작업자 (생산부)",
     workersDesc: "공동 작업자는 여러 명 선택할 수 있습니다.",
     workersSelected: "{{n}}명 선택됨",
     noWorkers: "배정 가능한 작업자가 없습니다.",
@@ -81,6 +88,5 @@ export default {
     submitEditing: "수정 중...",
     createError: "등록 중 오류가 발생했습니다.",
     updateError: "검사지시 수정 중 오류가 발생했습니다.",
-    partialCreated: "{{n}}건은 등록됐습니다.",
   },
 } as const;

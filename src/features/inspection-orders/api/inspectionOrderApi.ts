@@ -3,6 +3,7 @@ import { http } from "../../../lib/http";
 import type { ApiResponse } from "../../auth/type/types";
 import { orderWorkers } from "../lib/orderWorkers";
 import type {
+  CreateDayNightInspectionOrderRequest,
   CreateInspectionOrderRequest,
   InspectionOrder,
   InspectionOrderDetailResponse,
@@ -53,6 +54,17 @@ export async function createInspectionOrder(
   );
 }
 
+// 응답은 [주간, 야간] 순서의 지시 2건.
+export async function createDayNightInspectionOrder(
+  body: CreateDayNightInspectionOrderRequest,
+): Promise<InspectionOrder[]> {
+  const { data } = await http.post<InspectionOrderListResponse>(
+    "/inspection-order/day-night",
+    body,
+  );
+  return data.data ?? [];
+}
+
 export async function updateInspectionOrder(
   orderId: number,
   body: Partial<CreateInspectionOrderRequest>,
@@ -89,9 +101,9 @@ export async function copyInspectionOrders(
         equipmentId: order.equipment.id,
         workerIds: orderWorkers(order).map((w) => w.id),
         targetDate,
-        // 원본과 같은 교대로 복제한다. 주·야 슬롯이 다 있는 제품이면 이 값이 없을 때
-        // 서버가 400 SHIFT_SELECTION_REQUIRED 로 막는다.
-        ...(order.shift ? { shift: order.shift } : {}),
+        // 원본과 같은 교대로 복제한다. 교대가 없던 예전 지시는 주간으로 본다
+        // (지금은 shift 가 필수다).
+        shift: order.shift ?? "DAY",
       });
       result.created += 1;
     } catch (err) {

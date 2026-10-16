@@ -33,9 +33,20 @@ export interface CreateInspectionOrderRequest {
   equipmentId: number;
   workerIds: number[];
   targetDate: string;
-  // 제품 스케줄에 주간·야간 슬롯이 둘 다 있으면 필수 (없으면 400 SHIFT_SELECTION_REQUIRED).
-  // 한쪽만 있는 제품은 생략 — 서버가 알아서 정한다.
-  shift?: Shift;
+  // 항상 보낸다. 야간 슬롯이 없는 공정에 NIGHT 를 보내면 서버가 주간 슬롯 구성
+  // (초/중/종)을 본떠 야간 차수(NIGHT_1…)를 만든다 — 이 차수엔 정해진 시각이 없다.
+  shift: Shift;
+}
+
+// 주간·야간 지시를 한 번에 등록 (POST /inspection-order/day-night).
+// 서버가 한 트랜잭션으로 2건을 만든다 — 하나라도 실패하면 아무것도 안 만든다.
+// 같은 작업자를 양쪽에 넣어도 된다(중복은 같은 교대 안에서만 막힌다).
+export interface CreateDayNightInspectionOrderRequest {
+  productId: number;
+  equipmentId: number;
+  targetDate: string;
+  dayWorkerIds: number[];
+  nightWorkerIds: number[];
 }
 
 export type InspectionOrderStatus =
@@ -84,8 +95,9 @@ export interface InspectionOrder {
    */
   production?: InspectionOrderUserRef | null;
   targetDate: string;
-  // 이 지시가 만들어질 때의 교대. 제품 스케줄에 주·야가 둘 다 있으면 지시 하나에
-  // 양쪽 슬롯이 다 들어있을 수 있어 참고용으로만 쓴다(슬롯별 주/야는 슬롯의 shift).
+  // 이 지시의 교대. 주·야 동시 등록은 교대별로 지시가 따로 생긴다(주간 지시는 주간
+  // 작업자에게만, 야간 지시는 야간 작업자에게만 보인다). 교대 필수 이전에 만든 예전
+  // 지시엔 없을 수 있다. 슬롯별 주/야는 슬롯의 shift 로 판단한다.
   shift?: Shift;
   status: InspectionOrderStatus;
   createdAt: string;
