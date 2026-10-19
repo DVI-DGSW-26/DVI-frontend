@@ -12,7 +12,7 @@ import {
 } from "../api";
 import type { InspectionOrder } from "../api";
 import { orderWorkers } from "../lib/orderWorkers";
-import { defaultOrderShift, orderWorkDayKey } from "../lib/orderWorkDay";
+import { orderShiftAt, orderWorkDayKey } from "../lib/orderWorkDay";
 import { useAuth } from "../../auth/AuthContext";
 import type { User, WorkType } from "../../auth/type/types";
 import { useProductSlots } from "../../inspection/api";
@@ -68,7 +68,7 @@ export default function CreateInspectionOrderDrawer({
   const [productId, setProductId] = useState<number | "">("");
   // 켜 둔 교대. 최소 하나는 켜져 있다.
   const [shifts, setShifts] = useState<Shift[]>(() => [
-    defaultOrderShift(new Date()),
+    orderShiftAt(new Date()),
   ]);
   // 교대별 공동 작업자 — 인원 제한 없이 여러 명(1명이어도 배열로 보낸다).
   // 같은 사람을 주간·야간 양쪽에 넣어도 된다(서버도 같은 교대 안의 중복만 막는다).
@@ -86,7 +86,7 @@ export default function CreateInspectionOrderDrawer({
     setPrevSessionKey(sessionKey);
     if (sessionKey !== null) {
       // 교대가 없는 예전 지시는 작업자 목록을 주간 칸에 담아 둔다.
-      const shift = order ? (order.shift ?? "DAY") : defaultOrderShift(new Date());
+      const shift = order ? (order.shift ?? "DAY") : orderShiftAt(new Date());
       setTargetDate(order ? order.targetDate : defaultTargetDate());
       setEquipmentId(order ? order.equipment.id : "");
       setProductId(order ? order.product.id : "");

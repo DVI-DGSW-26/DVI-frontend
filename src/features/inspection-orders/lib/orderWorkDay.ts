@@ -38,7 +38,8 @@ export function orderWorkDayRange(now: Date): { start: Date; end: Date } {
 }
 
 /**
- * now 에 지시를 등록할 때 기본으로 골라 둘 교대. 17시~다음날 경계(06시)는 야간이다.
+ * now 가 속한 교대. 17시~다음날 경계(06시)는 야간이다. 등록 화면의 기본 교대와,
+ * 주·야로 함께 등록한 지시 중 작업자에게 보일 쪽을 고르는 데 쓴다.
  *
  * 보고서의 주/야 판정(report/lib/shift.ts)과 규칙은 같지만, 하한을 보고서의 작업일
  * 경계가 아니라 위 ORDER_WORK_DAY_START_HOUR 에 묶는다 — 새벽에 열면 기본 날짜가
@@ -46,7 +47,7 @@ export function orderWorkDayRange(now: Date): { start: Date; end: Date } {
  * 바뀌어도 같이 따라가야 한다. 17시는 서버 설정 inspection.night_start_time 과 같은
  * 값이다(조회 API 가 없어 상수로 둔다).
  */
-export function defaultOrderShift(now: Date): Shift {
+export function orderShiftAt(now: Date): Shift {
   if (Number.isNaN(now.getTime())) return "DAY";
   const hour = (now.getUTCHours() + 9) % 24; // KST, 기기 시간대와 무관
   return hour >= NIGHT_SHIFT_START_HOUR || hour < ORDER_WORK_DAY_START_HOUR
