@@ -24,6 +24,7 @@ import {
   orderWorkDayKey,
   orderWorkDayRange,
 } from "../../inspection-orders/lib/orderWorkDay";
+import { visibleOrdersNow } from "../../inspection-orders/lib/visibleOrders";
 import type { InspectionOrder } from "../../inspection-orders/api";
 import type { MyInspection } from "../type/types";
 import { getStatusBadge } from "../lib/inspectionStatus";
@@ -96,8 +97,13 @@ export default function ProductionHomePage() {
   // 기기 시간대가 아닌 KST 로 계산한다(공장 태블릿 시간대 오설정 대비).
   const { data: myOrders = [] } = useMyInspectionOrders();
   const todayStr = orderWorkDayKey(new Date());
+  // 주·야로 함께 배정된 지시는 지금 교대(17시 기준) 것만 보인다.
   const todaysOrders = useMemo(
-    () => myOrders.filter((o) => o.targetDate?.slice(0, 10) === todayStr),
+    () =>
+      visibleOrdersNow(
+        myOrders.filter((o) => o.targetDate?.slice(0, 10) === todayStr),
+        new Date(),
+      ),
     [myOrders, todayStr],
   );
 
