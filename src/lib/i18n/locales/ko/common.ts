@@ -4,6 +4,7 @@ export default {
     QUALITY_ADMIN: "품질 관리자",
     PRODUCTION: "생산자",
     PRODUCTION_MANAGER: "생산 관리자",
+    EQUIPMENT_MANAGER: "설비 관리자",
     QUALITY: "품질 담당자",
     TEST: "테스트",
   },

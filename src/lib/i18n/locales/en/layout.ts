@@ -19,6 +19,8 @@ export default {
     inspectionHistory: "History",
     scan: "Scan",
     tryoutReports: "Tryout reports",
+    equipmentReports: "Equipment reports",
+    notifications: "Notifications",
     more: "More",
   },
   groups: {
@@ -36,6 +38,8 @@ export default {
     inspectionMeasure: "Quality Inspection System",
     crossCheckMeasure: "Patrol Inspection System",
     inspectionDetail: "Measurement Items",
+    equipmentReports: "Equipment reports",
+    equipmentReportDetail: "Equipment report",
   },
   goHome: "Go to home",
   back: "Back",

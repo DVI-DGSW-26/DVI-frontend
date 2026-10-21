@@ -34,6 +34,12 @@ export function resolveNotificationLink(
       return m ? `/cross-check-approval?highlight=${m[1]}` : "/cross-check-approval";
     }
 
+    case "EQUIPMENT_REPORTED": {
+      // 설비 이상 신고 → 생산 관리자·설비 관리자. linkUrl(/equipment-report/{id})의 상세로.
+      const m = n.linkUrl?.match(/\/equipment-report\/(\d+)/);
+      return m ? `/equipment-report/${m[1]}` : "/equipment-report";
+    }
+
     case "CROSS_CHECK_APPROVED":
       // 본인 순회검사 결과. linkUrl 이 /reports/{id} 면 그 보고서로, 아니면 결재 이력 탭.
       return n.linkUrl ?? "/cross-checks?tab=history";

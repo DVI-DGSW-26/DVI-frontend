@@ -22,6 +22,9 @@ export type Role =
   | "PRODUCTION"
   | "QUALITY"
   | "PRODUCTION_MANAGER"
+  // 설비 관리자. 설비 이상 신고를 받아 보는 역할 — 알림·내 정보·설비 신고 목록만 쓴다.
+  // 회원가입으로는 만들 수 없고 관리자가 사용자 추가로 만든다.
+  | "EQUIPMENT_MANAGER"
   // 테스트 계정. 백엔드에서 모든 권한을 가지며, 세션은 항상 dev 서버를 쓴다
   // (lib/apiServer.ts). 화면에서도 역할 분기를 전부 통과한다(auth/roles.ts).
   | "TEST";

@@ -3,6 +3,7 @@ export default {
     production: "Production Dept.",
     quality: "Quality Dept.",
     admin: "Administration Dept.",
+    equipment: "Equipment",
     test: "Test",
   },
   statusBadge: {

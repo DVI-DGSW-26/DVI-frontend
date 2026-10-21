@@ -42,6 +42,9 @@ import TryoutReportListPage from "./features/tryout-report/ui/TryoutReportListPa
 import TryoutReportDetailPage from "./features/tryout-report/ui/TryoutReportDetailPage";
 import TryoutReportFormPage from "./features/tryout-report/ui/TryoutReportFormPage";
 
+import EquipmentReportListPage from "./features/equipment-report/ui/EquipmentReportListPage";
+import EquipmentReportDetailPage from "./features/equipment-report/ui/EquipmentReportDetailPage";
+
 import { useTranslation } from "react-i18next";
 import { useAuth } from "./features/auth/AuthContext";
 import { ROLE_HOME } from "./features/auth/constants";
@@ -77,6 +80,8 @@ function HomePage() {
   // 실제 첫 화면(ROLE_HOME)으로 넘긴다.
   if (user?.role === "QUALITY_ADMIN")
     return <Navigate to={ROLE_HOME.QUALITY_ADMIN} replace />;
+  if (user?.role === "EQUIPMENT_MANAGER")
+    return <Navigate to={ROLE_HOME.EQUIPMENT_MANAGER} replace />;
 
   return <div className="p-6">{t("home", { ns: "shared" })}</div>;
 }
@@ -226,6 +231,19 @@ function App() {
                 path="/inspection/:inspectionId/result"
                 element={<InspectionResultPage />}
               />
+            </Route>
+
+            {/* 설비 이상 신고 목록·상세. 신고는 생산·품질이 헤더 버튼으로 한다.
+                상세 경로는 알림 linkUrl(/equipment-report/{id})과 같다. */}
+            <Route
+              element={
+                <RouteGuard
+                  roles={["PRODUCTION_MANAGER", "EQUIPMENT_MANAGER", "ADMIN"]}
+                />
+              }
+            >
+              <Route path="/equipment-report" element={<EquipmentReportListPage />} />
+              <Route path="/equipment-report/:id" element={<EquipmentReportDetailPage />} />
             </Route>
 
             {/* 매칭 안 된 모든 경로 — 잘못된 알림 linkUrl 등으로 흰 화면이 뜨지 않도록. */}

@@ -14,6 +14,7 @@ export default {
     INCOMPLETE_REASON_REQUESTED: { title: "미완료 사유 작성 요청", content: "사유 없이 제출된 미완료 검사가 있습니다. 사유를 적어 주세요." },
     INCOMPLETE_APPROVED: { title: "미완료 승인", content: "미완료 검사가 승인되었습니다." },
     INCOMPLETE_REJECTED: { title: "미완료 반려", content: "미완료 검사 요청이 반려되었습니다." },
+    EQUIPMENT_REPORTED: { title: "설비 이상 신고", content: "설비 이상이 신고되었습니다." },
   },
   page: {
     markAllRead: "모두 읽음",

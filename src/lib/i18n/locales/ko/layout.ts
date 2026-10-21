@@ -20,6 +20,8 @@ export default {
     inspectionHistory: "검사이력",
     scan: "스캔",
     tryoutReports: "시압 결과보고서",
+    equipmentReports: "설비 신고",
+    notifications: "알림",
     more: "더보기",
   },
   // 관리자 메뉴 묶음 제목.
@@ -39,6 +41,8 @@ export default {
     inspectionMeasure: "품질 검사 시스템",
     crossCheckMeasure: "순회 검사 시스템",
     inspectionDetail: "측정 항목 확인",
+    equipmentReports: "설비 신고 목록",
+    equipmentReportDetail: "설비 신고 내용",
   },
   goHome: "홈으로 이동",
   back: "뒤로가기",
