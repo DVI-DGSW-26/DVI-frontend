@@ -3,6 +3,7 @@ export default {
     production: "생산부",
     quality: "품질부",
     admin: "관리부",
+    equipment: "설비",
     test: "테스트",
   },
   statusBadge: {

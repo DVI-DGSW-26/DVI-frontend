@@ -14,6 +14,7 @@ export default {
     INCOMPLETE_REASON_REQUESTED: { title: "Incomplete reason needed", content: "An inspection was submitted as incomplete without a reason. Please add one." },
     INCOMPLETE_APPROVED: { title: "Incomplete approved", content: "The incomplete inspection has been approved." },
     INCOMPLETE_REJECTED: { title: "Incomplete rejected", content: "The incomplete inspection request was rejected." },
+    EQUIPMENT_REPORTED: { title: "Equipment issue reported", content: "An equipment issue was reported." },
   },
   page: {
     markAllRead: "Mark all as read",

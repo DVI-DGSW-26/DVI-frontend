@@ -54,9 +54,17 @@ const TABS: TabItem[] = [
   { labelKey: "processes", to: "/processes", icon: "mdi:cog-transfer-outline", roles: ["ADMIN", "QUALITY_ADMIN"], group: "master" },
 
   { labelKey: "inspectionOrders", to: "/inspection-orders", icon: "mdi:clipboard-text-outline", roles: ["PRODUCTION_MANAGER"], iconSize: 34 },
+  {
+    labelKey: "equipmentReports",
+    to: "/equipment-report",
+    icon: "solar:danger-triangle-bold",
+    roles: ["EQUIPMENT_MANAGER", "PRODUCTION_MANAGER", "ADMIN"],
+    activeMatch: (p) => p.startsWith("/equipment-report"),
+  },
+  { labelKey: "notifications", to: "/notifications", icon: "solar:bell-bold", roles: ["EQUIPMENT_MANAGER"] },
   { labelKey: "myOrders", to: "/my-orders", icon: "mdi:clipboard-list-outline", roles: ["PRODUCTION"] },
 
-  { labelKey: "myPage", to: "/my-page", icon: "mdi:account-circle", roles: ["ADMIN", "QUALITY_ADMIN", "PRODUCTION", "PRODUCTION_MANAGER", "QUALITY"] },
+  { labelKey: "myPage", to: "/my-page", icon: "mdi:account-circle", roles: ["ADMIN", "QUALITY_ADMIN", "PRODUCTION", "PRODUCTION_MANAGER", "QUALITY", "EQUIPMENT_MANAGER"] },
 ];
 
 // 이보다 많으면 "더보기"로 접는다. 작업자·순회검사자(5개 이하)는 지금처럼 아이콘만 한 줄.

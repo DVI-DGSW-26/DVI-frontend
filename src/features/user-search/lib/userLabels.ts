@@ -7,6 +7,7 @@ import type { UserDetailStatus } from "../api/types";
 export const DEPARTMENT_LABEL_KEY: Record<Role, string> = {
   PRODUCTION: "departments.production",
   PRODUCTION_MANAGER: "departments.production",
+  EQUIPMENT_MANAGER: "departments.equipment",
   QUALITY: "departments.quality",
   QUALITY_ADMIN: "departments.quality",
   ADMIN: "departments.admin",

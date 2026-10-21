@@ -34,9 +34,9 @@ function inferType(title: string): NotificationType {
   return "info";
 }
 
-// 자주검사 NG 알림은 제목 문구와 무관하게 빨강(error)으로 강조한다.
+// 자주검사 NG·설비 이상 신고 알림은 제목 문구와 무관하게 빨강(error)으로 강조한다.
 function resolveVisualType(item: NotificationResponse): NotificationType {
-  if (item.type === "INSPECTION_NG") return "error";
+  if (item.type === "INSPECTION_NG" || item.type === "EQUIPMENT_REPORTED") return "error";
   return inferType(item.title);
 }
 

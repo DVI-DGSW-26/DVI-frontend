@@ -4,6 +4,7 @@ export default {
     QUALITY_ADMIN: "Approval Manager",
     PRODUCTION: "Operator",
     PRODUCTION_MANAGER: "Production Manager",
+    EQUIPMENT_MANAGER: "Equipment Manager",
     QUALITY: "Patrol Inspector",
     TEST: "Test",
   },

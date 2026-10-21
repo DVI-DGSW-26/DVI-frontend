@@ -17,7 +17,8 @@ interface RoleOption {
   label: string;
 }
 
-const ROLE_VALUES: Role[] = ["PRODUCTION", "QUALITY", "QUALITY_ADMIN", "ADMIN"];
+// 설비 관리자는 회원가입으로 만들 수 없어 여기서만 만든다.
+const ROLE_VALUES: Role[] = ["PRODUCTION", "QUALITY", "QUALITY_ADMIN", "EQUIPMENT_MANAGER", "ADMIN"];
 
 const selectStyles: StylesConfig<RoleOption, false> = {
   control: (base, state) => ({
