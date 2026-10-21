@@ -37,8 +37,11 @@ const TABS: TabItem[] = [
   { labelKey: "customers", to: "/customers", icon: "mdi:office-building", roles: ["ADMIN", "QUALITY_ADMIN"], group: "master" },
   { labelKey: "processes", to: "/processes", icon: "mdi:cog-transfer-outline", roles: ["ADMIN", "QUALITY_ADMIN"], group: "master" },
   { labelKey: "inspectionOrders", to: "/inspection-orders", icon: "mdi:clipboard-text-outline", roles: ["PRODUCTION_MANAGER"] },
+  { labelKey: "equipmentReports", to: "/equipment-report", icon: "solar:danger-triangle-bold", roles: ["EQUIPMENT_MANAGER", "PRODUCTION_MANAGER", "ADMIN"] },
+  // 설비 관리자 메뉴는 설비 신고·알림·내 정보 셋뿐이라 알림도 메뉴로 둔다.
+  { labelKey: "notifications", to: "/notifications", icon: "solar:bell-bold", roles: ["EQUIPMENT_MANAGER"] },
   { labelKey: "myOrders", to: "/my-orders", icon: "mdi:clipboard-list-outline", roles: ["PRODUCTION"] },
-  { labelKey: "myPage", to: "/my-page", icon: "mdi:account-circle", roles: ["ADMIN", "QUALITY_ADMIN", "PRODUCTION", "PRODUCTION_MANAGER", "QUALITY"] },
+  { labelKey: "myPage", to: "/my-page", icon: "mdi:account-circle", roles: ["ADMIN", "QUALITY_ADMIN", "PRODUCTION", "PRODUCTION_MANAGER", "QUALITY", "EQUIPMENT_MANAGER"] },
 ];
 
 const TabBarWeb = () => {

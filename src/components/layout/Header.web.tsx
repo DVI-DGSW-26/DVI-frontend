@@ -6,6 +6,7 @@ import { useUnreadCount } from "../../features/notification/api";
 import { useAuth } from "../../features/auth/AuthContext";
 import { canSwitchAccounts } from "../../features/auth/constants";
 import AccountSwitcher from "../../features/auth/ui/AccountSwitcher";
+import EquipmentReportButton from "../../features/equipment-report/ui/EquipmentReportButton";
 import LanguageToggle from "./LanguageToggle";
 
 // layout 네임스페이스 titles.* / tabs.* 키
@@ -23,6 +24,7 @@ const ROUTE_TITLE_KEYS: Record<string, string> = {
   "/tryout-reports": "tabs.tryoutReports",
   "/my-page": "tabs.myPage",
   "/notifications": "titles.notifications",
+  "/equipment-report": "titles.equipmentReports",
 };
 
 const HeaderWeb = () => {
@@ -31,7 +33,9 @@ const HeaderWeb = () => {
   const { user, accounts } = useAuth();
   const { t } = useTranslation(["layout", "common"]);
   const { data: unreadCount = 0 } = useUnreadCount();
-  const titleKey = ROUTE_TITLE_KEYS[pathname];
+  const titleKey = pathname.startsWith("/equipment-report/")
+    ? "titles.equipmentReportDetail"
+    : ROUTE_TITLE_KEYS[pathname];
   const title = titleKey ? t(`layout:${titleKey}`) : "";
   const hasUnread = unreadCount > 0;
   const isNotificationsPage = pathname === "/notifications";
@@ -64,6 +68,10 @@ const HeaderWeb = () => {
       <h1 className="text-3xl font-bold">{title}</h1>
 
       <div className="ml-auto flex items-center gap-1">
+        {/* 생산·품질 작업자는 어느 화면에서든 설비 이상을 바로 신고한다. */}
+        <div className="mr-2">
+          <EquipmentReportButton />
+        </div>
         <LanguageToggle />
 
         {showBell && !isNotificationsPage && (
