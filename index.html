@@ -12,13 +12,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- PWA: 홈 화면 설치 시 정식 앱(WebAPK)으로 동작해 로그인 세션이 유지되도록 함 -->
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#161A21" />
+    <meta name="theme-color" content="#FFFFFF" />
     <!-- 저장된 테마를 React 가 뜨기 전에 칠해 둔다(첫 화면 깜빡임 방지). 키·값은 src/lib/theme.ts 와 같다. -->
     <script>
       try {
-        var t = localStorage.getItem("theme") === "light" ? "light" : "dark";
+        var t = localStorage.getItem("theme") === "dark" ? "dark" : "light";
         document.documentElement.dataset.theme = t;
-        if (t === "light") document.querySelector("meta[name=theme-color]").setAttribute("content", "#FFFFFF");
+        if (t === "dark") document.querySelector("meta[name=theme-color]").setAttribute("content", "#161A21");
       } catch (e) {}
     </script>
     <meta name="mobile-web-app-capable" content="yes" />

@@ -7,7 +7,7 @@ import { useSyncExternalStore } from "react";
 export type Theme = "dark" | "light";
 
 const STORAGE_KEY = "theme";
-const DEFAULT_THEME: Theme = "dark";
+const DEFAULT_THEME: Theme = "light";
 
 /** 주소창·상태바 색 — 각 테마의 헤더 바탕과 맞춘다. */
 const BROWSER_BAR_COLOR: Record<Theme, string> = {
