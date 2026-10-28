@@ -87,6 +87,10 @@ export default {
     submitEdit: "Save",
     submitEditing: "Saving...",
     createError: "An error occurred while registering.",
+    dateRequired: "Select an order date.",
+    equipmentRequired: "Select a machine.",
+    productRequired: "Select a product.",
+    workersRequired: "Select at least one worker.",
     updateError: "An error occurred while updating the inspection order.",
   },
 } as const;

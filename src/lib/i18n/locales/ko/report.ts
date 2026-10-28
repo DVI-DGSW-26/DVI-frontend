@@ -40,6 +40,8 @@ export default {
     selfInspector: "자주 {{name}}",
     patrolInspector: "순회 {{name}}",
     approver: "승인 {{name}}",
+    savePdf: "PDF 저장",
+    savingPdf: "저장 중...",
   },
   detail: {
     title: "검사보고서 상세",
@@ -113,6 +115,7 @@ export default {
     popupBlocked: "팝업이 차단되어 PDF를 열 수 없습니다. 팝업 허용 후 다시 시도하세요.",
     loading: "보고서를 불러오는 중...",
     loadFailed: "보고서를 불러오지 못했습니다.",
+    saveFailed: "PDF를 만들지 못했습니다. 잠시 후 다시 시도해 주세요.",
   },
   // PDF 로 인쇄되는 보고서 문서 본문. 발행 시점의 앱 언어를 따른다.
   pdfDoc: {
