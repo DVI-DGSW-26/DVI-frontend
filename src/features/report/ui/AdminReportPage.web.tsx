@@ -168,13 +168,13 @@ const AdminReportPageWeb = () => {
 
   return (
     <div className="flex flex-col gap-4 p-6">
-      <div className="rounded-2xl bg-white p-4 shadow-sm">
+      <div className="rounded-2xl bg-surface p-4 shadow-sm border border-edge">
         <div className="relative mb-3">
           <Icon
             icon="solar:magnifer-linear"
             width={16}
             height={16}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A8A8]"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle"
           />
           <input
             type="text"
@@ -182,7 +182,7 @@ const AdminReportPageWeb = () => {
             onChange={(e) => setDraftKeyword(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={t("list.keywordPlaceholder")}
-            className="h-10 w-full rounded-full border border-[#E5E7EB] bg-white pl-9 pr-3 text-sm text-[#212121] placeholder:text-[#A8A8A8] focus:border-[#931B82] focus:outline-none"
+            className="h-10 w-full rounded-full border border-line-strong bg-surface pl-9 pr-3 text-sm text-fg placeholder:text-fg-subtle focus:border-brand focus:outline-none"
           />
         </div>
 
@@ -193,9 +193,9 @@ const AdminReportPageWeb = () => {
               value={draftDate}
               onChange={(e) => setDraftDate(e.target.value)}
               aria-label={t("filters.datePlaceholder")}
-              className={`h-9 w-36 rounded-full border border-[#931B82] bg-white pl-9 pr-3 text-xs focus:outline-none [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:m-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-datetime-edit]:opacity-0 ${
+              className={`h-9 w-36 rounded-full border border-brand bg-surface pl-9 pr-3 text-xs focus:outline-none [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:m-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-datetime-edit]:opacity-0 ${
                 draftDate
-                  ? "text-[#931B82] [&::-webkit-datetime-edit]:opacity-100"
+                  ? "text-brand-fg [&::-webkit-datetime-edit]:opacity-100"
                   : "text-transparent"
               }`}
             />
@@ -203,10 +203,10 @@ const AdminReportPageWeb = () => {
               icon="solar:calendar-linear"
               width={16}
               height={16}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#931B82]"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-fg"
             />
             {!draftDate && (
-              <span className="pointer-events-none absolute left-9 top-1/2 -translate-y-1/2 text-xs text-[#931B82]">
+              <span className="pointer-events-none absolute left-9 top-1/2 -translate-y-1/2 text-xs text-brand-fg">
                 {t("filters.datePlaceholder")}
               </span>
             )}
@@ -240,14 +240,14 @@ const AdminReportPageWeb = () => {
             <button
               type="button"
               onClick={handleApply}
-              className="h-9 rounded-full bg-[#931B82] px-7 text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D]"
+              className="h-9 rounded-full bg-brand px-7 text-sm font-medium text-on-brand transition-colors hover:bg-brand-hover"
             >
               {t("filters.apply")}
             </button>
             <button
               type="button"
               onClick={handleReset}
-              className="h-9 rounded-full border border-[#931B82] bg-white px-7 text-sm font-medium text-[#931B82] transition-colors hover:bg-[#F3E8F7]"
+              className="h-9 rounded-full border border-brand bg-surface px-7 text-sm font-medium text-brand-fg transition-colors hover:bg-brand-soft"
             >
               {t("filters.reset")}
             </button>
@@ -256,19 +256,19 @@ const AdminReportPageWeb = () => {
       </div>
 
       {isLoading && (
-        <div className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+        <div className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
           {t("list.loading")}
         </div>
       )}
 
       {isError && (
-        <div className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
+        <div className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-danger-fg border border-edge">
           {t("list.error")}
         </div>
       )}
 
       {!isLoading && !isError && filtered.length === 0 && (
-        <div className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+        <div className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
           {t("list.emptyFiltered")}
         </div>
       )}

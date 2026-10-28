@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@iconify/react";
 import authBackground from "../../../assets/authBackground.png";
-import authLogo from "../../../assets/authLogo.svg";
-import Logo from "../../../assets/Logo.svg";
+import BrandLogo from "../../../components/shared/BrandLogo";
 import Button from "../../../components/shared/Button";
 import type { LoginFormProps } from "./LoginForm";
 
@@ -26,7 +25,6 @@ export default function LoginFormWeb({
       {/* 왼쪽 고정 이미지 */}
       <div className="fixed left-0 top-0 w-1/2 h-dvh overflow-hidden lg:block hidden">
         <img src={authBackground} className="w-full h-full object-cover" />
-        <img src={authLogo} className="absolute top-10 left-8 w-44" />
         <div className="absolute inset-0 flex flex-col justify-center left-12 gap-6">
           <div className="flex flex-col gap-0 leading-tight">
             <span className="text-[40px] xl:text-[46px] text-white font-semibold">A social enterprise that cares about </span>
@@ -42,13 +40,13 @@ export default function LoginFormWeb({
       </div>
 
       {/* 오른쪽 스크롤 영역 */}
-      <div className="fixed right-0 top-0 w-full lg:w-1/2 h-dvh bg-white flex flex-col items-center justify-center">
+      <div className="fixed right-0 top-0 w-full lg:w-1/2 h-dvh bg-surface flex flex-col items-center justify-center">
         <div className="flex flex-col w-full max-w-md px-6 lg:px-0 xl:max-w-xl 2xl:max-w-2xl">
           <div
             className="flex flex-col items-center gap-2"
             style={{ marginBottom: "60px" }}
           >
-            <img src={Logo} className="w-60 xl:w-90" />
+            <BrandLogo className="w-60 xl:w-90" />
           </div>
           <form
             className="flex flex-col gap-3"
@@ -62,7 +60,7 @@ export default function LoginFormWeb({
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               style={{ paddingLeft: "13px" }}
-              className="w-full border border-[#A8A8A8] rounded-lg h-12 xl:h-15 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
+              className="w-full border border-line-strong rounded-lg h-12 xl:h-15 focus:outline-none focus:ring-1 focus:ring-brand"
             />
             <div className="relative">
               <input
@@ -71,12 +69,12 @@ export default function LoginFormWeb({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 style={{ paddingLeft: "13px" }}
-                className="w-full border border-[#A8A8A8] rounded-lg h-12 xl:h-15 pr-12 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
+                className="w-full border border-line-strong rounded-lg h-12 xl:h-15 pr-12 focus:outline-none focus:ring-1 focus:ring-brand"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A8A8A8] hover:text-[#931B82] transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-brand-fg transition-colors"
               >
                 <Icon
                   icon={showPassword ? "mdi:eye-outline" : "mdi:eye-off-outline"}
@@ -89,16 +87,16 @@ export default function LoginFormWeb({
                 type="checkbox"
                 checked={keepLoggedIn}
                 onChange={(e) => setKeepLoggedIn(e.target.checked)}
-                className="w-4 h-4 rounded border-[#A8A8A8] accent-[#931B82] cursor-pointer"
+                className="w-4 h-4 rounded border-line-strong accent-brand cursor-pointer"
               />
-              <span className="text-sm text-[#A8A8A8]">{t("login.keepLoggedIn")}</span>
+              <span className="text-sm text-fg-subtle">{t("login.keepLoggedIn")}</span>
             </label>
             <div style={{ marginTop: "35px" }}>
               <Button type="submit">{t("login.submit")}</Button>
             </div>
             <div className="flex flex-row justify-center gap-1 mt-5 text-sm">
-              <span className="text-[#A8A8A8]">{t("login.noAccount")}</span>
-              <span className="text-[#931B82] cursor-pointer" onClick={() => navigate("/signup")}>{t("login.signupLink")}</span>
+              <span className="text-fg-subtle">{t("login.noAccount")}</span>
+              <span className="text-brand-fg cursor-pointer" onClick={() => navigate("/signup")}>{t("login.signupLink")}</span>
             </div>
           </form>
         </div>

@@ -75,21 +75,21 @@ const AdminReportCard = ({ report, onClick }: Props) => {
           handleCardClick();
         }
       }}
-      className="flex cursor-pointer flex-col gap-2 rounded-2xl bg-white px-5 py-4 text-left shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#931B82]"
+      className="flex cursor-pointer flex-col gap-2 rounded-2xl bg-surface px-5 py-4 text-left shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-brand border border-edge"
     >
       <div className="flex items-start justify-between gap-3">
-        <span className="truncate text-base font-bold text-[#212121]">
+        <span className="min-w-0 wrap-break-word text-base font-bold text-fg">
           {report.reportNumber}
         </span>
         <div className="flex shrink-0 items-center gap-2">
           <span
-            className={`flex items-center gap-1 text-xs font-medium ${
-              isPass ? "text-[#22C55E]" : "text-[#EF4444]"
+            className={`flex items-center gap-1 text-sm font-medium ${
+              isPass ? "text-success-fg" : "text-danger-fg"
             }`}
           >
             <span
               className={`inline-block h-1.5 w-1.5 rounded-full ${
-                isPass ? "bg-[#22C55E]" : "bg-[#EF4444]"
+                isPass ? "bg-success" : "bg-danger"
               }`}
             />
             {isPass ? t("result.pass") : t("result.fail")}
@@ -98,7 +98,7 @@ const AdminReportCard = ({ report, onClick }: Props) => {
             type="button"
             onClick={handleDownload}
             disabled={downloading}
-            className="rounded-md bg-[#931B82] px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-[#6A0F5D] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-10 min-w-20 items-center justify-center rounded-lg bg-brand px-5 text-sm font-semibold text-on-brand transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {downloading ? "..." : "PDF"}
           </button>
@@ -106,12 +106,12 @@ const AdminReportCard = ({ report, onClick }: Props) => {
       </div>
 
       {report.productName && (
-        <p className="truncate text-sm font-medium text-[#212121]">
+        <p className="truncate text-sm font-medium text-fg">
           {report.productName}
         </p>
       )}
 
-      <p className="text-sm text-[#6B7280]">
+      <p className="text-sm text-fg-muted">
         {processLabel}
         {authorParts.length > 0 && (
           <>
@@ -121,7 +121,7 @@ const AdminReportCard = ({ report, onClick }: Props) => {
         )}
       </p>
 
-      <p className="text-xs text-[#A8A8A8]">
+      <p className="text-xs text-fg-subtle">
         {report.customerName ? `${report.customerName} · ` : ""}
         {inspectionDateText(report)}
         {report.inspectionLabel ? ` · ${slotLabelText(report.inspectionLabel)}` : ""}
@@ -131,7 +131,7 @@ const AdminReportCard = ({ report, onClick }: Props) => {
             {/* 야간은 드물어(실측 80건 중 5건) 한눈에 띄어야 한다. */}
             <span
               className={
-                shift === "NIGHT" ? "font-medium text-[#4F46E5]" : undefined
+                shift === "NIGHT" ? "font-medium text-brand-fg" : undefined
               }
             >
               {t(`shift.${shift}`)}

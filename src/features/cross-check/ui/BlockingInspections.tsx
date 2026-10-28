@@ -21,31 +21,31 @@ export default function BlockingInspections({
   });
 
   return (
-    <section className="rounded-xl border border-[#FDE68A] bg-[#FFFBEB] px-4 py-3">
-      <div className="text-sm font-semibold text-[#92400E]">
+    <section className="rounded-xl border border-warn-line bg-warn-soft px-4 py-3">
+      <div className="text-sm font-semibold text-warn-fg">
         {t("blocking.title")}
       </div>
-      <p className="mt-0.5 text-xs text-[#92400E]">{t("blocking.hint")}</p>
+      <p className="mt-0.5 text-xs text-warn-fg">{t("blocking.hint")}</p>
       {isLoading && (
-        <p className="mt-2 text-xs text-[#6B7280]">{t("blocking.loading")}</p>
+        <p className="mt-2 text-xs text-fg-muted">{t("blocking.loading")}</p>
       )}
       {isError && (
-        <p className="mt-2 text-xs text-[#B91C1C]">{t("blocking.loadError")}</p>
+        <p className="mt-2 text-xs text-danger-fg">{t("blocking.loadError")}</p>
       )}
       {data && data.length === 0 && (
-        <p className="mt-2 text-xs text-[#6B7280]">{t("blocking.none")}</p>
+        <p className="mt-2 text-xs text-fg-muted">{t("blocking.none")}</p>
       )}
       {data && data.length > 0 && (
         <ul className="mt-2 flex flex-col gap-1.5">
           {data.map((b) => (
             <li
               key={b.inspectionId}
-              className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 text-xs"
+              className="flex items-center justify-between gap-3 rounded-md bg-surface px-3 py-2 text-xs border border-edge"
             >
-              <span className="font-semibold text-[#212121]">
+              <span className="font-semibold text-fg">
                 {slotLabelWithShift(b.typeLabel, b.type, b.shift)}
               </span>
-              <span className="text-right text-[#6B7280]">
+              <span className="text-right text-fg-muted">
                 {blockingText(b, t)}
               </span>
             </li>

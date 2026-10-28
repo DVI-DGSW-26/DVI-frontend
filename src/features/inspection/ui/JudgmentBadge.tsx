@@ -12,13 +12,13 @@ export default function JudgmentBadge({ judgment, compact = false }: Props) {
   const { t } = useTranslation("inspection");
   if (judgment == null) return null;
   const pass = judgment === "pass";
-  const size = compact ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs";
+  const size = compact ? "px-2 py-0.5 text-[0.6875rem]" : "px-2.5 py-1 text-xs";
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full font-semibold ${size} ${
         pass
-          ? "bg-[#ECFDF5] text-[#15803D]"
-          : "bg-[#FEF2F2] text-[#B91C1C]"
+          ? "bg-success-soft text-success-fg"
+          : "bg-danger-soft text-danger-fg"
       }`}
     >
       <Icon

@@ -142,10 +142,10 @@ export default function InputPhase({
 
   const hintColor =
     hint?.tone === "ok"
-      ? "text-[#931B82]"
+      ? "text-brand-fg"
       : hint?.tone === "warn"
-        ? "text-[#B45309]"
-        : "text-[#6B7280]";
+        ? "text-warn-fg"
+        : "text-fg-muted";
 
   const handlePassFailChange = (v: PassFailResult) => {
     setPassFailTouched(true);
@@ -164,7 +164,7 @@ export default function InputPhase({
   return (
     <div className="flex flex-col gap-3">
       {imageSrc ? (
-        <div className="flex items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-[#F9FAFB]">
+        <div className="flex items-center justify-center overflow-hidden rounded-xl border border-line bg-canvas">
           <img
             src={imageSrc}
             alt={t("input.croppedAlt")}
@@ -172,14 +172,14 @@ export default function InputPhase({
           />
         </div>
       ) : (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-[#F9FAFB] px-4 py-6 text-center text-xs text-[#6B7280]">
+        <div className="rounded-xl border border-dashed border-line-strong bg-canvas px-4 py-6 text-center text-xs text-fg-muted">
           {t("input.noPhotoNotice")}
         </div>
       )}
 
-      <div className="rounded-xl border border-gray-200 bg-white p-4">
+      <div className="rounded-xl border border-edge bg-surface p-4">
         <div className="flex items-center justify-between gap-2">
-          <label className="block text-xs font-medium text-[#6B7280]">
+          <label className="block text-xs font-medium text-fg-muted">
             {t("input.measuredValue")}
           </label>
           <JudgmentBadge judgment={judgment} compact />
@@ -192,7 +192,7 @@ export default function InputPhase({
           onChange={(e) => setValue(e.target.value)}
           placeholder={isPreparing ? t("input.ocrRecognizing") : ""}
           disabled={inputDisabled}
-          className="mt-1 h-11 w-full rounded-md border border-gray-300 px-3 text-base text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+          className="mt-1 h-11 w-full rounded-md border border-line-strong px-3 text-base text-fg focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:bg-surface-2"
         />
         {hint && <p className={`mt-2 text-xs ${hintColor}`}>{hint.text}</p>}
 
@@ -200,7 +200,7 @@ export default function InputPhase({
           <div className="mt-3">
             <label
               htmlFor="passfail-select"
-              className="block text-xs font-medium text-[#6B7280]"
+              className="block text-xs font-medium text-fg-muted"
             >
               {t("judgment.machining")}
             </label>
@@ -211,7 +211,7 @@ export default function InputPhase({
                 handlePassFailChange(e.target.value as PassFailResult)
               }
               disabled={inputDisabled}
-              className="mt-1 h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+              className="mt-1 h-11 w-full rounded-md border border-line-strong bg-surface px-3 text-sm text-fg focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:bg-surface-2"
             >
               <option value="" disabled>
                 {t("input.selectJudgment")}
@@ -219,7 +219,7 @@ export default function InputPhase({
               <option value="OK">{t("judgment.okPass")}</option>
               <option value="NG">{t("judgment.ngFail")}</option>
             </select>
-            <p className="mt-1 text-[11px] text-[#9CA3AF]">
+            <p className="mt-1 text-[0.6875rem] text-fg-subtle">
               {t("input.autoJudgmentHint")}
             </p>
           </div>
@@ -232,7 +232,7 @@ export default function InputPhase({
             type="button"
             onClick={onGoBack}
             disabled={isSaving || isPreparing}
-            className="h-11 rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold text-[#6B7280] disabled:opacity-60"
+            className="h-11 rounded-md border border-line-strong bg-surface px-3 text-sm font-semibold text-fg-muted disabled:opacity-60"
           >
             {t("input.prev")}
           </button>
@@ -241,7 +241,7 @@ export default function InputPhase({
           type="button"
           onClick={onRetake}
           disabled={isSaving || isPreparing}
-          className="h-11 flex-1 rounded-md border border-gray-300 bg-white text-sm font-semibold text-[#212121] disabled:opacity-60"
+          className="h-11 flex-1 rounded-md border border-line-strong bg-surface text-sm font-semibold text-fg disabled:opacity-60"
         >
           {blob ? t("input.retake") : t("input.takePhoto")}
         </button>
@@ -250,7 +250,7 @@ export default function InputPhase({
             type="button"
             onClick={onGoNext}
             disabled={isSaving || isPreparing}
-            className="h-11 rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold text-[#6B7280] disabled:opacity-60"
+            className="h-11 rounded-md border border-line-strong bg-surface px-3 text-sm font-semibold text-fg-muted disabled:opacity-60"
           >
             {t("input.next")}
           </button>
@@ -259,7 +259,7 @@ export default function InputPhase({
           type="button"
           onClick={handleSubmit}
           disabled={submitDisabled}
-          className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+          className="h-11 flex-1 rounded-md bg-brand text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:bg-surface-3"
         >
           {buttonLabel}
         </button>

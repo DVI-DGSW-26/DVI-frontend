@@ -66,15 +66,15 @@ const AccountApprovalPageMobile = () => {
   };
 
   return (
-    <div className="flex min-h-full flex-col gap-4 bg-[#F5F5F5] pb-21">
-      <nav className="flex bg-white">
+    <div className="flex min-h-full flex-col gap-4 bg-canvas pb-21">
+      <nav className="flex bg-surface">
         <button
           type="button"
           onClick={() => setTab("PENDING")}
           className={`flex-1 border-b-2 py-3 text-sm font-semibold transition-colors ${
             tab === "PENDING"
-              ? "border-[#931B82] text-[#931B82]"
-              : "border-transparent text-[#A8A8A8]"
+              ? "border-brand text-brand-fg"
+              : "border-transparent text-fg-subtle"
           }`}
         >
           {t("page.tabPending", { n: pending.length })}
@@ -84,8 +84,8 @@ const AccountApprovalPageMobile = () => {
           onClick={() => setTab("COMPLETED")}
           className={`flex-1 border-b-2 py-3 text-sm font-semibold transition-colors ${
             tab === "COMPLETED"
-              ? "border-[#931B82] text-[#931B82]"
-              : "border-transparent text-[#A8A8A8]"
+              ? "border-brand text-brand-fg"
+              : "border-transparent text-fg-subtle"
           }`}
         >
           {t("page.tabCompleted")}
@@ -94,19 +94,19 @@ const AccountApprovalPageMobile = () => {
 
       <div className="flex flex-col gap-3 px-4">
         {isLoading && (
-          <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+          <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
             {t("status.loading", { ns: "common" })}
           </p>
         )}
 
         {isError && (
-          <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
+          <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-danger-fg border border-edge">
             {t("page.loadFailed")}
           </p>
         )}
 
         {!isLoading && !isError && list.length === 0 && (
-          <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+          <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
             {tab === "PENDING"
               ? t("page.emptyPending")
               : t("page.emptyCompleted")}
@@ -128,20 +128,20 @@ const AccountApprovalPageMobile = () => {
               return (
                 <li
                   key={u.id}
-                  className="flex gap-3 rounded-2xl bg-white p-4 shadow-sm"
+                  className="flex gap-3 rounded-2xl bg-surface p-4 shadow-sm border border-edge"
                 >
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#F3F4F6] text-base font-semibold text-[#6B7280]">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-surface-2 text-base font-semibold text-fg-muted">
                     {initial}
                   </div>
 
                   <div className="flex flex-1 flex-col gap-1">
-                    <p className="text-base font-bold text-[#212121]">
+                    <p className="text-base font-bold text-fg">
                       {u.name}
                     </p>
-                    <p className="text-sm text-[#6B7280]">
+                    <p className="text-sm text-fg-muted">
                       {dept} · {role}
                     </p>
-                    <p className="text-xs text-[#A8A8A8]">
+                    <p className="text-xs text-fg-subtle">
                       {t("page.requestedAt", {
                         date: formatDate(u.createdAt),
                       })}
@@ -154,7 +154,7 @@ const AccountApprovalPageMobile = () => {
                           type="button"
                           onClick={() => handleApprove(u)}
                           disabled={processing}
-                          className="flex-1 rounded-lg bg-[#931B82] py-2 text-sm font-medium text-white disabled:opacity-40"
+                          className="flex-1 rounded-lg bg-brand py-2 text-sm font-medium text-on-brand disabled:opacity-40"
                         >
                           {processing
                             ? t("page.approving")

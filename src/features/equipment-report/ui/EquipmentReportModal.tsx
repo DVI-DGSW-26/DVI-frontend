@@ -180,15 +180,15 @@ export default function EquipmentReportModal({ onClose }: Props) {
         aria-modal="true"
         aria-labelledby="equipment-report-title"
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl md:max-h-[88vh] md:max-w-lg md:rounded-2xl"
+        className="flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-surface shadow-xl md:max-h-[88vh] md:max-w-lg md:rounded-2xl border border-edge"
       >
         {doneName ? (
           <DoneView name={doneName} onClose={onClose} />
         ) : (
           <>
             {/* 머리 */}
-            <div className="flex items-center gap-3 border-b border-[#E5E7EB] px-5 py-4">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FEE2E2] text-[#DC2626]">
+            <div className="flex items-center gap-3 border-b border-line px-5 py-4">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-danger-soft text-danger-fg">
                 <Icon
                   icon="solar:danger-triangle-bold"
                   width={22}
@@ -198,18 +198,18 @@ export default function EquipmentReportModal({ onClose }: Props) {
               <div className="min-w-0 flex-1">
                 <h2
                   id="equipment-report-title"
-                  className="text-lg font-bold text-[#111827]"
+                  className="text-lg font-bold text-fg"
                 >
                   {t("form.title")}
                 </h2>
-                <p className="text-sm text-[#6B7280]">{t("form.hint")}</p>
+                <p className="text-sm text-fg-muted">{t("form.hint")}</p>
               </div>
               <button
                 type="button"
                 onClick={onClose}
                 disabled={submitting}
                 aria-label={t("detail.close")}
-                className="flex h-10 w-10 items-center justify-center rounded-full text-[#6B7280] hover:bg-[#F3F4F6]"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-fg-muted hover:bg-surface-2"
               >
                 <Icon icon="solar:close-circle-linear" width={26} height={26} />
               </button>
@@ -219,10 +219,10 @@ export default function EquipmentReportModal({ onClose }: Props) {
               {/* 설비 */}
               <section ref={equipmentRef} data-field="equipment">
                 <div className="mb-2 flex items-baseline gap-2">
-                  <h3 className="text-base font-semibold text-[#111827]">
+                  <h3 className="text-base font-semibold text-fg">
                     {t("form.equipment")}
                   </h3>
-                  <span className="text-xs font-medium text-[#DC2626]">
+                  <span className="text-xs font-medium text-danger-fg">
                     {t("form.equipmentRequired")}
                   </span>
                 </div>
@@ -238,8 +238,8 @@ export default function EquipmentReportModal({ onClose }: Props) {
                           onClick={() => setProcess(code)}
                           className={`h-9 shrink-0 rounded-full border px-4 text-sm font-medium ${
                             active
-                              ? "border-[#931B82] bg-[#931B82] text-white"
-                              : "border-[#D1D5DB] bg-white text-[#374151]"
+                              ? "border-brand bg-brand text-on-brand"
+                              : "border-line-strong bg-surface text-fg"
                           }`}
                         >
                           {code ? processLabel(code) : t("form.allProcesses")}
@@ -255,14 +255,14 @@ export default function EquipmentReportModal({ onClose }: Props) {
                       icon="solar:magnifer-linear"
                       width={18}
                       height={18}
-                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]"
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle"
                     />
                     <input
                       type="search"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder={t("form.searchPlaceholder")}
-                      className="h-11 w-full rounded-xl border border-[#D1D5DB] pl-9 pr-3 text-base outline-none focus:border-[#931B82]"
+                      className="h-11 w-full rounded-xl border border-line-strong pl-9 pr-3 text-base outline-none focus:border-brand"
                     />
                   </div>
                 )}
@@ -270,25 +270,25 @@ export default function EquipmentReportModal({ onClose }: Props) {
                 <div
                   aria-invalid={!!equipmentError}
                   className={`max-h-72 overflow-y-auto rounded-xl border ${
-                    equipmentError ? "border-[#DC2626]" : "border-[#E5E7EB]"
+                    equipmentError ? "border-danger" : "border-line"
                   }`}
                 >
                   {equipmentQuery.isLoading ? (
-                    <p className="p-4 text-center text-sm text-[#6B7280]">
+                    <p className="p-4 text-center text-sm text-fg-muted">
                       {t("form.loadingEquipment")}
                     </p>
                   ) : equipmentQuery.isError ? (
-                    <p className="p-4 text-center text-sm text-[#DC2626]">
+                    <p className="p-4 text-center text-sm text-danger-fg">
                       {t("form.equipmentLoadFailed")}
                     </p>
                   ) : visible.length === 0 ? (
-                    <p className="p-4 text-center text-sm text-[#6B7280]">
+                    <p className="p-4 text-center text-sm text-fg-muted">
                       {equipment.length === 0
                         ? t("form.noEquipment")
                         : t("form.noMatch")}
                     </p>
                   ) : (
-                    <ul role="radiogroup" className="divide-y divide-[#F3F4F6]">
+                    <ul role="radiogroup" className="divide-y divide-line">
                       {visible.map((e) => {
                         const checked = e.id === selectedId;
                         return (
@@ -303,29 +303,29 @@ export default function EquipmentReportModal({ onClose }: Props) {
                                   setError(null);
                               }}
                               className={`flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left ${
-                                checked ? "bg-[#F3E8F7]" : "hover:bg-[#F9FAFB]"
+                                checked ? "bg-brand-soft" : "hover:bg-surface-2"
                               }`}
                             >
                               <span
                                 className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
                                   checked
-                                    ? "border-[#931B82] bg-[#931B82]"
-                                    : "border-[#D1D5DB]"
+                                    ? "border-brand bg-brand"
+                                    : "border-line-strong"
                                 }`}
                               >
                                 {checked && (
                                   <Icon
                                     icon="solar:check-read-linear"
                                     width={16}
-                                    className="text-white"
+                                    className="text-on-brand"
                                   />
                                 )}
                               </span>
                               <span className="min-w-0 flex-1">
-                                <span className="block truncate text-base font-semibold text-[#111827]">
+                                <span className="block truncate text-base font-semibold text-fg">
                                   {e.name}
                                 </span>
-                                <span className="block text-sm text-[#6B7280]">
+                                <span className="block text-sm text-fg-muted">
                                   {processLabel(e.process)}
                                 </span>
                               </span>
@@ -337,7 +337,7 @@ export default function EquipmentReportModal({ onClose }: Props) {
                   )}
                 </div>
                 {equipmentError && (
-                  <p role="alert" className="mt-1.5 text-sm text-[#B91C1C]">
+                  <p role="alert" className="mt-1.5 text-sm text-danger-fg">
                     {equipmentError}
                   </p>
                 )}
@@ -346,10 +346,10 @@ export default function EquipmentReportModal({ onClose }: Props) {
               {/* 사진 */}
               <section ref={photosRef} data-field="photos" className="mt-6">
                 <div className="mb-2 flex items-baseline gap-2">
-                  <h3 className="text-base font-semibold text-[#111827]">
+                  <h3 className="text-base font-semibold text-fg">
                     {t("form.photos")}
                   </h3>
-                  <span className="text-xs text-[#6B7280]">
+                  <span className="text-xs text-fg-muted">
                     {t("form.photosOptional", { max: MAX_REPORT_IMAGES })}
                   </span>
                 </div>
@@ -357,7 +357,7 @@ export default function EquipmentReportModal({ onClose }: Props) {
                   {photos.map((p) => (
                     <div
                       key={p.key}
-                      className="relative aspect-square overflow-hidden rounded-xl border border-[#E5E7EB] bg-[#F9FAFB]"
+                      className="relative aspect-square overflow-hidden rounded-xl border border-line bg-canvas"
                     >
                       <img
                         src={p.url ? toBackendImageUrl(p.url) : p.preview}
@@ -388,7 +388,7 @@ export default function EquipmentReportModal({ onClose }: Props) {
                     <button
                       type="button"
                       onClick={() => fileRef.current?.click()}
-                      className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-[#D1D5DB] text-[#6B7280] hover:border-[#931B82] hover:text-[#931B82]"
+                      className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-line-strong text-fg-muted hover:border-brand hover:text-brand-fg"
                     >
                       <Icon
                         icon="solar:camera-add-linear"
@@ -409,7 +409,7 @@ export default function EquipmentReportModal({ onClose }: Props) {
                   onChange={(e) => addPhoto(e.target.files?.[0])}
                 />
                 {photosError && (
-                  <p role="alert" className="mt-1.5 text-sm text-[#B91C1C]">
+                  <p role="alert" className="mt-1.5 text-sm text-danger-fg">
                     {photosError}
                   </p>
                 )}
@@ -417,9 +417,9 @@ export default function EquipmentReportModal({ onClose }: Props) {
             </div>
 
             {/* 보내기 */}
-            <div className="border-t border-[#E5E7EB] px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+            <div className="border-t border-line px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
               {error?.field === "general" && (
-                <p role="alert" className="mb-2 text-sm text-[#B91C1C]">
+                <p role="alert" className="mb-2 text-sm text-danger-fg">
                   {error.message}
                 </p>
               )}
@@ -427,7 +427,7 @@ export default function EquipmentReportModal({ onClose }: Props) {
                 type="button"
                 onClick={submit}
                 disabled={submitting || uploading}
-                className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-[#DC2626] text-lg font-bold text-white hover:bg-[#B91C1C] disabled:opacity-60"
+                className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-danger text-lg font-bold text-white hover:bg-danger disabled:opacity-60"
               >
                 <Icon
                   icon="solar:danger-triangle-bold"
@@ -456,19 +456,19 @@ function DoneView({ name, onClose }: { name: string; onClose: () => void }) {
   const { t } = useTranslation("equipmentReport");
   return (
     <div className="flex flex-col items-center px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-10 text-center">
-      <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#DCFCE7] text-[#16A34A]">
+      <span className="flex h-20 w-20 items-center justify-center rounded-full bg-success-soft text-success-fg">
         <Icon icon="solar:check-circle-bold" width={48} height={48} />
       </span>
-      <h2 className="mt-5 text-2xl font-bold text-[#111827]">
+      <h2 className="mt-5 text-2xl font-bold text-fg">
         {t("done.title")}
       </h2>
-      <p className="mt-2 text-lg font-semibold text-[#374151]">{name}</p>
-      <p className="mt-3 text-base text-[#6B7280]">{t("done.notified")}</p>
+      <p className="mt-2 text-lg font-semibold text-fg">{name}</p>
+      <p className="mt-3 text-base text-fg-muted">{t("done.notified")}</p>
       <button
         type="button"
         onClick={onClose}
         autoFocus
-        className="mt-8 h-14 w-full rounded-xl bg-[#931B82] text-lg font-bold text-white hover:bg-[#7A1670]"
+        className="mt-8 h-14 w-full rounded-xl bg-brand text-lg font-bold text-on-brand hover:bg-brand-hover"
       >
         {t("done.confirm")}
       </button>

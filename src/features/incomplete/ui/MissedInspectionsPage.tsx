@@ -59,7 +59,7 @@ export default function MissedInspectionsPage() {
     groups.notStarted.length === 0;
 
   return (
-    <div className="flex min-h-full flex-col gap-4 bg-[#F5F5F5] px-4 pb-21 pt-4">
+    <div className="flex min-h-full flex-col gap-4 bg-canvas px-4 pb-21 pt-4">
       <div className="flex items-center gap-2">
         <CheckboxMultiSelect
           label={processFilterLabel}
@@ -71,13 +71,13 @@ export default function MissedInspectionsPage() {
       </div>
 
       {isLoading && (
-        <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+        <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
           {tCommon("status.loading")}
         </p>
       )}
 
       {isError && (
-        <div className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#B91C1C]">
+        <div className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-danger-fg border border-edge">
           {t("list.loadError")}
           <button
             type="button"
@@ -90,7 +90,7 @@ export default function MissedInspectionsPage() {
       )}
 
       {!isLoading && !isError && empty && (
-        <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+        <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
           {t("missed.empty")}
           {/* 시작 안 한 시점이 모두 오래돼 빠졌으면 섹션이 통째로 숨으니 여기서 알린다. */}
           {groups.notStartedOlder > 0 && (
@@ -186,10 +186,10 @@ function Section({
   return (
     <section className="flex flex-col gap-2">
       <div>
-        <h2 className="text-sm font-semibold text-[#212121]">
-          {title} <span className="text-[#931B82]">{items.length}</span>
+        <h2 className="text-sm font-semibold text-fg">
+          {title} <span className="text-brand-fg">{items.length}</span>
         </h2>
-        <p className="mt-0.5 text-xs text-[#6B7280]">{hint}</p>
+        <p className="mt-0.5 text-xs text-fg-muted">{hint}</p>
       </div>
       <ul className="flex flex-col gap-2">
         {items.map((item) => (
@@ -203,9 +203,9 @@ function Section({
 }
 
 const TONE_DOT: Record<"red" | "amber" | "gray", string> = {
-  red: "bg-[#EF4444]",
-  amber: "bg-[#F59E0B]",
-  gray: "bg-[#9CA3AF]",
+  red: "bg-danger",
+  amber: "bg-warn",
+  gray: "bg-fg-faint",
 };
 
 function MissedCard({
@@ -238,29 +238,29 @@ function MissedCard({
   const submittedAt = formatShortDateTime(item.updatedAt);
 
   return (
-    <div className="rounded-xl bg-white p-4 shadow-sm">
+    <div className="rounded-xl bg-surface p-4 shadow-sm border border-edge">
       <div className="flex items-start gap-3">
         <span
           className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${TONE_DOT[tone]}`}
         />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold text-[#212121]">
+          <div className="truncate text-sm font-semibold text-fg">
             {summary}
           </div>
-          <div className="mt-0.5 text-xs text-[#6B7280]">
+          <div className="mt-0.5 text-xs text-fg-muted">
             {t("missed.slotDate", { date: when })}
           </div>
-          <div className="mt-0.5 text-xs text-[#6B7280]">
+          <div className="mt-0.5 text-xs text-fg-muted">
             {item.productionName
               ? t("missed.worker", { name: who })
               : t("missed.assignedWorkers", { names: who })}
             {submittedAt && ` · ${t("missed.submittedAt", { date: submittedAt })}`}
           </div>
           {showReason && reasonText && (
-            <div className="mt-2 rounded-md bg-[#F9FAFB] px-2.5 py-1.5 text-xs text-[#212121]">
+            <div className="mt-2 rounded-md bg-canvas px-2.5 py-1.5 text-xs text-fg">
               {t("missed.reasonLine", { reason: reasonText })}
               {item.reasonByName && (
-                <span className="text-[#6B7280]">
+                <span className="text-fg-muted">
                   {" "}
                   · {t("missed.reasonBy", { name: item.reasonByName })}
                 </span>
@@ -274,8 +274,8 @@ function MissedCard({
             onClick={action.onClick}
             className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold ${
               action.secondary
-                ? "border border-[#931B82] bg-white text-[#931B82]"
-                : "bg-[#931B82] text-white"
+                ? "border border-brand bg-surface text-brand-fg"
+                : "bg-brand text-on-brand"
             }`}
           >
             {action.label}

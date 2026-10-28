@@ -100,19 +100,19 @@ export default function ProductScheduleDrawer({
   };
 
   const banner = hasOverride ? (
-    <div className="flex gap-2 rounded-lg border border-[#E9D5FF] bg-[#FAF5FF] px-3 py-2.5 text-[11px] leading-relaxed text-[#6B21A8]">
+    <div className="flex gap-2 rounded-lg border border-brand-line bg-brand-soft px-3 py-2.5 text-[0.6875rem] leading-relaxed text-brand-fg">
       <Icon icon="mdi:tag-outline" width={15} height={15} className="mt-px shrink-0" />
       <span>{t("product.bannerOverride")}</span>
     </div>
   ) : (
-    <div className="flex gap-2 rounded-lg border border-gray-200 bg-[#FAFAFA] px-3 py-2.5 text-[11px] leading-relaxed text-[#6B7280]">
+    <div className="flex gap-2 rounded-lg border border-line bg-surface-2 px-3 py-2.5 text-[0.6875rem] leading-relaxed text-fg-muted">
       <Icon icon="mdi:information-outline" width={15} height={15} className="mt-px shrink-0" />
       <span>
         <Trans
           t={t}
           i18nKey="product.bannerBase"
           values={{ process: processLabel }}
-          components={{ b: <span className="font-medium text-[#4B5563]" /> }}
+          components={{ b: <span className="font-medium text-fg-muted" /> }}
         />
       </span>
     </div>
@@ -148,7 +148,7 @@ export default function ProductScheduleDrawer({
             type="button"
             onClick={handleDelete}
             disabled={isDeleting}
-            className="h-10 rounded-lg border border-gray-300 text-xs font-medium text-[#6B7280] transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+            className="h-10 rounded-lg border border-line-strong text-xs font-medium text-fg-muted transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isDeleting ? t("product.reverting") : t("product.revert")}
           </button>

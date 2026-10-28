@@ -47,24 +47,24 @@ export default function SkipModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm rounded-t-2xl bg-white p-5 sm:rounded-2xl"
+        className="w-full max-w-sm rounded-t-2xl bg-surface p-5 sm:rounded-2xl border border-edge"
       >
         {step === "confirm" ? (
           <>
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FEF3C7]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-warn-soft">
                 <Icon
                   icon="solar:danger-triangle-bold"
                   width={22}
                   height={22}
-                  className="text-[#F59E0B]"
+                  className="text-warn-fg"
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-base font-semibold text-[#212121]">
+                <h3 className="text-base font-semibold text-fg">
                   {t("modals.skip.title", { label: slotLabel })}
                 </h3>
-                <p className="mt-1 text-xs text-[#6B7280]">
+                <p className="mt-1 text-xs text-fg-muted">
                   {t("modals.skip.warning")}
                 </p>
               </div>
@@ -73,14 +73,14 @@ export default function SkipModal({
               <button
                 type="button"
                 onClick={onCancel}
-                className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB]"
+                className="h-11 flex-1 rounded-md border border-line-strong bg-surface text-sm font-medium text-fg-muted hover:bg-surface-2"
               >
                 {t("modals.skip.cancel")}
               </button>
               <button
                 type="button"
                 onClick={() => setStep("reason")}
-                className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white hover:bg-[#6A0F5D]"
+                className="h-11 flex-1 rounded-md bg-brand text-sm font-semibold text-on-brand hover:bg-brand-hover"
               >
                 {t("modals.skip.skip")}
               </button>
@@ -88,10 +88,10 @@ export default function SkipModal({
           </>
         ) : (
           <>
-            <h3 className="text-base font-semibold text-[#212121]">
+            <h3 className="text-base font-semibold text-fg">
               {t("modals.skip.reasonTitle")}
             </h3>
-            <p className="mt-1 text-xs text-[#6B7280]">
+            <p className="mt-1 text-xs text-fg-muted">
               {t("modals.skip.reasonHint")}
             </p>
             <textarea
@@ -101,14 +101,14 @@ export default function SkipModal({
               maxLength={200}
               rows={3}
               disabled={isSubmitting}
-              className="mt-3 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+              className="mt-3 w-full resize-none rounded-md border border-line-strong bg-surface px-3 py-2 text-sm text-fg placeholder:text-fg-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:bg-surface-2"
             />
             <div className="mt-4 flex gap-2">
               <button
                 type="button"
                 onClick={() => setStep("confirm")}
                 disabled={isSubmitting}
-                className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-60"
+                className="h-11 flex-1 rounded-md border border-line-strong bg-surface text-sm font-medium text-fg-muted hover:bg-surface-2 disabled:opacity-60"
               >
                 {t("modals.skip.back")}
               </button>
@@ -116,7 +116,7 @@ export default function SkipModal({
                 type="button"
                 onClick={handleConfirm}
                 disabled={isSubmitting}
-                className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+                className="h-11 flex-1 rounded-md bg-brand text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:bg-surface-3"
               >
                 {isSubmitting
                   ? t("modals.skip.submitting")

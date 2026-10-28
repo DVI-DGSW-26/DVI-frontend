@@ -16,9 +16,9 @@ import {
 import { withSlotLabel } from "../../../lib/slotLabel";
 
 const STAGE_BADGE: Record<ReportStage, string> = {
-  INITIAL: "border-[#DBEAFE] bg-[#EFF6FF] text-[#1D4ED8]",
-  MIDDLE: "border-[#FEF3C7] bg-[#FFFBEB] text-[#B45309]",
-  FINAL: "border-[#FBCFE8] bg-[#FDF2F8] text-[#9D174D]",
+  INITIAL: "border-info-line bg-info-soft text-info-fg",
+  MIDDLE: "border-warn-line bg-warn-soft text-warn-fg",
+  FINAL: "border-brand-line bg-brand-soft text-danger-fg",
 };
 
 function isWithinTolerance(
@@ -35,8 +35,8 @@ function isWithinTolerance(
 }
 
 function valueColor(within: boolean | null): string {
-  if (within === null) return "text-[#A8A8A8]";
-  return within ? "text-[#15803D]" : "text-[#B91C1C]";
+  if (within === null) return "text-fg-subtle";
+  return within ? "text-success-fg" : "text-danger-fg";
 }
 
 function formatValue(value: number | null | undefined): string {
@@ -55,12 +55,12 @@ function StageChip({ column }: { column: StageColumn }) {
     <span className="inline-flex items-center gap-1.5">
       <span
         className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${
-          STAGE_BADGE[column.stage] ?? "border-[#E5E7EB] bg-[#F5F5F5] text-[#6B7280]"
+          STAGE_BADGE[column.stage] ?? "border-line bg-surface-2 text-fg-muted"
         }`}
       >
         {t(`stage.${column.stage}`, "?")}
       </span>
-      <span className="text-xs font-medium text-[#212121]">{label}</span>
+      <span className="text-xs font-medium text-fg">{label}</span>
     </span>
   );
 }
@@ -70,12 +70,12 @@ function StageChip({ column }: { column: StageColumn }) {
 // 실려 있는지로 판단해, dim 마다 방식이 다른 경우도 그대로 따라간다.
 function PassFailMark({ value }: { value: AppearanceResult | null }) {
   if (value === "OK") {
-    return <span className="text-sm font-semibold text-[#15803D]">OK</span>;
+    return <span className="text-sm font-semibold text-success-fg">OK</span>;
   }
   if (value === "NG") {
-    return <span className="text-sm font-semibold text-[#B91C1C]">NG</span>;
+    return <span className="text-sm font-semibold text-danger-fg">NG</span>;
   }
-  return <span className="text-sm text-[#A8A8A8]">—</span>;
+  return <span className="text-sm text-fg-subtle">—</span>;
 }
 
 function SideValue({
@@ -122,7 +122,7 @@ function MeasureCell({
 }) {
   const { t } = useTranslation("report");
   if (!measurement) {
-    return <span className="text-sm text-[#D4D4D4]">—</span>;
+    return <span className="text-sm text-fg-faint">—</span>;
   }
   const thumb = measurement.qualityImageUrl ?? measurement.productionImageUrl;
   return (
@@ -139,7 +139,7 @@ function MeasureCell({
             dimNo: item.dimNo,
             typeLabel: measurement.typeLabel,
           })}
-          className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#F5F5F5] transition-colors hover:bg-[#F3E8F7]"
+          className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface-2 transition-colors hover:bg-brand-soft"
         >
           <img
             src={toBackendImageUrl(thumb)}
@@ -177,13 +177,13 @@ export default function ReportMeasurementsSection({
         {results.map((item, idx) => (
           <li
             key={`${item.dimNo}-${idx}`}
-            className="flex flex-col gap-2 rounded-xl border border-[#E5E7EB] p-3"
+            className="flex flex-col gap-2 rounded-xl border border-line p-3"
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
+              <span className="rounded-md bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-fg">
                 DIM {item.dimNo}
               </span>
-              <span className="text-xs text-[#A8A8A8]">
+              <span className="text-xs text-fg-subtle">
                 {t("measurements.standardWithTolerance", {
                   value: item.standardValue,
                   tolerance: formatTolerance(
@@ -193,7 +193,7 @@ export default function ReportMeasurementsSection({
                 })}
               </span>
             </div>
-            <ul className="flex flex-col divide-y divide-[#F0F0F0]">
+            <ul className="flex flex-col divide-y divide-line">
               {columns.map((c) => (
                 <li
                   key={c.key}
@@ -218,7 +218,7 @@ export default function ReportMeasurementsSection({
     <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-sm">
         <thead>
-          <tr className="border-b border-[#E5E7EB] text-left text-xs text-[#A8A8A8]">
+          <tr className="border-b border-line text-left text-xs text-fg-subtle">
             <th className="pb-2 pr-3 font-medium">DIM</th>
             <th className="pb-2 pr-3 font-medium">
               {t("measurements.standard")}
@@ -230,15 +230,15 @@ export default function ReportMeasurementsSection({
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-[#F0F0F0]">
+        <tbody className="divide-y divide-line">
           {results.map((item, idx) => (
             <tr key={`${item.dimNo}-${idx}`} className="align-top">
               <td className="py-3 pr-3">
-                <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
+                <span className="rounded-md bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-fg">
                   {item.dimNo}
                 </span>
               </td>
-              <td className="py-3 pr-3 text-xs text-[#6B7280]">
+              <td className="py-3 pr-3 text-xs text-fg-muted">
                 {item.standardValue}
                 <br />+{item.toleranceUpper} / -{item.toleranceLower}
               </td>
@@ -255,7 +255,7 @@ export default function ReportMeasurementsSection({
           ))}
         </tbody>
       </table>
-      <p className="mt-3 text-xs text-[#A8A8A8]">{t("measurements.legend")}</p>
+      <p className="mt-3 text-xs text-fg-subtle">{t("measurements.legend")}</p>
     </div>
   );
 }

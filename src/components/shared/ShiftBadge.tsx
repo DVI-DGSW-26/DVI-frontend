@@ -17,12 +17,12 @@ const STYLE: Record<
   DAY: {
     labelKey: "shiftBadge.day",
     icon: "solar:sun-bold",
-    className: "bg-[#FEF3C7] text-[#B45309]",
+    className: "bg-warn-soft text-warn-fg",
   },
   NIGHT: {
     labelKey: "shiftBadge.night",
     icon: "solar:moon-bold",
-    className: "bg-[#E0E7FF] text-[#3730A3]",
+    className: "bg-brand-soft text-brand-fg",
   },
 };
 
@@ -36,7 +36,7 @@ export default function ShiftBadge({ shift, compact = false }: Props) {
   const { t } = useTranslation("shared");
   if (!shift) return null;
   const meta = STYLE[shift];
-  const size = compact ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-0.5 text-xs";
+  const size = compact ? "px-1.5 py-0.5 text-[0.625rem]" : "px-2 py-0.5 text-xs";
   return (
     <span
       className={`inline-flex shrink-0 items-center gap-1 rounded-full font-semibold ${size} ${meta.className}`}

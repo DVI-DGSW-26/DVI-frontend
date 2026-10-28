@@ -41,25 +41,25 @@ export function AutoReleaseNotice({ detail }: { detail: CrossCheckDetail }) {
   };
 
   return (
-    <section className="border-b border-[#FDE68A] bg-[#FFFBEB] px-4 py-3">
+    <section className="border-b border-warn-line bg-warn-soft px-4 py-3">
       <div className="flex items-start gap-2">
         <Icon
           icon="solar:clock-circle-bold"
           width={18}
           height={18}
-          className="mt-0.5 shrink-0 text-[#B45309]"
+          className="mt-0.5 shrink-0 text-warn-fg"
         />
         <div className="min-w-0 flex-1">
-          <div className="text-xs font-semibold text-[#B45309]">
+          <div className="text-xs font-semibold text-warn-fg">
             {released
               ? t("autoRelease.releasedTitle")
               : t("autoRelease.soonTitle", { minutes })}
           </div>
-          <div className="mt-0.5 text-[11px] text-[#6B7280]">
+          <div className="mt-0.5 text-[0.6875rem] text-fg-muted">
             {released ? t("autoRelease.releasedBody") : t("autoRelease.soonBody")}
           </div>
           {error && (
-            <div className="mt-1 text-[11px] text-[#B91C1C]">{error}</div>
+            <div className="mt-1 text-[0.6875rem] text-danger-fg">{error}</div>
           )}
         </div>
         {released && (
@@ -67,7 +67,7 @@ export function AutoReleaseNotice({ detail }: { detail: CrossCheckDetail }) {
             type="button"
             onClick={handleReclaim}
             disabled={reclaim.isPending}
-            className="shrink-0 rounded-lg bg-[#B45309] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+            className="shrink-0 rounded-lg bg-warn px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
           >
             {reclaim.isPending
               ? t("autoRelease.reclaiming")

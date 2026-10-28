@@ -37,8 +37,8 @@ export default function PassFailPhase({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-xl border border-gray-200 bg-white p-4">
-        <span className="block text-xs font-medium text-[#6B7280]">
+      <div className="rounded-xl border border-edge bg-surface p-4">
+        <span className="block text-xs font-medium text-fg-muted">
           {t("judgment.label")}
         </span>
         <div
@@ -60,9 +60,9 @@ export default function PassFailPhase({
                 className={`h-14 rounded-md border text-base font-semibold transition-colors disabled:opacity-60 ${
                   selected
                     ? isOk
-                      ? "border-[#22C55E] bg-[#ECFDF5] text-[#15803D]"
-                      : "border-[#EF4444] bg-[#FEF2F2] text-[#B91C1C]"
-                    : "border-gray-300 bg-white text-[#6B7280] hover:bg-gray-50"
+                      ? "border-success bg-success-soft text-success-fg"
+                      : "border-danger bg-danger-soft text-danger-fg"
+                    : "border-line-strong bg-surface text-fg-muted hover:bg-surface-2"
                 }`}
               >
                 {isOk ? t("judgment.okPass") : t("judgment.ngFail")}
@@ -70,7 +70,7 @@ export default function PassFailPhase({
             );
           })}
         </div>
-        <p className="mt-2 text-[11px] text-[#9CA3AF]">
+        <p className="mt-2 text-[0.6875rem] text-fg-subtle">
           {t("passFail.notice")}
         </p>
       </div>
@@ -81,7 +81,7 @@ export default function PassFailPhase({
             type="button"
             onClick={onGoBack}
             disabled={isSaving}
-            className="h-11 rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold text-[#6B7280] disabled:opacity-60"
+            className="h-11 rounded-md border border-line-strong bg-surface px-3 text-sm font-semibold text-fg-muted disabled:opacity-60"
           >
             {t("input.prev")}
           </button>
@@ -91,7 +91,7 @@ export default function PassFailPhase({
             type="button"
             onClick={onGoNext}
             disabled={isSaving}
-            className="h-11 rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold text-[#6B7280] disabled:opacity-60"
+            className="h-11 rounded-md border border-line-strong bg-surface px-3 text-sm font-semibold text-fg-muted disabled:opacity-60"
           >
             {t("input.next")}
           </button>
@@ -100,7 +100,7 @@ export default function PassFailPhase({
           type="button"
           onClick={() => value != null && onSubmit(value)}
           disabled={submitDisabled}
-          className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+          className="h-11 flex-1 rounded-md bg-brand text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:bg-surface-3"
         >
           {buttonLabel}
         </button>

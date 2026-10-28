@@ -4,6 +4,139 @@
   --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
     system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo",
     "Noto Sans KR", "Malgun Gothic", sans-serif;
+
+  /* 다크 테마 — QAC-FLOW 로고(배경 #0E1016, 보라 #7B6EF3, 초록 #3ECB9B)에서 뽑은 색.
+     화면 코드는 hex 를 직접 쓰지 말고 아래 이름(bg-surface, text-fg-muted, border-line …)을 쓴다.
+     JS 스타일 객체에서는 "var(--color-brand)" 처럼 변수로 참조한다. */
+
+  /* 바탕 — 깊이 순서: canvas(페이지) < surface(카드·헤더·모달) < surface-2(카드 안 옅은 칸·hover) < surface-3(트랙·비활성)
+     로고 배경의 남색 기운을 조금 올려(채도↑) 무채색보다 덜 칙칙하게 한다. 사이드바·헤더는 .sidebar-scope 로 무채색 유지. */
+  --color-canvas: #0a0c17;
+  --color-surface: #191f37;
+  --color-surface-2: #212844;
+  --color-surface-3: #2d3556;
+
+  /* 선 */
+  --color-line: #2a3152;
+  --color-line-strong: #4a5480;
+  /* 카드·모달·박스의 바깥 테두리 (표 안 구분선은 line) */
+  --color-edge: transparent; /* 다크는 박스 테두리 없이 바탕 대비로만 구분한다 */
+
+  /* 글자 — 순수 흰색 대신 살짝 낮춘 밝기로 눈부심을 줄인다 */
+  --color-fg: #e7e9ee;
+  --color-fg-muted: #a6adc4;
+  --color-fg-subtle: #7b83a0;
+  --color-fg-faint: #4a5272;
+
+  /* 브랜드 — 다크는 로고 민트, 라이트는 로고 보라(아래 라이트 블록).
+     brand 는 버튼 바탕, on-brand 는 그 위 글자, brand-fg 는 바탕 위 강조 글자 */
+  --color-brand: #3ecb9b;
+  --color-brand-hover: #5ad6ab;
+  --color-on-brand: #06231a;
+  --color-brand-fg: #6fe3bd;
+  --color-brand-soft: #3ecb9b24;
+  --color-brand-line: #3ecb9b66;
+
+  /* 로고 보라 — 공장 모니터는 테마와 상관없이 보라를 쓴다 */
+  --color-violet: #6c5fe8;
+  --color-violet-hover: #8175f0;
+  --color-violet-fg: #aaa1fa;
+  --color-violet-soft: #7b6ef324;
+  --color-violet-line: #7b6ef366;
+  --color-accent: #3ecb9b;
+
+  /* 상태 — 진한 색(바탕·점), -fg(글자), -soft(칩 바탕), -line(칩 테두리) */
+  --color-danger: #e5484d;
+  --color-danger-fg: #ff8f8a;
+  --color-danger-soft: #e5484d24;
+  --color-danger-line: #e5484d66;
+  --color-warn: #c0801f;
+  --color-warn-fg: #f6c46e;
+  --color-warn-soft: #f2a93b24;
+  --color-warn-line: #f2a93b66;
+  --color-success: #23936c;
+  --color-success-fg: #5fddb2;
+  --color-success-soft: #3ecb9b24;
+  --color-success-line: #3ecb9b66;
+  --color-info: #3b7fe0;
+  --color-info-fg: #93bdfb;
+  --color-info-soft: #5b9cf524;
+  --color-info-line: #5b9cf566;
+}
+
+html {
+  /* 날짜 선택기·스크롤바·select 같은 브라우저 기본 컨트롤도 테마를 따른다 */
+  color-scheme: dark;
+}
+
+/* PC 화면에서는 기준 글자 크기를 16px → 17px 로 올린다. 글자·여백이 모두 rem 기준이라
+   화면 전체가 약 6% 커진다(브라우저 106% 확대와 같은 효과). 모바일 앱은 그대로.
+   공장 모니터(/monitor)는 자체 배율(useDesignScale)로 화면을 맞추므로 제외한다. */
+@media (min-width: 1024px) {
+  html:not(:has(.monitor-root)) {
+    font-size: 106.25%;
+  }
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-fg);
+}
+
+/* 라이트 테마 — <html data-theme="light"> 일 때 같은 색 이름을 밝은 값으로 덮어쓴다.
+   화면 코드는 테마를 몰라도 된다(bg-surface, text-fg … 가 알아서 바뀐다).
+   전환은 src/lib/theme.ts, 첫 화면 깜빡임 방지는 index.html 의 인라인 스크립트. */
+html[data-theme="light"] {
+  color-scheme: light;
+
+  --color-canvas: #f2f3f7;
+  --color-surface: #ffffff;
+  --color-surface-2: #f4f5f7;
+  --color-surface-3: #e5e7eb;
+
+  --color-line: #eceef1;
+  --color-line-strong: #d1d5db;
+  --color-edge: #e6e8ec;
+
+  --color-fg: #1c1f26;
+  --color-fg-muted: #5f6673;
+  --color-fg-subtle: #8e95a1;
+  --color-fg-faint: #c4c8cf;
+
+  --color-brand: #6c5fe8;
+  --color-brand-hover: #5a4dd6;
+  --color-on-brand: #ffffff;
+  --color-brand-fg: #5546d6;
+  --color-brand-soft: #efedfe;
+  --color-brand-line: #d6d1fb;
+
+  --color-violet-hover: #5a4dd6;
+  --color-violet-fg: #5546d6;
+  --color-violet-soft: #efedfe;
+  --color-violet-line: #d6d1fb;
+
+  --color-danger-fg: #c42b30;
+  --color-danger-soft: #fdecec;
+  --color-danger-line: #f8c9ca;
+  --color-warn-fg: #a3610b;
+  --color-warn-soft: #fdf3e1;
+  --color-warn-line: #f5d9a8;
+  --color-success-fg: #137a55;
+  --color-success-soft: #e3f7ef;
+  --color-success-line: #b5e8d4;
+  --color-info-fg: #1f5fc4;
+  --color-info-soft: #e8f1fe;
+  --color-info-line: #c5dbfb;
+}
+
+/* 다크 사이드바·헤더 — 메인보다 채도를 낮춘 무채색 바탕(로고 배경 그대로). 선택 표시는 메인과 같은 민트. */
+html:not([data-theme="light"]) .sidebar-scope {
+  --color-surface: #161a21;
+  --color-surface-2: #1d222b;
+  --color-surface-3: #282e39;
+  --color-line: #262c36;
+  --color-fg-muted: #a3aab6;
+  --color-fg-subtle: #7a8290;
 }
 
 html, body, #root {

@@ -219,7 +219,7 @@ export default function InspectionResultPage() {
 
   if (needsFallback && detailQuery.isLoading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
+      <div className="flex min-h-dvh items-center justify-center bg-canvas text-xs text-fg-subtle">
         {t("result.loading")}
       </div>
     );
@@ -227,17 +227,17 @@ export default function InspectionResultPage() {
 
   if (results.length === 0) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
-        <div className="text-sm font-medium text-[#212121]">
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-canvas px-6 text-center">
+        <div className="text-sm font-medium text-fg">
           {t("result.noData")}
         </div>
-        <p className="mt-1 text-xs text-[#6B7280]">
+        <p className="mt-1 text-xs text-fg-muted">
           {t("result.startFromMeasure")}
         </p>
         <button
           type="button"
           onClick={() => navigate("/", { replace: true })}
-          className="mt-4 h-10 rounded-md bg-[#931B82] px-4 text-sm font-medium text-white hover:bg-[#6A0F5D]"
+          className="mt-4 h-10 rounded-md bg-brand px-4 text-sm font-medium text-on-brand hover:bg-brand-hover"
         >
           {t("common.goHome")}
         </button>
@@ -336,12 +336,12 @@ export default function InspectionResultPage() {
 
   return (
     <div
-      className={`flex min-h-dvh flex-col bg-[#F5F5F5] ${
+      className={`flex min-h-dvh flex-col bg-surface-2 ${
         // 비운 항목이 있으면 하단에 버튼 둘과 안내가 붙어 더 높다.
         hasSkipped && postSubmitMode === null ? "pb-64" : "pb-28"
       }`}
     >
-      <section className="border-b border-gray-200 bg-white px-4 py-4">
+      <section className="border-b border-line bg-surface px-4 py-4">
         <InfoRow label={t("measure.machineName")} value={equipmentName} />
         <div className="mt-2 grid grid-cols-2 gap-2">
           <Stat label={t("measure.productName")} value={productName} />
@@ -355,8 +355,8 @@ export default function InspectionResultPage() {
       */}
       {showIncompleteCard && (
         <section className="px-4 pt-4">
-          <div className="rounded-xl border border-[#BBF7D0] bg-white p-4">
-            <div className="flex items-center gap-1.5 text-sm font-semibold text-[#15803D]">
+          <div className="rounded-xl border border-success-line bg-surface p-4">
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-success-fg">
               <Icon icon="solar:check-circle-bold" width={18} height={18} />
               {incompleteApproved
                 ? t("result.incompleteFlow.approvedTitle")
@@ -373,7 +373,7 @@ export default function InspectionResultPage() {
       )}
 
       <section className="flex-1 px-4 pt-4">
-        <h2 className="mb-3 text-sm font-semibold text-[#212121]">
+        <h2 className="mb-3 text-sm font-semibold text-fg">
           {t("result.title")}
         </h2>
         <ul className="flex flex-col gap-3">
@@ -393,12 +393,12 @@ export default function InspectionResultPage() {
           ))}
         </ul>
 
-        <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4">
-          <div className="text-xs font-medium text-[#6B7280]">
+        <div className="mt-5 rounded-xl border border-edge bg-surface p-4">
+          <div className="text-xs font-medium text-fg-muted">
             {t("result.appearance")}
           </div>
           {/* 외관 판정 기준 — 모든 제품 공통 고정 문구(번역 파일에서 관리). */}
-          <p className="mt-0.5 text-[11px] text-[#9CA3AF]">
+          <p className="mt-0.5 text-[0.6875rem] text-fg-subtle">
             {t("appearanceCriterion", { ns: "shared" })}
           </p>
           <div
@@ -422,9 +422,9 @@ export default function InspectionResultPage() {
                   className={`h-11 rounded-md border text-sm font-semibold transition-colors disabled:opacity-60 ${
                     selected
                       ? isOk
-                        ? "border-[#22C55E] bg-[#ECFDF5] text-[#15803D]"
-                        : "border-[#EF4444] bg-[#FEF2F2] text-[#B91C1C]"
-                      : "border-gray-300 bg-white text-[#6B7280] hover:bg-gray-50"
+                        ? "border-success bg-success-soft text-success-fg"
+                        : "border-danger bg-danger-soft text-danger-fg"
+                      : "border-line-strong bg-surface text-fg-muted hover:bg-surface-2"
                   }`}
                 >
                   {isOk ? t("judgment.okPass") : t("judgment.ngFail")}
@@ -434,14 +434,14 @@ export default function InspectionResultPage() {
           </div>
         </div>
 
-        <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4">
+        <div className="mt-5 rounded-xl border border-edge bg-surface p-4">
           <label
             htmlFor="inspection-note"
-            className="block text-xs font-medium text-[#6B7280]"
+            className="block text-xs font-medium text-fg-muted"
           >
             {t("result.noteLabel")}
           </label>
-          <p className="mt-0.5 text-[11px] text-[#9CA3AF]">
+          <p className="mt-0.5 text-[0.6875rem] text-fg-subtle">
             {t("result.noteHint")}
           </p>
           <textarea
@@ -453,15 +453,15 @@ export default function InspectionResultPage() {
             disabled={isBusy || postSubmitMode !== null}
             rows={3}
             maxLength={500}
-            className="mt-2 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+            className="mt-2 w-full resize-none rounded-md border border-line-strong bg-surface px-3 py-2 text-sm text-fg placeholder:text-fg-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:bg-surface-2"
           />
         </div>
 
         {hasSkipped && (
-          <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4">
+          <div className="mt-5 rounded-xl border border-edge bg-surface p-4">
             <label
               htmlFor="incomplete-reason"
-              className="block text-xs font-medium text-[#6B7280]"
+              className="block text-xs font-medium text-fg-muted"
             >
               {t("result.incompleteReason")}
             </label>
@@ -470,7 +470,7 @@ export default function InspectionResultPage() {
               value={reasonKey}
               onChange={(e) => setReasonKey(e.target.value)}
               disabled={isBusy || postSubmitMode !== null}
-              className="mt-1 h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+              className="mt-1 h-11 w-full rounded-md border border-line-strong bg-surface px-3 text-sm text-fg focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:bg-surface-2"
             >
               <option value="">{t("result.noReason")}</option>
               {REASON_OPTIONS.map((opt) => (
@@ -480,7 +480,7 @@ export default function InspectionResultPage() {
               ))}
             </select>
 
-            <p className="mt-1.5 text-[11px] text-[#6B7280]">
+            <p className="mt-1.5 text-[0.6875rem] text-fg-muted">
               {t("result.reasonOptionalHint")}
             </p>
 
@@ -492,14 +492,14 @@ export default function InspectionResultPage() {
                 placeholder={t("result.customReasonPlaceholder")}
                 disabled={isBusy || postSubmitMode !== null}
                 rows={3}
-                className="mt-2 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+                className="mt-2 w-full resize-none rounded-md border border-line-strong bg-surface px-3 py-2 text-sm text-fg focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:bg-surface-2"
               />
             )}
           </div>
         )}
       </section>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white p-4 md:left-60">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface p-4 md:left-60">
         {postSubmitMode ? (
           // 완료/미완료 처리 후 — 다음 시점이 있으면 그쪽 진입, 없으면 홈으로 이동.
           // 미완료도 승인 전에 다음 시점을 열 수 있다(서버 규칙 2026-10).
@@ -509,7 +509,7 @@ export default function InspectionResultPage() {
                 type="button"
                 onClick={handleStartNext}
                 disabled={startNextMut.isPending}
-                className="h-12 w-full rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+                className="h-12 w-full rounded-md bg-brand text-base font-semibold text-on-brand transition-colors hover:bg-brand-hover disabled:bg-surface-3"
               >
                 {startNextMut.isPending
                   ? t("result.startingNext")
@@ -523,8 +523,8 @@ export default function InspectionResultPage() {
               onClick={() => navigate("/", { replace: true })}
               className={`h-12 w-full rounded-md text-base font-semibold transition-colors ${
                 nextType && postSubmitMode !== "terminated"
-                  ? "border border-[#E5E7EB] bg-white text-[#6B7280] hover:bg-[#F9FAFB]"
-                  : "bg-[#931B82] text-white hover:bg-[#6A0F5D]"
+                  ? "border border-line bg-surface text-fg-muted hover:bg-surface-2"
+                  : "bg-brand text-on-brand hover:bg-brand-hover"
               }`}
             >
               {t("result.home")}
@@ -538,13 +538,13 @@ export default function InspectionResultPage() {
             <button
               type="button"
               disabled
-              className="h-12 w-full rounded-md bg-[#D1D5DB] text-base font-semibold text-white"
+              className="h-12 w-full rounded-md bg-surface-3 text-base font-semibold text-white"
             >
               {t("result.completeSubmit")}
             </button>
             {firstSkipped && (
-              <div className="flex items-center gap-2 rounded-md border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2">
-                <p className="min-w-0 flex-1 text-xs text-[#92400E]">
+              <div className="flex items-center gap-2 rounded-md border border-warn-line bg-warn-soft px-3 py-2">
+                <p className="min-w-0 flex-1 text-xs text-warn-fg">
                   {t("result.skippedBlocksComplete", {
                     items: skippedLabels,
                     count: skippedCount,
@@ -554,7 +554,7 @@ export default function InspectionResultPage() {
                   type="button"
                   onClick={() => handleRetake(firstSkipped.dimNo)}
                   disabled={isBusy}
-                  className="shrink-0 rounded-md bg-[#931B82] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+                  className="shrink-0 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-on-brand hover:bg-brand-hover disabled:bg-surface-3"
                 >
                   {t("result.measureNow")}
                 </button>
@@ -564,7 +564,7 @@ export default function InspectionResultPage() {
               type="button"
               onClick={() => setConfirmIncomplete(true)}
               disabled={isBusy}
-              className="h-12 w-full rounded-md border border-[#931B82] bg-white text-base font-semibold text-[#931B82] transition-colors hover:bg-[#F3E8FF] disabled:border-[#E5E7EB] disabled:text-[#9CA3AF] disabled:hover:bg-white"
+              className="h-12 w-full rounded-md border border-brand bg-surface text-base font-semibold text-brand-fg transition-colors hover:bg-brand-soft disabled:border-line disabled:text-fg-subtle disabled:hover:bg-surface"
             >
               {incompleteMut.isPending
                 ? t("result.processing")
@@ -576,7 +576,7 @@ export default function InspectionResultPage() {
             type="button"
             onClick={handleComplete}
             disabled={!canSubmitComplete || isBusy}
-            className="h-12 w-full rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+            className="h-12 w-full rounded-md bg-brand text-base font-semibold text-on-brand transition-colors hover:bg-brand-hover disabled:bg-surface-3"
           >
             {saveMut.isPending || completeMut.isPending
               ? t("result.processing")
@@ -598,11 +598,11 @@ export default function InspectionResultPage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-t-2xl bg-white p-5 sm:rounded-2xl"
+            className="w-full max-w-sm rounded-t-2xl bg-surface p-5 sm:rounded-2xl border border-edge"
           >
             <h3
               id="confirm-incomplete-title"
-              className="text-base font-semibold text-[#212121]"
+              className="text-base font-semibold text-fg"
             >
               {t("result.incompleteFlow.confirmTitle")}
             </h3>
@@ -617,7 +617,7 @@ export default function InspectionResultPage() {
                 type="button"
                 onClick={() => setConfirmIncomplete(false)}
                 disabled={incompleteMut.isPending}
-                className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-60"
+                className="h-11 flex-1 rounded-md border border-line-strong bg-surface text-sm font-medium text-fg-muted hover:bg-surface-2 disabled:opacity-60"
               >
                 {t("result.incompleteFlow.back")}
               </button>
@@ -625,7 +625,7 @@ export default function InspectionResultPage() {
                 type="button"
                 onClick={handleIncomplete}
                 disabled={incompleteMut.isPending}
-                className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+                className="h-11 flex-1 rounded-md bg-brand text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:bg-surface-3"
               >
                 {incompleteMut.isPending
                   ? t("result.processing")
@@ -678,46 +678,46 @@ function StepResultCard({
       );
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-3">
+    <div className="rounded-xl border border-edge bg-surface p-3">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="shrink-0 rounded-md bg-[#F3E8FF] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
+          <span className="shrink-0 rounded-md bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-fg">
             {t("measure.stepLabel", { n: step })}
           </span>
-          <span className="truncate text-sm font-medium text-[#212121]">
+          <span className="truncate text-sm font-medium text-fg">
             {dimDisplayName(result)}
           </span>
         </div>
         <JudgmentBadge judgment={judgment} compact />
       </div>
-      <div className="mt-1 text-sm text-[#6B7280]">{dimText}</div>
+      <div className="mt-1 text-sm text-fg-muted">{dimText}</div>
 
       {isPassFail ? (
         // PASS_FAIL 항목 — 사진·측정값 없이 OK/NG 만 표시.
         result.passFailResult ? (
-          <div className="mt-3 flex items-baseline justify-between rounded-lg bg-[#F9FAFB] px-3 py-2">
-            <span className="text-xs text-[#6B7280]">
+          <div className="mt-3 flex items-baseline justify-between rounded-lg bg-canvas px-3 py-2">
+            <span className="text-xs text-fg-muted">
               {t("judgment.label")}
             </span>
             <span
               className={`text-base font-semibold ${
                 result.passFailResult === "OK"
-                  ? "text-[#15803D]"
-                  : "text-[#B91C1C]"
+                  ? "text-success-fg"
+                  : "text-danger-fg"
               }`}
             >
               {result.passFailResult}
             </span>
           </div>
         ) : (
-          <div className="mt-3 rounded-lg border border-dashed border-[#D1D5DB] bg-[#F3F4F6] px-3 py-4 text-center text-sm text-[#6B7280]">
+          <div className="mt-3 rounded-lg border border-dashed border-line-strong bg-surface-2 px-3 py-4 text-center text-sm text-fg-muted">
             {t("judgment.notJudged")}
           </div>
         )
       ) : result.status === "completed" ? (
         <>
           {result.imageUrl && (
-            <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-[#F9FAFB]">
+            <div className="mt-3 overflow-hidden rounded-lg border border-line bg-canvas">
               <img
                 src={toBackendImageUrl(result.imageUrl)}
                 alt={t("result.measurePhotoAlt", {
@@ -727,24 +727,24 @@ function StepResultCard({
               />
             </div>
           )}
-          <div className="mt-3 flex items-baseline justify-between rounded-lg bg-[#F9FAFB] px-3 py-2">
-            <span className="text-xs text-[#6B7280]">
+          <div className="mt-3 flex items-baseline justify-between rounded-lg bg-canvas px-3 py-2">
+            <span className="text-xs text-fg-muted">
               {t("input.measuredValue")}
             </span>
-            <span className="text-base font-semibold text-[#212121]">
+            <span className="text-base font-semibold text-fg">
               {result.measuredValue ?? "-"}
             </span>
           </div>
           {isMachining && result.passFailResult && (
-            <div className="mt-2 flex items-baseline justify-between rounded-lg bg-[#F9FAFB] px-3 py-2">
-              <span className="text-xs text-[#6B7280]">
+            <div className="mt-2 flex items-baseline justify-between rounded-lg bg-canvas px-3 py-2">
+              <span className="text-xs text-fg-muted">
                 {t("judgment.machining")}
               </span>
               <span
                 className={`text-base font-semibold ${
                   result.passFailResult === "OK"
-                    ? "text-[#15803D]"
-                    : "text-[#B91C1C]"
+                    ? "text-success-fg"
+                    : "text-danger-fg"
                 }`}
               >
                 {result.passFailResult}
@@ -753,12 +753,12 @@ function StepResultCard({
           )}
         </>
       ) : (
-        <div className="mt-3 flex aspect-square w-full flex-col items-center justify-center rounded-lg border border-dashed border-[#D1D5DB] bg-[#F3F4F6] text-[#6B7280]">
+        <div className="mt-3 flex aspect-square w-full flex-col items-center justify-center rounded-lg border border-dashed border-line-strong bg-surface-2 text-fg-muted">
           <Icon
             icon="solar:camera-cross-bold"
             width={36}
             height={36}
-            className="text-[#9CA3AF]"
+            className="text-fg-subtle"
           />
           <span className="mt-2 text-sm font-medium">
             {t("result.photoUnavailable")}
@@ -769,7 +769,7 @@ function StepResultCard({
         <button
           type="button"
           onClick={onRetake}
-          className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-[#931B82] bg-white text-sm font-semibold text-[#931B82] transition-colors hover:bg-[#F3E8FF]"
+          className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-brand bg-surface text-sm font-semibold text-brand-fg transition-colors hover:bg-brand-soft"
         >
           <Icon icon="solar:camera-linear" width={16} height={16} />
           {t("result.retakeItem")}
@@ -807,16 +807,16 @@ function IncompleteStages({
           <li key={label} className="flex flex-col gap-1">
             <span
               className={`h-1.5 rounded-full ${
-                done ? "bg-[#22C55E]" : current ? "bg-[#931B82]" : "bg-[#E5E7EB]"
+                done ? "bg-success" : current ? "bg-brand" : "bg-surface-3"
               }`}
             />
             <span
-              className={`text-[11px] ${
+              className={`text-[0.6875rem] ${
                 current
-                  ? "font-semibold text-[#931B82]"
+                  ? "font-semibold text-brand-fg"
                   : done
-                    ? "text-[#15803D]"
-                    : "text-[#9CA3AF]"
+                    ? "text-success-fg"
+                    : "text-fg-subtle"
               }`}
             >
               {label}
@@ -863,17 +863,17 @@ function IncompleteFacts({
   }
   return (
     <>
-      <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 rounded-lg bg-[#F9FAFB] px-3 py-2.5 text-xs">
+      <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 rounded-lg bg-canvas px-3 py-2.5 text-xs">
         {rows.map(([k, v]) => (
           <div key={k} className="contents">
-            <dt className="text-[#6B7280]">{k}</dt>
-            <dd className="font-medium text-[#212121]">{v}</dd>
+            <dt className="text-fg-muted">{k}</dt>
+            <dd className="font-medium text-fg">{v}</dd>
           </div>
         ))}
       </dl>
       {/* 서버 규칙(2026-10): 미완료는 승인 전이어도 다음 시점을 연다. 승인은 종 결재 전까지. */}
       {!approved && (
-        <p className="mt-2 rounded-md border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2 text-xs text-[#1E40AF]">
+        <p className="mt-2 rounded-md border border-info-line bg-info-soft px-3 py-2 text-xs text-info-fg">
           {t("result.incompleteFlow.nextOpen")}
         </p>
       )}
@@ -884,8 +884,8 @@ function IncompleteFacts({
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center gap-1.5 text-xs">
-      <span className="shrink-0 text-[#6B7280]">{label}</span>
-      <span className="ml-auto min-w-0 truncate text-right text-sm font-medium text-[#212121]">
+      <span className="shrink-0 text-fg-muted">{label}</span>
+      <span className="ml-auto min-w-0 truncate text-right text-sm font-medium text-fg">
         {value}
       </span>
     </div>
@@ -894,9 +894,9 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-[#F9FAFB] px-3 py-2">
-      <div className="text-xs text-[#6B7280]">{label}</div>
-      <div className="mt-0.5 wrap-break-word text-sm font-semibold text-[#212121]">
+    <div className="rounded-lg bg-canvas px-3 py-2">
+      <div className="text-xs text-fg-muted">{label}</div>
+      <div className="mt-0.5 wrap-break-word text-sm font-semibold text-fg">
         {value}
       </div>
     </div>

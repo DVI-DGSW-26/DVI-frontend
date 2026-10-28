@@ -15,12 +15,12 @@ const DashboardPageMobile = () => {
   const previewPending = pending.slice(0, 8);
 
   return (
-    <div className="flex min-h-full flex-col gap-5 bg-[#F5F5F5] px-4 pb-21 pt-5">
+    <div className="flex min-h-full flex-col gap-5 bg-canvas px-4 pb-21 pt-5">
       <header>
-        <h1 className="text-2xl font-bold text-[#212121]">
+        <h1 className="text-2xl font-bold text-fg">
           {t("greeting", { name: user?.name ?? t("defaultUserName") })}
         </h1>
-        <p className="mt-1 text-sm text-[#6B7280]">
+        <p className="mt-1 text-sm text-fg-muted">
           {t(`roles.${user?.role ?? "ADMIN"}`, {
             ns: "common",
             defaultValue: t("roles.ADMIN", { ns: "common" }),
@@ -51,11 +51,11 @@ const DashboardPageMobile = () => {
       </section>
 
       <section>
-        <h2 className="mb-3 text-base font-bold text-[#212121]">
+        <h2 className="mb-3 text-base font-bold text-fg">
           {t("pendingUsers.recentTitle")}
         </h2>
         {previewPending.length === 0 ? (
-          <p className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-[#A8A8A8]">
+          <p className="rounded-2xl bg-surface px-4 py-6 text-center text-sm text-fg-subtle border border-edge">
             {t("pendingUsers.empty")}
           </p>
         ) : (
@@ -63,12 +63,12 @@ const DashboardPageMobile = () => {
             {previewPending.map((u) => (
               <li
                 key={u.id}
-                className="flex w-24 shrink-0 flex-col items-center gap-2 rounded-2xl bg-white px-3 py-4 shadow-sm"
+                className="flex w-24 shrink-0 flex-col items-center gap-2 rounded-2xl bg-surface px-3 py-4 shadow-sm border border-edge"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F3F4F6] text-[#9CA3AF]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-2 text-fg-subtle">
                   <Icon icon="mdi:account" width={28} height={28} />
                 </div>
-                <span className="truncate text-sm font-medium text-[#212121]">
+                <span className="truncate text-sm font-medium text-fg">
                   {u.name}
                 </span>
               </li>
@@ -80,7 +80,7 @@ const DashboardPageMobile = () => {
       <button
         type="button"
         onClick={() => navigate("/approval")}
-        className="mt-auto w-full rounded-xl bg-[#931B82] py-4 text-base font-semibold text-white transition-opacity hover:opacity-90"
+        className="mt-auto w-full rounded-xl bg-brand py-4 text-base font-semibold text-on-brand transition-opacity hover:opacity-90"
       >
         {t("pendingUsers.approveNow")}
       </button>

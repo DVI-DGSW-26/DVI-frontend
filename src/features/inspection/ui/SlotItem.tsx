@@ -41,7 +41,7 @@ const STATUS_META: Record<
     badge: {
       icon: "solar:clock-circle-bold",
       labelKey: "slot.status.draft",
-      color: "text-[#3B82F6]",
+      color: "text-info-fg",
     },
     actionLabelKey: "slot.action.resume",
     disabled: false,
@@ -51,7 +51,7 @@ const STATUS_META: Record<
     badge: {
       icon: "solar:check-circle-bold",
       labelKey: "slot.status.completed",
-      color: "text-[#22C55E]",
+      color: "text-success-fg",
     },
     actionLabelKey: "",
     disabled: true,
@@ -61,7 +61,7 @@ const STATUS_META: Record<
     badge: {
       icon: "solar:pause-circle-bold",
       labelKey: "slot.status.reviewPending",
-      color: "text-[#F59E0B]",
+      color: "text-warn-fg",
     },
     actionLabelKey: "",
     disabled: true,
@@ -71,7 +71,7 @@ const STATUS_META: Record<
     badge: {
       icon: "solar:check-square-bold",
       labelKey: "slot.status.incompleteApproved",
-      color: "text-[#6B7280]",
+      color: "text-fg-muted",
     },
     actionLabelKey: "",
     disabled: true,
@@ -81,7 +81,7 @@ const STATUS_META: Record<
     badge: {
       icon: "solar:skip-next-bold",
       labelKey: "slot.status.skipped",
-      color: "text-[#6B7280]",
+      color: "text-fg-muted",
     },
     actionLabelKey: "",
     disabled: true,
@@ -91,7 +91,7 @@ const STATUS_META: Record<
     badge: {
       icon: "solar:lock-keyhole-bold",
       labelKey: "slot.status.locked",
-      color: "text-[#9CA3AF]",
+      color: "text-fg-subtle",
     },
     actionLabelKey: "",
     disabled: true,
@@ -139,17 +139,17 @@ export default function SlotItem({ slot, status, onTap, onSkip }: Props) {
   };
 
   const borderClass = meta.dim
-    ? "border-gray-200 bg-[#F9FAFB] opacity-60"
+    ? "border-line bg-canvas opacity-60"
     : status === "DRAFT"
-      ? "border-[#3B82F6] bg-white"
-      : "border-gray-200 bg-white hover:border-gray-300";
+      ? "border-info bg-surface"
+      : "border-line bg-surface hover:border-line-strong";
 
   const avatarClass =
     status === "DRAFT"
-      ? "bg-[#3B82F6] text-white"
+      ? "bg-info text-white"
       : status === "NONE"
-        ? "bg-[#931B82] text-white"
-        : "bg-[#F3F4F6] text-[#6B7280]";
+        ? "bg-brand text-on-brand"
+        : "bg-surface-2 text-fg-muted";
 
   return (
     <div
@@ -170,13 +170,13 @@ export default function SlotItem({ slot, status, onTap, onSkip }: Props) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-medium text-[#212121]">
+            <span className="text-sm font-medium text-fg">
               {slotLabelText(slot.label)}
             </span>
             {/* 주/야는 서버가 준 shift 로만 판단한다 (slot.type 접두어 아님). */}
             <ShiftBadge shift={slot.shift} compact />
           </div>
-          <div className="text-xs text-[#6B7280]">
+          <div className="text-xs text-fg-muted">
             {formatSlotTime(slot.time) || t("slot.timeUnset")}
           </div>
         </div>
@@ -191,7 +191,7 @@ export default function SlotItem({ slot, status, onTap, onSkip }: Props) {
         )}
 
         {!meta.disabled && meta.actionLabelKey && (
-          <span className="ml-1 inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[#931B82]">
+          <span className="ml-1 inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-brand-fg">
             {t(meta.actionLabelKey)}
             <Icon icon="solar:arrow-right-linear" width={14} height={14} />
           </span>
@@ -204,22 +204,22 @@ export default function SlotItem({ slot, status, onTap, onSkip }: Props) {
             type="button"
             onClick={handleMenuToggle}
             aria-label={t("slot.openMenu")}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-[#6B7280] hover:bg-[#F3F4F6]"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-fg-muted hover:bg-surface-2"
           >
             <Icon icon="solar:menu-dots-bold" width={20} height={20} />
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-9 z-10 min-w-35 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
+            <div className="absolute right-0 top-9 z-10 min-w-35 overflow-hidden rounded-lg border border-edge bg-surface shadow-lg">
               <button
                 type="button"
                 onClick={handleSkipClick}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[#212121] hover:bg-[#F9FAFB]"
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-fg hover:bg-surface-2"
               >
                 <Icon
                   icon="solar:skip-next-bold"
                   width={16}
                   height={16}
-                  className="text-[#6B7280]"
+                  className="text-fg-muted"
                 />
                 {t("slot.skip")}
               </button>

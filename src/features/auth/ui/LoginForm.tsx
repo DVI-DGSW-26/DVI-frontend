@@ -3,6 +3,7 @@ import { useLocation, useNavigate, type Location } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import LanguageToggle from "../../../components/layout/LanguageToggle";
+import ThemeToggle from "../../../components/layout/ThemeToggle";
 import { AuthError } from "../api";
 import { useAuth } from "../AuthContext";
 import { ROLE_HOME } from "../constants";
@@ -68,8 +69,9 @@ export default function Login() {
   return (
     <>
       {isMobile ? <LoginFormMobile {...props} /> : <LoginFormWeb {...props} />}
-      {/* 로그인 전 화면이라 앱 헤더가 없다 — 언어 버튼을 오른쪽 위에 띄워 둔다. */}
-      <div className="fixed right-3 top-3 z-50 rounded-full bg-white/90">
+      {/* 로그인 전 화면이라 앱 헤더가 없다 — 테마·언어 버튼을 오른쪽 위에 띄워 둔다. */}
+      <div className="fixed right-3 top-3 z-50 flex items-center rounded-full bg-surface/90 border border-edge">
+        <ThemeToggle />
         <LanguageToggle />
       </div>
     </>

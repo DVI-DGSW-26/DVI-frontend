@@ -128,8 +128,8 @@ export function Pager({
         }
         className="ml-1 flex h-9 items-center gap-1.5 rounded-lg px-3 text-base font-bold"
         style={{
-          backgroundColor: pager.paused ? T.neutral.ink : T.neutral.sub,
-          color: pager.paused ? T.neutral.white : T.inkSub,
+          backgroundColor: pager.paused ? T.primary[500] : T.neutral.sub,
+          color: pager.paused ? T.onSolid : T.inkSub,
           border: `1px solid ${pager.paused ? T.neutral.ink : T.neutral.border}`,
         }}
       >

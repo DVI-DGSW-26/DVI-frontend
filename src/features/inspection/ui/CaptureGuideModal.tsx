@@ -45,7 +45,7 @@ const EXAMPLES: Example[] = [
     ok: false,
     w: "26%",
     h: "15%",
-    font: "text-[8px]",
+    font: "text-[0.5rem]",
   },
 ];
 
@@ -64,16 +64,16 @@ export default function CaptureGuideModal({ open, onClose, onStart }: Props) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-t-2xl bg-white p-5 sm:rounded-2xl"
+        className="w-full max-w-md rounded-t-2xl bg-surface p-5 sm:rounded-2xl border border-edge"
       >
-        <h3 className="text-base font-semibold text-[#212121]">
+        <h3 className="text-base font-semibold text-fg">
           {t("modals.captureGuide.title")}
         </h3>
-        <p className="mt-1 text-xs leading-relaxed text-[#6B7280]">
+        <p className="mt-1 text-xs leading-relaxed text-fg-muted">
           <Trans
             t={t}
             i18nKey="modals.captureGuide.description"
-            components={{ b: <b className="text-[#212121]" /> }}
+            components={{ b: <b className="text-fg" /> }}
           />
         </p>
 
@@ -89,7 +89,7 @@ export default function CaptureGuideModal({ open, onClose, onStart }: Props) {
                 </div>
                 <span
                   className={`absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full ${
-                    ex.ok ? "bg-[#22C55E]" : "bg-[#EF4444]"
+                    ex.ok ? "bg-success" : "bg-danger"
                   }`}
                 >
                   <Icon
@@ -102,12 +102,12 @@ export default function CaptureGuideModal({ open, onClose, onStart }: Props) {
               </div>
               <div
                 className={`text-xs font-semibold ${
-                  ex.ok ? "text-[#15803D]" : "text-[#B91C1C]"
+                  ex.ok ? "text-success-fg" : "text-danger-fg"
                 }`}
               >
                 {t(ex.titleKey)}
               </div>
-              <div className="text-center text-[10px] leading-tight text-[#6B7280]">
+              <div className="text-center text-[0.625rem] leading-tight text-fg-muted">
                 {t(ex.noteKey)}
               </div>
             </div>
@@ -118,14 +118,14 @@ export default function CaptureGuideModal({ open, onClose, onStart }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB]"
+            className="h-11 flex-1 rounded-md border border-line-strong bg-surface text-sm font-medium text-fg-muted hover:bg-surface-2"
           >
             {t("modals.captureGuide.close")}
           </button>
           <button
             type="button"
             onClick={onStart}
-            className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white hover:bg-[#6A0F5D]"
+            className="h-11 flex-1 rounded-md bg-brand text-sm font-semibold text-on-brand hover:bg-brand-hover"
           >
             {t("modals.captureGuide.start")}
           </button>

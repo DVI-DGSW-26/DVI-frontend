@@ -14,15 +14,15 @@ import { processDisplayName } from "../lib/processLookup";
 const FLAG_CHIPS: { key: keyof ProcessInfo & string; style: string }[] = [
   {
     key: "hardnessTracked",
-    style: "bg-[#FEF3C7] text-[#B45309]",
+    style: "bg-warn-soft text-warn-fg",
   },
   {
     key: "bundledReport",
-    style: "bg-[#DBEAFE] text-[#1D4ED8]",
+    style: "bg-info-soft text-info-fg",
   },
   {
     key: "autoCopyNightCrossCheck",
-    style: "bg-[#E0E7FF] text-[#3730A3]",
+    style: "bg-brand-soft text-brand-fg",
   },
 ];
 
@@ -30,14 +30,14 @@ function FlagChips({ process }: { process: ProcessInfo }) {
   const { t } = useTranslation("process");
   const on = FLAG_CHIPS.filter((f) => process[f.key] === true);
   if (on.length === 0) {
-    return <span className="text-xs text-[#A8A8A8]">—</span>;
+    return <span className="text-xs text-fg-subtle">—</span>;
   }
   return (
     <div className="flex flex-wrap gap-1">
       {on.map((f) => (
         <span
           key={f.key}
-          className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${f.style}`}
+          className={`inline-flex rounded-full px-2 py-0.5 text-[0.6875rem] font-medium ${f.style}`}
         >
           {t(`flags.${f.key}`)}
         </span>
@@ -54,15 +54,15 @@ interface ScheduleSummary {
 
 function ScheduleCell({ summary }: { summary: ScheduleSummary | undefined }) {
   const { t } = useTranslation("process");
-  if (!summary) return <span className="text-xs text-[#A8A8A8]">—</span>;
+  if (!summary) return <span className="text-xs text-fg-subtle">—</span>;
   return (
-    <span className="whitespace-nowrap text-xs text-[#6B7280]">
+    <span className="whitespace-nowrap text-xs text-fg-muted">
       {summary.type === "TIME_BASED"
         ? t("schedule.timeBased")
         : t("schedule.stages")}{" "}
       {t("schedule.slotCount", { n: summary.count })}
       {summary.night > 0 && (
-        <span className="ml-1 rounded-full bg-[#E0E7FF] px-1.5 py-0.5 text-[10px] font-medium text-[#3730A3]">
+        <span className="ml-1 rounded-full bg-brand-soft px-1.5 py-0.5 text-[0.625rem] font-medium text-brand-fg">
           {t("schedule.nightCount", { n: summary.night })}
         </span>
       )}
@@ -76,8 +76,8 @@ function ActiveBadge({ isActive }: { isActive: boolean }) {
     <span
       className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
         isActive
-          ? "bg-[#DCFCE7] text-[#15803D]"
-          : "bg-[#F3F4F6] text-[#6B7280]"
+          ? "bg-success-soft text-success-fg"
+          : "bg-surface-2 text-fg-muted"
       }`}
     >
       {isActive ? t("status.active") : t("status.inactive")}
@@ -169,7 +169,7 @@ export default function ProcessesPage() {
         <button
           type="button"
           onClick={openCreate}
-          className="flex items-center gap-1.5 rounded-lg bg-[#931B82] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D] md:px-4"
+          className="flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-medium text-on-brand transition-colors hover:bg-brand-hover md:px-4"
         >
           <Icon icon="mdi:plus" width={18} height={18} />
           <span className="hidden sm:inline">{t("page.register")}</span>
@@ -177,15 +177,15 @@ export default function ProcessesPage() {
         </button>
       </div>
 
-      <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#F3E8F7] text-[#931B82]">
+      <div className="flex items-center gap-3 rounded-xl border border-edge bg-surface p-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand-fg">
           <Icon icon="mdi:cog-transfer-outline" width={22} height={22} />
         </div>
         <div className="min-w-0">
-          <div className="text-xs text-[#6B7280]">{t("page.activeCount")}</div>
-          <div className="text-lg font-semibold text-[#212121] md:text-xl">
+          <div className="text-xs text-fg-muted">{t("page.activeCount")}</div>
+          <div className="text-lg font-semibold text-fg md:text-xl">
             {activeCount}
-            <span className="ml-0.5 text-xs font-normal text-[#6B7280]">
+            <span className="ml-0.5 text-xs font-normal text-fg-muted">
               {t("page.activeCountUnit", { n: processes.length })}
             </span>
           </div>
@@ -198,22 +198,22 @@ export default function ProcessesPage() {
             icon="mdi:magnify"
             width={18}
             height={18}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A8A8]"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle"
           />
           <input
             type="search"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder={t("page.searchPlaceholder")}
-            className="h-10 w-full rounded-lg border border-gray-200 bg-white pl-9 pr-3 text-sm focus:border-[#931B82] focus:outline-none"
+            className="h-10 w-full rounded-lg border border-line-strong bg-surface pl-9 pr-3 text-sm focus:border-brand focus:outline-none"
           />
         </div>
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-[#6B7280]">
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-fg-muted">
           <input
             type="checkbox"
             checked={showInactive}
             onChange={(e) => setShowInactive(e.target.checked)}
-            className="h-4 w-4 accent-[#931B82]"
+            className="h-4 w-4 accent-brand"
           />
           {t("page.showInactive")}
         </label>
@@ -276,9 +276,9 @@ function DesktopTable({
 }: ListProps) {
   const { t } = useTranslation(["process", "common"]);
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+    <div className="overflow-x-auto rounded-xl border border-edge bg-surface">
       <table className="w-full min-w-[640px] text-sm">
-        <thead className="bg-[#F3E8F7] text-[#6B7280]">
+        <thead className="bg-brand-soft text-fg-muted">
           <tr>
             <th className="whitespace-nowrap px-4 py-3 text-left font-medium">
               {t("list.label")}
@@ -301,37 +301,37 @@ function DesktopTable({
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100 text-[#212121]">
+        <tbody className="divide-y divide-line text-fg">
           {isLoading && (
             <tr>
-              <td colSpan={7} className="px-4 py-10 text-center text-[#A8A8A8]">
+              <td colSpan={7} className="px-4 py-10 text-center text-fg-subtle">
                 {t("common:status.loading")}
               </td>
             </tr>
           )}
           {isError && (
             <tr>
-              <td colSpan={7} className="px-4 py-10 text-center text-[#EF4444]">
+              <td colSpan={7} className="px-4 py-10 text-center text-danger-fg">
                 {t("list.loadError")}
               </td>
             </tr>
           )}
           {!isLoading && !isError && items.length === 0 && (
             <tr>
-              <td colSpan={7} className="px-4 py-10 text-center text-[#A8A8A8]">
+              <td colSpan={7} className="px-4 py-10 text-center text-fg-subtle">
                 {t("list.empty")}
               </td>
             </tr>
           )}
           {items.map((item) => (
-            <tr key={item.code} className="hover:bg-gray-50">
+            <tr key={item.code} className="hover:bg-surface-2">
               <td className="whitespace-nowrap px-4 py-3 font-medium">
                 {processDisplayName(item.code, item.label)}
               </td>
-              <td className="px-4 py-3 whitespace-nowrap text-[#6B7280]">
+              <td className="px-4 py-3 whitespace-nowrap text-fg-muted">
                 {item.code}
               </td>
-              <td className="px-4 py-3 whitespace-nowrap text-[#6B7280]">
+              <td className="px-4 py-3 whitespace-nowrap text-fg-muted">
                 {item.shortCode}
               </td>
               <td className="px-4 py-3">
@@ -341,14 +341,14 @@ function DesktopTable({
                 <button
                   type="button"
                   onClick={() => onEditSchedule(item)}
-                  className="flex items-center gap-1 rounded-md px-1.5 py-1 transition-colors hover:bg-[#F3E8F7]"
+                  className="flex items-center gap-1 rounded-md px-1.5 py-1 transition-colors hover:bg-brand-soft"
                 >
                   <ScheduleCell summary={schedules.get(item.code)} />
                   <Icon
                     icon="mdi:pencil-outline"
                     width={13}
                     height={13}
-                    className="text-[#931B82]"
+                    className="text-brand-fg"
                   />
                 </button>
               </td>
@@ -361,7 +361,7 @@ function DesktopTable({
                     type="button"
                     onClick={() => onEdit(item)}
                     aria-label={t("common:actions.edit")}
-                    className="rounded p-1.5 text-[#6B7280] transition-colors hover:bg-[#F3E8F7] hover:text-[#931B82]"
+                    className="rounded p-1.5 text-fg-muted transition-colors hover:bg-brand-soft hover:text-brand-fg"
                   >
                     <Icon icon="mdi:pencil-outline" width={18} height={18} />
                   </button>
@@ -372,7 +372,7 @@ function DesktopTable({
                     aria-label={
                       item.isActive ? t("list.setInactive") : t("list.setActive")
                     }
-                    className="rounded p-1.5 text-[#6B7280] transition-colors hover:bg-[#F3E8F7] hover:text-[#931B82] disabled:cursor-not-allowed disabled:opacity-40"
+                    className="rounded p-1.5 text-fg-muted transition-colors hover:bg-brand-soft hover:text-brand-fg disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <Icon
                       icon={
@@ -407,21 +407,21 @@ function MobileList({
   const { t } = useTranslation(["process", "common"]);
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+      <div className="rounded-xl border border-edge bg-surface px-4 py-10 text-center text-sm text-fg-subtle">
         {t("common:status.loading")}
       </div>
     );
   }
   if (isError) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
+      <div className="rounded-xl border border-edge bg-surface px-4 py-10 text-center text-sm text-danger-fg">
         {t("list.loadError")}
       </div>
     );
   }
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+      <div className="rounded-xl border border-edge bg-surface px-4 py-10 text-center text-sm text-fg-subtle">
         {t("list.empty")}
       </div>
     );
@@ -432,14 +432,14 @@ function MobileList({
       {items.map((item) => (
         <div
           key={item.code}
-          className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+          className="rounded-xl border border-edge bg-surface p-4 shadow-sm"
         >
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <div className="truncate text-base font-semibold text-[#212121]">
+              <div className="truncate text-base font-semibold text-fg">
                 {processDisplayName(item.code, item.label)}
               </div>
-              <div className="mt-0.5 truncate text-xs text-[#6B7280]">
+              <div className="mt-0.5 truncate text-xs text-fg-muted">
                 {item.code} · {item.shortCode}
               </div>
             </div>
@@ -453,20 +453,20 @@ function MobileList({
           <button
             type="button"
             onClick={() => onEditSchedule(item)}
-            className="mt-2 flex w-full items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-left transition-colors hover:border-[#931B82]"
+            className="mt-2 flex w-full items-center justify-between rounded-lg border border-line px-3 py-2 text-left transition-colors hover:border-brand"
           >
             <span className="flex items-center gap-1.5">
-              <Icon icon="mdi:calendar-clock" width={15} height={15} className="text-[#6B7280]" />
+              <Icon icon="mdi:calendar-clock" width={15} height={15} className="text-fg-muted" />
               <ScheduleCell summary={schedules.get(item.code)} />
             </span>
-            <Icon icon="mdi:chevron-right" width={16} height={16} className="text-[#A8A8A8]" />
+            <Icon icon="mdi:chevron-right" width={16} height={16} className="text-fg-subtle" />
           </button>
 
-          <div className="mt-3 flex items-center justify-end gap-1 border-t border-gray-100 pt-2">
+          <div className="mt-3 flex items-center justify-end gap-1 border-t border-line pt-2">
             <button
               type="button"
               onClick={() => onEdit(item)}
-              className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-[#6B7280] transition-colors hover:bg-[#F3E8F7] hover:text-[#931B82]"
+              className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-fg-muted transition-colors hover:bg-brand-soft hover:text-brand-fg"
             >
               <Icon icon="mdi:pencil-outline" width={16} height={16} />
               {t("common:actions.edit")}
@@ -475,7 +475,7 @@ function MobileList({
               type="button"
               onClick={() => onToggleActive(item)}
               disabled={isUpdating}
-              className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-[#6B7280] transition-colors hover:bg-[#F3E8F7] hover:text-[#931B82] disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-fg-muted transition-colors hover:bg-brand-soft hover:text-brand-fg disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Icon
                 icon={item.isActive ? "mdi:eye-off-outline" : "mdi:eye-outline"}

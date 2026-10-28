@@ -227,9 +227,9 @@ export default function MyInspectionPage() {
     <div
       ref={scrollRef}
       {...bind}
-      className="relative flex min-h-dvh flex-col bg-[#F5F5F5] pb-24"
+      className="relative flex min-h-dvh flex-col bg-canvas pb-24"
     >
-      <div className="sticky top-0 z-10 bg-white">
+      <div className="sticky top-0 z-10 bg-surface">
         <div className="flex items-center gap-1 px-3 pb-1 pt-2">
           {DATE_FILTERS.map((f) => {
             const active = dateFilter === f.key;
@@ -240,8 +240,8 @@ export default function MyInspectionPage() {
                 onClick={() => setDateFilter(f.key)}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   active
-                    ? "bg-[#931B82] text-white"
-                    : "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"
+                    ? "bg-brand text-on-brand"
+                    : "bg-surface-2 text-fg-muted hover:bg-surface-3"
                 }`}
               >
                 {t(f.label)}
@@ -249,7 +249,7 @@ export default function MyInspectionPage() {
             );
           })}
           {dateFilter !== "ALL" && (
-            <span className="ml-1 text-[10px] text-[#9CA3AF]">
+            <span className="ml-1 text-[0.625rem] text-fg-subtle">
               {t("history.incompleteAlwaysShown")}
             </span>
           )}
@@ -318,7 +318,7 @@ export default function MyInspectionPage() {
         type="button"
         onClick={() => navigate("/my-orders")}
         aria-label={t("history.newInspection")}
-        className="fixed bottom-24 right-4 z-20 flex h-14 items-center gap-2 rounded-full bg-[#931B82] pl-4 pr-5 text-white shadow-lg ring-1 ring-[#6A0F5D]/40 transition-colors hover:bg-[#6A0F5D]"
+        className="fixed bottom-24 right-4 z-20 flex h-14 items-center gap-2 rounded-full bg-brand pl-4 pr-5 text-on-brand shadow-lg ring-1 ring-brand-hover/40 transition-colors hover:bg-brand-hover"
       >
         <Icon icon="solar:add-circle-bold" width={22} height={22} />
         <span className="text-sm font-semibold">

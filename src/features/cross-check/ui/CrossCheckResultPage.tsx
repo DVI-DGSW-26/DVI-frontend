@@ -231,7 +231,7 @@ export default function CrossCheckResultPage() {
 
   if (needsFallback && detailQuery.isLoading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
+      <div className="flex min-h-dvh items-center justify-center bg-canvas text-xs text-fg-subtle">
         {t("result.loading")}
       </div>
     );
@@ -239,14 +239,14 @@ export default function CrossCheckResultPage() {
 
   if (results.length === 0) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
-        <div className="text-sm font-medium text-[#212121]">
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-canvas px-6 text-center">
+        <div className="text-sm font-medium text-fg">
           {t("result.noData")}
         </div>
         <button
           type="button"
           onClick={() => navigate("/", { replace: true })}
-          className="mt-4 h-10 rounded-md bg-[#931B82] px-4 text-sm font-medium text-white hover:bg-[#6A0F5D]"
+          className="mt-4 h-10 rounded-md bg-brand px-4 text-sm font-medium text-on-brand hover:bg-brand-hover"
         >
           {t("goHome")}
         </button>
@@ -340,16 +340,16 @@ export default function CrossCheckResultPage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-28">
+    <div className="flex min-h-dvh flex-col bg-canvas pb-28">
       {detail && <AutoReleaseNotice detail={detail} />}
-      <section className="border-b border-gray-200 bg-white px-4 py-4">
+      <section className="border-b border-line bg-surface px-4 py-4">
         {detail &&
           (() => {
             const stage = getStage(detail.type, detail.product.process);
             if (!stage) return null;
             return (
               <div className="mb-2 flex items-center gap-2">
-                <span className="text-xs text-[#6B7280]">{t("label.round")}</span>
+                <span className="text-xs text-fg-muted">{t("label.round")}</span>
                 <span
                   className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${STAGE_BADGE[stage]}`}
                 >
@@ -360,7 +360,7 @@ export default function CrossCheckResultPage() {
                   </span>
                 </span>
                 {remainingSlotLabels.length > 0 && (
-                  <span className="text-xs text-[#A8A8A8]">
+                  <span className="text-xs text-fg-subtle">
                     {t("result.remainingSlots", {
                       labels: remainingSlotLabels.join(" · "),
                     })}
@@ -389,7 +389,7 @@ export default function CrossCheckResultPage() {
       </section>
 
       <section className="flex-1 px-4 pt-4">
-        <h2 className="mb-3 text-sm font-semibold text-[#212121]">
+        <h2 className="mb-3 text-sm font-semibold text-fg">
           {t("result.title")}
         </h2>
         <ul className="flex flex-col gap-3">
@@ -415,12 +415,12 @@ export default function CrossCheckResultPage() {
           ))}
         </ul>
 
-        <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4">
-          <div className="text-xs font-medium text-[#6B7280]">
+        <div className="mt-5 rounded-xl border border-edge bg-surface p-4">
+          <div className="text-xs font-medium text-fg-muted">
             {t("result.appearance")}
           </div>
           {/* 외관 판정 기준 — 모든 제품 공통 고정 문구(번역 파일에서 관리). */}
-          <p className="mt-0.5 text-[11px] text-[#9CA3AF]">
+          <p className="mt-0.5 text-[0.6875rem] text-fg-subtle">
             {t("appearanceCriterion", { ns: "shared" })}
           </p>
           <div
@@ -442,9 +442,9 @@ export default function CrossCheckResultPage() {
                   className={`h-11 rounded-md border text-sm font-semibold transition-colors disabled:opacity-60 ${
                     selected
                       ? isOk
-                        ? "border-[#22C55E] bg-[#ECFDF5] text-[#15803D]"
-                        : "border-[#EF4444] bg-[#FEF2F2] text-[#B91C1C]"
-                      : "border-gray-300 bg-white text-[#6B7280] hover:bg-gray-50"
+                        ? "border-success bg-success-soft text-success-fg"
+                        : "border-danger bg-danger-soft text-danger-fg"
+                      : "border-line-strong bg-surface text-fg-muted hover:bg-surface-2"
                   }`}
                 >
                   {isOk ? t("result.okPass") : t("result.ngFail")}
@@ -455,10 +455,10 @@ export default function CrossCheckResultPage() {
         </div>
 
         {needsHardness && (
-          <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4">
+          <div className="mt-5 rounded-xl border border-edge bg-surface p-4">
             <label
               htmlFor="cross-check-hardness"
-              className="block text-xs font-medium text-[#6B7280]"
+              className="block text-xs font-medium text-fg-muted"
             >
               {t("result.hardnessLabel")}
             </label>
@@ -469,9 +469,9 @@ export default function CrossCheckResultPage() {
               onChange={(e) => setHardness(e.target.value)}
               placeholder={t("result.hardnessPlaceholder")}
               disabled={saveMut.isPending}
-              className="mt-2 h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+              className="mt-2 h-11 w-full rounded-md border border-line-strong bg-surface px-3 text-sm text-fg placeholder:text-fg-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:bg-surface-2"
             />
-            <p className="mt-2 text-[11px] leading-relaxed text-[#6B7280]">
+            <p className="mt-2 text-[0.6875rem] leading-relaxed text-fg-muted">
               <Trans
                 t={t}
                 i18nKey="result.hardnessHint"
@@ -481,10 +481,10 @@ export default function CrossCheckResultPage() {
           </div>
         )}
 
-        <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4">
+        <div className="mt-5 rounded-xl border border-edge bg-surface p-4">
           <label
             htmlFor="cross-check-note"
-            className="block text-xs font-medium text-[#6B7280]"
+            className="block text-xs font-medium text-fg-muted"
           >
             {t("result.noteLabel")}
           </label>
@@ -496,12 +496,12 @@ export default function CrossCheckResultPage() {
             disabled={saveMut.isPending}
             rows={3}
             maxLength={500}
-            className="mt-2 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+            className="mt-2 w-full resize-none rounded-md border border-line-strong bg-surface px-3 py-2 text-sm text-fg placeholder:text-fg-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:bg-surface-2"
           />
         </div>
 
         {hasSkipped && (
-          <div className="mt-3 rounded-md bg-[#FEF3C7] px-3 py-2 text-xs text-[#92400E]">
+          <div className="mt-3 rounded-md bg-warn-soft px-3 py-2 text-xs text-warn-fg">
             <div className="font-semibold">{t("result.skippedTitle")}</div>
             <div className="mt-0.5 leading-relaxed">
               <Trans
@@ -520,14 +520,14 @@ export default function CrossCheckResultPage() {
         </div>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white p-4 md:left-60">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface p-4 md:left-60">
         <button
           type="button"
           onClick={handleSubmit}
           disabled={
             !canSubmit || submitted || saveMut.isPending || completeMut.isPending
           }
-          className="h-12 w-full rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+          className="h-12 w-full rounded-md bg-brand text-base font-semibold text-on-brand transition-colors hover:bg-brand-hover disabled:bg-surface-3"
         >
           {saveMut.isPending || completeMut.isPending
             ? t("result.processing")
@@ -600,21 +600,21 @@ function StepResultCard({
   };
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-3">
+    <div className="rounded-xl border border-edge bg-surface p-3">
       <div className="flex items-center gap-2">
-        <span className="rounded-md bg-[#F3E8FF] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
+        <span className="rounded-md bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-fg">
           {t("inspection:measure.stepLabel", { n: step })}
         </span>
-        <span className="text-sm font-medium text-[#212121]">
+        <span className="text-sm font-medium text-fg">
           {dimDisplayName(result)}
         </span>
       </div>
-      <div className="mt-1 text-sm text-[#6B7280]">{dimText}</div>
+      <div className="mt-1 text-sm text-fg-muted">{dimText}</div>
 
       {result.status === "completed" ? (
         <>
           {result.imageUrl && (
-            <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-[#F9FAFB]">
+            <div className="mt-3 overflow-hidden rounded-lg border border-line bg-canvas">
               <img
                 src={toBackendImageUrl(result.imageUrl)}
                 alt={t("result.photoAlt", { name: dimDisplayName(result) })}
@@ -623,8 +623,8 @@ function StepResultCard({
             </div>
           )}
           {isEditing ? (
-            <div className="mt-3 rounded-lg bg-[#F9FAFB] p-3">
-              <label className="block text-xs text-[#6B7280]">
+            <div className="mt-3 rounded-lg bg-canvas p-3">
+              <label className="block text-xs text-fg-muted">
                 {t("result.editValue")}
               </label>
               <input
@@ -635,14 +635,14 @@ function StepResultCard({
                 onChange={(e) => setDraft(e.target.value)}
                 disabled={isSaving}
                 autoFocus
-                className="mt-1 h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-base text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+                className="mt-1 h-10 w-full rounded-md border border-line-strong bg-surface px-3 text-base text-fg focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:bg-surface-2"
               />
               <div className="mt-2 flex gap-2">
                 <button
                   type="button"
                   onClick={cancelEdit}
                   disabled={isSaving}
-                  className="h-9 flex-1 rounded-md border border-gray-300 bg-white text-xs font-semibold text-[#212121] disabled:opacity-60"
+                  className="h-9 flex-1 rounded-md border border-line-strong bg-surface text-xs font-semibold text-fg disabled:opacity-60"
                 >
                   {tCommon("actions.cancel")}
                 </button>
@@ -650,26 +650,26 @@ function StepResultCard({
                   type="button"
                   onClick={saveEdit}
                   disabled={!isValid || isSaving}
-                  className="h-9 flex-1 rounded-md bg-[#931B82] text-xs font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+                  className="h-9 flex-1 rounded-md bg-brand text-xs font-semibold text-on-brand hover:bg-brand-hover disabled:bg-surface-3"
                 >
                   {isSaving ? t("result.saving") : tCommon("actions.save")}
                 </button>
               </div>
             </div>
           ) : (
-            <div className="mt-3 flex items-center justify-between rounded-lg bg-[#F9FAFB] px-3 py-2">
-              <span className="text-xs text-[#6B7280]">
+            <div className="mt-3 flex items-center justify-between rounded-lg bg-canvas px-3 py-2">
+              <span className="text-xs text-fg-muted">
                 {t("result.measuredValue")}
               </span>
               <div className="flex items-center gap-3">
-                <span className="text-base font-semibold text-[#212121]">
+                <span className="text-base font-semibold text-fg">
                   {result.measuredValue ?? "-"}
                 </span>
                 {editable && (
                   <button
                     type="button"
                     onClick={beginEdit}
-                    className="rounded-md border border-[#931B82] px-2 py-1 text-xs font-semibold text-[#931B82] hover:bg-[#F3E8FF]"
+                    className="rounded-md border border-brand px-2 py-1 text-xs font-semibold text-brand-fg hover:bg-brand-soft"
                   >
                     {tCommon("actions.edit")}
                   </button>
@@ -678,7 +678,7 @@ function StepResultCard({
                   <button
                     type="button"
                     onClick={onRetake}
-                    className="inline-flex items-center gap-1 rounded-md border border-[#931B82] px-2 py-1 text-xs font-semibold text-[#931B82] hover:bg-[#F3E8FF]"
+                    className="inline-flex items-center gap-1 rounded-md border border-brand px-2 py-1 text-xs font-semibold text-brand-fg hover:bg-brand-soft"
                   >
                     <Icon icon="solar:camera-linear" width={13} height={13} />
                     {t("result.remeasure")}
@@ -690,12 +690,12 @@ function StepResultCard({
         </>
       ) : (
         <>
-          <div className="mt-3 flex aspect-square w-full flex-col items-center justify-center rounded-lg border border-dashed border-[#D1D5DB] bg-[#F3F4F6] text-[#6B7280]">
+          <div className="mt-3 flex aspect-square w-full flex-col items-center justify-center rounded-lg border border-dashed border-line-strong bg-surface-2 text-fg-muted">
             <Icon
               icon="solar:camera-cross-bold"
               width={36}
               height={36}
-              className="text-[#9CA3AF]"
+              className="text-fg-subtle"
             />
             <span className="mt-2 text-sm font-medium">
               {t("result.skipped")}
@@ -705,7 +705,7 @@ function StepResultCard({
             <button
               type="button"
               onClick={onRetake}
-              className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-[#931B82] bg-white text-sm font-semibold text-[#931B82] transition-colors hover:bg-[#F3E8FF]"
+              className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-brand bg-surface text-sm font-semibold text-brand-fg transition-colors hover:bg-brand-soft"
             >
               <Icon icon="solar:refresh-linear" width={16} height={16} />
               {t("result.remeasure")}
@@ -715,7 +715,7 @@ function StepResultCard({
             <button
               type="button"
               onClick={onCancelSkip}
-              className="mt-2 flex h-9 w-full items-center justify-center text-xs font-medium text-[#6B7280] underline underline-offset-2 hover:text-[#374151]"
+              className="mt-2 flex h-9 w-full items-center justify-center text-xs font-medium text-fg-muted underline underline-offset-2 hover:text-fg"
             >
               {t("result.cancelSkip")}
             </button>
@@ -729,8 +729,8 @@ function StepResultCard({
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center gap-1.5 text-xs">
-      <span className="shrink-0 text-[#6B7280]">{label}</span>
-      <span className="ml-auto min-w-0 truncate text-right text-sm font-medium text-[#212121]">
+      <span className="shrink-0 text-fg-muted">{label}</span>
+      <span className="ml-auto min-w-0 truncate text-right text-sm font-medium text-fg">
         {value}
       </span>
     </div>
@@ -739,9 +739,9 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-[#F9FAFB] px-3 py-2">
-      <div className="text-xs text-[#6B7280]">{label}</div>
-      <div className="mt-0.5 truncate text-sm font-semibold text-[#212121]">
+    <div className="rounded-lg bg-canvas px-3 py-2">
+      <div className="text-xs text-fg-muted">{label}</div>
+      <div className="mt-0.5 truncate text-sm font-semibold text-fg">
         {value}
       </div>
     </div>

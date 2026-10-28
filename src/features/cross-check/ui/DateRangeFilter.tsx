@@ -19,7 +19,7 @@ interface Props {
 export default function DateRangeFilter({ value, onChange }: Props) {
   const { t } = useTranslation("crossCheck");
   return (
-    <div className="flex flex-col gap-2 rounded-2xl bg-white p-3 shadow-sm">
+    <div className="flex flex-col gap-2 rounded-2xl bg-surface p-3 shadow-sm border border-edge">
       <div className="flex flex-wrap gap-1.5">
         {PRESETS.map((p) => {
           const active = value.preset === p.key;
@@ -30,8 +30,8 @@ export default function DateRangeFilter({ value, onChange }: Props) {
               onClick={() => onChange({ ...value, preset: p.key })}
               className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
                 active
-                  ? "bg-[#931B82] text-white"
-                  : "border border-gray-200 bg-white text-[#6B7280] hover:bg-[#F9FAFB]"
+                  ? "bg-brand text-on-brand"
+                  : "border border-line bg-surface text-fg-muted hover:bg-surface-2"
               }`}
             >
               {t(p.labelKey)}
@@ -47,15 +47,15 @@ export default function DateRangeFilter({ value, onChange }: Props) {
             value={value.start}
             max={value.end || undefined}
             onChange={(e) => onChange({ ...value, start: e.target.value })}
-            className="h-9 min-w-0 flex-1 rounded-md border border-gray-300 bg-white px-2 text-xs text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82]"
+            className="h-9 min-w-0 flex-1 rounded-md border border-line-strong bg-surface px-2 text-xs text-fg focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
           />
-          <span className="shrink-0 text-xs text-[#6B7280]">~</span>
+          <span className="shrink-0 text-xs text-fg-muted">~</span>
           <input
             type="date"
             value={value.end}
             min={value.start || undefined}
             onChange={(e) => onChange({ ...value, end: e.target.value })}
-            className="h-9 min-w-0 flex-1 rounded-md border border-gray-300 bg-white px-2 text-xs text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82]"
+            className="h-9 min-w-0 flex-1 rounded-md border border-line-strong bg-surface px-2 text-xs text-fg focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
           />
         </div>
       )}

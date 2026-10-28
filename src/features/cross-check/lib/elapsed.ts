@@ -41,7 +41,7 @@ export function elapsedFrom(iso: string | undefined): ElapsedInfo {
 }
 
 export const TONE_COLOR: Record<ElapsedTone, string> = {
-  gray: "#A8A8A8",
-  orange: "#F59E0B",
-  red: "#EF4444",
+  gray: "var(--color-fg-subtle)",
+  orange: "var(--color-warn-fg)",
+  red: "var(--color-danger-fg)",
 };

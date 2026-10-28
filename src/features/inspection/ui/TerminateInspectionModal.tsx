@@ -34,22 +34,22 @@ export default function TerminateInspectionModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm rounded-t-2xl bg-white p-5 sm:rounded-2xl"
+        className="w-full max-w-sm rounded-t-2xl bg-surface p-5 sm:rounded-2xl border border-edge"
       >
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FEF3C7]">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-warn-soft">
             <Icon
               icon="solar:danger-triangle-bold"
               width={22}
               height={22}
-              className="text-[#B45309]"
+              className="text-warn-fg"
             />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-base font-semibold text-[#212121]">
+            <h3 className="text-base font-semibold text-fg">
               {t("modals.terminate.title")}
             </h3>
-            <p className="mt-1 text-xs text-[#6B7280]">
+            <p className="mt-1 text-xs text-fg-muted">
               <Trans
                 t={t}
                 i18nKey="modals.terminate.warning"
@@ -62,7 +62,7 @@ export default function TerminateInspectionModal({
         <div className="mt-4">
           <label
             htmlFor="terminate-reason"
-            className="text-xs font-medium text-[#6B7280]"
+            className="text-xs font-medium text-fg-muted"
           >
             {t("modals.terminate.reasonLabel")}
           </label>
@@ -74,7 +74,7 @@ export default function TerminateInspectionModal({
             rows={3}
             maxLength={REASON_MAX_LENGTH}
             disabled={isSubmitting}
-            className="mt-1 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+            className="mt-1 w-full resize-none rounded-md border border-line-strong bg-surface px-3 py-2 text-sm text-fg placeholder:text-fg-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:bg-surface-2"
           />
         </div>
 
@@ -83,7 +83,7 @@ export default function TerminateInspectionModal({
             type="button"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-60"
+            className="h-11 flex-1 rounded-md border border-line-strong bg-surface text-sm font-medium text-fg-muted hover:bg-surface-2 disabled:opacity-60"
           >
             {t("modals.terminate.cancel")}
           </button>
@@ -91,7 +91,7 @@ export default function TerminateInspectionModal({
             type="button"
             onClick={() => onConfirm(reason.trim())}
             disabled={isSubmitting}
-            className="h-11 flex-1 rounded-md bg-[#B45309] text-sm font-semibold text-white hover:bg-[#92400E] disabled:bg-[#D1D5DB]"
+            className="h-11 flex-1 rounded-md bg-warn text-sm font-semibold text-white hover:bg-warn disabled:bg-surface-3"
           >
             {isSubmitting
               ? t("modals.terminate.submitting")

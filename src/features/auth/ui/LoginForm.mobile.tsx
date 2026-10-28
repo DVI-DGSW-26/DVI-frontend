@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@iconify/react";
-import Logo from "../../../assets/Logo.svg";
+import BrandLogo from "../../../components/shared/BrandLogo";
 import Button from "../../../components/shared/Button";
 import type { LoginFormProps } from "./LoginForm";
 
@@ -21,7 +21,7 @@ export default function LoginFormMobile({
 
   return (
     <form
-      className="relative min-h-dvh w-full bg-white"
+      className="relative min-h-dvh w-full bg-surface"
       onSubmit={(e) => {
         e.preventDefault();
         onSubmit(keepLoggedIn);
@@ -31,7 +31,7 @@ export default function LoginFormMobile({
         className="absolute flex flex-col items-center left-1/2 -translate-x-1/2"
         style={{ top: "176px" }}
       >
-        <img src={Logo} style={{ width: "360px", height: "68px" }} />
+        <BrandLogo style={{ width: "300px", height: "auto" }} />
       </div>
 
       <input
@@ -45,7 +45,7 @@ export default function LoginFormMobile({
           width: "calc(100% - 60px)",
           paddingLeft: "13px",
         }}
-        className="border border-[#A8A8A8] rounded-lg h-15 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
+        className="border border-line-strong rounded-lg h-15 focus:outline-none focus:ring-1 focus:ring-brand"
       />
 
       <div
@@ -62,12 +62,12 @@ export default function LoginFormMobile({
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           style={{ paddingLeft: "13px" }}
-          className="w-full border border-[#A8A8A8] rounded-lg h-15 pr-12 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
+          className="w-full border border-line-strong rounded-lg h-15 pr-12 focus:outline-none focus:ring-1 focus:ring-brand"
         />
         <button
           type="button"
           onClick={() => setShowPassword(!showPassword)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A8A8A8] hover:text-[#931B82] transition-colors"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-brand-fg transition-colors"
         >
           <Icon
             icon={showPassword ? "mdi:eye-outline" : "mdi:eye-off-outline"}
@@ -84,9 +84,9 @@ export default function LoginFormMobile({
           type="checkbox"
           checked={keepLoggedIn}
           onChange={(e) => setKeepLoggedIn(e.target.checked)}
-          className="w-4 h-4 rounded border-[#A8A8A8] accent-[#931B82] cursor-pointer"
+          className="w-4 h-4 rounded border-line-strong accent-brand cursor-pointer"
         />
-        <span className="text-sm text-[#A8A8A8]">{t("login.keepLoggedIn")}</span>
+        <span className="text-sm text-fg-subtle">{t("login.keepLoggedIn")}</span>
       </label>
 
       <div
@@ -104,9 +104,9 @@ export default function LoginFormMobile({
         className="absolute flex flex-row gap-1 text-sm left-1/2 -translate-x-1/2"
         style={{ top: "635px" }}
       >
-        <span className="text-[#A8A8A8]">{t("login.noAccount")}</span>
+        <span className="text-fg-subtle">{t("login.noAccount")}</span>
         <span
-          className="text-[#931B82] cursor-pointer"
+          className="text-brand-fg cursor-pointer"
           onClick={() => navigate("/signup")}
         >
           {t("login.signupLinkMobile")}

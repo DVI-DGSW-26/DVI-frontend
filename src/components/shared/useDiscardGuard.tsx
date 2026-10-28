@@ -67,25 +67,25 @@ export function useDiscardGuard(
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-sm rounded-t-2xl bg-white p-5 sm:rounded-2xl"
+          className="w-full max-w-sm rounded-t-2xl bg-surface p-5 sm:rounded-2xl border border-edge"
         >
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FEF3C7]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-warn-soft">
               <Icon
                 icon="solar:danger-triangle-bold"
                 width={22}
                 height={22}
-                className="text-[#D97706]"
+                className="text-warn-fg"
               />
             </div>
             <div className="min-w-0 flex-1">
               <h3
                 id="discard-guard-title"
-                className="text-base font-semibold text-[#212121]"
+                className="text-base font-semibold text-fg"
               >
                 {t("discardGuard.title")}
               </h3>
-              <p className="mt-1 text-xs text-[#6B7280]">
+              <p className="mt-1 text-xs text-fg-muted">
                 {t("discardGuard.description", { count: touched.size })}
               </p>
             </div>
@@ -96,7 +96,7 @@ export function useDiscardGuard(
               type="button"
               autoFocus
               onClick={() => setAsking(false)}
-              className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#212121] hover:bg-[#F9FAFB]"
+              className="h-11 flex-1 rounded-md border border-line-strong bg-surface text-sm font-medium text-fg hover:bg-surface-2"
             >
               {t("discardGuard.keepEditing")}
             </button>
@@ -106,7 +106,7 @@ export function useDiscardGuard(
                 setAsking(false);
                 onClose();
               }}
-              className="h-11 flex-1 rounded-md bg-[#DC2626] text-sm font-semibold text-white hover:bg-[#B91C1C]"
+              className="h-11 flex-1 rounded-md bg-danger text-sm font-semibold text-white hover:bg-danger"
             >
               {t("discardGuard.discard")}
             </button>

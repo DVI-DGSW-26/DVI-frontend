@@ -21,10 +21,10 @@ import { notificationText } from "../lib/notificationText";
 type NotificationType = "error" | "warning" | "success" | "info";
 
 const ICON_BY_TYPE: Record<NotificationType, { icon: string; color: string; bg: string }> = {
-  error: { icon: "mdi:alert-circle", color: "#B91C1C", bg: "#FEE2E2" },
-  warning: { icon: "mdi:alert", color: "#F59E0B", bg: "#FEF3C7" },
-  success: { icon: "mdi:check-circle", color: "#22C55E", bg: "#DCFCE7" },
-  info: { icon: "mdi:information", color: "#3B82F6", bg: "#DBEAFE" },
+  error: { icon: "mdi:alert-circle", color: "var(--color-danger-fg)", bg: "var(--color-danger-soft)" },
+  warning: { icon: "mdi:alert", color: "var(--color-warn-fg)", bg: "var(--color-warn-soft)" },
+  success: { icon: "mdi:check-circle", color: "var(--color-success-fg)", bg: "var(--color-success-soft)" },
+  info: { icon: "mdi:information", color: "var(--color-info-fg)", bg: "var(--color-info-soft)" },
 };
 
 function inferType(title: string): NotificationType {
@@ -113,15 +113,15 @@ function WebNotificationPrompt() {
   if (permission !== "default") return null;
 
   return (
-    <div className="flex items-center gap-3 rounded-xl bg-white px-4 py-3">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#F3E8FF]">
-        <Icon icon="mdi:bell-ring" width={20} height={20} color="#931B82" />
+    <div className="flex items-center gap-3 rounded-xl bg-surface px-4 py-3 border border-edge">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-soft">
+        <Icon icon="mdi:bell-ring" width={20} height={20} color="var(--color-brand-fg)" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-[#212121]">
+        <p className="text-sm font-semibold text-fg">
           {t("permission.title")}
         </p>
-        <p className="mt-0.5 text-xs text-[#A8A8A8]">
+        <p className="mt-0.5 text-xs text-fg-subtle">
           {isWebPushConfigured
             ? t("permission.descPush")
             : t("permission.descTab")}
@@ -130,7 +130,7 @@ function WebNotificationPrompt() {
       <button
         type="button"
         onClick={async () => setPermission(await enableWebPush())}
-        className="shrink-0 rounded-md bg-[#931B82] px-3 py-1.5 text-sm font-medium text-white"
+        className="shrink-0 rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-on-brand"
       >
         {t("permission.allow")}
       </button>
@@ -165,7 +165,7 @@ const NotificationPage = () => {
   const groups = groupByDay(items);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-20">
+    <div className="flex min-h-dvh flex-col bg-canvas pb-20">
       <div className="flex flex-col gap-6 px-4 pb-5 pt-3">
         <WebNotificationPrompt />
 
@@ -174,32 +174,32 @@ const NotificationPage = () => {
             type="button"
             onClick={() => markAllAsRead.mutate()}
             disabled={markAllAsRead.isPending || items.length === 0}
-            className="text-sm font-medium text-[#931B82] disabled:text-[#A8A8A8] disabled:opacity-50"
+            className="text-sm font-medium text-brand-fg disabled:text-fg-subtle disabled:opacity-50"
           >
             {t("page.markAllRead")}
           </button>
         </div>
 
         {isLoading && (
-          <p className="py-10 text-center text-sm text-[#A8A8A8]">
+          <p className="py-10 text-center text-sm text-fg-subtle">
             {t("status.loading", { ns: "common" })}
           </p>
         )}
         {isError && (
-          <p className="py-10 text-center text-sm text-[#EF4444]">
+          <p className="py-10 text-center text-sm text-danger-fg">
             {t("page.loadFailed")}
           </p>
         )}
         {!isLoading && !isError && items.length === 0 && (
-          <p className="py-10 text-center text-sm text-[#A8A8A8]">
+          <p className="py-10 text-center text-sm text-fg-subtle">
             {t("page.empty")}
           </p>
         )}
 
         {groups.map((group) => (
           <section key={group.label} className="flex flex-col gap-2">
-            <h2 className="text-sm text-[#A8A8A8]">{group.label}</h2>
-            <ul className="flex flex-col overflow-hidden rounded-xl bg-white">
+            <h2 className="text-sm text-fg-subtle">{group.label}</h2>
+            <ul className="flex flex-col overflow-hidden rounded-xl bg-surface border border-edge">
               {group.items.map((item, idx) => {
                 const meta = ICON_BY_TYPE[resolveVisualType(item)];
                 const hasMeta = !!(item.productName || item.equipmentName);
@@ -208,12 +208,12 @@ const NotificationPage = () => {
                     key={item.id}
                     onClick={() => handleItemClick(item)}
                     className={`flex cursor-pointer items-start gap-3 px-4 py-4 ${
-                      idx !== group.items.length - 1 ? "border-b border-[#E5E7EB]" : ""
+                      idx !== group.items.length - 1 ? "border-b border-line" : ""
                     }`}
                   >
                     <div className="relative shrink-0">
                       {!item.isRead && (
-                        <span className="absolute -left-2 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-[#931B82]" />
+                        <span className="absolute -left-2 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-brand" />
                       )}
                       <div
                         className="flex h-8 w-8 items-center justify-center rounded-full"
@@ -225,21 +225,21 @@ const NotificationPage = () => {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm font-semibold text-[#212121]">{notificationText(item).title}</p>
-                        <span className="shrink-0 text-xs text-[#A8A8A8]">
+                        <p className="text-sm font-semibold text-fg">{notificationText(item).title}</p>
+                        <span className="shrink-0 text-xs text-fg-subtle">
                           {formatTime(item.createdAt)}
                         </span>
                       </div>
-                      <p className="mt-1 text-sm text-[#A8A8A8]">{notificationText(item).content}</p>
+                      <p className="mt-1 text-sm text-fg-subtle">{notificationText(item).content}</p>
                       {hasMeta && (
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {item.productName && (
-                            <span className="rounded-md bg-[#F3E8FF] px-2 py-0.5 text-[11px] font-medium text-[#931B82]">
+                            <span className="rounded-md bg-brand-soft px-2 py-0.5 text-[0.6875rem] font-medium text-brand-fg">
                               {t("page.productTag", { name: item.productName })}
                             </span>
                           )}
                           {item.equipmentName && (
-                            <span className="rounded-md bg-[#F3F4F6] px-2 py-0.5 text-[11px] font-medium text-[#6B7280]">
+                            <span className="rounded-md bg-surface-2 px-2 py-0.5 text-[0.6875rem] font-medium text-fg-muted">
                               {t("page.equipmentTag", {
                                 name: item.equipmentName,
                               })}
@@ -260,7 +260,7 @@ const NotificationPage = () => {
             type="button"
             onClick={() => fetchNextPage()}
             disabled={isFetchingNextPage}
-            className="rounded-xl border border-gray-200 bg-white py-3 text-sm font-medium text-[#6B7280] transition-colors hover:border-[#931B82] hover:text-[#931B82] disabled:opacity-50"
+            className="rounded-xl border border-line-strong bg-surface py-3 text-sm font-medium text-fg-muted transition-colors hover:border-brand hover:text-brand-fg disabled:opacity-50"
           >
             {isFetchingNextPage
               ? t("status.loading", { ns: "common" })

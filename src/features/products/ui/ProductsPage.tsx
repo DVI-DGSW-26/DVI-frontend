@@ -18,17 +18,17 @@ type ProcessFilter = string;
 const ALL_FILTER: ProcessFilter = "ALL";
 
 const PROCESS_BADGE_STYLE: Record<string, string> = {
-  EXTRUSION: "bg-[#DBEAFE] text-[#1D4ED8]",
-  AL_CUTTING: "bg-[#DCFCE7] text-[#15803D]",
-  ST_CUTTING: "bg-[#FEF3C7] text-[#B45309]",
-  MACHINING: "bg-[#F3E8F7] text-[#931B82]",
-  PRESS: "bg-[#FFE4E6] text-[#BE123C]",
+  EXTRUSION: "bg-info-soft text-info-fg",
+  AL_CUTTING: "bg-success-soft text-success-fg",
+  ST_CUTTING: "bg-warn-soft text-warn-fg",
+  MACHINING: "bg-brand-soft text-brand-fg",
+  PRESS: "bg-danger-soft text-danger-fg",
 };
 
 // 공정 배지. 색은 알려진 공정에만 지정하고, 관리자가 새로 만든 공정은 회색으로 뜬다.
 function ProcessBadge({ process }: { process: string }) {
   const processLabel = useProcessLabel();
-  const style = PROCESS_BADGE_STYLE[process] ?? "bg-[#F3F4F6] text-[#6B7280]";
+  const style = PROCESS_BADGE_STYLE[process] ?? "bg-surface-2 text-fg-muted";
   return (
     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${style}`}>
       {processLabel(process)}
@@ -124,7 +124,7 @@ export default function ProductsPage() {
         <button
           type="button"
           onClick={openCreate}
-          className="flex items-center gap-1.5 rounded-lg bg-[#931B82] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D] md:px-4"
+          className="flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-medium text-on-brand transition-colors hover:bg-brand-hover md:px-4"
         >
           <Icon icon="mdi:plus" width={18} height={18} />
           <span className="hidden sm:inline">{t("page.register")}</span>
@@ -136,20 +136,20 @@ export default function ProductsPage() {
         {processOptions.map((opt) => (
           <div
             key={opt.value}
-            className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 md:p-4"
+            className="flex items-center gap-3 rounded-xl border border-edge bg-surface p-3 md:p-4"
           >
             <div
               className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg md:h-10 md:w-10 ${
-                PROCESS_BADGE_STYLE[opt.value] ?? "bg-[#F3F4F6] text-[#6B7280]"
+                PROCESS_BADGE_STYLE[opt.value] ?? "bg-surface-2 text-fg-muted"
               }`}
             >
               <Icon icon="mdi:cube-outline" width={20} height={20} />
             </div>
             <div className="min-w-0">
-              <div className="truncate text-xs text-[#6B7280]">{opt.label}</div>
-              <div className="text-lg font-semibold text-[#212121] md:text-xl">
+              <div className="truncate text-xs text-fg-muted">{opt.label}</div>
+              <div className="text-lg font-semibold text-fg md:text-xl">
                 {counts[opt.value] ?? 0}
-                <span className="ml-0.5 text-xs font-normal text-[#6B7280]">
+                <span className="ml-0.5 text-xs font-normal text-fg-muted">
                   {t("page.countUnit")}
                 </span>
               </div>
@@ -169,8 +169,8 @@ export default function ProductsPage() {
                 onClick={() => setFilter(f.value)}
                 className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors md:text-sm ${
                   active
-                    ? "border-[#931B82] bg-[#931B82] text-white"
-                    : "border-gray-200 bg-white text-[#6B7280] hover:border-[#931B82] hover:text-[#931B82]"
+                    ? "border-brand bg-brand text-on-brand"
+                    : "border-line bg-surface text-fg-muted hover:border-brand hover:text-brand-fg"
                 }`}
               >
                 {f.label}
@@ -184,14 +184,14 @@ export default function ProductsPage() {
             icon="mdi:magnify"
             width={18}
             height={18}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A8A8]"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle"
           />
           <input
             type="search"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder={t("page.searchPlaceholder")}
-            className="h-10 w-full rounded-lg border border-gray-200 bg-white pl-9 pr-3 text-sm focus:border-[#931B82] focus:outline-none"
+            className="h-10 w-full rounded-lg border border-line-strong bg-surface pl-9 pr-3 text-sm focus:border-brand focus:outline-none"
           />
         </div>
       </div>
@@ -238,9 +238,9 @@ interface ListProps {
 function DesktopTable({ products, isLoading, isError, isDeleting, onEdit, onDelete }: ListProps) {
   const { t } = useTranslation(["products", "common"]);
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <div className="overflow-hidden rounded-xl border border-edge bg-surface">
       <table className="w-full text-sm">
-        <thead className="bg-[#F3E8F7] text-[#6B7280]">
+        <thead className="bg-brand-soft text-fg-muted">
           <tr>
             <th className="px-4 py-3 text-left font-medium">{t("table.code")}</th>
             <th className="px-4 py-3 text-left font-medium">{t("table.name")}</th>
@@ -252,30 +252,30 @@ function DesktopTable({ products, isLoading, isError, isDeleting, onEdit, onDele
             <th className="px-4 py-3 text-right font-medium">{t("table.manage")}</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100 text-[#212121]">
+        <tbody className="divide-y divide-line text-fg">
           {isLoading && (
             <tr>
-              <td colSpan={8} className="px-4 py-10 text-center text-[#A8A8A8]">
+              <td colSpan={8} className="px-4 py-10 text-center text-fg-subtle">
                 {t("common:status.loading")}
               </td>
             </tr>
           )}
           {isError && (
             <tr>
-              <td colSpan={8} className="px-4 py-10 text-center text-[#EF4444]">
+              <td colSpan={8} className="px-4 py-10 text-center text-danger-fg">
                 {t("page.loadError")}
               </td>
             </tr>
           )}
           {!isLoading && !isError && products.length === 0 && (
             <tr>
-              <td colSpan={8} className="px-4 py-10 text-center text-[#A8A8A8]">
+              <td colSpan={8} className="px-4 py-10 text-center text-fg-subtle">
                 {t("page.empty")}
               </td>
             </tr>
           )}
           {products.map((product) => (
-            <tr key={product.id} className="hover:bg-gray-50">
+            <tr key={product.id} className="hover:bg-surface-2">
               <td className="px-4 py-3 whitespace-nowrap font-medium">{product.code}</td>
               <td className="px-4 py-3">{product.name}</td>
               <td className="px-4 py-3">{product.customer.name}</td>
@@ -283,7 +283,7 @@ function DesktopTable({ products, isLoading, isError, isDeleting, onEdit, onDele
                 <ProcessBadge process={product.process} />
               </td>
               <td className="px-4 py-3">
-                <span className="inline-flex items-center gap-1 text-[#6B7280]">
+                <span className="inline-flex items-center gap-1 text-fg-muted">
                   <Icon icon="mdi:ruler" width={14} height={14} />
                   {product.dimCount}
                 </span>
@@ -292,14 +292,14 @@ function DesktopTable({ products, isLoading, isError, isDeleting, onEdit, onDele
                 <span
                   className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
                     product.isActive
-                      ? "bg-[#DCFCE7] text-[#15803D]"
-                      : "bg-[#F3F4F6] text-[#6B7280]"
+                      ? "bg-success-soft text-success-fg"
+                      : "bg-surface-2 text-fg-muted"
                   }`}
                 >
                   {product.isActive ? t("page.active") : t("page.inactive")}
                 </span>
               </td>
-              <td className="px-4 py-3 whitespace-nowrap text-[#6B7280]">
+              <td className="px-4 py-3 whitespace-nowrap text-fg-muted">
                 {formatDate(product.createdAt)}
               </td>
               <td className="px-4 py-3">
@@ -308,7 +308,7 @@ function DesktopTable({ products, isLoading, isError, isDeleting, onEdit, onDele
                     type="button"
                     onClick={() => onEdit(product)}
                     aria-label={t("common:actions.edit")}
-                    className="rounded p-1.5 text-[#6B7280] transition-colors hover:bg-[#F3E8F7] hover:text-[#931B82]"
+                    className="rounded p-1.5 text-fg-muted transition-colors hover:bg-brand-soft hover:text-brand-fg"
                   >
                     <Icon icon="mdi:pencil-outline" width={18} height={18} />
                   </button>
@@ -317,7 +317,7 @@ function DesktopTable({ products, isLoading, isError, isDeleting, onEdit, onDele
                     onClick={() => onDelete(product)}
                     disabled={isDeleting}
                     aria-label={t("common:actions.delete")}
-                    className="rounded p-1.5 text-[#6B7280] transition-colors hover:bg-[#FEE2E2] hover:text-[#EF4444] disabled:cursor-not-allowed disabled:opacity-40"
+                    className="rounded p-1.5 text-fg-muted transition-colors hover:bg-danger-soft hover:text-danger-fg disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <Icon icon="mdi:trash-can-outline" width={18} height={18} />
                   </button>
@@ -335,21 +335,21 @@ function MobileList({ products, isLoading, isError, isDeleting, onEdit, onDelete
   const { t } = useTranslation(["products", "common"]);
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+      <div className="rounded-xl border border-edge bg-surface px-4 py-10 text-center text-sm text-fg-subtle">
         {t("common:status.loading")}
       </div>
     );
   }
   if (isError) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
+      <div className="rounded-xl border border-edge bg-surface px-4 py-10 text-center text-sm text-danger-fg">
         {t("page.loadError")}
       </div>
     );
   }
   if (products.length === 0) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+      <div className="rounded-xl border border-edge bg-surface px-4 py-10 text-center text-sm text-fg-subtle">
         {t("page.empty")}
       </div>
     );
@@ -360,42 +360,42 @@ function MobileList({ products, isLoading, isError, isDeleting, onEdit, onDelete
       {products.map((product) => (
         <div
           key={product.id}
-          className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+          className="rounded-xl border border-edge bg-surface p-4 shadow-sm"
         >
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <div className="truncate text-base font-semibold text-[#212121]">
+              <div className="truncate text-base font-semibold text-fg">
                 {product.name}
               </div>
-              <div className="mt-0.5 truncate text-xs text-[#6B7280]">
+              <div className="mt-0.5 truncate text-xs text-fg-muted">
                 {product.code} · {product.customer.name}
               </div>
             </div>
             <ProcessBadge process={product.process} />
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-[#6B7280]">
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-fg-muted">
             <span className="inline-flex items-center gap-1">
               <Icon icon="mdi:ruler" width={14} height={14} />
               {t("page.dimsCount", { n: product.dimCount })}
             </span>
             <span
-              className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+              className={`inline-flex rounded-full px-2 py-0.5 text-[0.6875rem] font-medium ${
                 product.isActive
-                  ? "bg-[#DCFCE7] text-[#15803D]"
-                  : "bg-[#F3F4F6] text-[#6B7280]"
+                  ? "bg-success-soft text-success-fg"
+                  : "bg-surface-2 text-fg-muted"
               }`}
             >
               {product.isActive ? t("page.active") : t("page.inactive")}
             </span>
-            <span className="ml-auto text-[#A8A8A8]">{formatDate(product.createdAt)}</span>
+            <span className="ml-auto text-fg-subtle">{formatDate(product.createdAt)}</span>
           </div>
 
-          <div className="mt-3 flex items-center justify-end gap-1 border-t border-gray-100 pt-2">
+          <div className="mt-3 flex items-center justify-end gap-1 border-t border-line pt-2">
             <button
               type="button"
               onClick={() => onEdit(product)}
-              className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-[#6B7280] transition-colors hover:bg-[#F3E8F7] hover:text-[#931B82]"
+              className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-fg-muted transition-colors hover:bg-brand-soft hover:text-brand-fg"
             >
               <Icon icon="mdi:pencil-outline" width={16} height={16} />
               {t("common:actions.edit")}
@@ -404,7 +404,7 @@ function MobileList({ products, isLoading, isError, isDeleting, onEdit, onDelete
               type="button"
               onClick={() => onDelete(product)}
               disabled={isDeleting}
-              className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-[#6B7280] transition-colors hover:bg-[#FEE2E2] hover:text-[#EF4444] disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-fg-muted transition-colors hover:bg-danger-soft hover:text-danger-fg disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Icon icon="mdi:trash-can-outline" width={16} height={16} />
               {t("common:actions.delete")}

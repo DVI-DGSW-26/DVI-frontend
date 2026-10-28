@@ -17,7 +17,7 @@ export default function PullToRefreshIndicator({
   return (
     <div
       style={{ height: indicatorHeight }}
-      className="flex items-center justify-center overflow-hidden text-xs text-[#6B7280] transition-[height] duration-150"
+      className="flex items-center justify-center overflow-hidden text-xs text-fg-muted transition-[height] duration-150"
     >
       {refreshing ? (
         <span className="flex items-center gap-1.5">

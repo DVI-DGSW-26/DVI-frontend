@@ -20,6 +20,8 @@ type TabItem = {
   activeMatch?: (pathname: string) => boolean;
   // "더보기" 안에서 묶어 보여줄 제목(layout groups.*).
   group?: TabGroup;
+  // 역할별로 경로만 다른 같은 메뉴는 같은 slot 을 줘서 한 번만 보이게 한다(tabVisibility).
+  slot?: string;
 };
 
 // 탭이 많은 역할은 앞에서부터 MAX_PRIMARY 개만 탭바에 두고 나머지는 "더보기"로 보낸다 —
@@ -28,8 +30,8 @@ const TABS: TabItem[] = [
   { labelKey: "dashboard", to: "/", icon: "flowbite:home-solid", roles: ["ADMIN"] },
   { labelKey: "approvalManagement", to: "/approval-management", icon: "fluent:shield-task-48-filled", roles: ["QUALITY_ADMIN", "ADMIN"], group: "approval" },
   { labelKey: "crossCheckApproval", to: "/cross-check-approval", icon: "mdi:shield-check-outline", roles: ["QUALITY_ADMIN", "ADMIN"], group: "approval" },
-  { labelKey: "reports", to: "/reports", icon: "basil:document-solid", roles: ["ADMIN"], group: "status" },
-  { labelKey: "qmReports", to: "/qm-reports", icon: "basil:document-solid", roles: ["QUALITY_ADMIN"], group: "status" },
+  { labelKey: "reports", to: "/reports", icon: "basil:document-solid", roles: ["ADMIN"], group: "status", slot: "reports" },
+  { labelKey: "qmReports", to: "/qm-reports", icon: "basil:document-solid", roles: ["QUALITY_ADMIN"], group: "status", slot: "reports" },
 
   { labelKey: "home", to: "/", icon: "flowbite:home-solid", roles: ["PRODUCTION"], iconSize: 34 },
   { labelKey: "inspectionHistory", to: "/inspections", icon: "icon-park-outline:big-clock", roles: ["PRODUCTION"] },
@@ -101,7 +103,7 @@ const TabBarMobile = () => {
           onClose={() => setMoreOpenAt(null)}
         />
       )}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 flex h-16 items-center justify-around border-t border-[#E5E7EB] bg-white">
+      <nav className="fixed bottom-0 left-0 right-0 z-30 flex h-16 items-center justify-around border-t border-line bg-surface">
         {primary.map((tab) => {
           const customActive = tab.activeMatch?.(location.pathname);
           return (
@@ -113,7 +115,7 @@ const TabBarMobile = () => {
               className={({ isActive: navActive }) => {
                 const isActive = customActive ?? navActive;
                 return `flex flex-1 flex-col items-center justify-center gap-0.5 transition-colors ${
-                  isActive ? "text-[#931B82]" : "text-[#A8A8A8]"
+                  isActive ? "text-brand-fg" : "text-fg-subtle"
                 }`;
               }}
             >
@@ -126,7 +128,7 @@ const TabBarMobile = () => {
                 <CountBadge n={badges[tab.labelKey]} />
               </span>
               {collapsed && (
-                <span className="max-w-full truncate px-0.5 text-[10px] font-medium">
+                <span className="max-w-full truncate px-0.5 text-[0.625rem] font-medium">
                   {t(`tabs.${tab.labelKey}`)}
                 </span>
               )}
@@ -141,11 +143,11 @@ const TabBarMobile = () => {
             }
             aria-expanded={moreOpen}
             className={`flex flex-1 flex-col items-center justify-center gap-0.5 transition-colors ${
-              moreOpen || overflowActive ? "text-[#931B82]" : "text-[#A8A8A8]"
+              moreOpen || overflowActive ? "text-brand-fg" : "text-fg-subtle"
             }`}
           >
             <Icon icon="solar:menu-dots-bold" width={24} height={24} />
-            <span className="text-[10px] font-medium">{t("tabs.more")}</span>
+            <span className="text-[0.625rem] font-medium">{t("tabs.more")}</span>
           </button>
         )}
       </nav>
@@ -158,7 +160,7 @@ const TabBarMobile = () => {
 function CountBadge({ n }: { n: number | undefined }) {
   if (!n) return null;
   return (
-    <span className="absolute -right-2.5 -top-1.5 min-w-4 rounded-full bg-[#DC2626] px-1 text-center text-[10px] font-bold leading-4 text-white tabular-nums">
+    <span className="absolute -right-2.5 -top-1.5 min-w-4 rounded-full bg-danger px-1 text-center text-[0.625rem] font-bold leading-4 text-white tabular-nums">
       {n > 99 ? "99+" : n}
     </span>
   );
@@ -181,7 +183,7 @@ function MoreSheet({
     <div className="fixed inset-0 z-20 bg-black/30" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="absolute inset-x-0 bottom-16 max-h-[70dvh] overflow-y-auto rounded-t-2xl bg-white px-4 pb-3 pt-2 shadow-lg"
+        className="absolute inset-x-0 bottom-16 max-h-[70dvh] overflow-y-auto rounded-t-2xl bg-surface px-4 pb-3 pt-2 shadow-lg"
       >
         {groups.map((g) => {
           const items = tabs.filter((tab) => tab.group === g);
@@ -189,7 +191,7 @@ function MoreSheet({
           return (
             <div key={g ?? "etc"} className="pt-2">
               {g && (
-                <div className="px-1 pb-1 text-[11px] font-semibold text-[#9CA3AF]">
+                <div className="px-1 pb-1 text-[0.6875rem] font-semibold text-fg-subtle">
                   {t(`groups.${g}`)}
                 </div>
               )}
@@ -202,14 +204,14 @@ function MoreSheet({
                       onClick={onClose}
                       className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium ${
                         isActive(tab)
-                          ? "bg-[#F3E8F7] text-[#931B82]"
-                          : "text-[#212121] hover:bg-gray-50"
+                          ? "bg-brand-soft text-brand-fg"
+                          : "text-fg hover:bg-surface-2"
                       }`}
                     >
                       <Icon icon={tab.icon} width={20} height={20} />
                       <span className="truncate">{t(`tabs.${tab.labelKey}`)}</span>
                       {badges[tab.labelKey] ? (
-                        <span className="ml-auto rounded-full bg-[#DC2626] px-1.5 text-[11px] font-bold leading-5 text-white tabular-nums">
+                        <span className="ml-auto rounded-full bg-danger px-1.5 text-[0.6875rem] font-bold leading-5 text-white tabular-nums">
                           {badges[tab.labelKey]}
                         </span>
                       ) : null}

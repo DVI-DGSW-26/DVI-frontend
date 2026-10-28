@@ -11,7 +11,7 @@ export default function Button({ children, onClick, type = "button", disabled = 
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className="w-full bg-[#931B82] text-white rounded-md h-12 xl:h-15 hover:bg-[#6A0F5D] transition-colors disabled:bg-[#D1D5DB] disabled:cursor-not-allowed disabled:hover:bg-[#D1D5DB]"
+      className="w-full bg-brand text-on-brand rounded-md h-12 xl:h-15 hover:bg-brand-hover transition-colors disabled:bg-surface-3 disabled:cursor-not-allowed disabled:hover:bg-surface-3"
     >
       {children}
     </button>

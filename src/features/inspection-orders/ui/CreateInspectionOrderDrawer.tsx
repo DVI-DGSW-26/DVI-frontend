@@ -284,17 +284,17 @@ export default function CreateInspectionOrderDrawer({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-white shadow-2xl transition-transform duration-300 ease-out ${
+        className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-surface shadow-2xl transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <header className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-          <h2 className="text-base font-semibold text-[#212121]">{title}</h2>
+        <header className="flex items-center justify-between border-b border-line px-5 py-4">
+          <h2 className="text-base font-semibold text-fg">{title}</h2>
           <button
             type="button"
             onClick={guard.requestClose}
             aria-label={t("common:actions.close")}
-            className="text-[#A8A8A8] transition-colors hover:text-[#212121]"
+            className="text-fg-subtle transition-colors hover:text-fg"
           >
             <Icon icon="mdi:close" width={22} height={22} />
           </button>
@@ -305,18 +305,18 @@ export default function CreateInspectionOrderDrawer({
           className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-5"
         >
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[#212121]">{t("drawer.date")}</span>
+            <span className="text-sm font-medium text-fg">{t("drawer.date")}</span>
             <input
               type="date"
               value={targetDate}
               onChange={(e) => setTargetDate(e.target.value)}
               required
-              className="h-11 rounded-lg border border-gray-300 px-3 text-sm focus:border-[#931B82] focus:outline-none"
+              className="h-11 rounded-lg border border-line-strong px-3 text-sm focus:border-brand focus:outline-none"
             />
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[#212121]">{t("drawer.equipment")}</span>
+            <span className="text-sm font-medium text-fg">{t("drawer.equipment")}</span>
             <select
               value={equipmentId}
               onChange={(e) => {
@@ -331,7 +331,7 @@ export default function CreateInspectionOrderDrawer({
               }}
               required
               disabled={loadingEquipment}
-              className="h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none disabled:bg-gray-50"
+              className="h-11 rounded-lg border border-line-strong bg-surface px-3 text-sm focus:border-brand focus:outline-none disabled:bg-canvas"
             >
               <option value="">
                 {loadingEquipment ? t("drawer.loading") : t("drawer.equipmentPlaceholder")}
@@ -345,7 +345,7 @@ export default function CreateInspectionOrderDrawer({
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[#212121]">{t("drawer.product")}</span>
+            <span className="text-sm font-medium text-fg">{t("drawer.product")}</span>
             <select
               value={productId}
               onChange={(e) =>
@@ -353,7 +353,7 @@ export default function CreateInspectionOrderDrawer({
               }
               required
               disabled={loadingProducts || equipmentId === ""}
-              className="h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none disabled:bg-gray-50"
+              className="h-11 rounded-lg border border-line-strong bg-surface px-3 text-sm focus:border-brand focus:outline-none disabled:bg-canvas"
             >
               <option value="">
                 {equipmentId === ""
@@ -371,7 +371,7 @@ export default function CreateInspectionOrderDrawer({
           </label>
           {!shiftUnknown && (
             <fieldset className="flex flex-col gap-1.5">
-              <legend className="mb-1.5 text-sm font-medium text-[#212121]">
+              <legend className="mb-1.5 text-sm font-medium text-fg">
                 {t("drawer.shift")}
               </legend>
               <div className="grid grid-cols-2 gap-2">
@@ -383,10 +383,10 @@ export default function CreateInspectionOrderDrawer({
                   return (
                     <label
                       key={opt.value}
-                      className={`flex h-11 items-center justify-center gap-1.5 rounded-lg border text-sm font-medium transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#931B82]/40 ${
+                      className={`flex h-11 items-center justify-center gap-1.5 rounded-lg border text-sm font-medium transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand/40 ${
                         selected
-                          ? "border-[#931B82] bg-[#931B82] text-white"
-                          : "border-gray-300 bg-white text-[#6B7280] hover:bg-gray-50"
+                          ? "border-brand bg-brand text-on-brand"
+                          : "border-line-strong bg-surface text-fg-muted hover:bg-surface-2"
                       } ${isEdit && !selected ? "opacity-40" : ""} ${
                         locked ? "cursor-default" : "cursor-pointer"
                       }`}
@@ -412,7 +412,7 @@ export default function CreateInspectionOrderDrawer({
                   );
                 })}
               </div>
-              <span className="text-xs text-[#6B7280]">
+              <span className="text-xs text-fg-muted">
                 {isEdit
                   ? t("drawer.shiftLocked")
                   : isBoth
@@ -420,12 +420,12 @@ export default function CreateInspectionOrderDrawer({
                     : t("drawer.shiftDefaultDesc")}
               </span>
               {nightFromDaySchedule && (
-                <span className="text-xs text-[#B45309]">
+                <span className="text-xs text-warn-fg">
                   {t("drawer.nightFromDaySchedule")}
                 </span>
               )}
               {dayMissing && (
-                <span className="text-xs text-[#B45309]">
+                <span className="text-xs text-warn-fg">
                   {t("drawer.dayMissing")}
                 </span>
               )}
@@ -451,14 +451,14 @@ export default function CreateInspectionOrderDrawer({
             <button
               type="button"
               onClick={guard.requestClose}
-              className="h-11 flex-1 rounded-lg border border-gray-300 text-sm font-medium text-[#212121] transition-colors hover:bg-gray-50"
+              className="h-11 flex-1 rounded-lg border border-line-strong text-sm font-medium text-fg transition-colors hover:bg-surface-2"
             >
               {t("common:actions.cancel")}
             </button>
             <button
               type="submit"
               disabled={!canSubmit}
-              className="h-11 flex-1 rounded-lg bg-[#931B82] text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D] disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-11 flex-1 rounded-lg bg-brand text-sm font-medium text-on-brand transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40"
             >
               {submitLabel}
             </button>
@@ -486,40 +486,40 @@ function WorkerPicker({
   const { t } = useTranslation("inspectionOrders");
   return (
     <fieldset className="flex flex-col gap-1.5">
-      <legend className="text-sm font-medium text-[#212121]">{legend}</legend>
-      <p className="text-xs text-[#6B7280]">
+      <legend className="text-sm font-medium text-fg">{legend}</legend>
+      <p className="text-xs text-fg-muted">
         {t("drawer.workersDesc")}
         {selectedIds.length > 0 && (
-          <span className="ml-1 font-medium text-[#931B82]">
+          <span className="ml-1 font-medium text-brand-fg">
             {t("drawer.workersSelected", { n: selectedIds.length })}
           </span>
         )}
       </p>
-      <div className="max-h-56 overflow-y-auto rounded-lg border border-gray-300">
+      <div className="max-h-56 overflow-y-auto rounded-lg border border-line-strong">
         {loading ? (
-          <p className="px-3 py-4 text-sm text-[#A8A8A8]">{t("drawer.loading")}</p>
+          <p className="px-3 py-4 text-sm text-fg-subtle">{t("drawer.loading")}</p>
         ) : workers.length === 0 ? (
-          <p className="px-3 py-4 text-sm text-[#A8A8A8]">{t("drawer.noWorkers")}</p>
+          <p className="px-3 py-4 text-sm text-fg-subtle">{t("drawer.noWorkers")}</p>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-line">
             {workers.map((u) => {
               const checked = selectedIds.includes(u.id);
               return (
                 <li key={u.id}>
                   <label
-                    className={`flex cursor-pointer items-center gap-3 px-3 py-2.5 text-sm transition-colors hover:bg-[#FAF5FB] ${
-                      checked ? "bg-[#FAF5FB]" : ""
+                    className={`flex cursor-pointer items-center gap-3 px-3 py-2.5 text-sm transition-colors hover:bg-brand-soft ${
+                      checked ? "bg-brand-soft" : ""
                     }`}
                   >
                     <input
                       type="checkbox"
                       checked={checked}
                       onChange={() => onToggle(u.id)}
-                      className="h-4 w-4 shrink-0 accent-[#931B82]"
+                      className="h-4 w-4 shrink-0 accent-brand"
                     />
-                    <span className="min-w-0 truncate text-[#212121]">
+                    <span className="min-w-0 truncate text-fg">
                       {u.name}
-                      <span className="ml-1 text-xs text-[#6B7280]">({u.loginId})</span>
+                      <span className="ml-1 text-xs text-fg-muted">({u.loginId})</span>
                     </span>
                   </label>
                 </li>

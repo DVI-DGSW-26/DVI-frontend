@@ -81,7 +81,7 @@ function ResultCell({
     >
       {(["OK", "NG"] as const).map((v) => {
         const active = value === v;
-        const tone = v === "OK" ? "bg-[#15803D]" : "bg-[#B91C1C]";
+        const tone = v === "OK" ? "bg-success" : "bg-danger";
         return (
           <button
             key={v}
@@ -90,8 +90,8 @@ function ResultCell({
             aria-pressed={active}
             // 다시 누르면 선택을 지운다 — 아직 확인하지 않은 상태로 되돌릴 수 있어야 한다.
             onClick={() => onChange(active ? null : v)}
-            className={`h-6 w-9 rounded text-[11px] font-semibold ${
-              active ? `${tone} text-white` : "bg-[#F3F4F6] text-[#9CA3AF] hover:text-[#212121]"
+            className={`h-6 w-9 rounded text-[0.6875rem] font-semibold ${
+              active ? `${tone} text-white` : "bg-surface-2 text-fg-subtle hover:text-fg"
             }`}
           >
             {t(`result.${v}`)}
@@ -110,7 +110,7 @@ function NumberPreview({ row }: { row: ItemDraft }) {
   const result = judgeTryout(v, measured);
   if (result == null && measured != null && v.standardValue != null && v.toleranceLower == null && v.toleranceUpper == null) {
     return (
-      <span className="text-[11px] text-[#A8A8A8]" title={t("form.noToleranceHint")}>
+      <span className="text-[0.6875rem] text-fg-subtle" title={t("form.noToleranceHint")}>
         {t("form.noJudge")}
       </span>
     );
@@ -182,14 +182,14 @@ export default function ItemFormTable({ rows, errors, mode, onRowChange, onUploa
     for (const [key, patch] of Object.entries(pasteIntoRows(rows, at.r, at.col, cells))) onRowChange(key, patch);
   };
 
-  const th = "border border-[#D1D5DB] bg-[#F3F4F6] px-2 py-1.5 text-center text-xs font-semibold text-[#4B5563]";
-  const td = "border border-[#D1D5DB] p-0 align-middle";
-  const ro = "px-2 text-xs text-[#212121]";
-  const na = `${td} bg-[#F3F4F6]`;
+  const th = "border border-line-strong bg-surface-2 px-2 py-1.5 text-center text-xs font-semibold text-fg-muted";
+  const td = "border border-line-strong p-0 align-middle";
+  const ro = "px-2 text-xs text-fg";
+  const na = `${td} bg-surface-2`;
   const inputCls = (invalid: boolean, align: "right" | "left" = "right") =>
-    `h-10 w-full bg-transparent px-2 text-xs text-[#212121] placeholder:text-[#C4C4C4] ${CELL_FOCUS} ${
+    `h-10 w-full bg-transparent px-2 text-xs text-fg placeholder:text-fg-subtle ${CELL_FOCUS} ${
       align === "right" ? "text-right tabular-nums" : ""
-    } ${invalid ? "bg-[#FEF2F2]" : ""}`;
+    } ${invalid ? "bg-danger-soft" : ""}`;
 
   const errorRows = rows.filter((r) => errors[r.key]);
 
@@ -231,7 +231,7 @@ export default function ItemFormTable({ rows, errors, mode, onRowChange, onUploa
           <tbody>
             {display.map((d, k) => {
               const stepCell = spans[k] > 0 && (
-                <td rowSpan={spans[k]} className={`${td} bg-[#F9FAFB] text-center ${ro} font-medium`}>
+                <td rowSpan={spans[k]} className={`${td} bg-canvas text-center ${ro} font-medium`}>
                   {d.step}
                 </td>
               );
@@ -239,7 +239,7 @@ export default function ItemFormTable({ rows, errors, mode, onRowChange, onUploa
                 return (
                   <tr key="scrap-group">
                     {stepCell}
-                    <td colSpan={5} className={`${td} bg-[#F9FAFB] py-2 text-center ${ro}`}>
+                    <td colSpan={5} className={`${td} bg-canvas py-2 text-center ${ro}`}>
                       {t("sheet.scrapGroup")}
                     </td>
                     <td className={na} />
@@ -282,8 +282,8 @@ export default function ItemFormTable({ rows, errors, mode, onRowChange, onUploa
               return (
                 <tr key={row.key}>
                   {stepCell}
-                  <td className={`${td} bg-[#F9FAFB] text-center ${ro}`}>{sheetItemLabel(row, t)}</td>
-                  <td className={`${td} bg-[#F9FAFB] text-center ${ro} text-[#6B7280]`}>{row.unit || ""}</td>
+                  <td className={`${td} bg-canvas text-center ${ro}`}>{sheetItemLabel(row, t)}</td>
+                  <td className={`${td} bg-canvas text-center ${ro} text-fg-muted`}>{row.unit || ""}</td>
                   {row.valueType === "NUMBER" ? (
                     <>
                       {stdField("standard")}
@@ -291,7 +291,7 @@ export default function ItemFormTable({ rows, errors, mode, onRowChange, onUploa
                       {stdField("upper")}
                     </>
                   ) : (
-                    <td colSpan={3} className={`${td} bg-[#F9FAFB] text-center ${ro} text-[#6B7280]`}>
+                    <td colSpan={3} className={`${td} bg-canvas text-center ${ro} text-fg-muted`}>
                       {t("form.goodStandard")}
                     </td>
                   )}
@@ -346,9 +346,9 @@ export default function ItemFormTable({ rows, errors, mode, onRowChange, onUploa
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={9} className="border border-[#D1D5DB] bg-[#FAFAFA] px-3 py-2">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#6B7280]">
-                  <span className="font-semibold text-[#212121]">{t("sheet.dimFooter", { n: dimCount })}</span>
+              <td colSpan={9} className="border border-line-strong bg-surface-2 px-3 py-2">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-fg-muted">
+                  <span className="font-semibold text-fg">{t("sheet.dimFooter", { n: dimCount })}</span>
                   <span>{mode === "create" ? t("sheet.dimHowCreate") : t("sheet.dimHowEdit")}</span>
                   {mode === "create" && canManageProducts && (
                     // 쓰던 보고서가 날아가지 않게 새 탭으로 연다.
@@ -356,7 +356,7 @@ export default function ItemFormTable({ rows, errors, mode, onRowChange, onUploa
                       href="/products"
                       target="_blank"
                       rel="noreferrer"
-                      className="font-medium text-[#931B82] underline-offset-2 hover:underline"
+                      className="font-medium text-brand-fg underline-offset-2 hover:underline"
                     >
                       {t("sheet.openProducts")}
                     </a>
@@ -368,7 +368,7 @@ export default function ItemFormTable({ rows, errors, mode, onRowChange, onUploa
         </table>
       </div>
       {errorRows.length > 0 && (
-        <ul className="flex flex-col gap-0.5 text-xs text-[#DC2626]">
+        <ul className="flex flex-col gap-0.5 text-xs text-danger-fg">
           {errorRows.map((r) => (
             <li key={r.key}>
               {itemLabel(r, t)}: {t(`errors.item.${errors[r.key]}`)}

@@ -33,34 +33,34 @@ const STATUS_BADGE: Record<
 > = {
   DRAFT: {
     labelKey: "status.draft",
-    className: "border-[#FDE68A] bg-[#FEF3C7] text-[#B45309]",
+    className: "border-warn-line bg-warn-soft text-warn-fg",
   },
   COMPLETED: {
     labelKey: "status.completed",
-    className: "border-[#BBF7D0] bg-[#DCFCE7] text-[#15803D]",
+    className: "border-success-line bg-success-soft text-success-fg",
   },
   INCOMPLETE: {
     labelKey: "status.incomplete",
-    className: "border-[#FECACA] bg-[#FEE2E2] text-[#B91C1C]",
+    className: "border-danger-line bg-danger-soft text-danger-fg",
   },
   INCOMPLETE_APPROVED: {
     labelKey: "status.incompleteApproved",
-    className: "border-gray-200 bg-[#F3F4F6] text-[#6B7280]",
+    className: "border-line bg-surface-2 text-fg-muted",
   },
   SKIPPED: {
     labelKey: "status.skipped",
-    className: "border-gray-200 bg-[#F3F4F6] text-[#9CA3AF]",
+    className: "border-line bg-surface-2 text-fg-subtle",
   },
   TERMINATED: {
     labelKey: "status.terminated",
-    className: "border-[#FECACA] bg-[#FEF2F2] text-[#B91C1C]",
+    className: "border-danger-line bg-danger-soft text-danger-fg",
   },
 };
 
 // 서버에 새 상태가 생겨도 목록 전체가 죽지 않도록 — TERMINATED 추가 때 실제로 크래시났다.
 const UNKNOWN_BADGE = {
   labelKey: "status.unknown",
-  className: "border-gray-200 bg-[#F3F4F6] text-[#6B7280]",
+  className: "border-line bg-surface-2 text-fg-muted",
 };
 
 function matchesTab(status: MyInspectionStatus, tab: StatusTab): boolean {
@@ -140,7 +140,7 @@ export default function AdminInspectionListPage() {
     <div className="flex flex-col gap-4 p-4 pb-20 md:p-6 md:pb-6">
       <div>
         <h1 className="text-xl font-semibold">{t("page.title")}</h1>
-        <p className="mt-1 text-xs text-[#6B7280]">{t("page.desc")}</p>
+        <p className="mt-1 text-xs text-fg-muted">{t("page.desc")}</p>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -151,8 +151,8 @@ export default function AdminInspectionListPage() {
             onClick={() => setTab(tabItem.key)}
             className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
               tab === tabItem.key
-                ? "bg-[#931B82] text-white"
-                : "border border-gray-200 bg-white text-[#6B7280] hover:bg-gray-50"
+                ? "bg-brand text-on-brand"
+                : "border border-line bg-surface text-fg-muted hover:bg-surface-2"
             }`}
           >
             {t(tabItem.labelKey)} ({counts[tabItem.key]})
@@ -161,22 +161,22 @@ export default function AdminInspectionListPage() {
       </div>
 
       {listQuery.isLoading ? (
-        <div className="flex min-h-40 items-center justify-center text-xs text-[#A8A8A8]">
+        <div className="flex min-h-40 items-center justify-center text-xs text-fg-subtle">
           {t("common:status.loading")}
         </div>
       ) : listQuery.isError ? (
         <div className="flex min-h-40 flex-col items-center justify-center gap-2 text-center">
-          <span className="text-sm text-[#EF4444]">{t("page.loadError")}</span>
+          <span className="text-sm text-danger-fg">{t("page.loadError")}</span>
           <button
             type="button"
             onClick={() => listQuery.refetch()}
-            className="h-9 rounded-md border border-gray-200 px-3 text-xs font-medium text-[#6B7280] hover:bg-gray-50"
+            className="h-9 rounded-md border border-line px-3 text-xs font-medium text-fg-muted hover:bg-surface-2"
           >
             {t("common:actions.retry")}
           </button>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex min-h-40 items-center justify-center text-xs text-[#A8A8A8]">
+        <div className="flex min-h-40 items-center justify-center text-xs text-fg-subtle">
           {t("page.empty")}
         </div>
       ) : (
@@ -187,23 +187,23 @@ export default function AdminInspectionListPage() {
             return (
               <li
                 key={item.inspectionId}
-                className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4"
+                className="flex items-center gap-3 rounded-xl border border-edge bg-surface p-4"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="truncate text-sm font-semibold text-[#212121]">
+                    <span className="truncate text-sm font-semibold text-fg">
                       {item.product.name}
                     </span>
-                    <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-[11px] font-medium text-[#931B82]">
+                    <span className="rounded-md bg-brand-soft px-2 py-0.5 text-[0.6875rem] font-medium text-brand-fg">
                       {item.product.code}
                     </span>
                     <span
-                      className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${badge.className}`}
+                      className={`rounded-full border px-2 py-0.5 text-[0.625rem] font-semibold ${badge.className}`}
                     >
                       {t(badge.labelKey)}
                     </span>
                   </div>
-                  <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-[#6B7280] sm:grid-cols-3">
+                  <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[0.6875rem] text-fg-muted sm:grid-cols-3">
                     <Meta
                       label={t("meta.round")}
                       value={slotLabelWithShift(item.typeLabel, item.type)}
@@ -223,7 +223,7 @@ export default function AdminInspectionListPage() {
                       ? t("common:actions.delete")
                       : t("page.deleteDisabledTitle")
                   }
-                  className="flex shrink-0 items-center gap-1 rounded-md border border-[#EF4444] px-3 py-1.5 text-xs font-medium text-[#EF4444] transition-colors hover:bg-[#FEF2F2] disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-[#D1D5DB] disabled:hover:bg-transparent"
+                  className="flex shrink-0 items-center gap-1 rounded-md border border-danger px-3 py-1.5 text-xs font-medium text-danger-fg transition-colors hover:bg-danger-soft disabled:cursor-not-allowed disabled:border-line disabled:text-fg-faint disabled:hover:bg-transparent"
                 >
                   <Icon icon="solar:trash-bin-trash-linear" width={14} height={14} />
                   {t("common:actions.delete")}
@@ -258,8 +258,8 @@ function Meta({
 }) {
   return (
     <div className="flex items-center gap-1">
-      <span className="shrink-0 text-[#9CA3AF]">{label}</span>
-      <span className="min-w-0 truncate text-[#374151]">{value}</span>
+      <span className="shrink-0 text-fg-subtle">{label}</span>
+      <span className="min-w-0 truncate text-fg">{value}</span>
       {suffix}
     </div>
   );

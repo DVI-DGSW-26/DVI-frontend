@@ -45,7 +45,7 @@ export default function EquipmentReportListPage() {
   return (
     <div className="mx-auto w-full max-w-3xl p-4 md:p-6">
       {/* 거르기 */}
-      <div className="rounded-2xl bg-white p-4 shadow-sm">
+      <div className="rounded-2xl bg-surface p-4 shadow-sm border border-edge">
         <div role="radiogroup" className="grid grid-cols-4 gap-2">
           {PERIODS.map((p) => {
             const active = period === p;
@@ -58,8 +58,8 @@ export default function EquipmentReportListPage() {
                 onClick={() => setPeriod(p)}
                 className={`h-12 rounded-xl border text-base font-semibold ${
                   active
-                    ? "border-[#931B82] bg-[#931B82] text-white"
-                    : "border-[#D1D5DB] bg-white text-[#374151]"
+                    ? "border-brand bg-brand text-on-brand"
+                    : "border-line-strong bg-surface text-fg"
                 }`}
               >
                 {t(`list.period.${p}`)}
@@ -68,13 +68,13 @@ export default function EquipmentReportListPage() {
           })}
         </div>
         <label className="mt-3 flex items-center gap-3">
-          <span className="shrink-0 text-base font-semibold text-[#374151]">
+          <span className="shrink-0 text-base font-semibold text-fg">
             {t("list.process")}
           </span>
           <select
             value={process}
             onChange={(e) => setProcess(e.target.value)}
-            className="h-12 min-w-0 flex-1 rounded-xl border border-[#D1D5DB] bg-white px-3 text-base"
+            className="h-12 min-w-0 flex-1 rounded-xl border border-line-strong bg-surface px-3 text-base"
           >
             <option value="">{t("list.allProcesses")}</option>
             {processOptions.map((o) => (
@@ -91,12 +91,12 @@ export default function EquipmentReportListPage() {
         {query.isLoading ? (
           <Message text={t("list.loading")} />
         ) : query.isError ? (
-          <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
-            <p className="text-lg text-[#DC2626]">{t("list.error")}</p>
+          <div className="rounded-2xl bg-surface p-8 text-center shadow-sm border border-edge">
+            <p className="text-lg text-danger-fg">{t("list.error")}</p>
             <button
               type="button"
               onClick={() => query.refetch()}
-              className="mt-4 h-12 rounded-xl border border-[#D1D5DB] px-6 text-base font-semibold"
+              className="mt-4 h-12 rounded-xl border border-line-strong px-6 text-base font-semibold"
             >
               {t("list.retry")}
             </button>
@@ -105,7 +105,7 @@ export default function EquipmentReportListPage() {
           <Message text={t("list.empty")} />
         ) : (
           <>
-            <p className="mb-2 px-1 text-base text-[#6B7280]">
+            <p className="mb-2 px-1 text-base text-fg-muted">
               {t("list.total", { count: total })}
             </p>
             <ul className="flex flex-col gap-3">
@@ -115,30 +115,30 @@ export default function EquipmentReportListPage() {
                   <li key={r.id}>
                     <Link
                       to={`/equipment-report/${r.id}`}
-                      className={`flex items-center gap-4 rounded-2xl border-2 bg-white p-4 shadow-sm active:bg-[#F9FAFB] ${
-                        isToday ? "border-[#FCA5A5]" : "border-transparent"
+                      className={`flex items-center gap-4 rounded-2xl border-2 bg-surface p-4 shadow-sm active:bg-surface-2 ${
+                        isToday ? "border-danger-line" : "border-transparent"
                       }`}
                     >
-                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#FEE2E2] text-[#DC2626]">
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-danger-soft text-danger-fg">
                         <Icon icon="solar:danger-triangle-bold" width={26} height={26} />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-xl font-bold text-[#111827]">
+                        <span className="block truncate text-xl font-bold text-fg">
                           {r.equipmentName}
                         </span>
-                        <span className="mt-0.5 block text-base text-[#374151]">
+                        <span className="mt-0.5 block text-base text-fg">
                           {processLabel(r.process)}
-                          <span className="mx-1.5 text-[#D1D5DB]">|</span>
+                          <span className="mx-1.5 text-fg-faint">|</span>
                           {t("list.reporter", { name: r.reporter.name })}
                         </span>
                         <span className="mt-1 flex flex-wrap items-center gap-x-3 text-base">
                           <span
-                            className={isToday ? "font-semibold text-[#DC2626]" : "text-[#6B7280]"}
+                            className={isToday ? "font-semibold text-danger-fg" : "text-fg-muted"}
                           >
                             {formatReportedAt(r.reportedAt, t, i18n.language)}
                           </span>
                           {r.imageCount > 0 && (
-                            <span className="flex items-center gap-1 text-[#6B7280]">
+                            <span className="flex items-center gap-1 text-fg-muted">
                               <Icon icon="solar:camera-linear" width={18} height={18} />
                               {t("list.photoCount", { count: r.imageCount })}
                             </span>
@@ -149,7 +149,7 @@ export default function EquipmentReportListPage() {
                         icon="solar:alt-arrow-right-linear"
                         width={28}
                         height={28}
-                        className="shrink-0 text-[#9CA3AF]"
+                        className="shrink-0 text-fg-subtle"
                       />
                     </Link>
                   </li>
@@ -161,7 +161,7 @@ export default function EquipmentReportListPage() {
                 type="button"
                 onClick={() => query.fetchNextPage()}
                 disabled={query.isFetchingNextPage}
-                className="mt-4 h-14 w-full rounded-2xl border border-[#D1D5DB] bg-white text-lg font-semibold text-[#374151] disabled:opacity-60"
+                className="mt-4 h-14 w-full rounded-2xl border border-line-strong bg-surface text-lg font-semibold text-fg disabled:opacity-60"
               >
                 {query.isFetchingNextPage ? t("list.loadingMore") : t("list.more")}
               </button>
@@ -175,7 +175,7 @@ export default function EquipmentReportListPage() {
 
 function Message({ text }: { text: string }) {
   return (
-    <div className="rounded-2xl bg-white p-10 text-center text-lg text-[#6B7280] shadow-sm">
+    <div className="rounded-2xl bg-surface p-10 text-center text-lg text-fg-muted shadow-sm border border-edge">
       {text}
     </div>
   );
