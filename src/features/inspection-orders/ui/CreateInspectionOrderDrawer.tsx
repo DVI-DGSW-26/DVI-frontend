@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
 import { useTranslation } from "react-i18next";
@@ -19,6 +19,12 @@ import { useProductSlots } from "../../inspection/api";
 import type { Shift } from "../../inspection-schedule/api";
 
 import { useDiscardGuard } from "../../../components/shared/useDiscardGuard";
+import FieldError from "../../../components/shared/FieldError";
+import {
+  fieldBorder,
+  useFormError,
+} from "../../../components/shared/useFormError";
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -76,6 +82,8 @@ export default function CreateInspectionOrderDrawer({
     DAY: [],
     NIGHT: [],
   });
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const formError = useFormError(formRef);
 
   // 드로어가 열릴 때(등록/수정 대상이 바뀔 때) 폼을 초기화한다.
   // effect 가 아니라 "렌더 중 state 조정" 패턴 — 열자마자 빈 폼을 한 번 그린 뒤
@@ -96,6 +104,7 @@ export default function CreateInspectionOrderDrawer({
         NIGHT: [],
         [shift]: order ? orderWorkers(order).map((w) => w.id) : [],
       });
+      formError.clear();
     }
   }
 
@@ -202,14 +211,6 @@ export default function CreateInspectionOrderDrawer({
     );
   };
 
-  const canSubmit =
-    !!targetDate &&
-    equipmentId !== "" &&
-    productId !== "" &&
-    shifts.length > 0 &&
-    shifts.every((s) => workerIds[s].length > 0) &&
-    !isPending;
-
   // 백엔드가 준 실제 사유(예: WORK_TYPE_MISMATCH — 담당 업무 구분 불일치)를 그대로
   // 노출한다. 없을 때만 일반 메시지로 폴백.
   const serverMessageOf = (err: unknown): string | undefined =>
@@ -219,7 +220,17 @@ export default function CreateInspectionOrderDrawer({
 
   const handleSubmit = (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    if (!canSubmit) return;
+    if (isPending) return;
+    // 빈 칸이 있으면 버튼을 꺼 두지 않고, 눌렀을 때 그 칸 아래에 알리고 데려간다(UX 12).
+    formError.clear();
+    if (!targetDate) return formError.fail("date", t("drawer.dateRequired"));
+    if (equipmentId === "")
+      return formError.fail("equipment", t("drawer.equipmentRequired"));
+    if (productId === "")
+      return formError.fail("product", t("drawer.productRequired"));
+    const emptyShift = shifts.find((s) => workerIds[s].length === 0);
+    if (emptyShift)
+      return formError.fail(`workers-${emptyShift}`, t("drawer.workersRequired"));
     const base = {
       productId: productId as number,
       equipmentId: equipmentId as number,
@@ -232,7 +243,7 @@ export default function CreateInspectionOrderDrawer({
         {
           onSuccess: () => onClose(),
           onError: (err: unknown) =>
-            alert(serverMessageOf(err) ?? t("drawer.updateError")),
+            formError.setError(serverMessageOf(err) ?? t("drawer.updateError")),
         },
       );
       return;
@@ -241,7 +252,7 @@ export default function CreateInspectionOrderDrawer({
     const callbacks = {
       onSuccess: () => onClose(),
       onError: (err: unknown) =>
-        alert(serverMessageOf(err) ?? t("drawer.createError")),
+        formError.setError(serverMessageOf(err) ?? t("drawer.createError")),
     };
 
     // 주·야 동시 등록은 서버가 한 번에 처리한다 — 하나라도 실패하면 둘 다 안 만든다.
@@ -301,6 +312,8 @@ export default function CreateInspectionOrderDrawer({
         </header>
 
         <form
+          ref={formRef}
+          noValidate
           onSubmit={handleSubmit}
           className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-5"
         >
@@ -310,9 +323,11 @@ export default function CreateInspectionOrderDrawer({
               type="date"
               value={targetDate}
               onChange={(e) => setTargetDate(e.target.value)}
-              required
-              className="h-11 rounded-lg border border-line-strong px-3 text-sm focus:border-brand focus:outline-none"
+              data-field="date"
+              aria-invalid={!!formError.errorFor("date") || undefined}
+              className={`h-11 rounded-lg border px-3 text-sm focus:border-brand focus:outline-none ${fieldBorder(!!formError.errorFor("date"))}`}
             />
+            <FieldError message={formError.errorFor("date")} />
           </label>
 
           <label className="flex flex-col gap-1.5">
@@ -329,9 +344,10 @@ export default function CreateInspectionOrderDrawer({
                   setProductId("");
                 }
               }}
-              required
               disabled={loadingEquipment}
-              className="h-11 rounded-lg border border-line-strong bg-surface px-3 text-sm focus:border-brand focus:outline-none disabled:bg-canvas"
+              data-field="equipment"
+              aria-invalid={!!formError.errorFor("equipment") || undefined}
+              className={`h-11 rounded-lg border bg-surface px-3 text-sm focus:border-brand focus:outline-none disabled:bg-canvas ${fieldBorder(!!formError.errorFor("equipment"))}`}
             >
               <option value="">
                 {loadingEquipment ? t("drawer.loading") : t("drawer.equipmentPlaceholder")}
@@ -342,6 +358,7 @@ export default function CreateInspectionOrderDrawer({
                 </option>
               ))}
             </select>
+            <FieldError message={formError.errorFor("equipment")} />
           </label>
 
           <label className="flex flex-col gap-1.5">
@@ -351,9 +368,10 @@ export default function CreateInspectionOrderDrawer({
               onChange={(e) =>
                 setProductId(e.target.value === "" ? "" : Number(e.target.value))
               }
-              required
               disabled={loadingProducts || equipmentId === ""}
-              className="h-11 rounded-lg border border-line-strong bg-surface px-3 text-sm focus:border-brand focus:outline-none disabled:bg-canvas"
+              data-field="product"
+              aria-invalid={!!formError.errorFor("product") || undefined}
+              className={`h-11 rounded-lg border bg-surface px-3 text-sm focus:border-brand focus:outline-none disabled:bg-canvas ${fieldBorder(!!formError.errorFor("product"))}`}
             >
               <option value="">
                 {equipmentId === ""
@@ -368,6 +386,7 @@ export default function CreateInspectionOrderDrawer({
                 </option>
               ))}
             </select>
+            <FieldError message={formError.errorFor("product")} />
           </label>
           {!shiftUnknown && (
             <fieldset className="flex flex-col gap-1.5">
@@ -444,8 +463,19 @@ export default function CreateInspectionOrderDrawer({
               loading={loadingProduction}
               selectedIds={workerIds[shift]}
               onToggle={(id) => toggleWorker(shift, id)}
+              field={`workers-${shift}`}
+              error={formError.errorFor(`workers-${shift}`)}
             />
           ))}
+
+          {formError.generalError && (
+            <div
+              role="alert"
+              className="whitespace-pre-line rounded-md border border-danger-line bg-danger-soft px-3 py-2 text-xs text-danger-fg"
+            >
+              {formError.generalError}
+            </div>
+          )}
 
           <div className="mt-auto flex gap-2 pt-4">
             <button
@@ -457,7 +487,7 @@ export default function CreateInspectionOrderDrawer({
             </button>
             <button
               type="submit"
-              disabled={!canSubmit}
+              disabled={isPending}
               className="h-11 flex-1 rounded-lg bg-brand text-sm font-medium text-on-brand transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40"
             >
               {submitLabel}
@@ -476,12 +506,17 @@ function WorkerPicker({
   loading,
   selectedIds,
   onToggle,
+  field,
+  error,
 }: {
   legend: string;
   workers: User[];
   loading: boolean;
   selectedIds: number[];
   onToggle: (id: number) => void;
+  /** 오류 칸 이름(data-field) — 빈 채로 등록하면 이 목록으로 데려간다. */
+  field: string;
+  error: string | null;
 }) {
   const { t } = useTranslation("inspectionOrders");
   return (
@@ -495,7 +530,12 @@ function WorkerPicker({
           </span>
         )}
       </p>
-      <div className="max-h-56 overflow-y-auto rounded-lg border border-line-strong">
+      <div
+        data-field={field}
+        tabIndex={-1}
+        aria-invalid={!!error || undefined}
+        className={`max-h-56 overflow-y-auto rounded-lg border focus:outline-none ${fieldBorder(!!error)}`}
+      >
         {loading ? (
           <p className="px-3 py-4 text-sm text-fg-subtle">{t("drawer.loading")}</p>
         ) : workers.length === 0 ? (
@@ -528,6 +568,7 @@ function WorkerPicker({
           </ul>
         )}
       </div>
+      <FieldError message={error} />
     </fieldset>
   );
 }

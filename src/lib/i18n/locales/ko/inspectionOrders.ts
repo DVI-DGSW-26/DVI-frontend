@@ -88,5 +88,9 @@ export default {
     submitEditing: "수정 중...",
     createError: "등록 중 오류가 발생했습니다.",
     updateError: "검사지시 수정 중 오류가 발생했습니다.",
+    dateRequired: "지시 날짜를 고르세요.",
+    equipmentRequired: "설비를 고르세요.",
+    productRequired: "제품을 고르세요.",
+    workersRequired: "작업자를 한 명 이상 고르세요.",
   },
 } as const;

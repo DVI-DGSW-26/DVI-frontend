@@ -41,6 +41,8 @@ export default {
     selfInspector: "Self {{name}}",
     patrolInspector: "Patrol {{name}}",
     approver: "Approved by {{name}}",
+    savePdf: "Save PDF",
+    savingPdf: "Saving...",
   },
   detail: {
     title: "Inspection Report Details",
@@ -116,6 +118,7 @@ export default {
     popupBlocked: "The popup was blocked, so the PDF cannot be opened. Allow popups and try again.",
     loading: "Loading report...",
     loadFailed: "Failed to load the report.",
+    saveFailed: "Couldn't create the PDF. Please try again shortly.",
   },
   // PDF 로 인쇄되는 보고서 문서 본문. 발행 시점의 앱 언어를 따른다.
   pdfDoc: {
