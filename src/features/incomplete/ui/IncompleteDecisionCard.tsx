@@ -200,7 +200,7 @@ export default function IncompleteDecisionCard({
         )}
       </div>
 
-      {/* "검토 후 재제출" = 반려(작업자에게 돌려보내 다시 측정), "승인" = 미완료로 종결.
+      {/* "다시 측정 요청" = 반려(작업자에게 돌려보내 다시 측정), "승인" = 미완료로 종결.
           누르기 전에 결과를 알 수 있게 버튼마다 일어나는 일을 한 줄씩 적는다. */}
       <div className="grid grid-cols-2 gap-2 pl-8">
         <div className="flex flex-col gap-1">

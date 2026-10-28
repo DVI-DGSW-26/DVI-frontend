@@ -1,7 +1,7 @@
 export default {
   page: {
     title: "자주검사 미완료 결재",
-    hint: "작업자가 일부 항목을 비우고 제출한 검사입니다. 비운 항목과 사유를 보고 승인하거나 반려하세요.",
+    hint: "작업자가 일부 항목을 비우고 제출한 검사입니다. 비운 항목과 사유를 보고 승인하거나 다시 측정을 요청하세요.",
     empty: "결재할 미완료 검사가 없습니다.",
     approveSelected: "선택 승인 ({{n}})",
     dismiss: "닫기",
@@ -12,7 +12,7 @@ export default {
   card: {
     select: "선택",
     approve: "승인",
-    reject: "검토 후 재제출",
+    reject: "다시 측정 요청",
     rejectEffect: "작업자에게 돌아가 비운 항목을 다시 측정해 재제출합니다. 적힌 사유는 지워집니다.",
     approveEffect: "비운 채로 이 시점을 종결합니다. 보고서는 종 차수 순회검사 결재 때 발행됩니다.",
     loadingDims: "측정 항목 불러오는 중...",
@@ -34,16 +34,16 @@ export default {
   confirm: {
     approveTitle: "{{n}}건을 승인할까요?",
     approveBody: "이 시점이 비운 채로 종결되고 작업자에게 알림이 갑니다. 이 시점은 순회검사를 하지 않으며, 보고서는 종 차수 순회검사 결재가 승인될 때 발행됩니다.",
-    rejectTitle: "작업자에게 재제출을 요청할까요?",
+    rejectTitle: "작업자에게 다시 측정을 요청할까요?",
     rejectBody: "검사가 작업자에게 돌아가 비운 항목을 다시 측정한 뒤 재제출해야 합니다. 작업자에게 알림이 가고, 적힌 사유는 지워집니다.",
     cancel: "취소",
     approve: "승인",
-    reject: "재제출 요청",
+    reject: "다시 측정 요청",
     processing: "처리 중...",
   },
   done: {
     approved: "{{n}}건 승인했습니다",
-    rejected: "작업자에게 재제출을 요청했습니다 — 비운 항목을 다시 측정합니다",
+    rejected: "작업자에게 다시 측정을 요청했습니다 — 비운 항목을 측정해 다시 제출합니다",
   },
   list: {
     loading: "불러오는 중...",

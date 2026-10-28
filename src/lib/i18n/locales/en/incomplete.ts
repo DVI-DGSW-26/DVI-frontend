@@ -1,7 +1,7 @@
 export default {
   page: {
     title: "Incomplete Self-Inspection Approval",
-    hint: "The worker left some items empty and submitted these as incomplete. Review the empty items and reason, then approve or reject.",
+    hint: "The worker left some items empty and submitted these as incomplete. Review the empty items and reason, then approve or request a re-measure.",
     empty: "No incomplete inspections to review.",
     approveSelected: "Approve selected ({{n}})",
     dismiss: "Dismiss",
@@ -12,7 +12,7 @@ export default {
   card: {
     select: "Select",
     approve: "Approve",
-    reject: "Review & resubmit",
+    reject: "Request re-measure",
     rejectEffect: "Goes back to the worker to re-measure the empty items and resubmit. The reason is cleared.",
     approveEffect: "Closes this slot with the items left empty. The report is issued when the final patrol approval is made.",
     loadingDims: "Loading items...",
@@ -34,16 +34,16 @@ export default {
   confirm: {
     approveTitle: "Approve {{n}}?",
     approveBody: "This slot closes with the items left empty and the worker is notified. No patrol inspection is done for it; the report is issued when the final patrol approval is made.",
-    rejectTitle: "Ask the worker to resubmit?",
+    rejectTitle: "Ask the worker to re-measure?",
     rejectBody: "It goes back to the worker to re-measure the empty items and resubmit. The worker is notified and the reason is cleared.",
     cancel: "Cancel",
     approve: "Approve",
-    reject: "Request resubmission",
+    reject: "Request re-measure",
     processing: "Processing...",
   },
   done: {
     approved: "Approved {{n}}",
-    rejected: "Asked the worker to resubmit — they will re-measure the empty items",
+    rejected: "Asked the worker to re-measure — they will measure the empty items and resubmit",
   },
   list: {
     loading: "Loading...",
