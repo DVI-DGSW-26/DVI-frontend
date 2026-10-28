@@ -101,14 +101,14 @@ export default function CropPhase({
         )}
       </div>
 
-      <div className="sticky bottom-16 z-20 -mx-4 flex flex-col gap-2 border-t border-gray-200 bg-[#F5F5F5] px-4 pb-3 pt-2 shadow-[0_-2px_8px_rgba(0,0,0,0.04)]">
-        <p className="text-xs text-[#6B7280]">{t("crop.instruction")}</p>
+      <div className="sticky bottom-16 z-20 -mx-4 flex flex-col gap-2 border-t border-line bg-surface-2 px-4 pb-3 pt-2 shadow-[0_-2px_8px_rgba(0,0,0,0.04)]">
+        <p className="text-xs text-fg-muted">{t("crop.instruction")}</p>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={onRetake}
             disabled={confirming}
-            className="h-11 flex-1 rounded-md border border-gray-300 bg-white text-sm font-semibold text-[#212121] disabled:opacity-60"
+            className="h-11 flex-1 rounded-md border border-line-strong bg-surface text-sm font-semibold text-fg disabled:opacity-60"
           >
             {t("crop.retake")}
           </button>
@@ -116,7 +116,7 @@ export default function CropPhase({
             type="button"
             onClick={handleConfirm}
             disabled={confirming || !canConfirm}
-            className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+            className="h-11 flex-1 rounded-md bg-brand text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:bg-surface-3"
           >
             {confirming ? t("crop.processing") : t("crop.confirm")}
           </button>

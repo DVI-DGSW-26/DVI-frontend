@@ -1,10 +1,10 @@
 import { useTranslation } from "react-i18next";
 import authBackground from "../../../assets/authBackground.png";
-import authLogo from "../../../assets/authLogo.svg";
-import Logo from "../../../assets/Logo.svg";
+import BrandLogo from "../../../components/shared/BrandLogo";
 import Select, { type StylesConfig } from "react-select";
 import Button from "../../../components/shared/Button";
 import type { SignupFormProps } from "./SignupForm";
+import { selectTheme } from "../../../lib/selectTheme";
 
 type DepartmentOption = { value: string; label: string };
 
@@ -17,11 +17,11 @@ const selectStyles: StylesConfig<DepartmentOption, false> = {
       height: "60px",
       minHeight: "60px",
     },
-    borderColor: "#A8A8A8",
+    borderColor: "var(--color-line-strong)",
     borderRadius: "6px",
     paddingLeft: "5px",
     boxShadow: "none",
-    "&:hover": { borderColor: "#A8A8A8" },
+    "&:hover": { borderColor: "var(--color-line-strong)" },
   }),
   dropdownIndicator: (base) => ({
     ...base,
@@ -57,7 +57,6 @@ export default function SignupFormWeb({
       {/* 왼쪽 고정 이미지 */}
       <div className="fixed left-0 top-0 w-1/2 h-dvh overflow-hidden lg:block hidden">
         <img src={authBackground} className="w-full h-full object-cover" />
-        <img src={authLogo} className="absolute top-10 left-8 w-44" />
         <div className="absolute inset-0 flex flex-col justify-center left-12 gap-6">
           <div className="flex flex-col gap-0 leading-tight">
             <span className="text-[40px] xl:text-[46px] text-white font-semibold">A social enterprise that cares about </span>
@@ -73,13 +72,13 @@ export default function SignupFormWeb({
       </div>
 
       {/* 오른쪽 스크롤 영역 */}
-      <div className="fixed right-0 top-0 w-full lg:w-1/2 h-dvh bg-white flex flex-col items-center justify-center">
+      <div className="fixed right-0 top-0 w-full lg:w-1/2 h-dvh bg-surface flex flex-col items-center justify-center">
         <div className="flex flex-col w-full max-w-md px-6 lg:px-0 xl:max-w-xl 2xl:max-w-2xl">
           <div
             className="flex flex-col items-center gap-2"
             style={{ marginBottom: "60px" }}
           >
-            <img src={Logo} className="w-60 xl:w-90" />
+            <BrandLogo className="w-60 xl:w-90" />
           </div>
           <div className="flex flex-col gap-3">
             <input
@@ -87,7 +86,7 @@ export default function SignupFormWeb({
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               style={{ paddingLeft: "13px" }}
-              className="w-full border border-[#A8A8A8] rounded-lg h-12 xl:h-15 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
+              className="w-full border border-line-strong rounded-lg h-12 xl:h-15 focus:outline-none focus:ring-1 focus:ring-brand"
             />
             <input
               placeholder={t("fields.passwordPlaceholder")}
@@ -95,7 +94,7 @@ export default function SignupFormWeb({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               style={{ paddingLeft: "13px" }}
-              className="w-full border border-[#A8A8A8] rounded-lg h-12 xl:h-15 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
+              className="w-full border border-line-strong rounded-lg h-12 xl:h-15 focus:outline-none focus:ring-1 focus:ring-brand"
             />
             <input
               placeholder={t("fields.passwordConfirmPlaceholder")}
@@ -103,7 +102,7 @@ export default function SignupFormWeb({
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               style={{ paddingLeft: "13px" }}
-              className="w-full border border-[#A8A8A8] rounded-lg h-12 xl:h-15 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
+              className="w-full border border-line-strong rounded-lg h-12 xl:h-15 focus:outline-none focus:ring-1 focus:ring-brand"
             />
             <div className="flex gap-4">
               <input
@@ -111,10 +110,11 @@ export default function SignupFormWeb({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 style={{ paddingLeft: "13px" }}
-                className="w-1/2 border border-[#A8A8A8] rounded-lg h-12 xl:h-15 focus:outline-none focus:ring-1 focus:ring-[#931B82]"
+                className="w-1/2 border border-line-strong rounded-lg h-12 xl:h-15 focus:outline-none focus:ring-1 focus:ring-brand"
               />
               <div className="w-1/2">
                 <Select<DepartmentOption, false>
+                  theme={selectTheme}
                   placeholder={t("fields.departmentPlaceholder")}
                   options={departmentOptions}
                   value={departmentOptions.find((o) => o.value === department)}

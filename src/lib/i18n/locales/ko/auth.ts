@@ -50,6 +50,9 @@ export default {
     role: "역할",
     statusLabel: "상태",
     language: "언어 설정",
+    theme: "화면 테마",
+    themeDark: "다크",
+    themeLight: "라이트",
     accountSwitch: "계정 전환",
     logout: "로그아웃",
     password: {

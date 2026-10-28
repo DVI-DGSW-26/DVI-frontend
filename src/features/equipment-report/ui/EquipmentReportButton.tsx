@@ -25,7 +25,7 @@ export default function EquipmentReportButton({ compact = false }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-[#DC2626] font-semibold text-white shadow-sm hover:bg-[#B91C1C] active:scale-95 ${
+        className={`flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-danger font-semibold text-white shadow-sm hover:bg-danger active:scale-95 ${
           compact ? "h-8 px-2.5 text-xs" : "h-10 px-4 text-sm"
         }`}
       >

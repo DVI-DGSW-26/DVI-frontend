@@ -115,13 +115,13 @@ export default function CrossCheckHistoryFilter({
         : t("filter.statusN", { n: statuses.length });
 
   return (
-    <div className="rounded-2xl bg-white p-4 shadow-sm">
+    <div className="rounded-2xl bg-surface p-4 shadow-sm border border-edge">
       <div className="relative mb-3">
         <Icon
           icon="solar:magnifer-linear"
           width={16}
           height={16}
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A8A8]"
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle"
         />
         <input
           type="text"
@@ -129,7 +129,7 @@ export default function CrossCheckHistoryFilter({
           onChange={(e) => setKeyword(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={t("filter.searchPlaceholder")}
-          className="h-10 w-full rounded-full border border-[#E5E7EB] bg-white pl-9 pr-3 text-sm text-[#212121] placeholder:text-[#A8A8A8] focus:border-[#931B82] focus:outline-none"
+          className="h-10 w-full rounded-full border border-line-strong bg-surface pl-9 pr-3 text-sm text-fg placeholder:text-fg-subtle focus:border-brand focus:outline-none"
         />
       </div>
 
@@ -140,9 +140,9 @@ export default function CrossCheckHistoryFilter({
             value={date}
             onChange={(e) => setDate(e.target.value)}
             aria-label={t("filter.datePick")}
-            className={`h-9 w-36 rounded-full border border-[#931B82] bg-white pl-9 pr-3 text-xs focus:outline-none [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:m-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-datetime-edit]:opacity-0 ${
+            className={`h-9 w-36 rounded-full border border-brand bg-surface pl-9 pr-3 text-xs focus:outline-none [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:m-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-datetime-edit]:opacity-0 ${
               date
-                ? "text-[#931B82] [&::-webkit-datetime-edit]:opacity-100"
+                ? "text-brand-fg [&::-webkit-datetime-edit]:opacity-100"
                 : "text-transparent"
             }`}
           />
@@ -150,10 +150,10 @@ export default function CrossCheckHistoryFilter({
             icon="solar:calendar-linear"
             width={16}
             height={16}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#931B82]"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-fg"
           />
           {!date && (
-            <span className="pointer-events-none absolute left-9 top-1/2 -translate-y-1/2 text-xs text-[#931B82]">
+            <span className="pointer-events-none absolute left-9 top-1/2 -translate-y-1/2 text-xs text-brand-fg">
               {t("filter.datePick")}
             </span>
           )}
@@ -187,14 +187,14 @@ export default function CrossCheckHistoryFilter({
           <button
             type="button"
             onClick={apply}
-            className="h-9 rounded-full bg-[#931B82] px-7 text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D]"
+            className="h-9 rounded-full bg-brand px-7 text-sm font-medium text-on-brand transition-colors hover:bg-brand-hover"
           >
             {t("filter.apply")}
           </button>
           <button
             type="button"
             onClick={reset}
-            className="h-9 rounded-full border border-[#931B82] bg-white px-7 text-sm font-medium text-[#931B82] transition-colors hover:bg-[#F3E8F7]"
+            className="h-9 rounded-full border border-brand bg-surface px-7 text-sm font-medium text-brand-fg transition-colors hover:bg-brand-soft"
           >
             {t("filter.reset")}
           </button>

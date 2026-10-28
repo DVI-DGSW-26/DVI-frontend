@@ -57,19 +57,19 @@ export default function ItemViewTable({ items }: { items: TryoutItem[] }) {
           <img
             src={toBackendImageUrl(r.item.imageUrl)}
             alt={t("photo.alt", { item: r.label })}
-            className="h-14 w-14 rounded-md border border-[#E5E7EB] object-cover"
+            className="h-14 w-14 rounded-md border border-line object-cover"
           />
         </a>
       ) : (
-        <span className="text-xs text-[#A8A8A8]">{t("detail.photoEmpty")}</span>
+        <span className="text-xs text-fg-subtle">{t("detail.photoEmpty")}</span>
       );
     }
-    if (r.item.valueType === "PASS_FAIL") return <span className="text-xs text-[#A8A8A8]">-</span>;
-    return <span className="text-sm text-[#212121]">{r.item.measuredValue ?? "-"}</span>;
+    if (r.item.valueType === "PASS_FAIL") return <span className="text-xs text-fg-subtle">-</span>;
+    return <span className="text-sm text-fg">{r.item.measuredValue ?? "-"}</span>;
   };
 
-  const th = "border border-[#D1D5DB] bg-[#F3F4F6] px-2 py-1.5 text-center text-xs font-semibold text-[#4B5563]";
-  const td = "border border-[#D1D5DB] px-2 py-1.5 text-center align-middle";
+  const th = "border border-line-strong bg-surface-2 px-2 py-1.5 text-center text-xs font-semibold text-fg-muted";
+  const td = "border border-line-strong px-2 py-1.5 text-center align-middle";
 
   return (
     <>
@@ -93,7 +93,7 @@ export default function ItemViewTable({ items }: { items: TryoutItem[] }) {
           <tbody>
             {display.map((d, k) => {
               const stepCell = spans[k] > 0 && (
-                <td rowSpan={spans[k]} className={`${td} bg-[#F9FAFB] text-xs font-medium text-[#212121]`}>
+                <td rowSpan={spans[k]} className={`${td} bg-canvas text-xs font-medium text-fg`}>
                   {d.step}
                 </td>
               );
@@ -101,7 +101,7 @@ export default function ItemViewTable({ items }: { items: TryoutItem[] }) {
                 return (
                   <tr key="scrap-group">
                     {stepCell}
-                    <td colSpan={3} className={`${td} bg-[#F9FAFB] text-sm text-[#212121]`}>
+                    <td colSpan={3} className={`${td} bg-canvas text-sm text-fg`}>
                       {t("sheet.scrapGroup")}
                     </td>
                     <td className={td} />
@@ -114,16 +114,16 @@ export default function ItemViewTable({ items }: { items: TryoutItem[] }) {
               return (
                 <tr key={`${r.item.itemType}-${r.item.dimNo ?? ""}`}>
                   {stepCell}
-                  <td className={`${td} bg-[#F9FAFB] text-sm text-[#212121]`}>{r.sheetLabel}</td>
-                  <td className={`${td} text-xs text-[#6B7280]`}>{r.unit}</td>
-                  <td className={`${td} text-sm text-[#212121]`}>{r.standard || "-"}</td>
+                  <td className={`${td} bg-canvas text-sm text-fg`}>{r.sheetLabel}</td>
+                  <td className={`${td} text-xs text-fg-muted`}>{r.unit}</td>
+                  <td className={`${td} text-sm text-fg`}>{r.standard || "-"}</td>
                   <td className={td}>
                     <div className="flex justify-center">{measuredCell(r)}</div>
                   </td>
                   <td className={td}>
                     <ItemResultBadge value={r.item.result ?? null} />
                   </td>
-                  <td className={`${td} whitespace-pre-wrap text-left text-sm text-[#212121]`}>{r.item.note || ""}</td>
+                  <td className={`${td} whitespace-pre-wrap text-left text-sm text-fg`}>{r.item.note || ""}</td>
                 </tr>
               );
             })}
@@ -131,24 +131,24 @@ export default function ItemViewTable({ items }: { items: TryoutItem[] }) {
         </table>
       </div>
 
-      <ul className="flex flex-col divide-y divide-[#F0F0F0] md:hidden">
+      <ul className="flex flex-col divide-y divide-line md:hidden">
         {rows.map((r) => (
           <li key={`${r.item.itemType}-${r.item.dimNo ?? ""}`} className="flex flex-col gap-1 py-3">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <span className="mr-2 text-xs text-[#6B7280]">{r.step}</span>
-                <span className="text-sm font-medium text-[#212121]">{r.label}</span>
+                <span className="mr-2 text-xs text-fg-muted">{r.step}</span>
+                <span className="text-sm font-medium text-fg">{r.label}</span>
               </div>
               <ItemResultBadge value={r.item.result ?? null} />
             </div>
             {r.item.valueType === "NUMBER" && (
-              <p className="text-xs text-[#6B7280]">
+              <p className="text-xs text-fg-muted">
                 {t("columns.standard")} {r.standard || "-"} {r.unit} · {t("columns.measured")}{" "}
-                <span className="text-[#212121]">{r.item.measuredValue ?? "-"}</span>
+                <span className="text-fg">{r.item.measuredValue ?? "-"}</span>
               </p>
             )}
             {r.item.valueType === "PHOTO" && measuredCell(r)}
-            {r.item.note && <p className="whitespace-pre-wrap text-xs text-[#212121]">{r.item.note}</p>}
+            {r.item.note && <p className="whitespace-pre-wrap text-xs text-fg">{r.item.note}</p>}
           </li>
         ))}
       </ul>

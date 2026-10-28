@@ -20,7 +20,7 @@ function SketchImageInner({ src, alt }: Props) {
   );
 
   return (
-    <div className="relative w-full overflow-hidden rounded-xl border border-gray-200 bg-[#F9FAFB]">
+    <div className="relative w-full overflow-hidden rounded-xl border border-line bg-canvas">
       <div className="aspect-4/3 w-full">
         {status !== "error" && src && (
           <img
@@ -40,7 +40,7 @@ function SketchImageInner({ src, alt }: Props) {
               icon="solar:gallery-linear"
               width={36}
               height={36}
-              className="text-[#D1D5DB]"
+              className="text-fg-faint"
             />
           </div>
         )}
@@ -51,9 +51,9 @@ function SketchImageInner({ src, alt }: Props) {
               icon="solar:gallery-broken"
               width={36}
               height={36}
-              className="text-[#D1D5DB]"
+              className="text-fg-faint"
             />
-            <span className="text-xs text-[#9CA3AF]">
+            <span className="text-xs text-fg-subtle">
               {t("sketch.loadError")}
             </span>
           </div>

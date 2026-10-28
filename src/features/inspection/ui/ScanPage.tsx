@@ -326,17 +326,17 @@ export default function ScanPage() {
 
   if (!hasContext) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
-        <div className="text-sm font-medium text-[#212121]">
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-canvas px-6 text-center">
+        <div className="text-sm font-medium text-fg">
           {t("scan.noContext.title")}
         </div>
-        <p className="mt-1 text-xs text-[#6B7280]">
+        <p className="mt-1 text-xs text-fg-muted">
           {t("scan.noContext.hint")}
         </p>
         <button
           type="button"
           onClick={() => navigate("/my-orders", { replace: true })}
-          className="mt-4 h-10 rounded-md bg-[#931B82] px-4 text-sm font-medium text-white hover:bg-[#6A0F5D]"
+          className="mt-4 h-10 rounded-md bg-brand px-4 text-sm font-medium text-on-brand hover:bg-brand-hover"
         >
           {t("scan.noContext.goToMyOrders")}
         </button>
@@ -345,25 +345,25 @@ export default function ScanPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-24">
+    <div className="flex min-h-dvh flex-col bg-canvas pb-24">
       <div className="px-4 pt-4">
-        <h2 className="text-base font-semibold text-[#212121]">
+        <h2 className="text-base font-semibold text-fg">
           {t("scan.title")}
         </h2>
-        <p className="mt-1 text-xs text-[#6B7280]">{t("scan.subtitle")}</p>
+        <p className="mt-1 text-xs text-fg-muted">{t("scan.subtitle")}</p>
       </div>
 
       <div className="flex-1 px-4 pt-4">
         {slotsQuery.isLoading || myInspectionsQuery.isLoading ? (
-          <div className="py-10 text-center text-xs text-[#A8A8A8]">
+          <div className="py-10 text-center text-xs text-fg-subtle">
             {t("common.loading")}
           </div>
         ) : slotsQuery.isError ? (
-          <div className="py-10 text-center text-xs text-[#EF4444]">
+          <div className="py-10 text-center text-xs text-danger-fg">
             {t("scan.slotsError")}
           </div>
         ) : slots.length === 0 ? (
-          <div className="py-10 text-center text-xs text-[#A8A8A8]">
+          <div className="py-10 text-center text-xs text-fg-subtle">
             {t("scan.noSlots")}
           </div>
         ) : (
@@ -382,7 +382,7 @@ export default function ScanPage() {
         )}
 
         {startMutation.isPending && pendingType && (
-          <div className="mt-4 rounded-lg border border-[#E5E7EB] bg-white p-3 text-center text-xs text-[#6B7280]">
+          <div className="mt-4 rounded-lg border border-edge bg-surface p-3 text-center text-xs text-fg-muted">
             {t("scan.starting")}
           </div>
         )}

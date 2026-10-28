@@ -2,7 +2,7 @@ import { Fragment } from "react";
 import { NavLink, Link } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useTranslation } from "react-i18next";
-import Logo from "../../assets/Logo.svg";
+import BrandLogo from "../shared/BrandLogo";
 import { useAuth } from "../../features/auth/AuthContext";
 import { ROLE_HOME } from "../../features/auth/constants";
 import type { Role } from "../../features/auth/api";
@@ -18,6 +18,8 @@ type TabItem = {
   roles: Role[];
   // 묶음 제목(layout groups.*). 없으면 제목 없이 이어 붙인다.
   group?: TabGroup;
+  // 역할별로 경로만 다른 같은 메뉴는 같은 slot 을 줘서 한 번만 보이게 한다(tabVisibility).
+  slot?: string;
 };
 
 // 관리자 메뉴가 열한 줄 평면 목록이라 "결재할 게 있다"는 말에 어디를 열어야 할지 몰랐다.
@@ -29,8 +31,8 @@ const TABS: TabItem[] = [
   { labelKey: "missedInspections", to: "/missed-inspections", icon: "mdi:clipboard-alert-outline", roles: ["QUALITY", "QUALITY_ADMIN", "ADMIN"], group: "approval" },
   { labelKey: "adminInspections", to: "/admin-inspections", icon: "mdi:clipboard-remove-outline", roles: ["ADMIN"], group: "status" },
   { labelKey: "crossChecks", to: "/cross-checks", icon: "icon-park-outline:big-clock", roles: ["ADMIN"], group: "status" },
-  { labelKey: "reports", to: "/reports", icon: "basil:document-solid", roles: ["ADMIN"], group: "status" },
-  { labelKey: "qmReports", to: "/qm-reports", icon: "basil:document-solid", roles: ["QUALITY_ADMIN"], group: "status" },
+  { labelKey: "reports", to: "/reports", icon: "basil:document-solid", roles: ["ADMIN"], group: "status", slot: "reports" },
+  { labelKey: "qmReports", to: "/qm-reports", icon: "basil:document-solid", roles: ["QUALITY_ADMIN"], group: "status", slot: "reports" },
   { labelKey: "tryoutReports", to: "/tryout-reports", icon: "mdi:file-document-edit-outline", roles: ["ADMIN", "QUALITY_ADMIN", "PRODUCTION", "PRODUCTION_MANAGER", "QUALITY"], group: "status" },
   { labelKey: "products", to: "/products", icon: "mdi:cube", roles: ["ADMIN", "QUALITY_ADMIN"], group: "master" },
   { labelKey: "equipment", to: "/equipment", icon: "mdi:factory", roles: ["ADMIN", "QUALITY_ADMIN"], group: "master" },
@@ -52,10 +54,11 @@ const TabBarWeb = () => {
   const homePath = user ? ROLE_HOME[user.role] : "/";
 
   return (
-  <aside className="flex h-dvh w-60 flex-col bg-white">
-    <div className="flex items-center px-4 py-8 text-lg font-bold">
+  <aside className="sidebar-scope flex h-dvh w-60 flex-col bg-surface">
+    {/* 오른쪽 헤더(h-24)와 높이를 맞추고, 로고 왼쪽을 메뉴 아이콘 세로줄(px-4 + pl-2)에 맞춘다. */}
+    <div className="flex h-24 shrink-0 items-center px-6">
       <Link to={homePath} aria-label={t("goHome")}>
-        <img src={Logo} className="w-14 xl:w-37 cursor-pointer" />
+        <BrandLogo className="h-11 w-auto cursor-pointer" />
       </Link>
     </div>
 
@@ -65,10 +68,10 @@ const TabBarWeb = () => {
         {/* 묶음이 바뀌는 자리에만 제목 — 그 역할에 보이는 탭 기준이라 빈 묶음 제목은 안 생긴다. */}
         {/* 묶음이 끝나고 묶음 없는 탭(마이페이지 등)이 오면 선만 그어 앞 묶음에 딸려 보이지 않게. */}
         {!tab.group && visibleTabs[i - 1]?.group && (
-          <div className="mx-2 my-2 border-t border-gray-100" />
+          <div className="mx-2 my-2 border-t border-line" />
         )}
         {tab.group && tab.group !== visibleTabs[i - 1]?.group && (
-          <div className="px-2 pb-1 pt-4 text-[11px] font-semibold tracking-wide text-[#9CA3AF]">
+          <div className="px-2 pb-1 pt-4 text-[0.6875rem] font-semibold tracking-wide text-fg-subtle">
             {t(`groups.${tab.group}`)}
           </div>
         )}
@@ -78,8 +81,8 @@ const TabBarWeb = () => {
           className={({ isActive }) =>
             `flex items-center gap-2 rounded-lg w-full py-4 pl-2 text-sm font-medium transition-colors ${
               isActive
-                ? "bg-[#F3E8F7] text-[#931B82]"
-                : "text-black hover:text-[#931B82]"
+                ? "bg-brand-soft text-brand-fg"
+                : "text-fg hover:text-brand-fg"
             }`
           }
         >
@@ -87,7 +90,7 @@ const TabBarWeb = () => {
           <span>{t(`tabs.${tab.labelKey}`)}</span>
           {/* 결재 대기 건수 — 어디부터 열어볼지 메뉴에서 바로 보이게. */}
           {badges[tab.labelKey] ? (
-            <span className="ml-auto mr-2 rounded-full bg-[#DC2626] px-1.5 text-[11px] font-bold leading-5 text-white tabular-nums">
+            <span className="ml-auto mr-2 rounded-full bg-danger px-1.5 text-[0.6875rem] font-bold leading-5 text-white tabular-nums">
               {badges[tab.labelKey]}
             </span>
           ) : null}

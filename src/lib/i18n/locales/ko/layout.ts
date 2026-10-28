@@ -49,4 +49,5 @@ export default {
   notifications: "알림",
   accountSwitch: "계정 전환",
   language: "언어",
+  theme: "테마 전환",
 } as const;

@@ -41,36 +41,36 @@ const CheckboxMultiSelect = ({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex h-9 w-full items-center justify-between rounded-full border border-[#E5E7EB] bg-white px-3 text-xs text-[#212121] hover:border-[#931B82] focus:border-[#931B82] focus:outline-none"
+        className="flex h-9 w-full items-center justify-between rounded-full border border-line-strong bg-surface px-3 text-xs text-fg hover:border-brand focus:border-brand focus:outline-none"
       >
         <span className="truncate">{label}</span>
         <Icon
           icon="mdi:chevron-down"
           width={16}
           height={16}
-          className="text-[#A8A8A8]"
+          className="text-fg-subtle"
         />
       </button>
 
       {open && (
-        <div className="absolute left-0 top-10 z-20 max-h-64 w-full min-w-35 overflow-y-auto rounded-xl border border-[#E5E7EB] bg-white py-2 text-xs shadow-lg">
+        <div className="absolute left-0 top-10 z-20 max-h-64 w-full min-w-35 overflow-y-auto rounded-xl border border-edge bg-surface py-2 text-xs shadow-lg">
           {options.length === 0 ? (
-            <p className="px-3 py-2 text-[#A8A8A8]">{t("filters.noOptions")}</p>
+            <p className="px-3 py-2 text-fg-subtle">{t("filters.noOptions")}</p>
           ) : (
             options.map((opt) => {
               const checked = value.includes(opt.value);
               return (
                 <label
                   key={opt.value}
-                  className="flex cursor-pointer items-center gap-2 px-3 py-1.5 hover:bg-[#F3E8F7]"
+                  className="flex cursor-pointer items-center gap-2 px-3 py-1.5 hover:bg-brand-soft"
                 >
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() => toggle(opt.value)}
-                    className="h-4 w-4 cursor-pointer accent-[#931B82]"
+                    className="h-4 w-4 cursor-pointer accent-brand"
                   />
-                  <span className="truncate text-[#212121]">{opt.label}</span>
+                  <span className="truncate text-fg">{opt.label}</span>
                 </label>
               );
             })

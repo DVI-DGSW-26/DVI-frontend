@@ -21,22 +21,22 @@ export default function LatestCompletedCard({
 }: Props) {
   const { t } = useTranslation("myInspection");
   return (
-    <div className="rounded-xl border border-[#931B82]/25 bg-white p-4 shadow-sm ring-1 ring-[#931B82]/10">
-      <div className="mt-2 wrap-break-word text-base font-semibold text-[#212121]">
+    <div className="rounded-xl border border-brand/25 bg-surface p-4 shadow-sm ring-1 ring-brand/10">
+      <div className="mt-2 wrap-break-word text-base font-semibold text-fg">
         {previous.product.name}
       </div>
-      <div className="mt-0.5 truncate text-xs text-[#6B7280]">
+      <div className="mt-0.5 truncate text-xs text-fg-muted">
         {previous.equipment.name} · {slotLabelText(previous.typeLabel) || previous.type}
       </div>
 
-      <div className="mt-2 flex items-center gap-1.5 text-xs text-[#6B7280]">
+      <div className="mt-2 flex items-center gap-1.5 text-xs text-fg-muted">
         <span>
           {t("latestCard.typeCompleted", {
             type: slotLabelText(previous.typeLabel) || previous.type,
           })}
         </span>
-        <span className="text-[#D1D5DB]">›</span>
-        <span className="font-medium text-[#931B82]">
+        <span className="text-fg-faint">›</span>
+        <span className="font-medium text-brand-fg">
           {t("latestCard.typeStart", { type: nextLabel })}
         </span>
       </div>
@@ -45,7 +45,7 @@ export default function LatestCompletedCard({
         type="button"
         onClick={() => onStartNext(previous)}
         disabled={isStartingNext}
-        className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+        className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-brand text-sm font-semibold text-on-brand transition-colors hover:bg-brand-hover disabled:bg-surface-3"
       >
         {isStartingNext ? t("latestCard.starting") : t("latestCard.startNextNow")}
       </button>

@@ -247,30 +247,30 @@ export default function CapturePhase({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col items-center gap-4 rounded-xl border-2 border-dashed border-[#D1D5DB] bg-white px-6 py-10">
+      <div className="flex flex-col items-center gap-4 rounded-xl border-2 border-dashed border-line-strong bg-surface px-6 py-10">
         <Icon
           icon="solar:camera-bold"
           width={56}
           height={56}
-          className="text-[#931B82]"
+          className="text-brand-fg"
         />
         <div className="text-center">
-          <div className="text-sm font-medium text-[#212121]">
+          <div className="text-sm font-medium text-fg">
             {t("capture.prompt")}
           </div>
-          <p className="mt-1 text-xs text-[#6B7280]">{t("capture.fileHint")}</p>
+          <p className="mt-1 text-xs text-fg-muted">{t("capture.fileHint")}</p>
         </div>
         <button
           type="button"
           onClick={handleCaptureClick}
-          className="h-11 rounded-md bg-[#931B82] px-6 text-sm font-semibold text-white hover:bg-[#6A0F5D]"
+          className="h-11 rounded-md bg-brand px-6 text-sm font-semibold text-on-brand hover:bg-brand-hover"
         >
           {t("capture.captureButton")}
         </button>
         <button
           type="button"
           onClick={() => setShowGuide(true)}
-          className="inline-flex items-center gap-1 text-xs font-medium text-[#931B82] hover:underline"
+          className="inline-flex items-center gap-1 text-xs font-medium text-brand-fg hover:underline"
         >
           <Icon icon="solar:question-circle-linear" width={14} height={14} />
           {t("capture.guideLink")}
@@ -294,7 +294,7 @@ export default function CapturePhase({
           <button
             type="button"
             onClick={onGoBack}
-            className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F3F4F6]"
+            className="h-11 flex-1 rounded-md border border-line-strong bg-surface text-sm font-medium text-fg-muted hover:bg-surface-2"
           >
             ← {t("capture.prevStep")}
           </button>
@@ -303,7 +303,7 @@ export default function CapturePhase({
           <button
             type="button"
             onClick={onGoNext}
-            className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F3F4F6]"
+            className="h-11 flex-1 rounded-md border border-line-strong bg-surface text-sm font-medium text-fg-muted hover:bg-surface-2"
           >
             {t("capture.nextStep")} →
           </button>
@@ -314,7 +314,7 @@ export default function CapturePhase({
           aria-expanded={showMore}
           aria-label={t("capture.moreOptions")}
           title={t("capture.moreOptions")}
-          className={`flex h-11 items-center justify-center gap-1 rounded-md border border-[#E5E7EB] bg-white px-3 text-sm font-medium text-[#6B7280] hover:bg-[#F3F4F6] ${
+          className={`flex h-11 items-center justify-center gap-1 rounded-md border border-line-strong bg-surface px-3 text-sm font-medium text-fg-muted hover:bg-surface-2 ${
             onGoBack || onGoNext ? "w-11 px-0" : "ml-auto"
           }`}
         >
@@ -324,19 +324,19 @@ export default function CapturePhase({
       </div>
 
       {showMore && (
-        <div className="rounded-md border border-[#E5E7EB] bg-white">
+        <div className="rounded-md border border-edge bg-surface">
           <button
             type="button"
             onClick={() => {
               setShowMore(false);
               onSkip();
             }}
-            className="flex w-full flex-col items-start gap-0.5 px-3 py-2.5 text-left hover:bg-[#F9FAFB]"
+            className="flex w-full flex-col items-start gap-0.5 px-3 py-2.5 text-left hover:bg-surface-2"
           >
-            <span className="text-sm font-medium text-[#212121]">
+            <span className="text-sm font-medium text-fg">
               {t("capture.skipItem")}
             </span>
-            <span className="text-xs text-[#6B7280]">
+            <span className="text-xs text-fg-muted">
               {skipHint ?? t("capture.skipItemHint")}
             </span>
           </button>
@@ -347,12 +347,12 @@ export default function CapturePhase({
           {!onSkipAll && skipAllDisabledReason && (
             <div
               aria-disabled="true"
-              className="flex w-full flex-col items-start gap-0.5 border-t border-[#F3F4F6] px-3 py-2.5"
+              className="flex w-full flex-col items-start gap-0.5 border-t border-line px-3 py-2.5"
             >
-              <span className="text-sm font-medium text-[#9CA3AF]">
+              <span className="text-sm font-medium text-fg-subtle">
                 {t("capture.skipAll")}
               </span>
-              <span className="text-xs text-[#B45309]">
+              <span className="text-xs text-warn-fg">
                 {skipAllDisabledReason}
               </span>
             </div>
@@ -364,7 +364,7 @@ export default function CapturePhase({
         <button
           type="button"
           onClick={onMeasureWithoutPhoto}
-          className="h-11 w-full rounded-md border border-[#931B82] bg-white text-sm font-medium text-[#931B82] hover:bg-[#F3E8FF]"
+          className="h-11 w-full rounded-md border border-brand bg-surface text-sm font-medium text-brand-fg hover:bg-brand-soft"
         >
           {t("capture.withoutPhoto")}
         </button>
@@ -375,10 +375,10 @@ export default function CapturePhase({
         <button
           type="button"
           onClick={onSkipAll}
-          className="flex w-full flex-col items-center justify-center gap-0.5 rounded-md border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-[#6B7280] hover:bg-[#F3F4F6]"
+          className="flex w-full flex-col items-center justify-center gap-0.5 rounded-md border border-line bg-canvas px-3 py-2 text-fg-muted hover:bg-surface-2"
         >
           <span className="text-sm font-medium">{t("capture.skipAll")}</span>
-          <span className="text-[11px]">{t("capture.skipAllHint")}</span>
+          <span className="text-[0.6875rem]">{t("capture.skipAllHint")}</span>
         </button>
       )}
 
@@ -432,7 +432,7 @@ export default function CapturePhase({
               type="button"
               onClick={handleTakePhoto}
               disabled={isStarting}
-              className="h-16 w-16 rounded-full border-4 border-white bg-white disabled:opacity-50"
+              className="h-16 w-16 rounded-full border-4 border-white bg-surface disabled:opacity-50"
               aria-label={t("capture.shutter")}
             />
             <div className="w-15" />

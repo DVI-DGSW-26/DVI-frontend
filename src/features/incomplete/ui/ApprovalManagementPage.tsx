@@ -60,7 +60,7 @@ function ApprovalManagementPage() {
           type="button"
           onClick={submit}
           disabled={!hasSelection || isPending}
-          className="px-5 py-2 rounded-lg bg-[#931B82] text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-5 py-2 rounded-lg bg-brand text-on-brand font-medium disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {t("page.approve")} {hasSelection && `(${selectedIds.length})`}
         </button>

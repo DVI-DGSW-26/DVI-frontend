@@ -90,7 +90,7 @@ export default function ServerStatusOverlay() {
   if (recovered) {
     return (
       <div className="pointer-events-none fixed inset-x-0 top-0 z-[100] flex justify-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <div className="flex items-center gap-2 rounded-full bg-[#059669] px-4 py-2 text-xs font-semibold text-white shadow-lg">
+        <div className="flex items-center gap-2 rounded-full bg-success px-4 py-2 text-xs font-semibold text-white shadow-lg">
           <CheckIcon />
           {t("overlay.recovered")}
         </div>
@@ -110,7 +110,7 @@ export default function ServerStatusOverlay() {
         <button
           type="button"
           onClick={() => setDismissed(false)}
-          className="flex items-center gap-2 rounded-full bg-[#DC2626] px-4 py-2 text-xs font-semibold text-white shadow-lg"
+          className="flex items-center gap-2 rounded-full bg-danger px-4 py-2 text-xs font-semibold text-white shadow-lg"
         >
           <span className="shrink-0">
             <WarningIcon />
@@ -129,26 +129,26 @@ export default function ServerStatusOverlay() {
       aria-labelledby="server-status-title"
       className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 sm:items-center sm:p-4"
     >
-      <div className="w-full max-w-sm rounded-t-2xl bg-white p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl sm:pb-5">
+      <div className="w-full max-w-sm rounded-t-2xl bg-surface p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl sm:pb-5 border border-edge">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FEE2E2] text-[#DC2626]">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-danger-soft text-danger-fg">
             <WarningIcon />
           </div>
           <div className="min-w-0 flex-1">
             <h2
               id="server-status-title"
-              className="text-base font-semibold text-[#212121]"
+              className="text-base font-semibold text-fg"
             >
               {title}
             </h2>
-            <p className="mt-1 text-xs leading-relaxed text-[#6B7280]">
+            <p className="mt-1 text-xs leading-relaxed text-fg-muted">
               {isOffline ? t("overlay.offlineBody") : t("overlay.downBody")}
             </p>
           </div>
         </div>
 
-        <div className="mt-4 rounded-md bg-[#F9FAFB] px-3 py-2.5">
-          <p className="text-[11px] leading-relaxed text-[#6B7280]">
+        <div className="mt-4 rounded-md bg-canvas px-3 py-2.5">
+          <p className="text-[0.6875rem] leading-relaxed text-fg-muted">
             {t("overlay.pendingNotice")}
           </p>
         </div>
@@ -157,7 +157,7 @@ export default function ServerStatusOverlay() {
           <button
             type="button"
             onClick={() => setDismissed(true)}
-            className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB]"
+            className="h-11 flex-1 rounded-md border border-line-strong bg-surface text-sm font-medium text-fg-muted hover:bg-surface-2"
           >
             {t("overlay.dismiss")}
           </button>
@@ -165,7 +165,7 @@ export default function ServerStatusOverlay() {
             type="button"
             onClick={() => void recheckServerNow()}
             disabled={probing}
-            className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+            className="h-11 flex-1 rounded-md bg-brand text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:bg-surface-3"
           >
             {probing
               ? t("overlay.checking")
@@ -173,7 +173,7 @@ export default function ServerStatusOverlay() {
           </button>
         </div>
 
-        <p className="mt-3 text-center text-[11px] text-[#9CA3AF]">
+        <p className="mt-3 text-center text-[0.6875rem] text-fg-subtle">
           {probing
             ? t("overlay.probing")
             : nextRetryAt != null && secondsLeft != null

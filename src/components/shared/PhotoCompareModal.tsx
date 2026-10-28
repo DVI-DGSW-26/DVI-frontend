@@ -32,10 +32,10 @@ export default function PhotoCompareModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-t-2xl bg-white p-5 sm:rounded-2xl"
+        className="w-full max-w-lg rounded-t-2xl bg-surface p-5 sm:rounded-2xl border border-edge"
       >
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-base font-semibold text-[#212121]">
+          <h3 className="text-base font-semibold text-fg">
             {dimNo != null
               ? t("photoCompare.titleWithDim", { n: dimNo })
               : t("photoCompare.title")}
@@ -44,7 +44,7 @@ export default function PhotoCompareModal({
             type="button"
             onClick={onClose}
             aria-label={t("actions.close", { ns: "common" })}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-[#6B7280] hover:bg-[#F3F4F6]"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-fg-muted hover:bg-surface-2"
           >
             <Icon icon="solar:close-circle-linear" width={22} height={22} />
           </button>
@@ -78,13 +78,13 @@ function PhotoColumn({
   const { t } = useTranslation("shared");
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium text-[#6B7280]">{label}</span>
+      <span className="text-xs font-medium text-fg-muted">{label}</span>
       {url ? (
         <a
           href={toBackendImageUrl(url)}
           target="_blank"
           rel="noopener noreferrer"
-          className="block overflow-hidden rounded-lg border border-gray-200 bg-[#F9FAFB]"
+          className="block overflow-hidden rounded-lg border border-line bg-canvas"
         >
           <img
             src={toBackendImageUrl(url)}
@@ -93,7 +93,7 @@ function PhotoColumn({
           />
         </a>
       ) : (
-        <div className="flex aspect-square w-full flex-col items-center justify-center rounded-lg border border-dashed border-[#D1D5DB] bg-[#F3F4F6] text-[#9CA3AF]">
+        <div className="flex aspect-square w-full flex-col items-center justify-center rounded-lg border border-dashed border-line-strong bg-surface-2 text-fg-subtle">
           <Icon icon="solar:gallery-broken" width={28} height={28} />
           <span className="mt-1.5 text-xs font-medium">
             {t("photoCompare.noPhoto")}

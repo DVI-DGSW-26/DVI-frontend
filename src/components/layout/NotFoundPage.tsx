@@ -8,29 +8,29 @@ export default function NotFoundPage() {
   const { t } = useTranslation("shared");
   const navigate = useNavigate();
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 bg-[#F5F5F5] px-6 text-center">
+    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 bg-surface-2 px-6 text-center">
       <Icon
         icon="solar:document-broken"
         width={48}
         height={48}
-        className="text-[#A8A8A8]"
+        className="text-fg-subtle"
       />
-      <div className="text-base font-semibold text-[#212121]">
+      <div className="text-base font-semibold text-fg">
         {t("notFound.title")}
       </div>
-      <p className="text-sm text-[#6B7280]">{t("notFound.description")}</p>
+      <p className="text-sm text-fg-muted">{t("notFound.description")}</p>
       <div className="mt-2 flex gap-2">
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="h-10 rounded-md border border-gray-300 bg-white px-4 text-sm font-medium text-[#212121]"
+          className="h-10 rounded-md border border-line-strong bg-surface px-4 text-sm font-medium text-fg"
         >
           {t("notFound.back")}
         </button>
         <button
           type="button"
           onClick={() => navigate("/")}
-          className="h-10 rounded-md bg-[#931B82] px-4 text-sm font-medium text-white hover:bg-[#6A0F5D]"
+          className="h-10 rounded-md bg-brand px-4 text-sm font-medium text-on-brand hover:bg-brand-hover"
         >
           {t("notFound.home")}
         </button>

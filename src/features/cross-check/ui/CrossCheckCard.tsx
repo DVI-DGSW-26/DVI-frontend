@@ -36,33 +36,33 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
         if (!locked) onClick?.(item);
       }}
       disabled={isStarting || locked}
-      className="flex w-full items-center gap-3 rounded-2xl bg-white px-5 py-4 text-left shadow-sm disabled:opacity-60"
+      className="flex w-full items-center gap-3 rounded-2xl bg-surface px-5 py-4 text-left shadow-sm disabled:opacity-60 border border-edge"
     >
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex flex-wrap items-center gap-2">
           {stage && (
             <span
-              className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${STAGE_BADGE[stage]}`}
+              className={`shrink-0 rounded-full border px-2 py-0.5 text-[0.625rem] font-semibold ${STAGE_BADGE[stage]}`}
             >
               {t(`stage.${stage}`)}
             </span>
           )}
-          <span className="wrap-break-word text-base font-bold text-[#212121]">
+          <span className="wrap-break-word text-base font-bold text-fg">
             {item.productName}
           </span>
           {takeoverable && (
-            <span className="shrink-0 rounded-md bg-[#F3E8F7] px-2 py-0.5 text-[10px] font-semibold text-[#931B82]">
+            <span className="shrink-0 rounded-md bg-brand-soft px-2 py-0.5 text-[0.625rem] font-semibold text-brand-fg">
               {t("card.takeover")}
             </span>
           )}
           {owned && (
-            <span className="shrink-0 rounded-md bg-[#FEF3C7] px-2 py-0.5 text-[10px] font-semibold text-[#B45309]">
+            <span className="shrink-0 rounded-md bg-warn-soft px-2 py-0.5 text-[0.625rem] font-semibold text-warn-fg">
               {t("card.inProgress")}
             </span>
           )}
           {finished && (
             <span
-              className={`shrink-0 rounded-md px-2 py-0.5 text-[10px] font-semibold ${finished.className}`}
+              className={`shrink-0 rounded-md px-2 py-0.5 text-[0.625rem] font-semibold ${finished.className}`}
             >
               {t(finished.labelKey)}
             </span>
@@ -73,24 +73,24 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
             icon="solar:user-circle-linear"
             width={16}
             height={16}
-            className="text-[#A8A8A8]"
+            className="text-fg-subtle"
           />
-          <span className="truncate text-sm text-[#6B7280]">
+          <span className="truncate text-sm text-fg-muted">
             {item.productionName}
           </span>
         </div>
         {item.typeLabel && (
-          <span className="mt-2 truncate text-xs text-[#A8A8A8]">
+          <span className="mt-2 truncate text-xs text-fg-subtle">
             {t("card.roundLine", { label: slotLabelText(item.typeLabel) })}
           </span>
         )}
         {item.equipmentName && (
-          <span className="mt-1 truncate text-xs text-[#A8A8A8]">
+          <span className="mt-1 truncate text-xs text-fg-subtle">
             {t("card.processLine", { name: item.equipmentName })}
           </span>
         )}
         {item.createdAt && (
-          <span className="mt-1 truncate text-xs text-[#A8A8A8]">
+          <span className="mt-1 truncate text-xs text-fg-subtle">
             {t("card.startDateLine", { date: formatDate(item.createdAt) })}
           </span>
         )}
@@ -105,7 +105,7 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
             {t(finished.labelKey)}
           </span>
         ) : owned ? (
-          <span className="text-right text-xs font-medium text-[#B45309]">
+          <span className="text-right text-xs font-medium text-warn-fg">
             {item.ownerName
               ? t("card.ownerInProgress", { name: item.ownerName })
               : t("card.inProgress")}
@@ -126,7 +126,7 @@ const CrossCheckCard = ({ item, onClick, isStarting }: Props) => {
                 icon="solar:alt-arrow-right-linear"
                 width={20}
                 height={20}
-                className="text-[#A8A8A8]"
+                className="text-fg-subtle"
               />
             </div>
           </>

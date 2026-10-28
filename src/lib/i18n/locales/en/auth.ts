@@ -50,6 +50,9 @@ export default {
     role: "Role",
     statusLabel: "Status",
     language: "Language",
+    theme: "Theme",
+    themeDark: "Dark",
+    themeLight: "Light",
     accountSwitch: "Switch Account",
     logout: "Log Out",
     password: {

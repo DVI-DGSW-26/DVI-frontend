@@ -20,8 +20,8 @@ export interface StatusBadgeStyle {
 }
 
 export const STATUS_BADGE: Record<UserDetailStatus, StatusBadgeStyle> = {
-  ACTIVE: { labelKey: "statusBadge.active", color: "#22C55E" },
-  INACTIVE: { labelKey: "statusBadge.inactive", color: "#EF4444" },
-  PENDING: { labelKey: "statusBadge.pending", color: "#F59E0B" },
-  DELETED: { labelKey: "statusBadge.deleted", color: "#A8A8A8" },
+  ACTIVE: { labelKey: "statusBadge.active", color: "var(--color-success-fg)" },
+  INACTIVE: { labelKey: "statusBadge.inactive", color: "var(--color-danger-fg)" },
+  PENDING: { labelKey: "statusBadge.pending", color: "var(--color-warn-fg)" },
+  DELETED: { labelKey: "statusBadge.deleted", color: "var(--color-fg-subtle)" },
 };

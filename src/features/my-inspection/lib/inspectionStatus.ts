@@ -72,33 +72,33 @@ export interface StatusBadge {
 }
 
 export const STATUS_BADGE: Record<string, StatusBadge> = {
-  PENDING: { label: "status.pending", text: "text-[#F59E0B]", dot: "bg-[#F59E0B]" },
-  IN_PROGRESS: { label: "status.inProgress", text: "text-[#3B82F6]", dot: "bg-[#3B82F6]" },
-  DRAFT: { label: "status.inProgress", text: "text-[#3B82F6]", dot: "bg-[#3B82F6]" },
-  COMPLETED: { label: "status.completed", text: "text-[#22C55E]", dot: "bg-[#22C55E]" },
-  INCOMPLETE: { label: "status.pendingReview", text: "text-[#F59E0B]", dot: "bg-[#F59E0B]" },
+  PENDING: { label: "status.pending", text: "text-warn-fg", dot: "bg-warn" },
+  IN_PROGRESS: { label: "status.inProgress", text: "text-info-fg", dot: "bg-info" },
+  DRAFT: { label: "status.inProgress", text: "text-info-fg", dot: "bg-info" },
+  COMPLETED: { label: "status.completed", text: "text-success-fg", dot: "bg-success" },
+  INCOMPLETE: { label: "status.pendingReview", text: "text-warn-fg", dot: "bg-warn" },
   INCOMPLETE_APPROVED: {
     label: "status.incompleteApproved",
-    text: "text-[#6B7280]",
-    dot: "bg-[#9CA3AF]",
+    text: "text-fg-muted",
+    dot: "bg-fg-faint",
   },
   SKIPPED: {
     label: "status.skipped",
-    text: "text-[#6B7280]",
-    dot: "bg-[#9CA3AF]",
+    text: "text-fg-muted",
+    dot: "bg-fg-faint",
   },
   // 금형교체 등 조기 마감 — 보고서는 발행됐고 재검사는 새 초품으로 따로 시작된다.
   TERMINATED: {
     label: "status.terminated",
-    text: "text-[#B91C1C]",
-    dot: "bg-[#EF4444]",
+    text: "text-danger-fg",
+    dot: "bg-danger",
   },
 };
 
 export const FALLBACK_BADGE: StatusBadge = {
   label: "",
-  text: "text-[#6B7280]",
-  dot: "bg-[#9CA3AF]",
+  text: "text-fg-muted",
+  dot: "bg-fg-faint",
 };
 
 export function getStatusBadge(status: string): StatusBadge {

@@ -46,4 +46,5 @@ export default {
   notifications: "Notifications",
   accountSwitch: "Switch account",
   language: "Language",
+  theme: "Switch theme",
 } as const;

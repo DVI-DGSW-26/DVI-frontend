@@ -32,27 +32,27 @@ export default function TryoutReportListPage() {
 
   const open = (id: number) => navigate(`/tryout-reports/${id}`);
   const control =
-    "h-9 rounded-full border border-[#E5E7EB] bg-white px-3 text-xs text-[#212121] focus:border-[#931B82] focus:outline-none";
-  const th = "border-b border-[#E5E7EB] px-3 py-2 text-left text-xs font-semibold text-[#6B7280]";
-  const td = "border-b border-[#F0F0F0] px-3 py-3 text-sm text-[#212121]";
+    "h-9 rounded-full border border-line bg-surface px-3 text-xs text-fg focus:border-brand focus:outline-none";
+  const th = "border-b border-line px-3 py-2 text-left text-xs font-semibold text-fg-muted";
+  const td = "border-b border-line px-3 py-3 text-sm text-fg";
 
   const body = (() => {
-    if (isLoading) return <p className="py-10 text-center text-sm text-[#6B7280]">{t("list.loading")}</p>;
-    if (isError) return <p className="py-10 text-center text-sm text-[#DC2626]">{t("list.error")}</p>;
-    if (reports.length === 0) return <p className="py-10 text-center text-sm text-[#6B7280]">{t("list.empty")}</p>;
+    if (isLoading) return <p className="py-10 text-center text-sm text-fg-muted">{t("list.loading")}</p>;
+    if (isError) return <p className="py-10 text-center text-sm text-danger-fg">{t("list.error")}</p>;
+    if (reports.length === 0) return <p className="py-10 text-center text-sm text-fg-muted">{t("list.empty")}</p>;
     if (isMobile) {
       return (
-        <ul className="flex flex-col divide-y divide-[#F0F0F0]">
+        <ul className="flex flex-col divide-y divide-line">
           {reports.map((r) => (
             <li key={r.id}>
               <button type="button" onClick={() => open(r.id)} className="flex w-full flex-col gap-1 py-3 text-left">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="truncate text-sm font-medium text-[#212121]">
+                  <span className="truncate text-sm font-medium text-fg">
                     {r.productCode} · {t("list.roundValue", { n: r.roundNo })}
                   </span>
                   <OverallBadge value={r.overallResult} />
                 </div>
-                <span className="truncate text-xs text-[#6B7280]">
+                <span className="truncate text-xs text-fg-muted">
                   {r.conductedOn} · {r.productName} · {r.customerName}
                 </span>
               </button>
@@ -77,11 +77,11 @@ export default function TryoutReportListPage() {
           </thead>
           <tbody>
             {reports.map((r) => (
-              <tr key={r.id} onClick={() => open(r.id)} className="cursor-pointer hover:bg-[#F9FAFB]">
+              <tr key={r.id} onClick={() => open(r.id)} className="cursor-pointer hover:bg-surface-2">
                 <td className={td}>{r.conductedOn}</td>
                 <td className={td}>
                   <div className="font-medium">{r.productCode}</div>
-                  <div className="text-xs text-[#6B7280]">{r.productName}</div>
+                  <div className="text-xs text-fg-muted">{r.productName}</div>
                 </td>
                 <td className={td}>{r.customerName}</td>
                 <td className={td}>{t("list.roundValue", { n: r.roundNo })}</td>
@@ -100,7 +100,7 @@ export default function TryoutReportListPage() {
 
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-surface p-4 shadow-sm border border-edge">
         <div className="flex flex-wrap items-center gap-2">
           <select
             value={productId ?? ""}
@@ -123,7 +123,7 @@ export default function TryoutReportListPage() {
             aria-label={t("list.from")}
             className={control}
           />
-          <span className="text-xs text-[#6B7280]">~</span>
+          <span className="text-xs text-fg-muted">~</span>
           <input
             type="date"
             value={to}
@@ -140,7 +140,7 @@ export default function TryoutReportListPage() {
                 setFrom("");
                 setTo("");
               }}
-              className="h-9 px-2 text-xs text-[#6B7280] hover:text-[#931B82]"
+              className="h-9 px-2 text-xs text-fg-muted hover:text-brand-fg"
             >
               {t("list.reset")}
             </button>
@@ -150,7 +150,7 @@ export default function TryoutReportListPage() {
           <button
             type="button"
             onClick={() => navigate("/tryout-reports/new")}
-            className="flex h-9 items-center gap-1 rounded-md bg-[#931B82] px-4 text-sm font-semibold text-white hover:bg-[#6A0F5D]"
+            className="flex h-9 items-center gap-1 rounded-md bg-brand px-4 text-sm font-semibold text-on-brand hover:bg-brand-hover"
           >
             <Icon icon="mdi:plus" width={18} height={18} />
             {t("list.newButton")}
@@ -158,7 +158,7 @@ export default function TryoutReportListPage() {
         )}
       </div>
 
-      <section className="rounded-2xl bg-white p-4 shadow-sm">{body}</section>
+      <section className="rounded-2xl bg-surface p-4 shadow-sm border border-edge">{body}</section>
     </div>
   );
 }

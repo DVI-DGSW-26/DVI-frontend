@@ -280,7 +280,7 @@ export default function MonitorPage() {
     // 화면 밖으로 넘기지 않는다 — 넘치는 항목은 스크롤이 아니라 페이지로 보여준다.
     // 바깥은 실제 화면 크기, 안쪽은 기준 너비로 그린 뒤 그만큼 축소한다(useDesignScale).
     <div
-      className="h-dvh w-screen overflow-hidden"
+      className="monitor-root h-dvh w-screen overflow-hidden"
       style={{ backgroundColor: T.neutral.sub }}
     >
       <div
@@ -315,7 +315,7 @@ export default function MonitorPage() {
             className="shrink-0 rounded-lg px-3 py-1 text-3xl font-black tracking-tight"
             style={{
               backgroundColor: T.primary[500],
-              color: T.neutral.white,
+              color: T.onSolid,
             }}
           >
             {t("title")}
@@ -461,7 +461,7 @@ function PageTabs({
           >
             <span
               className="text-base tabular-nums"
-              style={{ color: active ? T.primary[500] : T.neutral.muted }}
+              style={{ color: active ? T.primary[700] : T.neutral.muted }}
             >
               {i + 1}
             </span>
@@ -471,9 +471,9 @@ function PageTabs({
                 className="rounded-full px-2 text-base font-bold tabular-nums"
                 style={{
                   backgroundColor:
-                    badge.tone === "alert" ? T.error[700] : T.neutral.border,
+                    badge.tone === "alert" ? T.error[500] : T.neutral.border,
                   color:
-                    badge.tone === "alert" ? T.neutral.white : T.neutral.ink,
+                    badge.tone === "alert" ? T.onSolid : T.neutral.ink,
                 }}
               >
                 {badge.count}
@@ -512,8 +512,8 @@ function PageTabs({
         }
         className="ml-1 flex h-11 items-center gap-1.5 rounded-lg px-3 text-lg font-bold"
         style={{
-          backgroundColor: pinned ? T.neutral.ink : T.neutral.white,
-          color: pinned ? T.neutral.white : T.inkSub,
+          backgroundColor: pinned ? T.primary[500] : T.neutral.white,
+          color: pinned ? T.onSolid : T.inkSub,
           border: `1px solid ${pinned ? T.neutral.ink : T.neutral.border}`,
         }}
       >

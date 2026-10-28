@@ -11,16 +11,18 @@ import { canSwitchAccounts } from "../constants";
 import AccountSwitcher from "./AccountSwitcher";
 import Toast from "../../inspection/ui/Toast";
 import type { Lang } from "../../../lib/i18n";
+import { useTheme, type Theme } from "../../../lib/theme";
 
 const STATUS_STYLE: Record<UserStatus, string> = {
-  ACTIVE: "bg-[#DCFCE7] text-[#15803D]",
-  PENDING: "bg-[#FEF3C7] text-[#B45309]",
-  INACTIVE: "bg-[#F3F4F6] text-[#6B7280]",
+  ACTIVE: "bg-success-soft text-success-fg",
+  PENDING: "bg-warn-soft text-warn-fg",
+  INACTIVE: "bg-surface-2 text-fg-muted",
 };
 
 export default function MyPage() {
   const { t, i18n } = useTranslation(["auth", "common"]);
   const { user, accounts, logout } = useAuth();
+  const [theme, setTheme] = useTheme();
   const navigate = useNavigate();
 
   const [pwOpen, setPwOpen] = useState(false);
@@ -42,7 +44,7 @@ export default function MyPage() {
 
   if (!user) {
     return (
-      <div className="flex min-h-full items-center justify-center px-4 py-8 text-sm text-[#6B7280]">
+      <div className="flex min-h-full items-center justify-center px-4 py-8 text-sm text-fg-muted">
         {t("myPage.loadError")}
       </div>
     );
@@ -52,25 +54,25 @@ export default function MyPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-4 pb-20 md:p-6 md:pb-6">
-      <section className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 md:p-6">
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#F3E8F7] text-2xl font-semibold text-[#931B82] md:h-20 md:w-20 md:text-3xl">
+      <section className="flex items-center gap-4 rounded-2xl border border-edge bg-surface p-5 md:p-6">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-brand-soft text-2xl font-semibold text-brand-fg md:h-20 md:w-20 md:text-3xl">
           {initial}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-lg font-semibold text-[#212121] md:text-xl">
+          <div className="truncate text-lg font-semibold text-fg md:text-xl">
             {user.name}
           </div>
-          <div className="mt-0.5 truncate text-sm text-[#6B7280]">
+          <div className="mt-0.5 truncate text-sm text-fg-muted">
             {t(`roles.${user.role}`, { ns: "common" })}
           </div>
         </div>
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white">
-        <h2 className="border-b border-gray-100 px-5 py-3 text-sm font-semibold text-[#212121]">
+      <section className="rounded-2xl border border-edge bg-surface">
+        <h2 className="border-b border-line px-5 py-3 text-sm font-semibold text-fg">
           {t("myPage.accountInfo")}
         </h2>
-        <dl className="divide-y divide-gray-100 px-5">
+        <dl className="divide-y divide-line px-5">
           <InfoRow label={t("myPage.id")} value={user.loginId} />
           <InfoRow label={t("myPage.name")} value={user.name} />
           <InfoRow
@@ -90,8 +92,8 @@ export default function MyPage() {
         </dl>
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white">
-        <h2 className="border-b border-gray-100 px-5 py-3 text-sm font-semibold text-[#212121]">
+      <section className="rounded-2xl border border-edge bg-surface">
+        <h2 className="border-b border-line px-5 py-3 text-sm font-semibold text-fg">
           {t("myPage.language")}
         </h2>
         <div className="flex gap-2 px-5 py-4">
@@ -110,19 +112,36 @@ export default function MyPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white">
+      <section className="rounded-2xl border border-edge bg-surface">
+        <h2 className="border-b border-line px-5 py-3 text-sm font-semibold text-fg">
+          {t("myPage.theme")}
+        </h2>
+        <div className="flex gap-2 px-5 py-4">
+          {(["dark", "light"] as Theme[]).map((value) => (
+            <ThemeButton
+              key={value}
+              icon={value === "dark" ? "mdi:weather-night" : "mdi:white-balance-sunny"}
+              label={t(value === "dark" ? "myPage.themeDark" : "myPage.themeLight")}
+              active={theme === value}
+              onSelect={() => setTheme(value)}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="overflow-hidden rounded-2xl border border-edge bg-surface">
         <button
           type="button"
           onClick={() => setPwOpen((v) => !v)}
           aria-expanded={pwOpen}
-          className="flex w-full items-center justify-between border-b border-gray-100 px-5 py-3 text-left text-sm font-semibold text-[#212121]"
+          className="flex w-full items-center justify-between border-b border-line px-5 py-3 text-left text-sm font-semibold text-fg"
         >
           <span>{t("myPage.password.title")}</span>
           <Icon
             icon={pwOpen ? "mdi:chevron-up" : "mdi:chevron-down"}
             width={18}
             height={18}
-            className="text-[#6B7280]"
+            className="text-fg-muted"
           />
         </button>
         {pwOpen && (
@@ -137,19 +156,19 @@ export default function MyPage() {
       </section>
 
       {showSwitcher && (
-        <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
-          <h2 className="border-b border-gray-100 px-5 py-3 text-sm font-semibold text-[#212121]">
+        <section className="overflow-hidden rounded-2xl border border-edge bg-surface">
+          <h2 className="border-b border-line px-5 py-3 text-sm font-semibold text-fg">
             {t("myPage.accountSwitch")}
           </h2>
           <AccountSwitcher />
         </section>
       )}
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-5">
+      <section className="rounded-2xl border border-edge bg-surface p-5">
         <button
           type="button"
           onClick={handleLogout}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#EF4444] text-sm font-semibold text-white transition-colors hover:bg-[#DC2626]"
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-danger text-sm font-semibold text-white transition-colors hover:bg-danger"
         >
           <Icon icon="mdi:logout" width={18} height={18} />
           {t("myPage.logout")}
@@ -158,6 +177,34 @@ export default function MyPage() {
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
+  );
+}
+
+function ThemeButton({
+  icon,
+  label,
+  active,
+  onSelect,
+}: {
+  icon: string;
+  label: string;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={active}
+      className={`flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border text-sm font-medium transition-colors ${
+        active
+          ? "border-brand bg-brand-soft text-brand-fg"
+          : "border-line bg-surface text-fg-muted hover:bg-brand-soft"
+      }`}
+    >
+      <Icon icon={icon} width={16} height={16} />
+      {label}
+    </button>
   );
 }
 
@@ -179,8 +226,8 @@ function LanguageButton({
       aria-pressed={active}
       className={`h-10 flex-1 rounded-lg border text-sm font-medium transition-colors ${
         active
-          ? "border-[#931B82] bg-[#F3E8F7] text-[#931B82]"
-          : "border-gray-200 bg-white text-[#6B7280] hover:bg-[#FAF5FB]"
+          ? "border-brand bg-brand-soft text-brand-fg"
+          : "border-line bg-surface text-fg-muted hover:bg-brand-soft"
       }`}
     >
       {label}
@@ -270,7 +317,7 @@ function ChangePasswordForm({
       <button
         type="submit"
         disabled={!canSubmit}
-        className="mt-1 h-11 rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+        className="mt-1 h-11 rounded-md bg-brand text-sm font-semibold text-on-brand transition-colors hover:bg-brand-hover disabled:bg-surface-3"
       >
         {isSubmitting
           ? t("myPage.password.submitting")
@@ -301,7 +348,7 @@ function Field({
     <div>
       <label
         htmlFor={id}
-        className="block text-xs font-medium text-[#6B7280]"
+        className="block text-xs font-medium text-fg-muted"
       >
         {label}
       </label>
@@ -312,12 +359,12 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         autoComplete={autoComplete}
-        className="mt-1 h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+        className="mt-1 h-10 w-full rounded-md border border-line-strong bg-surface px-3 text-sm text-fg focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:bg-surface-2"
       />
       {hint && (
         <p
           className={`mt-1 text-xs ${
-            hint.tone === "ok" ? "text-[#15803D]" : "text-[#B45309]"
+            hint.tone === "ok" ? "text-success-fg" : "text-warn-fg"
           }`}
         >
           {hint.text}
@@ -336,8 +383,8 @@ function InfoRow({
 }) {
   return (
     <div className="flex items-center justify-between py-3">
-      <dt className="text-sm text-[#6B7280]">{label}</dt>
-      <dd className="ml-3 min-w-0 truncate text-right text-sm font-medium text-[#212121]">
+      <dt className="text-sm text-fg-muted">{label}</dt>
+      <dd className="ml-3 min-w-0 truncate text-right text-sm font-medium text-fg">
         {value}
       </dd>
     </div>

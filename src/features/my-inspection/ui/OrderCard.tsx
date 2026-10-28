@@ -94,7 +94,7 @@ export default function OrderCard({
   };
 
   return (
-    <div className="relative flex w-full flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:bg-gray-50">
+    <div className="relative flex w-full flex-col gap-3 rounded-xl border border-edge bg-surface p-4 shadow-sm transition-colors hover:bg-surface-2">
       <div className="flex w-full items-center justify-between gap-3">
         <button
           type="button"
@@ -102,18 +102,18 @@ export default function OrderCard({
           className="flex flex-1 items-center justify-between gap-3 text-left"
         >
           <div className="min-w-0">
-            <div className="wrap-break-word text-base font-semibold text-[#212121]">
+            <div className="wrap-break-word text-base font-semibold text-fg">
               {inspection.product.name}
             </div>
-            <div className="mt-0.5 truncate text-xs text-[#6B7280]">
+            <div className="mt-0.5 truncate text-xs text-fg-muted">
               {inspection.customer.name} · {inspection.equipment.name}
             </div>
-            <div className="mt-0.5 flex items-center gap-1.5 text-xs text-[#6B7280]">
+            <div className="mt-0.5 flex items-center gap-1.5 text-xs text-fg-muted">
               <span className="truncate">{slotLabelText(inspection.typeLabel)}</span>
               <ShiftBadge shift={inspection.shift} compact />
             </div>
             {inspection.createdAt && (
-              <div className="mt-0.5 truncate text-xs text-[#A8A8A8]">
+              <div className="mt-0.5 truncate text-xs text-fg-subtle">
                 {t("orderCard.workDate", {
                   date: formatWorkDay(inspection.createdAt),
                 })}
@@ -134,16 +134,16 @@ export default function OrderCard({
               type="button"
               onClick={handleMenuToggle}
               aria-label={t("orderCard.openMenu")}
-              className="flex h-8 w-8 items-center justify-center rounded-md text-[#6B7280] hover:bg-[#F3F4F6]"
+              className="flex h-8 w-8 items-center justify-center rounded-md text-fg-muted hover:bg-surface-2"
             >
               <Icon icon="solar:menu-dots-bold" width={20} height={20} />
             </button>
             {menuOpen && (
-              <div className="absolute right-0 top-9 z-10 min-w-35 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
+              <div className="absolute right-0 top-9 z-10 min-w-35 overflow-hidden rounded-lg border border-edge bg-surface shadow-lg">
                 <button
                   type="button"
                   onClick={handleDeleteClick}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[#DC2626] hover:bg-[#FEF2F2]"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-danger-fg hover:bg-danger-soft"
                 >
                   <Icon icon="solar:trash-bin-trash-bold" width={16} height={16} />
                   {t("orderCard.delete")}
@@ -155,24 +155,24 @@ export default function OrderCard({
       </div>
 
       {(showNext || canRestart) && (
-        <div className="flex flex-col gap-2 border-t border-gray-100 pt-3">
+        <div className="flex flex-col gap-2 border-t border-line pt-3">
           {showNext && (
             <div>
-              <div className="flex items-center gap-1.5 text-xs text-[#6B7280]">
+              <div className="flex items-center gap-1.5 text-xs text-fg-muted">
                 <Icon
                   icon="solar:arrow-right-linear"
                   width={14}
                   height={14}
-                  className="text-[#931B82]"
+                  className="text-brand-fg"
                 />
                 <span>{t("orderCard.next")}</span>
-                <span className="font-medium text-[#212121]">{nextLabel}</span>
+                <span className="font-medium text-fg">{nextLabel}</span>
               </div>
               <button
                 type="button"
                 onClick={handleStartNextClick}
                 disabled={isStartingNext}
-                className="mt-2 h-10 w-full rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+                className="mt-2 h-10 w-full rounded-md bg-brand text-sm font-semibold text-on-brand transition-colors hover:bg-brand-hover disabled:bg-surface-3"
               >
                 {isStartingNext
                   ? t("orderCard.starting")
@@ -185,7 +185,7 @@ export default function OrderCard({
               type="button"
               onClick={handleRestartClick}
               disabled={isRestarting}
-              className="h-10 w-full rounded-md border border-[#931B82] bg-white text-sm font-semibold text-[#931B82] transition-colors hover:bg-[#F3E8F7] disabled:opacity-60"
+              className="h-10 w-full rounded-md border border-brand bg-surface text-sm font-semibold text-brand-fg transition-colors hover:bg-brand-soft disabled:opacity-60"
             >
               {isRestarting ? t("orderCard.starting") : t("orderCard.restart")}
             </button>

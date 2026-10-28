@@ -20,13 +20,14 @@ import {
 import { canEditTryout } from "../lib/permissions";
 import { draftKeys, loadLastProduct, saveLastProduct } from "../lib/draft";
 import TryoutReportForm from "./components/TryoutReportForm";
+import { selectTheme } from "../../../lib/selectTheme";
 
 type ProductOption = { value: number; label: string };
 
 function Frame({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-4 p-6">
-      <h1 className="text-lg font-semibold text-[#212121]">{title}</h1>
+      <h1 className="text-lg font-semibold text-fg">{title}</h1>
       {children}
     </div>
   );
@@ -35,9 +36,9 @@ function Frame({ title, children }: { title: string; children: React.ReactNode }
 function Message({ children, tone = "muted" }: { children: React.ReactNode; tone?: "muted" | "error" }) {
   return (
     <div
-      className={`rounded-2xl bg-white p-8 text-center text-sm shadow-sm ${
-        tone === "error" ? "text-[#DC2626]" : "text-[#6B7280]"
-      }`}
+      className={`rounded-2xl bg-surface p-8 text-center text-sm shadow-sm ${
+        tone === "error" ? "text-danger-fg" : "text-fg-muted"
+      } border border-edge`}
     >
       {children}
     </div>
@@ -75,10 +76,11 @@ function CreateForm() {
 
   return (
     <Frame title={t("form.createTitle")}>
-      <section className="rounded-2xl bg-white p-5 shadow-sm">
-        <label className="mb-1 block text-xs font-medium text-[#6B7280]">{t("form.product")}</label>
+      <section className="rounded-2xl bg-surface p-5 shadow-sm border border-edge">
+        <label className="mb-1 block text-xs font-medium text-fg-muted">{t("form.product")}</label>
         <div className="max-w-xl">
           <Select<ProductOption, false>
+            theme={selectTheme}
             value={options.find((o) => o.value === productId) ?? null}
             onChange={(o) => setProductId(o?.value ?? null)}
             options={options}
@@ -89,22 +91,22 @@ function CreateForm() {
                 ...base,
                 minHeight: "40px",
                 borderRadius: "8px",
-                borderColor: state.isFocused ? "#931B82" : "#E5E7EB",
+                borderColor: state.isFocused ? "var(--color-brand)" : "var(--color-line)",
                 boxShadow: "none",
                 fontSize: "14px",
-                "&:hover": { borderColor: "#931B82" },
+                "&:hover": { borderColor: "var(--color-brand)" },
               }),
               option: (base, state) => ({
                 ...base,
-                backgroundColor: state.isSelected ? "#931B82" : state.isFocused ? "#F3E8F7" : "white",
-                color: state.isSelected ? "white" : "#212121",
+                backgroundColor: state.isSelected ? "var(--color-brand)" : state.isFocused ? "var(--color-brand-soft)" : "var(--color-surface)",
+                color: state.isSelected ? "var(--color-on-brand)" : "var(--color-fg)",
                 fontSize: "14px",
               }),
               menu: (base) => ({ ...base, zIndex: 30 }),
             }}
           />
         </div>
-        <p className="mt-1 text-xs text-[#A8A8A8]">{t("form.productHint")}</p>
+        <p className="mt-1 text-xs text-fg-subtle">{t("form.productHint")}</p>
       </section>
 
       {productId == null && <Message>{t("form.productEmpty")}</Message>}

@@ -62,7 +62,7 @@ const HeaderMobile = () => {
   };
 
   return (
-    <header className="relative flex h-14 items-center justify-center gap-2 border-b border-[#E5E7EB] bg-white px-2">
+    <header className="sidebar-scope relative flex h-14 items-center justify-center gap-2 border-b border-line bg-surface px-2">
       {/* 오른쪽은 언어·알림으로 차 있어 설비 신고 버튼은 뒤로가기 옆에 둔다.
           버튼이 있으면 제목을 양쪽 버튼 사이 남은 폭에 두어 겹치지 않게 한다. */}
       <div
@@ -76,7 +76,7 @@ const HeaderMobile = () => {
           type="button"
           onClick={handleBack}
           aria-label={t("back")}
-          className="flex h-8 w-8 items-center justify-center text-[#212121]"
+          className="flex h-8 w-8 items-center justify-center text-fg"
         >
           <Icon icon="solar:alt-arrow-left-linear" width={24} height={24} />
         </button>
@@ -106,11 +106,11 @@ const HeaderMobile = () => {
             type="button"
             onClick={() => navigate("/notifications")}
             aria-label={t("notifications")}
-            className="relative flex h-8 w-8 items-center justify-center text-[#212121]"
+            className="relative flex h-8 w-8 items-center justify-center text-fg"
           >
             <Icon icon="solar:bell-linear" width={22} height={22} />
             {hasUnread && (
-              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#EF4444]" />
+              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-danger" />
             )}
           </button>
         )}

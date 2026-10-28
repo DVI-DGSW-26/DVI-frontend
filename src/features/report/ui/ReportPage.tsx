@@ -9,6 +9,7 @@ import {
   useProductList,
 } from "../../inspection-orders/api";
 import { useViewState } from "../../../lib/viewState";
+import { selectTheme } from "../../../lib/selectTheme";
 
 type Option = { value: string; label: string };
 
@@ -18,12 +19,12 @@ const filterSelectStyles: StylesConfig<Option, false> = {
     minHeight: "36px",
     height: "36px",
     borderRadius: "9999px",
-    borderColor: state.isFocused ? "#931B82" : "#D1D5DB",
+    borderColor: state.isFocused ? "var(--color-brand)" : "var(--color-line-strong)",
     boxShadow: "none",
     fontSize: "12px",
     cursor: "pointer",
     "&:hover": {
-      borderColor: "#931B82",
+      borderColor: "var(--color-brand)",
     },
   }),
   valueContainer: (base) => ({
@@ -42,7 +43,7 @@ const filterSelectStyles: StylesConfig<Option, false> = {
   dropdownIndicator: (base) => ({
     ...base,
     padding: "4px 8px 4px 4px",
-    color: "#6B7280",
+    color: "var(--color-fg-muted)",
   }),
   indicatorSeparator: () => ({ display: "none" }),
   menu: (base) => ({
@@ -55,17 +56,17 @@ const filterSelectStyles: StylesConfig<Option, false> = {
   option: (base, state) => ({
     ...base,
     backgroundColor: state.isSelected
-      ? "#931B82"
+      ? "var(--color-brand)"
       : state.isFocused
-        ? "#F3E8F7"
-        : "white",
-    color: state.isSelected ? "white" : "#212121",
+        ? "var(--color-brand-soft)"
+        : "var(--color-surface)",
+    color: state.isSelected ? "var(--color-on-brand)" : "var(--color-fg)",
     fontSize: "12px",
     cursor: "pointer",
   }),
   placeholder: (base) => ({
     ...base,
-    color: "#6B7280",
+    color: "var(--color-fg-muted)",
   }),
 };
 
@@ -175,7 +176,7 @@ export default function ReportPage() {
 
   return (
     <div className="flex flex-col gap-4 p-4 pb-20 md:p-6 md:pb-6">
-      <div className="rounded-xl border border-[#F0F1F4] bg-white">
+      <div className="rounded-xl border border-edge bg-surface">
         <div className="p-3 md:p-4">
           <form onSubmit={handleSearchSubmit} className="relative">
             <input
@@ -183,36 +184,37 @@ export default function ReportPage() {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder={t("list.searchPlaceholder")}
-              className="h-10 w-full rounded-lg bg-white pl-3 pr-16 text-sm focus:outline-none"
+              className="h-10 w-full rounded-lg bg-surface pl-3 pr-16 text-sm focus:outline-none border border-line-strong"
             />
             <button
               type="submit"
               aria-label={t("list.searchButton")}
-              className="absolute right-1 top-1 flex h-8 w-12 items-center justify-center rounded-md bg-[#931B82] text-white transition-colors hover:bg-[#6A0F5D]"
+              className="absolute right-1 top-1 flex h-8 w-12 items-center justify-center rounded-md bg-brand text-on-brand transition-colors hover:bg-brand-hover"
             >
               <Icon icon="tabler:search" width={18} height={18} />
             </button>
           </form>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 border-t border-[#F0F1F4] p-3 md:p-4">
+        <div className="flex flex-wrap items-center gap-2 border-t border-line p-3 md:p-4">
           <div className="relative">
             <input
               type="date"
               value={draftDate}
               onChange={(e) => setDraftDate(e.target.value)}
-              className="h-9 rounded-full border border-gray-300 bg-white pl-3 pr-8 text-xs focus:border-[#931B82] focus:outline-none [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:m-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+              className="h-9 rounded-full border border-line-strong bg-surface pl-3 pr-8 text-xs focus:border-brand focus:outline-none [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:m-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
             />
             <Icon
               icon="solar:calendar-linear"
               width={16}
               height={16}
-              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280]"
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-fg-muted"
             />
           </div>
 
           <div className="w-44">
             <Select<Option, false>
+              theme={selectTheme}
               value={draftEquipment}
               onChange={(opt) => setDraftEquipment(opt)}
               options={equipmentOptions}
@@ -224,6 +226,7 @@ export default function ReportPage() {
 
           <div className="w-56">
             <Select<Option, false>
+              theme={selectTheme}
               value={draftProduct}
               onChange={(opt) => setDraftProduct(opt)}
               options={productOptions}
@@ -237,14 +240,14 @@ export default function ReportPage() {
             <button
               type="button"
               onClick={handleApply}
-              className="h-9 rounded-full bg-[#931B82] px-7 text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D]"
+              className="h-9 rounded-full bg-brand px-7 text-sm font-medium text-on-brand transition-colors hover:bg-brand-hover"
             >
               {t("filters.apply")}
             </button>
             <button
               type="button"
               onClick={handleReset}
-              className="h-9 rounded-full border border-[#931B82] bg-white px-7 text-sm font-medium text-[#931B82] transition-colors hover:bg-[#F3E8F7]"
+              className="h-9 rounded-full border border-brand bg-surface px-7 text-sm font-medium text-brand-fg transition-colors hover:bg-brand-soft"
             >
               {t("filters.reset")}
             </button>
@@ -253,19 +256,19 @@ export default function ReportPage() {
       </div>
 
       {isLoading && (
-        <div className="rounded-xl border border-[#F0F1F4] bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+        <div className="rounded-xl border border-edge bg-surface px-4 py-10 text-center text-sm text-fg-subtle">
           {t("list.loading")}
         </div>
       )}
 
       {isError && (
-        <div className="rounded-xl border border-[#F0F1F4] bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
+        <div className="rounded-xl border border-edge bg-surface px-4 py-10 text-center text-sm text-danger-fg">
           {t("list.error")}
         </div>
       )}
 
       {!isLoading && !isError && filtered.length === 0 && (
-        <div className="rounded-xl border border-[#F0F1F4] bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+        <div className="rounded-xl border border-edge bg-surface px-4 py-10 text-center text-sm text-fg-subtle">
           {hasAppliedFilter ? t("list.emptyFiltered") : t("list.emptyNoReports")}
         </div>
       )}

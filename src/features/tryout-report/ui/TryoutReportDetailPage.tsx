@@ -31,9 +31,9 @@ export default function TryoutReportDetailPage() {
   const message = (text: string, tone: "muted" | "error" = "muted") => (
     <div className="p-4 md:p-6">
       <div
-        className={`rounded-2xl bg-white p-8 text-center text-sm shadow-sm ${
-          tone === "error" ? "text-[#DC2626]" : "text-[#6B7280]"
-        }`}
+        className={`rounded-2xl bg-surface p-8 text-center text-sm shadow-sm ${
+          tone === "error" ? "text-danger-fg" : "text-fg-muted"
+        } border border-edge`}
       >
         {text}
       </div>
@@ -87,7 +87,7 @@ export default function TryoutReportDetailPage() {
         <button
           type="button"
           onClick={() => navigate("/tryout-reports")}
-          className="flex items-center gap-1 text-sm text-[#6B7280] hover:text-[#931B82]"
+          className="flex items-center gap-1 text-sm text-fg-muted hover:text-brand-fg"
         >
           <Icon icon="mdi:chevron-left" width={20} height={20} />
           {t("detail.back")}
@@ -99,7 +99,7 @@ export default function TryoutReportDetailPage() {
               type="button"
               disabled={downloading}
               onClick={handleDownload}
-              className="flex h-9 items-center gap-1 rounded-md bg-[#931B82] px-4 text-sm font-medium text-white hover:bg-[#6A0F5D] disabled:opacity-60"
+              className="flex h-9 items-center gap-1 rounded-md bg-brand px-4 text-sm font-medium text-on-brand hover:bg-brand-hover disabled:opacity-60"
             >
               <Icon icon="mdi:file-pdf-box" width={18} height={18} />
               {downloading ? t("print.downloading") : t("print.download")}
@@ -111,7 +111,7 @@ export default function TryoutReportDetailPage() {
                 <button
                   type="button"
                   onClick={() => navigate(`/tryout-reports/${report.id}/edit`)}
-                  className="h-9 rounded-md border border-[#931B82] px-4 text-sm font-medium text-[#931B82] hover:bg-[#F3E8F7]"
+                  className="h-9 rounded-md border border-brand px-4 text-sm font-medium text-brand-fg hover:bg-brand-soft"
                 >
                   {t("detail.edit")}
                 </button>
@@ -119,7 +119,7 @@ export default function TryoutReportDetailPage() {
               <button
                 type="button"
                 onClick={() => setDeleteOpen(true)}
-                className="h-9 rounded-md border border-[#DC2626] px-4 text-sm font-medium text-[#DC2626] hover:bg-[#FEE2E2]"
+                className="h-9 rounded-md border border-danger px-4 text-sm font-medium text-danger-fg hover:bg-danger-soft"
               >
                 {t("detail.delete")}
               </button>
@@ -128,21 +128,21 @@ export default function TryoutReportDetailPage() {
         </div>
       </div>
 
-      <section className="rounded-2xl bg-white p-5 shadow-sm">
-        <h1 className="text-lg font-semibold text-[#212121]">{t("roundTitle", { n: report.roundNo })}</h1>
-        <p className="mt-1 text-xs text-[#A8A8A8]">{t("detail.updatedAt", { at: formatDateTime(report.updatedAt) })}</p>
+      <section className="rounded-2xl bg-surface p-5 shadow-sm border border-edge">
+        <h1 className="text-lg font-semibold text-fg">{t("roundTitle", { n: report.roundNo })}</h1>
+        <p className="mt-1 text-xs text-fg-subtle">{t("detail.updatedAt", { at: formatDateTime(report.updatedAt) })}</p>
         <dl className="mt-4 grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
           {info.map((row) => (
             <div key={row.label}>
-              <dt className="text-xs text-[#6B7280]">{row.label}</dt>
-              <dd className="mt-0.5 text-sm text-[#212121]">{row.value}</dd>
+              <dt className="text-xs text-fg-muted">{row.label}</dt>
+              <dd className="mt-0.5 text-sm text-fg">{row.value}</dd>
             </div>
           ))}
         </dl>
       </section>
 
-      <section className="rounded-2xl bg-white p-5 shadow-sm">
-        <h2 className="mb-3 text-base font-semibold text-[#212121]">{t("form.itemsTitle")}</h2>
+      <section className="rounded-2xl bg-surface p-5 shadow-sm border border-edge">
+        <h2 className="mb-3 text-base font-semibold text-fg">{t("form.itemsTitle")}</h2>
         <ItemViewTable items={report.items} />
       </section>
 
