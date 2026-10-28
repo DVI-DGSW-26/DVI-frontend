@@ -228,7 +228,7 @@ export default function EquipmentReportModal({ onClose }: Props) {
                 </div>
 
                 {processes.length > 1 && (
-                  <div className="-mx-5 mb-2 flex gap-2 overflow-x-auto px-5 pb-1">
+                  <div className="no-scrollbar -mx-5 mb-2 flex gap-2 overflow-x-auto px-5 pb-1">
                     {[null, ...processes].map((code) => {
                       const active = process === code;
                       return (
