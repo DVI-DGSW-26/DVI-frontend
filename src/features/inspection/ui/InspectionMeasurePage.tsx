@@ -352,7 +352,7 @@ export default function InspectionMeasurePage() {
   // detail 이 아직 도착하지 않았으면 어떤 케이스든 로딩 UI. (stateInspection 만으로 항목 렌더하면 빈 화면 깜빡)
   if (detailQuery.isLoading || (!detail && !detailQuery.isError)) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
+      <div className="flex min-h-dvh items-center justify-center bg-canvas text-xs text-fg-subtle">
         {t("common.loading")}
       </div>
     );
@@ -360,14 +360,14 @@ export default function InspectionMeasurePage() {
 
   if (!info) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
-        <div className="text-sm font-medium text-[#212121]">
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-canvas px-6 text-center">
+        <div className="text-sm font-medium text-fg">
           {t("common.notFound")}
         </div>
         <button
           type="button"
           onClick={() => navigate("/")}
-          className="mt-4 h-10 rounded-md bg-[#931B82] px-4 text-sm font-medium text-white hover:bg-[#6A0F5D]"
+          className="mt-4 h-10 rounded-md bg-brand px-4 text-sm font-medium text-on-brand hover:bg-brand-hover"
         >
           {t("common.goHome")}
         </button>
@@ -378,7 +378,7 @@ export default function InspectionMeasurePage() {
   // editMode 일 땐 allDone 이어도 화면을 그대로 렌더 — 사용자가 dim 을 골라 수정 가능.
   if (allDone && !editMode) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
+      <div className="flex min-h-dvh items-center justify-center bg-canvas text-xs text-fg-subtle">
         {t("measure.movingToResult")}
       </div>
     );
@@ -409,7 +409,7 @@ export default function InspectionMeasurePage() {
       items,
     });
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
+      <div className="flex min-h-dvh items-center justify-center bg-canvas text-xs text-fg-subtle">
         {t("measure.loadingItems")}
       </div>
     );
@@ -709,8 +709,8 @@ export default function InspectionMeasurePage() {
 
   if (totalSteps === 0) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
-        <div className="text-sm font-medium text-[#212121]">
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-canvas px-6 text-center">
+        <div className="text-sm font-medium text-fg">
           {t("measure.noItems")}
         </div>
       </div>
@@ -730,8 +730,8 @@ export default function InspectionMeasurePage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-24">
-      <section className="border-b border-gray-200 bg-white px-4 py-4">
+    <div className="flex min-h-dvh flex-col bg-canvas pb-24">
+      <section className="border-b border-line bg-surface px-4 py-4">
         <InfoRow label={t("measure.machineName")} value={info.equipment.name} />
         <InfoRow label={t("measure.round")} value={slotLabelText(info.typeLabel) || "-"} />
         <InfoRow
@@ -745,7 +745,7 @@ export default function InspectionMeasurePage() {
         <button
           type="button"
           onClick={() => setShowTerminate(true)}
-          className="mt-3 w-full rounded-md border border-[#B45309] px-3 py-2 text-xs font-medium text-[#B45309] transition-colors hover:bg-[#FFFBEB]"
+          className="mt-3 w-full rounded-md border border-warn px-3 py-2 text-xs font-medium text-warn-fg transition-colors hover:bg-warn-soft"
         >
           {t("measure.terminateButton")}
         </button>
@@ -756,13 +756,13 @@ export default function InspectionMeasurePage() {
         알아야 "순회검사는 안 했는데 왜 되어 있지?"가 안 생긴다.
       */}
       {isNightShift && info && autoCopyNight(info.product.process) && (
-        <section className="flex items-start gap-2 border-b border-[#BFDBFE] bg-[#EFF6FF] px-4 py-2.5 text-xs text-[#1E40AF]">
+        <section className="flex items-start gap-2 border-b border-info-line bg-info-soft px-4 py-2.5 text-xs text-info-fg">
           <Icon icon="solar:moon-bold" width={16} height={16} className="mt-0.5 shrink-0" />
           <span>{t("measure.nightAutoCopyNotice")}</span>
         </section>
       )}
 
-      <section className="border-b border-gray-200 bg-white px-4 py-4">
+      <section className="border-b border-line bg-surface px-4 py-4">
         <StepProgress
           states={chipStates}
           currentIndex={stepIndex}
@@ -770,18 +770,18 @@ export default function InspectionMeasurePage() {
           disabled={isSaving}
         />
 
-        <div className="mt-4 rounded-lg bg-[#F9FAFB] p-3">
+        <div className="mt-4 rounded-lg bg-canvas p-3">
           <div className="flex items-center gap-2">
-            <span className="rounded-md bg-[#F3E8FF] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
+            <span className="rounded-md bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-fg">
               DIM {currentDim.dimNo}
             </span>
-            <span className="text-sm font-medium text-[#212121]">
+            <span className="text-sm font-medium text-fg">
               {currentDim.valueType === "PASS_FAIL"
                 ? t("judgment.passFailItem")
                 : dimDisplayName(currentDim)}
             </span>
           </div>
-          <div className="mt-1 text-base font-semibold text-[#212121]">
+          <div className="mt-1 text-base font-semibold text-fg">
             {currentDim.valueType === "PASS_FAIL"
               ? dimDisplayName(currentDim)
               : formatStandardWithTolerance(
@@ -908,8 +908,8 @@ export default function InspectionMeasurePage() {
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center gap-1.5 text-xs">
-      <span className="shrink-0 text-[#6B7280]">{label}</span>
-      <span className="ml-auto min-w-0 truncate text-right text-sm font-medium text-[#212121]">
+      <span className="shrink-0 text-fg-muted">{label}</span>
+      <span className="ml-auto min-w-0 truncate text-right text-sm font-medium text-fg">
         {value}
       </span>
     </div>
@@ -918,9 +918,9 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-[#F9FAFB] px-3 py-2">
-      <div className="text-xs text-[#6B7280]">{label}</div>
-      <div className="mt-0.5 wrap-break-word text-sm font-semibold text-[#212121]">
+    <div className="rounded-lg bg-canvas px-3 py-2">
+      <div className="text-xs text-fg-muted">{label}</div>
+      <div className="mt-0.5 wrap-break-word text-sm font-semibold text-fg">
         {value}
       </div>
     </div>

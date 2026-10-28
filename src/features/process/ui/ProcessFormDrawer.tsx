@@ -137,17 +137,17 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-white shadow-2xl transition-transform duration-300 ease-out ${
+        className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-surface shadow-2xl transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <header className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-          <h2 className="text-base font-semibold text-[#212121]">{title}</h2>
+        <header className="flex items-center justify-between border-b border-line px-5 py-4">
+          <h2 className="text-base font-semibold text-fg">{title}</h2>
           <button
             type="button"
             onClick={guard.requestClose}
             aria-label={t("common:actions.close")}
-            className="text-[#A8A8A8] transition-colors hover:text-[#212121]"
+            className="text-fg-subtle transition-colors hover:text-fg"
           >
             <Icon icon="mdi:close" width={22} height={22} />
           </button>
@@ -159,7 +159,7 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
         >
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-[#212121]">
+              <span className="text-sm font-medium text-fg">
                 {t("form.code")}
               </span>
               <input
@@ -168,11 +168,11 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 placeholder="INJECTION_MOLDING"
                 disabled={isEdit}
-                className="h-11 rounded-lg border border-gray-300 px-3 text-sm focus:border-[#931B82] focus:outline-none disabled:bg-gray-50 disabled:text-[#6B7280]"
+                className="h-11 rounded-lg border border-line-strong px-3 text-sm focus:border-brand focus:outline-none disabled:bg-canvas disabled:text-fg-muted"
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-[#212121]">
+              <span className="text-sm font-medium text-fg">
                 {t("form.shortCode")}
               </span>
               <input
@@ -182,16 +182,16 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
                 placeholder="IJ"
                 maxLength={4}
                 disabled={isEdit}
-                className="h-11 rounded-lg border border-gray-300 px-3 text-sm focus:border-[#931B82] focus:outline-none disabled:bg-gray-50 disabled:text-[#6B7280]"
+                className="h-11 rounded-lg border border-line-strong px-3 text-sm focus:border-brand focus:outline-none disabled:bg-canvas disabled:text-fg-muted"
               />
             </label>
           </div>
-          <p className="-mt-3 text-xs text-[#6B7280]">
+          <p className="-mt-3 text-xs text-fg-muted">
             {isEdit ? t("form.codeNoteEdit") : t("form.codeNoteCreate")}
           </p>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[#212121]">
+            <span className="text-sm font-medium text-fg">
               {t("form.label")}
             </span>
             <input
@@ -199,18 +199,18 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               placeholder={t("form.labelPlaceholder")}
-              className="h-11 rounded-lg border border-gray-300 px-3 text-sm focus:border-[#931B82] focus:outline-none"
+              className="h-11 rounded-lg border border-line-strong px-3 text-sm focus:border-brand focus:outline-none"
             />
           </label>
 
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-[#212121]">
+            <span className="text-sm font-medium text-fg">
               {t("form.settings")}
             </span>
             {FLAG_KEYS.map((key) => (
               <label
                 key={key}
-                className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-gray-200 px-3 py-2.5"
+                className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line px-3 py-2.5"
               >
                 <input
                   type="checkbox"
@@ -218,13 +218,13 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
                   onChange={(e) =>
                     setFlags((prev) => ({ ...prev, [key]: e.target.checked }))
                   }
-                  className="mt-0.5 h-4 w-4 shrink-0 accent-[#931B82]"
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
                 />
                 <span className="min-w-0">
-                  <span className="block text-sm font-medium text-[#212121]">
+                  <span className="block text-sm font-medium text-fg">
                     {t(`form.flagOptions.${key}.label`)}
                   </span>
-                  <span className="mt-0.5 block text-xs text-[#6B7280]">
+                  <span className="mt-0.5 block text-xs text-fg-muted">
                     {t(`form.flagOptions.${key}.hint`)}
                   </span>
                 </span>
@@ -233,18 +233,18 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
           </div>
 
           {isEdit && (
-            <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-gray-200 px-3 py-2.5">
+            <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line px-3 py-2.5">
               <input
                 type="checkbox"
                 checked={isActive}
                 onChange={(e) => setIsActive(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 accent-[#931B82]"
+                className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
               />
               <span className="min-w-0">
-                <span className="block text-sm font-medium text-[#212121]">
+                <span className="block text-sm font-medium text-fg">
                   {t("form.active")}
                 </span>
-                <span className="mt-0.5 block text-xs text-[#6B7280]">
+                <span className="mt-0.5 block text-xs text-fg-muted">
                   {t("form.activeHint")}
                 </span>
               </span>
@@ -252,7 +252,7 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
           )}
 
           {error && (
-            <div className="rounded-md border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 text-xs text-[#B91C1C]">
+            <div className="rounded-md border border-danger-line bg-danger-soft px-3 py-2 text-xs text-danger-fg">
               {error}
             </div>
           )}
@@ -261,14 +261,14 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
             <button
               type="button"
               onClick={guard.requestClose}
-              className="h-11 flex-1 rounded-lg border border-gray-300 text-sm font-medium text-[#212121] transition-colors hover:bg-gray-50"
+              className="h-11 flex-1 rounded-lg border border-line-strong text-sm font-medium text-fg transition-colors hover:bg-surface-2"
             >
               {t("common:actions.cancel")}
             </button>
             <button
               type="submit"
               disabled={isPending}
-              className="h-11 flex-1 rounded-lg bg-[#931B82] text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D] disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-11 flex-1 rounded-lg bg-brand text-sm font-medium text-on-brand transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40"
             >
               {submitLabel}
             </button>

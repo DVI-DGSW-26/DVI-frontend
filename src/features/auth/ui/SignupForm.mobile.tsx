@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@iconify/react";
 import Select, { type StylesConfig } from "react-select";
-import Logo from "../../../assets/Logo.svg";
+import BrandLogo from "../../../components/shared/BrandLogo";
 import Button from "../../../components/shared/Button";
 import type { SignupFormProps } from "./SignupForm";
+import { selectTheme } from "../../../lib/selectTheme";
 
 type DepartmentOption = { value: string; label: string };
 
@@ -14,11 +15,11 @@ const selectStyles: StylesConfig<DepartmentOption, false> = {
     ...base,
     height: "60px",
     minHeight: "60px",
-    borderColor: "#A8A8A8",
+    borderColor: "var(--color-line-strong)",
     borderRadius: "8px",
     paddingLeft: "5px",
     boxShadow: "none",
-    "&:hover": { borderColor: "#A8A8A8" },
+    "&:hover": { borderColor: "var(--color-line-strong)" },
   }),
   dropdownIndicator: (base) => ({ ...base, paddingRight: "12px" }),
   indicatorSeparator: () => ({ display: "none" }),
@@ -65,15 +66,15 @@ export default function SignupFormMobile({
     paddingLeft: "13px",
   };
   const inputClass =
-    "h-[60px] border border-[#A8A8A8] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#931B82]";
+    "h-[60px] border border-line-strong rounded-lg focus:outline-none focus:ring-1 focus:ring-brand";
 
   return (
-    <div className="relative min-h-dvh w-full bg-white overflow-hidden">
+    <div className="relative min-h-dvh w-full bg-surface overflow-hidden">
       {step < 3 && (
         <button
           type="button"
           onClick={handleBack}
-          className="absolute text-[#212121]"
+          className="absolute text-fg"
           style={{ left: "39px", top: "69px" }}
           aria-label={t("signup.back")}
         >
@@ -84,7 +85,7 @@ export default function SignupFormMobile({
       {step === 1 && (
         <>
           <h1
-            className="absolute text-xl font-bold leading-snug text-[#212121]"
+            className="absolute text-xl font-bold leading-snug text-fg"
             style={{ left: "48px", top: "139px" }}
           >
             {t("signup.step1TitleLine1")}
@@ -127,7 +128,7 @@ export default function SignupFormMobile({
             <button
               type="button"
               onClick={() => setShowConfirmPassword((v) => !v)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#A8A8A8]"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-fg-subtle"
               aria-label={
                 showConfirmPassword
                   ? t("fields.hidePassword")
@@ -159,7 +160,7 @@ export default function SignupFormMobile({
       {step === 2 && (
         <>
           <h1
-            className="absolute text-xl font-bold leading-snug text-[#212121]"
+            className="absolute text-xl font-bold leading-snug text-fg"
             style={{ left: "48px", top: "139px" }}
           >
             {t("signup.step2TitleLine1")}
@@ -183,6 +184,7 @@ export default function SignupFormMobile({
             }}
           >
             <Select<DepartmentOption, false>
+              theme={selectTheme}
               placeholder={t("fields.departmentPlaceholder")}
               options={departmentOptions}
               value={departmentOptions.find((o) => o.value === department)}
@@ -212,7 +214,7 @@ export default function SignupFormMobile({
             className="absolute flex flex-col items-center left-1/2 -translate-x-1/2"
             style={{ top: "300px" }}
           >
-            <img src={Logo} style={{ width: "300px", height: "57px" }} />
+            <BrandLogo style={{ width: "260px", height: "auto" }} />
 
           </div>
 
@@ -237,7 +239,7 @@ export default function SignupFormMobile({
           <div
             key={n}
             className={`w-2 h-2 rounded-full ${
-              step === n ? "bg-[#931B82]" : "bg-[#E5E7EB]"
+              step === n ? "bg-brand" : "bg-surface-3"
             }`}
           />
         ))}

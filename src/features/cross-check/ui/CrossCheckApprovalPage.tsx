@@ -54,14 +54,14 @@ const STATUS_META: Record<
 > = {
   PENDING_APPROVAL: {
     labelKey: "status.pendingApproval",
-    bg: "#FEF3C7",
-    fg: "#B45309",
+    bg: "var(--color-warn-soft)",
+    fg: "var(--color-warn-fg)",
     order: 0,
   },
-  COMPLETED: { labelKey: "status.completed", bg: "#ECFEFF", fg: "#0E7490", order: 1 },
-  DRAFT: { labelKey: "status.inProgress", bg: "#DBEAFE", fg: "#1D4ED8", order: 2 },
-  REJECTED: { labelKey: "status.rejected", bg: "#FEE2E2", fg: "#B91C1C", order: 3 },
-  APPROVED: { labelKey: "status.approved", bg: "#DCFCE7", fg: "#15803D", order: 4 },
+  COMPLETED: { labelKey: "status.completed", bg: "var(--color-info-soft)", fg: "var(--color-info-fg)", order: 1 },
+  DRAFT: { labelKey: "status.inProgress", bg: "var(--color-info-soft)", fg: "var(--color-info-fg)", order: 2 },
+  REJECTED: { labelKey: "status.rejected", bg: "var(--color-danger-soft)", fg: "var(--color-danger-fg)", order: 3 },
+  APPROVED: { labelKey: "status.approved", bg: "var(--color-success-soft)", fg: "var(--color-success-fg)", order: 4 },
 };
 
 const STATUS_ORDER = Object.keys(STATUS_META).sort(
@@ -189,10 +189,10 @@ export default function CrossCheckApprovalPage() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-semibold">{t("approval.title")}</h1>
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-[#FEF3C7] px-3 py-1 text-xs font-medium text-[#B45309]">
+          <span className="rounded-full bg-warn-soft px-3 py-1 text-xs font-medium text-warn-fg">
             {t("approval.pendingCount", { n: pendingCount })}
           </span>
-          <span className="rounded-full bg-[#DBEAFE] px-3 py-1 text-xs font-medium text-[#1D4ED8]">
+          <span className="rounded-full bg-info-soft px-3 py-1 text-xs font-medium text-info-fg">
             {t("approval.inProgressCount", { n: draftCount })}
           </span>
         </div>
@@ -214,13 +214,13 @@ export default function CrossCheckApprovalPage() {
       </div>
 
       {isLoading && (
-        <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+        <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
           {tCommon("status.loading")}
         </p>
       )}
 
       {isError && (
-        <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
+        <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-danger-fg border border-edge">
           {t("approval.listError")}
         </p>
       )}
@@ -228,21 +228,21 @@ export default function CrossCheckApprovalPage() {
       {/* 공정을 골라서 비어 있는 것과, 정말 아무것도 없는 것을 구분해 알린다. */}
       {!isLoading && !isError && sorted.length === 0 && (
         processFilter.length > 0 ? (
-          <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+          <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
             {t("approval.emptyFiltered")}
           </p>
         ) : (
-          <div className="flex flex-col items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-16 text-center">
+          <div className="flex flex-col items-center gap-2 rounded-2xl border border-edge bg-surface px-4 py-16 text-center">
             <Icon
               icon="solar:check-circle-bold"
               width={40}
               height={40}
-              className="text-[#22C55E]"
+              className="text-success-fg"
             />
-            <span className="text-sm font-medium text-[#212121]">
+            <span className="text-sm font-medium text-fg">
               {t("approval.emptyTitle")}
             </span>
-            <span className="text-xs text-[#6B7280]">
+            <span className="text-xs text-fg-muted">
               {t("approval.emptyHint")}
             </span>
           </div>
@@ -250,7 +250,7 @@ export default function CrossCheckApprovalPage() {
       )}
 
       {!isLoading && !isError && sorted.length > 0 && filtered.length === 0 && (
-        <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+        <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
           {isDateFilterActive(dateFilter)
             ? t("approval.emptyPeriod")
             : t("approval.emptyTitle")}
@@ -266,16 +266,16 @@ export default function CrossCheckApprovalPage() {
             return (
               <section
                 key={run.key}
-                className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-[#FAFAFA] p-3"
+                className="flex flex-col gap-3 rounded-2xl border border-line bg-surface-2 p-3"
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="wrap-break-word text-sm font-semibold text-[#212121]">
+                  <h2 className="wrap-break-word text-sm font-semibold text-fg">
                     {head.product.name}
                   </h2>
-                  <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-medium text-[#931B82]">
+                  <span className="rounded-md bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand-fg">
                     {head.product.code}
                   </span>
-                  <span className="text-xs text-[#6B7280]">
+                  <span className="text-xs text-fg-muted">
                     {head.equipment.name}
                   </span>
                   <span
@@ -284,13 +284,13 @@ export default function CrossCheckApprovalPage() {
                   >
                     {run.final ? t(meta.labelKey) : t("status.inProgress")}
                   </span>
-                  <span className="rounded-full bg-white px-2 py-0.5 text-xs text-[#6B7280]">
+                  <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-fg-muted border border-edge">
                     {t("approval.roundsCount", { n: run.items.length })}
                   </span>
                 </div>
 
                 {!run.explicitKey && (
-                  <p className="text-[11px] text-[#A8A8A8]">
+                  <p className="text-[0.6875rem] text-fg-subtle">
                     {t("approval.estimatedGroup")}
                   </p>
                 )}
@@ -353,16 +353,16 @@ function ApprovalCard({
   const stage = getStage(cc.type, cc.product.process);
   return (
     <div
-      className={`relative flex items-stretch rounded-2xl border bg-white shadow-sm transition-colors hover:border-[#931B82] ${
+      className={`relative flex items-stretch rounded-2xl border bg-surface shadow-sm transition-colors hover:border-brand ${
         highlighted
-          ? "border-[#931B82] ring-2 ring-[#931B82] ring-offset-2"
-          : "border-gray-200"
+          ? "border-brand ring-2 ring-brand ring-offset-2 ring-offset-surface"
+          : "border-line"
       }`}
     >
       <button
         type="button"
         onClick={onClick}
-        className="flex min-w-0 flex-1 items-stretch gap-4 rounded-l-2xl p-4 text-left transition-colors hover:bg-[#FDF7FB]"
+        className="flex min-w-0 flex-1 items-stretch gap-4 rounded-l-2xl p-4 text-left transition-colors hover:bg-brand-soft"
       >
         <div className="flex-1 min-w-0">
           {/* 제품·설비는 run 섹션 헤더에 이미 있어, 카드는 차수 정보부터 보여준다. */}
@@ -374,7 +374,7 @@ function ApprovalCard({
                 {t(`stage.${stage}`)}
               </span>
             )}
-            <span className="text-sm font-semibold text-[#212121]">
+            <span className="text-sm font-semibold text-fg">
               {slotLabelText(cc.typeLabel)}
             </span>
             <span
@@ -406,14 +406,14 @@ function ApprovalCard({
         </div>
       </button>
 
-      <div className="flex shrink-0 flex-col items-center justify-center gap-3 border-l border-gray-100 px-3">
+      <div className="flex shrink-0 flex-col items-center justify-center gap-3 border-l border-line px-3">
         {canDelete && (
           <button
             type="button"
             onClick={onDelete}
             title={tCommon("actions.delete")}
             aria-label={t("approval.deleteAria")}
-            className="flex items-center justify-center rounded-md p-1.5 text-[#EF4444] transition-colors hover:bg-[#FEF2F2]"
+            className="flex items-center justify-center rounded-md p-1.5 text-danger-fg transition-colors hover:bg-danger-soft"
           >
             <Icon icon="solar:trash-bin-trash-linear" width={18} height={18} />
           </button>
@@ -422,7 +422,7 @@ function ApprovalCard({
           icon="solar:alt-arrow-right-linear"
           width={20}
           height={20}
-          className="text-[#931B82]"
+          className="text-brand-fg"
         />
       </div>
     </div>
@@ -440,10 +440,10 @@ function InfoLine({
 }) {
   return (
     <div
-      className={`flex items-center gap-1.5 text-[#6B7280] ${className ?? ""}`}
+      className={`flex items-center gap-1.5 text-fg-muted ${className ?? ""}`}
     >
       <span className="shrink-0">{label}</span>
-      <span className="ml-auto min-w-0 truncate text-right text-[#212121]">
+      <span className="ml-auto min-w-0 truncate text-right text-fg">
         {value}
       </span>
     </div>

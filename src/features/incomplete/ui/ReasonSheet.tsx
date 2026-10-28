@@ -65,16 +65,16 @@ export default function ReasonSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby="reason-sheet-title"
-        className="w-full max-w-md rounded-t-2xl bg-white p-5 md:rounded-2xl"
+        className="w-full max-w-md rounded-t-2xl bg-surface p-5 md:rounded-2xl border border-edge"
         onClick={(e) => e.stopPropagation()}
       >
         <h2
           id="reason-sheet-title"
-          className="text-base font-semibold text-[#212121]"
+          className="text-base font-semibold text-fg"
         >
           {item.reason ? t("missed.sheet.editTitle") : t("missed.sheet.title")}
         </h2>
-        <p className="mt-1 text-xs text-[#6B7280]">{summary}</p>
+        <p className="mt-1 text-xs text-fg-muted">{summary}</p>
 
         <div
           role="radiogroup"
@@ -93,8 +93,8 @@ export default function ReasonSheet({
                 disabled={write.isPending}
                 className={`h-11 rounded-lg border text-sm font-medium transition-colors ${
                   selected
-                    ? "border-[#931B82] bg-[#F3E8FF] text-[#931B82]"
-                    : "border-gray-300 bg-white text-[#212121]"
+                    ? "border-brand bg-brand-soft text-brand-fg"
+                    : "border-line-strong bg-surface text-fg"
                 }`}
               >
                 {tInspection(REASON_LABEL_KEYS[opt])}
@@ -111,21 +111,21 @@ export default function ReasonSheet({
             disabled={write.isPending}
             rows={3}
             maxLength={REASON_MAX_LENGTH}
-            className="mt-3 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+            className="mt-3 w-full resize-none rounded-md border border-line-strong bg-surface px-3 py-2 text-sm text-fg focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:bg-surface-2"
           />
         )}
 
-        <p className="mt-3 text-xs text-[#6B7280]">
+        <p className="mt-3 text-xs text-fg-muted">
           {item.reason ? t("missed.sheet.editHint") : t("missed.sheet.hint")}
         </p>
-        {error && <p className="mt-2 text-xs text-[#B91C1C]">{error}</p>}
+        {error && <p className="mt-2 text-xs text-danger-fg">{error}</p>}
 
         <div className="mt-4 flex gap-2">
           <button
             type="button"
             onClick={onClose}
             disabled={write.isPending}
-            className="h-11 flex-1 rounded-md border border-gray-300 bg-white text-sm font-medium text-[#212121]"
+            className="h-11 flex-1 rounded-md border border-line-strong bg-surface text-sm font-medium text-fg"
           >
             {t("missed.sheet.cancel")}
           </button>
@@ -133,7 +133,7 @@ export default function ReasonSheet({
             type="button"
             onClick={handleSave}
             disabled={!reason || write.isPending}
-            className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+            className="h-11 flex-1 rounded-md bg-brand text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:bg-surface-3"
           >
             {write.isPending ? t("missed.sheet.saving") : t("missed.sheet.save")}
           </button>

@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import Select, { type StylesConfig } from "react-select";
 import type { PeopleOptions } from "./usePeopleOptions";
 import { CELL_FOCUS_BG, CELL_FOCUS_RING, CELL_HEIGHT_PX } from "./cellStyle";
+import { selectTheme } from "../../../../lib/selectTheme";
 
 type Option = PeopleOptions["options"][number];
 
@@ -22,18 +23,18 @@ function cellStyles<Multi extends boolean>(): StylesConfig<Option, Multi> {
     // 칸 안이라 군더더기는 뺀다 — 구분선 없음, 아이콘은 작고 흐리게, 글자는 옆 칸과 같은 여백(8px).
     valueContainer: (base) => ({ ...base, padding: "0 8px" }),
     indicatorSeparator: () => ({ display: "none" }),
-    dropdownIndicator: (base) => ({ ...base, padding: "0 6px", color: "#C4C4C4", "&:hover": { color: "#6B7280" } }),
-    clearIndicator: (base) => ({ ...base, padding: "0 2px", color: "#C4C4C4", "&:hover": { color: "#DC2626" } }),
+    dropdownIndicator: (base) => ({ ...base, padding: "0 6px", color: "var(--color-fg-subtle)", "&:hover": { color: "var(--color-fg-muted)" } }),
+    clearIndicator: (base) => ({ ...base, padding: "0 2px", color: "var(--color-fg-subtle)", "&:hover": { color: "var(--color-danger-fg)" } }),
     input: (base) => ({ ...base, margin: 0, padding: 0 }),
     option: (base, state) => ({
       ...base,
-      backgroundColor: state.isSelected ? "#931B82" : state.isFocused ? "#F3E8F7" : "white",
-      color: state.isSelected ? "white" : "#212121",
+      backgroundColor: state.isSelected ? "var(--color-brand)" : state.isFocused ? "var(--color-brand-soft)" : "var(--color-surface)",
+      color: state.isSelected ? "var(--color-on-brand)" : "var(--color-fg)",
       fontSize: "13px",
     }),
-    multiValue: (base) => ({ ...base, backgroundColor: "#F3E8F7" }),
-    multiValueLabel: (base) => ({ ...base, color: "#931B82" }),
-    placeholder: (base) => ({ ...base, color: "#C4C4C4" }),
+    multiValue: (base) => ({ ...base, backgroundColor: "var(--color-brand-soft)" }),
+    multiValueLabel: (base) => ({ ...base, color: "var(--color-brand-fg)" }),
+    placeholder: (base) => ({ ...base, color: "var(--color-fg-subtle)" }),
     menuPortal: (base) => ({ ...base, zIndex: 40 }),
   };
 }
@@ -54,6 +55,7 @@ export function ManagerSelect({
   const { t } = useTranslation("tryoutReport");
   return (
     <Select<Option, false>
+      theme={selectTheme}
       value={value != null ? (people.options.find((o) => o.value === value) ?? null) : null}
       onChange={(o) => onChange(o?.value ?? null)}
       options={people.options}
@@ -80,6 +82,7 @@ export function AttendeesSelect({
   const { t } = useTranslation("tryoutReport");
   return (
     <Select<Option, true>
+      theme={selectTheme}
       isMulti
       value={value.map((id) => people.options.find((o) => o.value === id)).filter((o): o is Option => o != null)}
       onChange={(os) => onChange(os.map((o) => o.value))}
@@ -98,6 +101,6 @@ export function PeopleNotice({ people }: { people: People }) {
   const { t } = useTranslation("tryoutReport");
   if (!people.unavailable) return null;
   return (
-    <p className="text-xs text-[#B45309]">{people.forbidden ? t("form.peopleForbidden") : t("form.peopleError")}</p>
+    <p className="text-xs text-warn-fg">{people.forbidden ? t("form.peopleForbidden") : t("form.peopleError")}</p>
   );
 }

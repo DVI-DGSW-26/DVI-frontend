@@ -93,7 +93,7 @@ export default function AccountSwitcher({ onDone }: Props) {
 
   return (
     <div className="flex flex-col">
-      <ul className="divide-y divide-gray-100">
+      <ul className="divide-y divide-line">
         {targets.map((target) => {
           const isActive = target.loginId === activeLoginId;
           const isBusy = busyLoginId === target.loginId;
@@ -108,27 +108,27 @@ export default function AccountSwitcher({ onDone }: Props) {
                 onClick={() => handleSwitch(target)}
                 disabled={isActive || busyLoginId !== null}
                 aria-current={isActive ? "true" : undefined}
-                className="flex w-full min-w-0 items-center gap-3 px-4 py-3 text-left transition-colors enabled:hover:bg-[#FAF5FB] disabled:cursor-default"
+                className="flex w-full min-w-0 items-center gap-3 px-4 py-3 text-left transition-colors enabled:hover:bg-brand-soft disabled:cursor-default"
               >
                 <span
                   className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
                     isActive
-                      ? "bg-[#F3E8F7] text-[#931B82]"
-                      : "bg-[#F3F4F6] text-[#6B7280]"
+                      ? "bg-brand-soft text-brand-fg"
+                      : "bg-surface-2 text-fg-muted"
                   }`}
                 >
                   {name?.[0] ?? "?"}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium text-[#212121]">
+                  <span className="block truncate text-sm font-medium text-fg">
                     {name}
                     {target.note && (
-                      <span className="ml-1 text-xs font-normal text-[#6B7280]">
+                      <span className="ml-1 text-xs font-normal text-fg-muted">
                         ({target.note})
                       </span>
                     )}
                   </span>
-                  <span className="block truncate text-xs text-[#6B7280]">
+                  <span className="block truncate text-xs text-fg-muted">
                     {t(`roles.${target.role}`, { ns: "common" })} ·{" "}
                     {target.loginId}
                   </span>
@@ -138,14 +138,14 @@ export default function AccountSwitcher({ onDone }: Props) {
                     icon="mdi:loading"
                     width={18}
                     height={18}
-                    className="shrink-0 animate-spin text-[#931B82]"
+                    className="shrink-0 animate-spin text-brand-fg"
                   />
                 ) : isActive ? (
                   <Icon
                     icon="mdi:check"
                     width={20}
                     height={20}
-                    className="shrink-0 text-[#931B82]"
+                    className="shrink-0 text-brand-fg"
                   />
                 ) : null}
               </button>
@@ -155,7 +155,7 @@ export default function AccountSwitcher({ onDone }: Props) {
       </ul>
 
       {error && (
-        <p className="border-t border-gray-100 px-4 py-2 text-xs text-[#B45309]">
+        <p className="border-t border-line px-4 py-2 text-xs text-warn-fg">
           {error}
         </p>
       )}

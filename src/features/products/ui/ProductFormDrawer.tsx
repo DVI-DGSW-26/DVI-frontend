@@ -125,7 +125,7 @@ function SketchPreview({ src }: { src: string }) {
   const [failed, setFailed] = useState(resolved === "");
 
   return (
-    <div className="relative h-28 w-36 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-[#F9FAFB]">
+    <div className="relative h-28 w-36 shrink-0 overflow-hidden rounded-lg border border-line bg-canvas">
       {!failed && (
         <img
           src={resolved}
@@ -140,9 +140,9 @@ function SketchPreview({ src }: { src: string }) {
             icon="solar:gallery-broken"
             width={22}
             height={22}
-            className="text-[#D1D5DB]"
+            className="text-fg-faint"
           />
-          <span className="text-[11px] leading-tight text-[#9CA3AF]">
+          <span className="text-[0.6875rem] leading-tight text-fg-subtle">
             {t("form.sketch.previewError")}
           </span>
         </div>
@@ -505,28 +505,28 @@ export default function ProductFormDrawer({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-lg flex-col bg-white shadow-2xl transition-transform duration-300 ease-out ${
+        className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-lg flex-col bg-surface shadow-2xl transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <header className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-          <h2 className="text-base font-semibold text-[#212121]">{title}</h2>
+        <header className="flex items-center justify-between border-b border-line px-5 py-4">
+          <h2 className="text-base font-semibold text-fg">{title}</h2>
           <button
             type="button"
             onClick={guard.requestClose}
             aria-label={t("common:actions.close")}
-            className="text-[#A8A8A8] transition-colors hover:text-[#212121]"
+            className="text-fg-subtle transition-colors hover:text-fg"
           >
             <Icon icon="mdi:close" width={22} height={22} />
           </button>
         </header>
 
         {isEdit && loadingDetail ? (
-          <div className="flex flex-1 items-center justify-center text-sm text-[#A8A8A8]">
+          <div className="flex flex-1 items-center justify-center text-sm text-fg-subtle">
             {t("common:status.loading")}
           </div>
         ) : isEdit && detailError ? (
-          <div className="flex flex-1 items-center justify-center text-sm text-[#EF4444]">
+          <div className="flex flex-1 items-center justify-center text-sm text-danger-fg">
             {t("form.loadError")}
           </div>
         ) : (
@@ -537,7 +537,7 @@ export default function ProductFormDrawer({
           >
             <div className="grid grid-cols-2 gap-3">
               <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium text-[#212121]">{t("form.name")}</span>
+                <span className="text-sm font-medium text-fg">{t("form.name")}</span>
                 <input
                   type="text"
                   value={name}
@@ -545,12 +545,12 @@ export default function ProductFormDrawer({
                   placeholder="DV-A0100"
                   data-field="name"
                   aria-invalid={fieldError === "name" || undefined}
-                  className={`h-11 rounded-lg border px-3 text-sm focus:border-[#931B82] focus:outline-none ${fieldBorder(fieldError === "name")}`}
+                  className={`h-11 rounded-lg border px-3 text-sm focus:border-brand focus:outline-none ${fieldBorder(fieldError === "name")}`}
                 />
                 <FieldError message={fieldError === "name" ? error : null} />
               </label>
               <label className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium text-[#212121]">{t("form.code")}</span>
+                <span className="text-sm font-medium text-fg">{t("form.code")}</span>
                 <input
                   type="text"
                   value={code}
@@ -558,14 +558,14 @@ export default function ProductFormDrawer({
                   placeholder="DV-A0100"
                   data-field="code"
                   aria-invalid={fieldError === "code" || undefined}
-                  className={`h-11 rounded-lg border px-3 text-sm focus:border-[#931B82] focus:outline-none ${fieldBorder(fieldError === "code")}`}
+                  className={`h-11 rounded-lg border px-3 text-sm focus:border-brand focus:outline-none ${fieldBorder(fieldError === "code")}`}
                 />
                 <FieldError message={fieldError === "code" ? error : null} />
               </label>
             </div>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-[#212121]">{t("form.customer")}</span>
+              <span className="text-sm font-medium text-fg">{t("form.customer")}</span>
               {customerOptions.length > 0 ? (
                 <select
                   value={customerId}
@@ -576,7 +576,7 @@ export default function ProductFormDrawer({
                   }}
                   data-field="customer"
                   aria-invalid={fieldError === "customer" || undefined}
-                  className={`h-11 rounded-lg border bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none ${fieldBorder(fieldError === "customer")}`}
+                  className={`h-11 rounded-lg border bg-surface px-3 text-sm focus:border-brand focus:outline-none ${fieldBorder(fieldError === "customer")}`}
                 >
                   <option value="">{t("form.customerPlaceholder")}</option>
                   {customerOptions.map((c) => (
@@ -597,25 +597,25 @@ export default function ProductFormDrawer({
                   placeholder={t("form.customerIdPlaceholder")}
                   data-field="customer"
                   aria-invalid={fieldError === "customer" || undefined}
-                  className={`h-11 rounded-lg border px-3 text-sm focus:border-[#931B82] focus:outline-none ${fieldBorder(fieldError === "customer")}`}
+                  className={`h-11 rounded-lg border px-3 text-sm focus:border-brand focus:outline-none ${fieldBorder(fieldError === "customer")}`}
                 />
               )}
               <FieldError message={fieldError === "customer" ? error : null} />
               {customerOptions.length > 0 && customerId !== "" && !customerInOptions && (
-                <span className="text-xs text-[#6B7280]">
+                <span className="text-xs text-fg-muted">
                   {t("form.selectedCustomerId", { id: customerId })}
                 </span>
               )}
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-[#212121]">{t("form.process")}</span>
+              <span className="text-sm font-medium text-fg">{t("form.process")}</span>
               <select
                 value={process}
                 onChange={(e) => setProcess(e.target.value as ProcessType | "")}
                 data-field="process"
                 aria-invalid={fieldError === "process" || undefined}
-                className={`h-11 rounded-lg border bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none ${fieldBorder(fieldError === "process")}`}
+                className={`h-11 rounded-lg border bg-surface px-3 text-sm focus:border-brand focus:outline-none ${fieldBorder(fieldError === "process")}`}
               >
                 <option value="">{t("form.processPlaceholder")}</option>
                 {processOptions.map((opt) => (
@@ -631,36 +631,36 @@ export default function ProductFormDrawer({
             {/* 검사 주기 — 기본은 공정 단위이고, 제품 전용 스케줄을 걸면 그 제품만
                 따로 간다. 어느 쪽이 실제로 적용 중인지 여기서 바로 보이게 한다. */}
             <div className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-[#212121]">
+              <span className="text-sm font-medium text-fg">
                 {t("form.schedule.label")}
               </span>
               {process === "" ? (
-                <p className="rounded-lg border border-dashed border-gray-300 bg-[#FAFAFA] px-3 py-3 text-xs text-[#6B7280]">
+                <p className="rounded-lg border border-dashed border-line-strong bg-surface-2 px-3 py-3 text-xs text-fg-muted">
                   {t("form.schedule.selectProcessFirst")}
                 </p>
               ) : productSchedule ? (
                 <button
                   type="button"
                   onClick={() => setProductScheduleOpen(true)}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-[#E9D5FF] bg-[#FAF5FF] px-3 py-2.5 text-left transition-colors hover:border-[#931B82]"
+                  className="flex items-center justify-between gap-2 rounded-lg border border-brand-line bg-brand-soft px-3 py-2.5 text-left transition-colors hover:border-brand"
                 >
                   <span className="min-w-0">
                     <span className="flex items-center gap-1.5">
-                      <span className="shrink-0 rounded bg-[#F3E8F7] px-1.5 py-0.5 text-[10px] font-medium text-[#931B82]">
+                      <span className="shrink-0 rounded bg-brand-soft px-1.5 py-0.5 text-[0.625rem] font-medium text-brand-fg">
                         {t("form.schedule.productOnlyBadge")}
                       </span>
-                      <span className="truncate text-sm text-[#212121]">
+                      <span className="truncate text-sm text-fg">
                         {productScheduleSummary ?? t("form.schedule.noSlots")}
                       </span>
                     </span>
-                    <span className="mt-0.5 block text-[11px] text-[#6B7280]">
+                    <span className="mt-0.5 block text-[0.6875rem] text-fg-muted">
                       {t("form.schedule.appliesToProductOnly", {
                         process: processLabel(process),
                         base: scheduleSummary ?? t("form.schedule.none"),
                       })}
                     </span>
                   </span>
-                  <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-[#931B82]">
+                  <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-brand-fg">
                     {t("form.schedule.configure")}
                     <Icon icon="mdi:chevron-right" width={14} height={14} />
                   </span>
@@ -670,19 +670,19 @@ export default function ProductFormDrawer({
                   <button
                     type="button"
                     onClick={() => setScheduleOpen(true)}
-                    className="flex items-center justify-between gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-left transition-colors hover:border-[#931B82]"
+                    className="flex items-center justify-between gap-2 rounded-lg border border-line-strong bg-surface px-3 py-2.5 text-left transition-colors hover:border-brand"
                   >
                     <span className="min-w-0">
-                      <span className="block text-sm text-[#212121]">
+                      <span className="block text-sm text-fg">
                         {scheduleSummary ?? t("form.schedule.noSchedule")}
                       </span>
-                      <span className="mt-0.5 block text-[11px] text-[#6B7280]">
+                      <span className="mt-0.5 block text-[0.6875rem] text-fg-muted">
                         {t("form.schedule.appliesToAllInProcess", {
                           process: processLabel(process),
                         })}
                       </span>
                     </span>
-                    <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-[#931B82]">
+                    <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-brand-fg">
                       {t("form.schedule.configure")}
                       <Icon icon="mdi:chevron-right" width={14} height={14} />
                     </span>
@@ -691,7 +691,7 @@ export default function ProductFormDrawer({
                     <button
                       type="button"
                       onClick={() => setProductScheduleOpen(true)}
-                      className="flex items-center gap-1 self-start text-[11px] font-medium text-[#931B82] hover:underline"
+                      className="flex items-center gap-1 self-start text-[0.6875rem] font-medium text-brand-fg hover:underline"
                     >
                       <Icon icon="mdi:tag-plus-outline" width={13} height={13} />
                       {t("form.schedule.customizeThisProduct")}
@@ -702,9 +702,9 @@ export default function ProductFormDrawer({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-[#212121]">
+              <span className="text-sm font-medium text-fg">
                 {t("form.sketch.label")}{" "}
-                <span className="text-xs text-[#A8A8A8]">{t("form.sketch.optional")}</span>
+                <span className="text-xs text-fg-subtle">{t("form.sketch.optional")}</span>
               </span>
               {sketchUrl ? (
                 <div className="flex items-start gap-3">
@@ -714,7 +714,7 @@ export default function ProductFormDrawer({
                       type="button"
                       onClick={pickSketch}
                       disabled={isUploadingSketch}
-                      className="flex items-center gap-1 rounded-md border border-[#931B82] px-3 py-1.5 text-xs font-medium text-[#931B82] transition-colors hover:bg-[#F3E8F7] disabled:cursor-not-allowed disabled:opacity-40"
+                      className="flex items-center gap-1 rounded-md border border-brand px-3 py-1.5 text-xs font-medium text-brand-fg transition-colors hover:bg-brand-soft disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <Icon
                         icon={isUploadingSketch ? "mdi:loading" : "solar:refresh-linear"}
@@ -733,7 +733,7 @@ export default function ProductFormDrawer({
                         setSketchError(null);
                       }}
                       disabled={isUploadingSketch}
-                      className="flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-[#6B7280] transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="flex items-center gap-1 rounded-md border border-line-strong px-3 py-1.5 text-xs font-medium text-fg-muted transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <Icon icon="mdi:trash-can-outline" width={14} height={14} />
                       {t("common:actions.delete")}
@@ -745,7 +745,7 @@ export default function ProductFormDrawer({
                   type="button"
                   onClick={pickSketch}
                   disabled={isUploadingSketch}
-                  className="flex h-28 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-300 bg-[#F9FAFB] text-sm font-medium text-[#6B7280] transition-colors hover:border-[#931B82] hover:text-[#931B82] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex h-28 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-line-strong bg-canvas text-sm font-medium text-fg-muted transition-colors hover:border-brand hover:text-brand-fg disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Icon
                     icon={isUploadingSketch ? "mdi:loading" : "solar:gallery-add-linear"}
@@ -756,7 +756,7 @@ export default function ProductFormDrawer({
                   {isUploadingSketch
                     ? t("form.sketch.uploading")
                     : t("form.sketch.pick")}
-                  <span className="text-xs font-normal text-[#A8A8A8]">
+                  <span className="text-xs font-normal text-fg-subtle">
                     {t("form.sketch.hint")}
                   </span>
                 </button>
@@ -769,15 +769,15 @@ export default function ProductFormDrawer({
                 className="hidden"
               />
               {sketchError && (
-                <span className="text-xs text-[#EF4444]">{sketchError}</span>
+                <span className="text-xs text-danger-fg">{sketchError}</span>
               )}
             </div>
 
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-[#212121]">
+                <span className="text-sm font-medium text-fg">
                   {t("form.dims.label")}{" "}
-                  <span className="text-xs text-[#6B7280]">
+                  <span className="text-xs text-fg-muted">
                     ({dims.length}/{MAX_DIMS})
                   </span>
                 </span>
@@ -786,7 +786,7 @@ export default function ProductFormDrawer({
                     type="button"
                     onClick={addDim}
                     disabled={dims.length >= MAX_DIMS}
-                    className="flex items-center gap-1 rounded-md border border-[#931B82] px-2 py-1 text-xs font-medium text-[#931B82] transition-colors hover:bg-[#F3E8F7] disabled:cursor-not-allowed disabled:opacity-40"
+                    className="flex items-center gap-1 rounded-md border border-brand px-2 py-1 text-xs font-medium text-brand-fg transition-colors hover:bg-brand-soft disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <Icon icon="mdi:plus" width={14} height={14} />
                     {t("form.dims.dim")}
@@ -795,7 +795,7 @@ export default function ProductFormDrawer({
                     type="button"
                     onClick={addPassFail}
                     disabled={dims.length >= MAX_DIMS}
-                    className="flex items-center gap-1 rounded-md border border-[#F59E0B] px-2 py-1 text-xs font-medium text-[#B45309] transition-colors hover:bg-[#FEF3C7] disabled:cursor-not-allowed disabled:opacity-40"
+                    className="flex items-center gap-1 rounded-md border border-warn px-2 py-1 text-xs font-medium text-warn-fg transition-colors hover:bg-warn-soft disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <Icon icon="mdi:plus" width={14} height={14} />
                     OK/NG
@@ -811,21 +811,21 @@ export default function ProductFormDrawer({
                       key={idx}
                       className={`flex flex-col gap-2 rounded-lg border p-3 ${
                         isPassFail
-                          ? "border-[#FEF3C7] bg-[#FFFBEB]"
-                          : "border-gray-200 bg-[#FAFAFA]"
+                          ? "border-warn-line bg-warn-soft"
+                          : "border-line bg-surface-2"
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <span
                           className={`inline-flex items-center gap-1.5 text-xs font-semibold ${
-                            isPassFail ? "text-[#B45309]" : "text-[#6B7280]"
+                            isPassFail ? "text-warn-fg" : "text-fg-muted"
                           }`}
                         >
                           <span
-                            className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] ${
+                            className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[0.625rem] ${
                               isPassFail
-                                ? "bg-[#FEF3C7] text-[#B45309]"
-                                : "bg-[#F3E8F7] text-[#931B82]"
+                                ? "bg-warn-soft text-warn-fg"
+                                : "bg-brand-soft text-brand-fg"
                             }`}
                           >
                             {isPassFail ? "OK/NG" : t("form.dims.dim")}
@@ -836,7 +836,7 @@ export default function ProductFormDrawer({
                           type="button"
                           onClick={() => removeDim(idx)}
                           aria-label={t("common:actions.delete")}
-                          className="text-[#A8A8A8] transition-colors hover:text-[#EF4444]"
+                          className="text-fg-subtle transition-colors hover:text-danger-fg"
                         >
                           <Icon icon="mdi:close" width={16} height={16} />
                         </button>
@@ -853,11 +853,11 @@ export default function ProductFormDrawer({
                             ? t("form.dims.namePlaceholderPassFail")
                             : t("form.dims.namePlaceholderNumber")
                         }
-                        className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-[#931B82] focus:outline-none"
+                        className="h-10 rounded-md border border-line-strong bg-surface px-3 text-sm focus:border-brand focus:outline-none"
                       />
 
                       {isPassFail ? (
-                        <p className="text-[11px] text-[#92400E]">
+                        <p className="text-[0.6875rem] text-warn-fg">
                           {t("form.dims.passFailHint")}
                         </p>
                       ) : (
@@ -907,7 +907,7 @@ export default function ProductFormDrawer({
 
             {/* 칸에 붙일 수 있는 오류는 칸 아래에 — 여기는 서버 오류 등 칸이 없는 것만. */}
             {error && fieldError === null && (
-              <div className="rounded-md border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 text-xs text-[#B91C1C]">
+              <div className="rounded-md border border-danger-line bg-danger-soft px-3 py-2 text-xs text-danger-fg">
                 {error}
               </div>
             )}
@@ -916,14 +916,14 @@ export default function ProductFormDrawer({
               <button
                 type="button"
                 onClick={guard.requestClose}
-                className="h-11 flex-1 rounded-lg border border-gray-300 text-sm font-medium text-[#212121] transition-colors hover:bg-gray-50"
+                className="h-11 flex-1 rounded-lg border border-line-strong text-sm font-medium text-fg transition-colors hover:bg-surface-2"
               >
                 {t("common:actions.cancel")}
               </button>
               <button
                 type="submit"
                 disabled={isPending || isUploadingSketch}
-                className="h-11 flex-1 rounded-lg bg-[#931B82] text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D] disabled:cursor-not-allowed disabled:opacity-40"
+                className="h-11 flex-1 rounded-lg bg-brand text-sm font-medium text-on-brand transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {submitLabel}
               </button>
@@ -973,7 +973,7 @@ function DimNumberInput({
 }: DimNumberInputProps) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-[11px] text-[#6B7280]">{label}</span>
+      <span className="text-[0.6875rem] text-fg-muted">{label}</span>
       <input
         type="number"
         step="any"
@@ -982,7 +982,7 @@ function DimNumberInput({
         onChange={(e) => onChange(e.target.value)}
         data-field={field}
         aria-invalid={invalid || undefined}
-        className={`h-10 rounded-md border bg-white px-2 text-sm focus:border-[#931B82] focus:outline-none ${fieldBorder(invalid)}`}
+        className={`h-10 rounded-md border bg-surface px-2 text-sm focus:border-brand focus:outline-none ${fieldBorder(invalid)}`}
       />
     </label>
   );
@@ -990,14 +990,14 @@ function DimNumberInput({
 
 /** 오류 칸은 빨간 테두리 — 나머지는 평소 회색. */
 function fieldBorder(invalid: boolean) {
-  return invalid ? "border-[#EF4444]" : "border-gray-300";
+  return invalid ? "border-danger" : "border-line-strong";
 }
 
 /** 칸 바로 아래 붙는 오류 문구. */
 function FieldError({ message }: { message: string | null }) {
   if (!message) return null;
   return (
-    <span role="alert" className="text-xs text-[#B91C1C]">
+    <span role="alert" className="text-xs text-danger-fg">
       {message}
     </span>
   );

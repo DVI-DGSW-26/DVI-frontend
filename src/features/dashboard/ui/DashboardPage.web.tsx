@@ -41,15 +41,15 @@ const DashboardPageWeb = () => {
         />
       </section>
 
-      <section className="rounded-2xl bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-bold text-[#212121]">
+      <section className="rounded-2xl bg-surface p-6 shadow-sm border border-edge">
+        <h2 className="mb-4 text-lg font-bold text-fg">
           {t("pendingUsers.quickTitle")}
         </h2>
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-[#F9FAFB] text-[#6B7280]">
+              <tr className="bg-canvas text-fg-muted">
                 <th className="rounded-l-lg px-4 py-3 text-left font-medium">
                   {t("table.name")}
                 </th>
@@ -75,7 +75,7 @@ const DashboardPageWeb = () => {
                 <tr>
                   <td
                     colSpan={6}
-                    className="px-4 py-8 text-center text-[#A8A8A8]"
+                    className="px-4 py-8 text-center text-fg-subtle"
                   >
                     {t("pendingUsers.loading")}
                   </td>
@@ -84,7 +84,7 @@ const DashboardPageWeb = () => {
                 <tr>
                   <td
                     colSpan={6}
-                    className="px-4 py-8 text-center text-[#A8A8A8]"
+                    className="px-4 py-8 text-center text-fg-subtle"
                   >
                     {t("pendingUsers.empty")}
                   </td>
@@ -93,22 +93,22 @@ const DashboardPageWeb = () => {
                 previewPending.map((user) => (
                   <tr
                     key={user.id}
-                    className="border-b border-[#F3F4F6] last:border-0"
+                    className="border-b border-line last:border-0"
                   >
-                    <td className="px-4 py-4 font-medium text-[#212121]">
+                    <td className="px-4 py-4 font-medium text-fg">
                       {user.name}
                     </td>
-                    <td className="px-4 py-4 text-[#6B7280]">
+                    <td className="px-4 py-4 text-fg-muted">
                       {user.loginId}
                     </td>
-                    <td className="px-4 py-4 text-[#6B7280]">—</td>
-                    <td className="px-4 py-4 text-[#6B7280]">—</td>
-                    <td className="px-4 py-4 text-[#6B7280]">
+                    <td className="px-4 py-4 text-fg-muted">—</td>
+                    <td className="px-4 py-4 text-fg-muted">—</td>
+                    <td className="px-4 py-4 text-fg-muted">
                       {formatDate(user.createdAt)}
                     </td>
                     <td className="px-4 py-4">
-                      <span className="inline-flex items-center gap-1.5 text-[#F59E0B]">
-                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#F59E0B]" />
+                      <span className="inline-flex items-center gap-1.5 text-warn-fg">
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-warn" />
                         {t("pendingUsers.statusPending")}
                       </span>
                     </td>
@@ -123,7 +123,7 @@ const DashboardPageWeb = () => {
           <button
             type="button"
             onClick={() => navigate("/approval")}
-            className="rounded-lg bg-[#931B82] px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
+            className="rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-on-brand transition-opacity hover:opacity-90"
           >
             {t("pendingUsers.viewAll")}
           </button>

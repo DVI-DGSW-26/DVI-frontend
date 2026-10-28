@@ -236,7 +236,7 @@ export default function StatusBoard({
           label={t("stats.active")}
           tag={<TrackTag track="self" />}
           value={totals.active}
-          color={T.primary[500]}
+          color={T.primary[700]}
         />
         <StatCard
           dense
@@ -284,7 +284,7 @@ export default function StatusBoard({
               <FootStat
                 label={t("stats.draft")}
                 value={crossTotals.draft}
-                color={T.primary[500]}
+                color={T.primary[700]}
               />
               <FootStat
                 label={t("stats.pending")}
@@ -447,7 +447,7 @@ function ProgressRowView({
 
         <div className="flex shrink-0 items-center gap-3">
           {lateCount > 0 ? (
-            <Chip bg={OVERDUE_COLOR} fg={T.neutral.ink} strong>
+            <Chip bg={OVERDUE_COLOR} fg={T.onSolid} strong>
               <span aria-hidden>▲</span> {t("progress.lateChip", { n: lateCount })}
               {late > 0 && (
                 <span className="tabular-nums">· {formatCountdown(late)}</span>
@@ -786,27 +786,27 @@ const CELL_STYLE: Record<
   { bg: string; fg: string; border?: string; mark: string; name: string }
 > = {
   COMPLETED: {
-    bg: T.success[700],
-    fg: T.neutral.white,
+    bg: T.success[500],
+    fg: T.onSolid,
     mark: "✓",
     name: "cellStatus.completed",
   },
   DRAFT: {
     bg: T.primary[500],
-    fg: T.neutral.white,
+    fg: T.onSolid,
     mark: "▶",
     name: "cellStatus.draft",
   },
   SKIPPED: {
     bg: T.neutral.border,
-    fg: "#5B5B5B",
+    fg: "var(--color-fg-muted)",
     mark: "⊘",
     name: "cellStatus.skipped",
   },
   // 건너뛴 항목이 있어 결재로 올라간 칸 — 순회검사 쪽 '승인대기'와 같은 뜻이라 같은 색.
   INCOMPLETE: {
-    bg: T.warning[700],
-    fg: T.neutral.white,
+    bg: T.warning[500],
+    fg: T.onSolid,
     mark: "!",
     name: "cellStatus.incomplete",
   },
@@ -815,13 +815,13 @@ const CELL_STYLE: Record<
   INCOMPLETE_APPROVED: {
     bg: T.success[100],
     fg: T.success[700],
-    border: "#A7E9C0",
+    border: "var(--color-success-line)",
     mark: "✓",
     name: "cellStatus.incompleteApproved",
   },
   NONE: {
     bg: T.neutral.sub,
-    fg: "#6B6B6B",
+    fg: "var(--color-fg-muted)",
     border: T.neutral.border,
     mark: "·",
     name: "cellStatus.notStarted",
@@ -837,14 +837,14 @@ const CROSS_STYLE: Record<
   { bg: string; fg: string; border?: string; mark: string; name: string }
 > = {
   CHECKED: {
-    bg: T.success[700],
-    fg: T.neutral.white,
+    bg: T.success[500],
+    fg: T.onSolid,
     mark: "✓",
     name: "crossStatus.checked",
   },
   DRAFT: {
     bg: T.primary[500],
-    fg: T.neutral.white,
+    fg: T.onSolid,
     mark: "▶",
     name: "crossStatus.draft",
   },
@@ -853,8 +853,8 @@ const CROSS_STYLE: Record<
   // 색 하나를 줄이면, 정말 사람이 가야 하는 칸(반려·대기)이 더 도드라진다.
   // 결재가 밀리는 것은 상단 요약의 "승인대기" 숫자가 알린다.
   PENDING_APPROVAL: {
-    bg: T.success[700],
-    fg: T.neutral.white,
+    bg: T.success[500],
+    fg: T.onSolid,
     mark: "✓",
     name: "crossStatus.pendingApproval",
   },
@@ -864,7 +864,7 @@ const CROSS_STYLE: Record<
   // 반려 건수는 상단 "순회 대기" 카드의 숫자가 그대로 알린다.
   REJECTED: {
     bg: T.neutral.sub,
-    fg: "#6B6B6B",
+    fg: "var(--color-fg-muted)",
     border: T.neutral.border,
     mark: "·",
     name: "crossStatus.rejected",
@@ -884,7 +884,7 @@ const CROSS_STYLE: Record<
   },
   NA: {
     bg: T.neutral.sub,
-    fg: "#6B6B6B",
+    fg: "var(--color-fg-muted)",
     border: T.neutral.border,
     mark: "·",
     name: "crossStatus.notApplicable",
@@ -1080,7 +1080,7 @@ function FinishedStrip({
               {r.skipped > 0 && (
                 <span
                   className="font-bold tabular-nums"
-                  style={{ color: "#5B5B5B" }}
+                  style={{ color: "var(--color-fg-muted)" }}
                 >
                   ⊘{r.skipped}
                 </span>

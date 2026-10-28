@@ -51,7 +51,7 @@ export default function PhotoInput({ value, onChange, alt, onUploadingChange }: 
             <img
               src={toBackendImageUrl(value)}
               alt={alt}
-              className="h-7 w-7 rounded border border-[#E5E7EB] object-cover"
+              className="h-7 w-7 rounded border border-line object-cover"
             />
           </a>
         )}
@@ -59,7 +59,7 @@ export default function PhotoInput({ value, onChange, alt, onUploadingChange }: 
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="h-7 rounded border border-[#931B82] px-2 text-[11px] font-medium text-[#931B82] hover:bg-[#F3E8F7] disabled:opacity-60"
+          className="h-7 rounded border border-brand px-2 text-[0.6875rem] font-medium text-brand-fg hover:bg-brand-soft disabled:opacity-60"
         >
           {uploading ? t("photo.uploading") : value ? t("photo.change") : t("photo.upload")}
         </button>
@@ -67,7 +67,7 @@ export default function PhotoInput({ value, onChange, alt, onUploadingChange }: 
           <button
             type="button"
             onClick={() => onChange(null)}
-            className="h-7 px-1 text-[11px] text-[#6B7280] hover:text-[#DC2626]"
+            className="h-7 px-1 text-[0.6875rem] text-fg-muted hover:text-danger-fg"
           >
             {t("photo.remove")}
           </button>
@@ -80,7 +80,7 @@ export default function PhotoInput({ value, onChange, alt, onUploadingChange }: 
           onChange={(e) => handleFile(e.target.files?.[0])}
         />
       </div>
-      {error && <p className="text-[11px] leading-tight text-[#DC2626]">{error}</p>}
+      {error && <p className="text-[0.6875rem] leading-tight text-danger-fg">{error}</p>}
     </div>
   );
 }

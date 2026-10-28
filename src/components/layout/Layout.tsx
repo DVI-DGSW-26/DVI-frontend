@@ -11,7 +11,7 @@ const Layout = () => {
   useScrollRestore(mainRef);
 
   return (
-    <div className="flex h-dvh w-full overflow-hidden bg-gray-50">
+    <div className="flex h-dvh w-full overflow-hidden bg-canvas">
       <TabBar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header />

@@ -152,30 +152,30 @@ export default function TryoutReportForm({
       : null;
 
   // 현장 엑셀 양식의 머리 부분과 같은 격자. 라벨 칸은 회색, 값 칸은 흰색, 고칠 수 있는 칸은 칸 안에서 바로 입력한다.
-  const lb = "h-10 border border-[#D1D5DB] bg-[#F3F4F6] px-2 text-center text-xs font-semibold text-[#4B5563]";
-  const vl = "h-10 border border-[#D1D5DB] px-2 text-sm text-[#212121]";
-  const ed = "h-10 border border-[#D1D5DB] p-0";
+  const lb = "h-10 border border-line-strong bg-surface-2 px-2 text-center text-xs font-semibold text-fg-muted";
+  const vl = "h-10 border border-line-strong px-2 text-sm text-fg";
+  const ed = "h-10 border border-line-strong p-0";
   const cellInput = (invalid: boolean) =>
-    `h-10 w-full bg-transparent px-2 text-sm text-[#212121] ${CELL_FOCUS} ${
-      invalid ? "bg-[#FEF2F2]" : ""
+    `h-10 w-full bg-transparent px-2 text-sm text-fg ${CELL_FOCUS} ${
+      invalid ? "bg-danger-soft" : ""
     }`;
 
   return (
     <div className="flex flex-col gap-4">
       {showRestored && (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#E9D5E5] bg-[#FBF7FC] px-4 py-3 text-sm text-[#6A0F5D]">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand-line bg-brand-soft px-4 py-3 text-sm text-brand-fg">
           <span>{t("draft.restored")}</span>
           <div className="flex gap-3">
-            <button type="button" onClick={discardDraft} className="text-xs font-medium text-[#6B7280] hover:text-[#DC2626]">
+            <button type="button" onClick={discardDraft} className="text-xs font-medium text-fg-muted hover:text-danger-fg">
               {t("draft.discard")}
             </button>
-            <button type="button" onClick={() => setShowRestored(false)} className="text-xs font-medium text-[#931B82]">
+            <button type="button" onClick={() => setShowRestored(false)} className="text-xs font-medium text-brand-fg">
               {t("draft.keep")}
             </button>
           </div>
         </div>
       )}
-      <section className="flex flex-col gap-2 rounded-2xl bg-white p-5 shadow-sm">
+      <section className="flex flex-col gap-2 rounded-2xl bg-surface p-5 shadow-sm border border-edge">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1040px] table-fixed border-collapse">
             <colgroup>
@@ -194,8 +194,8 @@ export default function TryoutReportForm({
                 <td colSpan={3} className={vl}>
                   {meta.customerName || "-"}
                 </td>
-                <td colSpan={4} className="border border-[#D1D5DB] px-2 py-2">
-                  <div className="flex items-center justify-center gap-1 text-xl font-bold text-[#212121]">
+                <td colSpan={4} className="border border-line-strong px-2 py-2">
+                  <div className="flex items-center justify-center gap-1 text-xl font-bold text-fg">
                     <span>{t("sheet.roundPrefix")}</span>
                     <input
                       id="tryout-round"
@@ -208,12 +208,12 @@ export default function TryoutReportForm({
                       aria-label={t("form.roundNo")}
                       aria-invalid={roundError != null}
                       className={`h-9 w-14 border-b-2 bg-transparent text-center text-xl font-bold ${CELL_FOCUS} ${
-                        roundError ? "border-[#DC2626] bg-[#FEF2F2]" : "border-[#D1D5DB]"
+                        roundError ? "border-danger bg-danger-soft" : "border-line-strong"
                       }`}
                     />
                     <span>{t("sheet.roundSuffix")}</span>
                   </div>
-                  {roundError && <p className="mt-1 text-center text-xs text-[#DC2626]">{roundError}</p>}
+                  {roundError && <p className="mt-1 text-center text-xs text-danger-fg">{roundError}</p>}
                 </td>
               </tr>
               <tr>
@@ -261,7 +261,7 @@ export default function TryoutReportForm({
                           aria-pressed={active}
                           onClick={() => patchHeader({ overallResult: active ? null : o })}
                           className={`flex flex-1 items-center justify-center gap-1 whitespace-nowrap text-sm ${CELL_FOCUS_VISIBLE} ${
-                            active ? "font-semibold text-[#931B82]" : "text-[#6B7280] hover:text-[#212121]"
+                            active ? "font-semibold text-brand-fg" : "text-fg-muted hover:text-fg"
                           }`}
                         >
                           <span aria-hidden>{active ? "■" : "□"}</span>
@@ -276,15 +276,15 @@ export default function TryoutReportForm({
           </table>
         </div>
         {headerErrors.conductedOn && (
-          <p className="text-xs text-[#DC2626]">{t(`errors.header.${headerErrors.conductedOn}`)}</p>
+          <p className="text-xs text-danger-fg">{t(`errors.header.${headerErrors.conductedOn}`)}</p>
         )}
         <PeopleNotice people={people} />
       </section>
 
-      <section className="rounded-2xl bg-white p-5 shadow-sm">
+      <section className="rounded-2xl bg-surface p-5 shadow-sm border border-edge">
         <div className="mb-3 flex flex-col gap-1">
-          <p className="text-xs text-[#6B7280]">{t("form.gridHint")}</p>
-          <p className="text-xs text-[#6B7280]">{t("form.judgeHint")}</p>
+          <p className="text-xs text-fg-muted">{t("form.gridHint")}</p>
+          <p className="text-xs text-fg-muted">{t("form.judgeHint")}</p>
         </div>
         <ItemFormTable
           rows={items}
@@ -297,10 +297,10 @@ export default function TryoutReportForm({
 
       <div className="flex flex-col items-end gap-2">
         {itemErrorCount > 0 && (
-          <p className="text-sm text-[#DC2626]">{t("errors.itemsSummary", { n: itemErrorCount })}</p>
+          <p className="text-sm text-danger-fg">{t("errors.itemsSummary", { n: itemErrorCount })}</p>
         )}
         {saveError && saveError.field !== "roundNo" && (
-          <p className="text-sm text-[#DC2626]">{saveError.message}</p>
+          <p className="text-sm text-danger-fg">{saveError.message}</p>
         )}
         <div className="flex gap-2">
           <button
@@ -310,7 +310,7 @@ export default function TryoutReportForm({
               onCancel();
             }}
             disabled={saving}
-            className="h-11 w-28 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-60"
+            className="h-11 w-28 rounded-md border border-line-strong bg-surface text-sm font-medium text-fg-muted hover:bg-surface-2 disabled:opacity-60"
           >
             {t("form.cancel")}
           </button>
@@ -318,7 +318,7 @@ export default function TryoutReportForm({
             type="button"
             onClick={handleSubmit}
             disabled={saving || uploading.size > 0}
-            className="h-11 w-28 rounded-md bg-[#931B82] text-sm font-semibold text-white hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+            className="h-11 w-28 rounded-md bg-brand text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:bg-surface-3"
           >
             {saving ? t("form.saving") : submitLabel}
           </button>

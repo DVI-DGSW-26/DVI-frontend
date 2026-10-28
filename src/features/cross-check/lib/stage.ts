@@ -26,9 +26,9 @@ export function getStage(type: string, process: ProcessType): Stage | null {
 // 키는 Stage 값과 동일: stage.INITIAL / stage.MIDDLE / stage.FINAL) 로 얻는다.
 
 export const STAGE_BADGE: Record<Stage, string> = {
-  INITIAL: "border-[#DBEAFE] bg-[#EFF6FF] text-[#1D4ED8]",
-  MIDDLE: "border-[#FEF3C7] bg-[#FFFBEB] text-[#B45309]",
-  FINAL: "border-[#FBCFE8] bg-[#FDF2F8] text-[#9D174D]",
+  INITIAL: "border-info-line bg-info-soft text-info-fg",
+  MIDDLE: "border-warn-line bg-warn-soft text-warn-fg",
+  FINAL: "border-brand-line bg-brand-soft text-danger-fg",
 };
 
 // 경도를 추적하는 공정(hardnessTracked)의 종품(FINAL)인데 경도값이 아직 없는 DRAFT —

@@ -67,15 +67,15 @@ const AccountApprovalPageWeb = () => {
 
   return (
     <div className="flex flex-col gap-4 p-6">
-      <div className="rounded-2xl bg-white shadow-sm">
+      <div className="rounded-2xl bg-surface shadow-sm border border-edge">
         <nav className="flex">
           <button
             type="button"
             onClick={() => setTab("PENDING")}
             className={`flex-1 border-b-2 py-4 text-sm font-semibold transition-colors ${
               tab === "PENDING"
-                ? "border-[#931B82] text-[#931B82]"
-                : "border-[#E5E7EB] text-[#A8A8A8]"
+                ? "border-brand text-brand-fg"
+                : "border-line text-fg-subtle"
             }`}
           >
             {t("page.tabPending", { n: pending.length })}
@@ -85,8 +85,8 @@ const AccountApprovalPageWeb = () => {
             onClick={() => setTab("COMPLETED")}
             className={`flex-1 border-b-2 py-4 text-sm font-semibold transition-colors ${
               tab === "COMPLETED"
-                ? "border-[#931B82] text-[#931B82]"
-                : "border-[#E5E7EB] text-[#A8A8A8]"
+                ? "border-brand text-brand-fg"
+                : "border-line text-fg-subtle"
             }`}
           >
             {t("page.tabCompleted")}
@@ -95,19 +95,19 @@ const AccountApprovalPageWeb = () => {
       </div>
 
       {isLoading && (
-        <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+        <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
           {t("status.loading", { ns: "common" })}
         </p>
       )}
 
       {isError && (
-        <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
+        <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-danger-fg border border-edge">
           {t("page.loadFailed")}
         </p>
       )}
 
       {!isLoading && !isError && list.length === 0 && (
-        <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+        <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
           {tab === "PENDING"
             ? t("page.emptyPending")
             : t("page.emptyCompleted")}
@@ -128,16 +128,16 @@ const AccountApprovalPageWeb = () => {
             return (
               <li
                 key={u.id}
-                className="flex items-center justify-between gap-4 rounded-2xl bg-white px-6 py-5 shadow-sm"
+                className="flex items-center justify-between gap-4 rounded-2xl bg-surface px-6 py-5 shadow-sm border border-edge"
               >
                 <div className="flex min-w-0 flex-col">
-                  <span className="truncate text-base font-bold text-[#212121]">
+                  <span className="truncate text-base font-bold text-fg">
                     {u.name}
                   </span>
-                  <span className="mt-1 truncate text-sm text-[#6B7280]">
+                  <span className="mt-1 truncate text-sm text-fg-muted">
                     {dept} · {role}
                   </span>
-                  <span className="mt-1 truncate text-xs text-[#A8A8A8]">
+                  <span className="mt-1 truncate text-xs text-fg-subtle">
                     {t("page.requestedAt", { date: formatDate(u.createdAt) })}
                   </span>
                 </div>
@@ -149,7 +149,7 @@ const AccountApprovalPageWeb = () => {
                       type="button"
                       onClick={() => handleApprove(u)}
                       disabled={processing}
-                      className="h-10 rounded-lg bg-[#931B82] px-7 text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D] disabled:opacity-40"
+                      className="h-10 rounded-lg bg-brand px-7 text-sm font-medium text-on-brand transition-colors hover:bg-brand-hover disabled:opacity-40"
                     >
                       {processing ? t("page.approving") : t("page.approve")}
                     </button>

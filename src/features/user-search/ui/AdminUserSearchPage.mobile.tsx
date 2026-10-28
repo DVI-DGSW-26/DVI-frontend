@@ -50,28 +50,28 @@ const AdminUserSearchPageMobile = () => {
   }, [users, keyword, filter, t]);
 
   return (
-    <div className="flex min-h-full flex-col gap-5 bg-[#F5F5F5] px-4 pb-21 pt-5">
+    <div className="flex min-h-full flex-col gap-5 bg-canvas px-4 pb-21 pt-5">
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Icon
             icon="solar:magnifer-linear"
             width={18}
             height={18}
-            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A8A8A8]"
+            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-fg-subtle"
           />
           <input
             type="text"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder={t("search.placeholder")}
-            className="h-12 w-full rounded-2xl border border-[#931B82] bg-white pl-11 pr-4 text-sm text-[#212121] placeholder:text-[#A8A8A8] focus:outline-none"
+            className="h-12 w-full rounded-2xl border border-brand bg-surface pl-11 pr-4 text-sm text-fg placeholder:text-fg-subtle focus:outline-none"
           />
         </div>
         <button
           type="button"
           onClick={() => setCreateOpen(true)}
           aria-label={t("search.addUser")}
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#931B82] text-white transition-colors hover:bg-[#6A0F5D]"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand text-on-brand transition-colors hover:bg-brand-hover"
         >
           <Icon icon="mdi:plus" width={22} height={22} />
         </button>
@@ -87,8 +87,8 @@ const AdminUserSearchPageMobile = () => {
               onClick={() => setFilter(f.key)}
               className={`h-9 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors ${
                 active
-                  ? "border-transparent bg-[#F3F4F6] text-[#212121]"
-                  : "border-[#E5E7EB] bg-white text-[#6B7280]"
+                  ? "border-transparent bg-surface-2 text-fg"
+                  : "border-line bg-surface text-fg-muted"
               }`}
             >
               {t(f.labelKey)}
@@ -98,19 +98,19 @@ const AdminUserSearchPageMobile = () => {
       </div>
 
       {isLoading && (
-        <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+        <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
           {t("status.loading", { ns: "common" })}
         </p>
       )}
 
       {isError && (
-        <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
+        <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-danger-fg border border-edge">
           {t("list.loadFailed")}
         </p>
       )}
 
       {!isLoading && !isError && filtered.length === 0 && (
-        <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+        <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
           {t("list.empty")}
         </p>
       )}
@@ -131,16 +131,16 @@ const AdminUserSearchPageMobile = () => {
               <li key={u.id}>
                 <button
                   type="button"
-                  className="flex w-full cursor-default items-stretch gap-3 rounded-2xl bg-white px-5 py-4 text-left shadow-sm"
+                  className="flex w-full cursor-default items-stretch gap-3 rounded-2xl bg-surface px-5 py-4 text-left shadow-sm border border-edge"
                 >
                   <div className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate text-base font-bold text-[#212121]">
+                    <span className="truncate text-base font-bold text-fg">
                       {u.name}
                     </span>
-                    <span className="mt-0.5 truncate text-sm text-[#6B7280]">
+                    <span className="mt-0.5 truncate text-sm text-fg-muted">
                       {roleLabel}
                     </span>
-                    <span className="mt-0.5 truncate text-xs text-[#A8A8A8]">
+                    <span className="mt-0.5 truncate text-xs text-fg-subtle">
                       {deptLabel}
                     </span>
                   </div>
@@ -161,7 +161,7 @@ const AdminUserSearchPageMobile = () => {
                       icon="solar:alt-arrow-right-linear"
                       width={24}
                       height={24}
-                      className="text-[#A8A8A8]"
+                      className="text-fg-subtle"
                     />
                   </div>
                 </button>

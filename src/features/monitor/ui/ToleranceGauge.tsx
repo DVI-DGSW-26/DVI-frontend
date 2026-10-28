@@ -180,8 +180,8 @@ export function JudgeChip({
     <span
       className="inline-flex h-8 min-w-12 items-center justify-center rounded-md px-2 text-lg font-bold"
       style={{
-        backgroundColor: ok ? T.success[700] : T.error[700],
-        color: T.neutral.white,
+        backgroundColor: ok ? T.success[500] : T.error[500],
+        color: T.onSolid,
       }}
     >
       {text ?? (ok ? "OK" : "NG")}

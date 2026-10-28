@@ -67,9 +67,9 @@ const Section = ({
   trailing?: React.ReactNode;
   children: React.ReactNode;
 }) => (
-  <section className="rounded-2xl bg-white p-5 shadow-sm">
+  <section className="rounded-2xl bg-surface p-5 shadow-sm border border-edge">
     <div className="mb-3 flex items-center justify-between">
-      <h2 className="text-base font-bold text-[#212121]">{title}</h2>
+      <h2 className="text-base font-bold text-fg">{title}</h2>
       {trailing}
     </div>
     {children}
@@ -78,8 +78,8 @@ const Section = ({
 
 const InfoCell = ({ label, value }: { label: string; value: string }) => (
   <div className="flex flex-col gap-1">
-    <dt className="text-xs text-[#A8A8A8]">{label}</dt>
-    <dd className="font-medium text-[#212121]">{value || "—"}</dd>
+    <dt className="text-xs text-fg-subtle">{label}</dt>
+    <dd className="font-medium text-fg">{value || "—"}</dd>
   </div>
 );
 
@@ -90,8 +90,8 @@ const JudgeBadge = ({ value }: { value: JudgeResult }) => {
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
         isPass
-          ? "bg-[#DCFCE7] text-[#15803D]"
-          : "bg-[#FEE2E2] text-[#B91C1C]"
+          ? "bg-success-soft text-success-fg"
+          : "bg-danger-soft text-danger-fg"
       }`}
     >
       <Icon
@@ -108,7 +108,7 @@ const AppearanceBadge = ({ value }: { value: AppearanceResult | null }) => {
   const { t } = useTranslation("report");
   if (value === "OK") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[#DCFCE7] px-2.5 py-1 text-xs font-semibold text-[#15803D]">
+      <span className="inline-flex items-center gap-1 rounded-full bg-success-soft px-2.5 py-1 text-xs font-semibold text-success-fg">
         <Icon icon="solar:check-circle-bold" width={14} height={14} />
         OK
       </span>
@@ -116,14 +116,14 @@ const AppearanceBadge = ({ value }: { value: AppearanceResult | null }) => {
   }
   if (value === "NG") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[#FEE2E2] px-2.5 py-1 text-xs font-semibold text-[#B91C1C]">
+      <span className="inline-flex items-center gap-1 rounded-full bg-danger-soft px-2.5 py-1 text-xs font-semibold text-danger-fg">
         <Icon icon="solar:close-circle-bold" width={14} height={14} />
         NG
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-[#F5F5F5] px-2.5 py-1 text-xs font-medium text-[#A8A8A8]">
+    <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2.5 py-1 text-xs font-medium text-fg-subtle">
       {t("detail.notEntered")}
     </span>
   );
@@ -144,17 +144,17 @@ const MeasureCard = ({
   const within = isWithinTolerance(item, measuredValue);
   const valueColor =
     within === null
-      ? "text-[#A8A8A8]"
+      ? "text-fg-subtle"
       : within
-        ? "text-[#15803D]"
-        : "text-[#B91C1C]";
+        ? "text-success-fg"
+        : "text-danger-fg";
 
   return (
-    <li className="flex gap-3 rounded-xl border border-[#E5E7EB] p-3">
+    <li className="flex gap-3 rounded-xl border border-line p-3">
       <button
         type="button"
         onClick={onOpenPhotos}
-        className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#F5F5F5]"
+        className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface-2"
       >
         {imageUrl ? (
           <img
@@ -163,19 +163,19 @@ const MeasureCard = ({
             className="h-full w-full object-cover"
           />
         ) : (
-          <Icon icon="mdi:image-off-outline" width={22} height={22} className="text-[#A8A8A8]" />
+          <Icon icon="mdi:image-off-outline" width={22} height={22} className="text-fg-subtle" />
         )}
       </button>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
-            <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
+            <span className="rounded-md bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-fg">
               DIM {item.dimNo}
             </span>
           </div>
           <JudgeBadge value={item.result} />
         </div>
-        <div className="text-xs text-[#A8A8A8]">
+        <div className="text-xs text-fg-subtle">
           {t("measurements.standardWithTolerance", {
             value: item.standardValue,
             tolerance: formatTolerance(item.toleranceUpper, item.toleranceLower),
@@ -243,8 +243,8 @@ const AdminReportDetailPageMobile = () => {
 
   if (!validId) {
     return (
-      <div className="flex min-h-full flex-col bg-[#F5F5F5] px-4 pb-21 pt-5">
-        <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
+      <div className="flex min-h-full flex-col bg-canvas px-4 pb-21 pt-5">
+        <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-danger-fg border border-edge">
           {t("detail.invalidId")}
         </p>
       </div>
@@ -253,8 +253,8 @@ const AdminReportDetailPageMobile = () => {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-full flex-col bg-[#F5F5F5] px-4 pb-21 pt-5">
-        <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+      <div className="flex min-h-full flex-col bg-canvas px-4 pb-21 pt-5">
+        <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
           {t("detail.loading")}
         </p>
       </div>
@@ -263,8 +263,8 @@ const AdminReportDetailPageMobile = () => {
 
   if (isError || !data) {
     return (
-      <div className="flex min-h-full flex-col bg-[#F5F5F5] px-4 pb-21 pt-5">
-        <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
+      <div className="flex min-h-full flex-col bg-canvas px-4 pb-21 pt-5">
+        <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-danger-fg border border-edge">
           {t("detail.error")}
         </p>
       </div>
@@ -276,27 +276,27 @@ const AdminReportDetailPageMobile = () => {
   const shift = resolveShift(data);
 
   return (
-    <div className="flex min-h-full flex-col gap-3 bg-[#F5F5F5] px-4 pb-21 pt-5">
-      <section className="rounded-2xl bg-white p-5 shadow-sm">
+    <div className="flex min-h-full flex-col gap-3 bg-canvas px-4 pb-21 pt-5">
+      <section className="rounded-2xl bg-surface p-5 shadow-sm border border-edge">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-col">
-            <span className="truncate text-lg font-bold text-[#212121]">
+            <span className="truncate text-lg font-bold text-fg">
               {data.reportNumber}
             </span>
-            <span className="mt-1 text-sm text-[#A8A8A8]">
+            <span className="mt-1 text-sm text-fg-subtle">
               {formatDateTime(data.createdAt)}
             </span>
           </div>
           {data.terminated ? (
             // 조기 마감 즉시 발행분은 순회검사·승인을 거치지 않아 승인/반려로 볼 수 없다.
-            <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#B45309] px-3 py-1 text-xs font-medium text-white">
+            <span className="flex shrink-0 items-center gap-1 rounded-full bg-warn px-3 py-1 text-xs font-medium text-white">
               <Icon icon="solar:bolt-circle-bold" width={14} height={14} />
               {t("detail.directIssue")}
             </span>
           ) : (
             <span
               className={`flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-white ${
-                isPass ? "bg-[#22C55E]" : "bg-[#EF4444]"
+                isPass ? "bg-success" : "bg-danger"
               }`}
             >
               <Icon
@@ -315,20 +315,20 @@ const AdminReportDetailPageMobile = () => {
       </section>
 
       {data.terminated && (
-        <div className="rounded-2xl border border-[#FCD34D] bg-[#FFFBEB] p-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-[#B45309]">
+        <div className="rounded-2xl border border-warn-line bg-warn-soft p-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-warn-fg">
             <Icon icon="solar:danger-triangle-bold" width={18} height={18} />
             {t("detail.terminatedTitle")}
           </div>
-          <p className="mt-1 text-xs text-[#92400E]">
+          <p className="mt-1 text-xs text-warn-fg">
             {t("detail.terminatedDescription")}
           </p>
           {data.terminateReason && (
-            <div className="mt-2 rounded-lg bg-white/70 px-3 py-2">
-              <div className="text-xs text-[#92400E]">
+            <div className="mt-2 rounded-lg bg-surface/70 px-3 py-2 border border-edge">
+              <div className="text-xs text-warn-fg">
                 {t("detail.terminatedReason")}
               </div>
-              <div className="mt-0.5 whitespace-pre-wrap text-sm text-[#212121]">
+              <div className="mt-0.5 whitespace-pre-wrap text-sm text-fg">
                 {data.terminateReason}
               </div>
             </div>
@@ -364,7 +364,7 @@ const AdminReportDetailPageMobile = () => {
       )}
 
       <Section title={t("detail.sketchTitle")}>
-        <div className="flex aspect-4/3 w-full items-center justify-center overflow-hidden rounded-xl bg-[#F5F5F5]">
+        <div className="flex aspect-4/3 w-full items-center justify-center overflow-hidden rounded-xl bg-surface-2">
           {data.sketchUrl ? (
             <img
               src={toBackendImageUrl(data.sketchUrl)}
@@ -372,7 +372,7 @@ const AdminReportDetailPageMobile = () => {
               className="h-full w-full object-contain"
             />
           ) : (
-            <span className="text-sm text-[#A8A8A8]">
+            <span className="text-sm text-fg-subtle">
               {t("detail.sketchEmpty")}
             </span>
           )}
@@ -380,15 +380,15 @@ const AdminReportDetailPageMobile = () => {
       </Section>
 
       <Section title={t("detail.appearanceTitle")}>
-        <ul className="flex flex-col divide-y divide-[#E5E7EB]">
+        <ul className="flex flex-col divide-y divide-line">
           <li className="flex items-center justify-between py-3 first:pt-0">
-            <span className="text-sm text-[#212121]">
+            <span className="text-sm text-fg">
               {t("detail.selfAppearance")}
             </span>
             <AppearanceBadge value={data.productionAppearanceResult} />
           </li>
           <li className="flex items-center justify-between py-3 last:pb-0">
-            <span className="text-sm text-[#212121]">
+            <span className="text-sm text-fg">
               {t("detail.patrolAppearance")}
             </span>
             <AppearanceBadge value={data.qualityAppearanceResult} />
@@ -401,7 +401,7 @@ const AdminReportDetailPageMobile = () => {
         <Section
           title={t("detail.measurementsTitle")}
           trailing={
-            <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
+            <span className="rounded-md bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-fg">
               {slotLabelText(data.inspectionLabel) || "—"}
             </span>
           }
@@ -423,20 +423,20 @@ const AdminReportDetailPageMobile = () => {
           {/* 차수별 측정값 없이 초·중·종이 results[] 에 이어 붙어 온 경우 —
               같은 DIM 이 반복되는데 행마다 어느 차수인지 알 방법이 없다. */}
           {hasDuplicateDimNo(data.results) && (
-            <p className="rounded-xl border border-[#FED7AA] bg-[#FFF7ED] px-4 py-3 text-xs text-[#9A3412]">
+            <p className="rounded-xl border border-warn-line bg-warn-soft px-4 py-3 text-xs text-warn-fg">
               {t("detail.duplicateDimNotice")}
             </p>
           )}
           <Section
             title={t("detail.selfSection")}
             trailing={
-              <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
+              <span className="rounded-md bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-fg">
                 {slotLabelText(data.inspectionLabel) || "—"}
               </span>
             }
           >
             {data.results.length === 0 ? (
-              <p className="rounded-xl bg-[#F5F5F5] px-4 py-6 text-center text-xs text-[#A8A8A8]">
+              <p className="rounded-xl bg-surface-2 px-4 py-6 text-center text-xs text-fg-subtle">
                 {t("detail.noMeasureData")}
               </p>
             ) : (
@@ -457,13 +457,13 @@ const AdminReportDetailPageMobile = () => {
           <Section
             title={t("detail.patrolSection")}
             trailing={
-              <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
+              <span className="rounded-md bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-fg">
                 {slotLabelText(data.inspectionLabel) || "—"}
               </span>
             }
           >
             {data.results.length === 0 ? (
-              <p className="rounded-xl bg-[#F5F5F5] px-4 py-6 text-center text-xs text-[#A8A8A8]">
+              <p className="rounded-xl bg-surface-2 px-4 py-6 text-center text-xs text-fg-subtle">
                 {t("detail.noMeasureData")}
               </p>
             ) : (
@@ -487,7 +487,7 @@ const AdminReportDetailPageMobile = () => {
         type="button"
         onClick={handleDownload}
         disabled={downloading}
-        className="mt-1 flex h-12 w-full items-center justify-center rounded-2xl bg-[#931B82] text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+        className="mt-1 flex h-12 w-full items-center justify-center rounded-2xl bg-brand text-base font-semibold text-on-brand transition-opacity hover:opacity-90 disabled:opacity-50"
       >
         {downloading ? t("detail.preparing") : "PDF"}
       </button>
@@ -497,7 +497,7 @@ const AdminReportDetailPageMobile = () => {
           type="button"
           onClick={() => setConfirmDelete(true)}
           disabled={deleteReport.isPending}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-[#FCA5A5] bg-white text-base font-semibold text-[#DC2626] transition-colors hover:bg-[#FEF2F2] disabled:opacity-50"
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-danger-line bg-surface text-base font-semibold text-danger-fg transition-colors hover:bg-danger-soft disabled:opacity-50"
         >
           <Icon icon="solar:trash-bin-trash-bold" width={18} height={18} />
           {t("detail.deleteButton")}

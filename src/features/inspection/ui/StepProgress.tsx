@@ -2,10 +2,10 @@ import { useTranslation } from "react-i18next";
 import type { StepChipState } from "../lib/stepChip";
 
 const CHIP_STYLE: Record<StepChipState, string> = {
-  done: "border-[#BBF7D0] bg-[#F0FDF4] text-[#15803D]",
-  fail: "border-[#FECACA] bg-[#FEF2F2] text-[#B91C1C]",
-  skipped: "border-[#FDE68A] bg-[#FFFBEB] text-[#B45309]",
-  empty: "border-[#E5E7EB] bg-white text-[#9CA3AF]",
+  done: "border-success-line bg-success-soft text-success-fg",
+  fail: "border-danger-line bg-danger-soft text-danger-fg",
+  skipped: "border-warn-line bg-warn-soft text-warn-fg",
+  empty: "border-line bg-surface text-fg-subtle",
 };
 
 /**
@@ -35,14 +35,14 @@ export default function StepProgress({
   return (
     <div>
       <div className="flex items-baseline justify-between">
-        <span className="text-sm font-semibold text-[#212121]">
+        <span className="text-sm font-semibold text-fg">
           {t("measure.progressDone", { done: doneCount, total })}
         </span>
-        <span className="text-xs text-[#6B7280]">{percent}%</span>
+        <span className="text-xs text-fg-muted">{percent}%</span>
       </div>
-      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#F3E8FF]">
+      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-brand-soft">
         <div
-          className="h-full rounded-full bg-[#931B82] transition-all"
+          className="h-full rounded-full bg-brand transition-all"
           style={{ width: `${percent}%` }}
         />
       </div>
@@ -65,7 +65,7 @@ export default function StepProgress({
                 })}
                 className={`flex size-8 items-center justify-center rounded-md border text-xs font-semibold tabular-nums transition-colors disabled:cursor-default ${
                   current
-                    ? "border-[#931B82] bg-[#931B82] text-white"
+                    ? "border-brand bg-brand text-on-brand"
                     : CHIP_STYLE[state]
                 }`}
               >
@@ -75,7 +75,7 @@ export default function StepProgress({
           );
         })}
       </ol>
-      <p className="mt-1.5 text-[11px] text-[#9CA3AF]">
+      <p className="mt-1.5 text-[0.6875rem] text-fg-subtle">
         {t("measure.stepListHint")}
       </p>
     </div>

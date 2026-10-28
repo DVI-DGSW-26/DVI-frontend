@@ -11,7 +11,7 @@ interface Props {
 export default function TabBar({ tab, counts, onChange }: Props) {
   const { t: translate } = useTranslation("myInspection");
   return (
-    <nav className="sticky top-0 z-10 flex bg-white">
+    <nav className="sticky top-0 z-10 flex bg-surface">
       {TABS.map((t) => {
         const active = tab === t.key;
         return (
@@ -21,8 +21,8 @@ export default function TabBar({ tab, counts, onChange }: Props) {
             onClick={() => onChange(t.key)}
             className={`flex-1 border-b-2 py-3 text-sm font-semibold ${
               active
-                ? "border-[#931B82] text-[#931B82]"
-                : "border-transparent text-[#A8A8A8]"
+                ? "border-brand text-brand-fg"
+                : "border-transparent text-fg-subtle"
             }`}
           >
             {translate(t.label)} {counts[t.key]}

@@ -169,7 +169,7 @@ export default function CrossCheckApprovalDetailPage() {
 
   if (detailQuery.isLoading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
+      <div className="flex min-h-dvh items-center justify-center bg-canvas text-xs text-fg-subtle">
         {tCommon("status.loading")}
       </div>
     );
@@ -177,14 +177,14 @@ export default function CrossCheckApprovalDetailPage() {
 
   if (detailQuery.isError || !detail) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-[#F5F5F5] px-6 text-center">
-        <span className="text-sm text-[#EF4444]">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-canvas px-6 text-center">
+        <span className="text-sm text-danger-fg">
           {t("approval.detail.loadError")}
         </span>
         <button
           type="button"
           onClick={goBack}
-          className="h-10 rounded-md bg-[#931B82] px-4 text-sm font-medium text-white hover:bg-[#6A0F5D]"
+          className="h-10 rounded-md bg-brand px-4 text-sm font-medium text-on-brand hover:bg-brand-hover"
         >
           {t("approval.detail.backToList")}
         </button>
@@ -243,7 +243,7 @@ export default function CrossCheckApprovalDetailPage() {
                 setCancelSkipAllError(null);
                 setShowCancelSkipAll(true);
               }}
-              className="flex items-center gap-1 rounded-md border border-[#931B82] px-3 py-1.5 text-xs font-medium text-[#931B82] transition-colors hover:bg-[#F3E8FF]"
+              className="flex items-center gap-1 rounded-md border border-brand px-3 py-1.5 text-xs font-medium text-brand-fg transition-colors hover:bg-brand-soft"
             >
               <Icon icon="solar:refresh-linear" width={14} height={14} />
               건너뜀 해제
@@ -254,7 +254,7 @@ export default function CrossCheckApprovalDetailPage() {
               type="button"
               onClick={handleDelete}
               disabled={deleteMut.isPending}
-              className="flex items-center gap-1 rounded-md border border-[#EF4444] px-3 py-1.5 text-xs font-medium text-[#EF4444] transition-colors hover:bg-[#FEF2F2] disabled:opacity-60"
+              className="flex items-center gap-1 rounded-md border border-danger px-3 py-1.5 text-xs font-medium text-danger-fg transition-colors hover:bg-danger-soft disabled:opacity-60"
             >
               <Icon icon="solar:trash-bin-trash-linear" width={14} height={14} />
               {deleteMut.isPending
@@ -265,7 +265,7 @@ export default function CrossCheckApprovalDetailPage() {
           <button
             type="button"
             onClick={goBack}
-            className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-[#6B7280] transition-colors hover:bg-gray-50"
+            className="flex items-center gap-1 rounded-md border border-line px-3 py-1.5 text-xs font-medium text-fg-muted transition-colors hover:bg-surface-2"
           >
             <Icon icon="solar:alt-arrow-left-linear" width={14} height={14} />
             {t("approval.detail.list")}
@@ -273,12 +273,12 @@ export default function CrossCheckApprovalDetailPage() {
         </div>
       </div>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-5">
+      <section className="rounded-2xl border border-edge bg-surface p-5">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-lg font-semibold text-[#212121]">
+          <span className="text-lg font-semibold text-fg">
             {detail.product.name}
           </span>
-          <span className="rounded-md bg-[#F3E8F7] px-2 py-0.5 text-xs font-medium text-[#931B82]">
+          <span className="rounded-md bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand-fg">
             {detail.product.code}
           </span>
           {(() => {
@@ -327,30 +327,30 @@ export default function CrossCheckApprovalDetailPage() {
       </section>
 
       {detail.status === "REJECTED" && detail.rejectReason && (
-        <section className="rounded-2xl border border-[#FECACA] bg-[#FEF2F2] p-5">
+        <section className="rounded-2xl border border-danger-line bg-danger-soft p-5">
           <div className="flex items-center gap-2">
             <Icon
               icon="solar:close-circle-bold"
               width={18}
               height={18}
-              className="text-[#B91C1C]"
+              className="text-danger-fg"
             />
-            <h2 className="text-sm font-semibold text-[#B91C1C]">
+            <h2 className="text-sm font-semibold text-danger-fg">
               {t("approval.detail.rejectReasonTitle")}
             </h2>
           </div>
-          <p className="mt-2 whitespace-pre-wrap text-sm text-[#7F1D1D]">
+          <p className="mt-2 whitespace-pre-wrap text-sm text-danger-fg">
             {detail.rejectReason}
           </p>
         </section>
       )}
 
-      <section className="rounded-2xl border border-gray-200 bg-white">
-        <h2 className="border-b border-gray-100 px-5 py-3 text-sm font-semibold text-[#212121]">
+      <section className="rounded-2xl border border-edge bg-surface">
+        <h2 className="border-b border-line px-5 py-3 text-sm font-semibold text-fg">
           {t("approval.detail.comparisonTitle")}
         </h2>
         {autoRecorded && (
-          <div className="mx-3 mt-3 flex items-start gap-2 rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2 text-xs text-[#1E40AF]">
+          <div className="mx-3 mt-3 flex items-start gap-2 rounded-lg border border-info-line bg-info-soft px-3 py-2 text-xs text-info-fg">
             <Icon
               icon="solar:moon-bold"
               width={16}
@@ -366,7 +366,7 @@ export default function CrossCheckApprovalDetailPage() {
         {/* 데스크톱: 가로 표 */}
         <div className="hidden overflow-x-auto px-2 py-2 md:block md:px-3">
           <table className="w-full min-w-160 text-sm">
-            <thead className="bg-[#F9FAFB] text-xs text-[#6B7280]">
+            <thead className="bg-canvas text-xs text-fg-muted">
               <tr>
                 <th className="px-3 py-2 text-left font-medium">DIM</th>
                 <th className="px-3 py-2 text-left font-medium">
@@ -383,7 +383,7 @@ export default function CrossCheckApprovalDetailPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-line">
               {detail.results
                 .slice()
                 .sort((a, b) => a.dimNo - b.dimNo)
@@ -409,12 +409,12 @@ export default function CrossCheckApprovalDetailPage() {
         </ul>
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-5">
-        <h2 className="text-sm font-semibold text-[#212121]">
+      <section className="rounded-2xl border border-edge bg-surface p-5">
+        <h2 className="text-sm font-semibold text-fg">
           {t("approval.detail.sectionAppearance")}
         </h2>
         {/* 외관 판정 기준 — 모든 제품 공통 고정 문구(번역 파일에서 관리). */}
-        <p className="mt-0.5 text-[11px] text-[#9CA3AF]">
+        <p className="mt-0.5 text-[0.6875rem] text-fg-subtle">
           {t("appearanceCriterion", { ns: "shared" })}
         </p>
         <dl className="mt-3 grid grid-cols-1 gap-y-2 text-xs md:grid-cols-2 md:gap-x-6">
@@ -441,19 +441,19 @@ export default function CrossCheckApprovalDetailPage() {
       </section>
 
       {error && (
-        <div className="rounded-md bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
+        <div className="rounded-md bg-danger-soft px-4 py-3 text-sm text-danger-fg">
           {error}
         </div>
       )}
       {showBlocking && <BlockingInspections crossCheckId={detail.crossCheckId} />}
 
       {canDecide && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white p-4 md:left-60">
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface p-4 md:left-60">
           {showRejectForm ? (
             <div className="mx-auto flex max-w-3xl flex-col gap-3">
               <label
                 htmlFor="reject-reason"
-                className="text-xs font-medium text-[#6B7280]"
+                className="text-xs font-medium text-fg-muted"
               >
                 {t("approval.detail.rejectReasonLabel")}
               </label>
@@ -464,7 +464,7 @@ export default function CrossCheckApprovalDetailPage() {
                 placeholder={t("approval.detail.rejectPlaceholder")}
                 rows={3}
                 disabled={isPending}
-                className="resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+                className="resize-none rounded-md border border-line-strong bg-surface px-3 py-2 text-sm text-fg placeholder:text-fg-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:bg-surface-2"
               />
               <div className="flex gap-2">
                 <button
@@ -475,7 +475,7 @@ export default function CrossCheckApprovalDetailPage() {
                     setError(null);
                   }}
                   disabled={isPending}
-                  className="h-11 flex-1 rounded-md border border-gray-300 text-sm font-medium text-[#212121] transition-colors hover:bg-gray-50 disabled:opacity-60"
+                  className="h-11 flex-1 rounded-md border border-line-strong text-sm font-medium text-fg transition-colors hover:bg-surface-2 disabled:opacity-60"
                 >
                   {tCommon("actions.cancel")}
                 </button>
@@ -483,7 +483,7 @@ export default function CrossCheckApprovalDetailPage() {
                   type="button"
                   onClick={handleRejectConfirm}
                   disabled={isPending || rejectReason.trim() === ""}
-                  className="h-11 flex-1 rounded-md bg-[#EF4444] text-sm font-semibold text-white transition-colors hover:bg-[#DC2626] disabled:bg-[#D1D5DB]"
+                  className="h-11 flex-1 rounded-md bg-danger text-sm font-semibold text-white transition-colors hover:bg-danger disabled:bg-surface-3"
                 >
                   {isPending
                     ? t("approval.detail.processing")
@@ -498,7 +498,7 @@ export default function CrossCheckApprovalDetailPage() {
                   type="button"
                   onClick={() => setShowRejectForm(true)}
                   disabled={isPending}
-                  className="h-12 flex-1 rounded-md border border-[#EF4444] text-base font-semibold text-[#EF4444] transition-colors hover:bg-[#FEF2F2] disabled:opacity-60"
+                  className="h-12 flex-1 rounded-md border border-danger text-base font-semibold text-danger-fg transition-colors hover:bg-danger-soft disabled:opacity-60"
                 >
                   {t("approval.detail.reject")}
                 </button>
@@ -506,7 +506,7 @@ export default function CrossCheckApprovalDetailPage() {
                   type="button"
                   onClick={handleApprove}
                   disabled={isPending}
-                  className="h-12 flex-2 rounded-md bg-[#931B82] text-base font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+                  className="h-12 flex-2 rounded-md bg-brand text-base font-semibold text-on-brand transition-colors hover:bg-brand-hover disabled:bg-surface-3"
                 >
                   {isPending
                     ? t("approval.detail.processing")
@@ -567,13 +567,13 @@ function DimRow({
 
   return (
     <tr>
-      <td className="px-3 py-2 text-xs font-semibold text-[#931B82]">
+      <td className="px-3 py-2 text-xs font-semibold text-brand-fg">
         DIM {row.dimNo}
         {row.dimName ? (
-          <span className="ml-1 text-[#6B7280]">({row.dimName})</span>
+          <span className="ml-1 text-fg-muted">({row.dimName})</span>
         ) : null}
       </td>
-      <td className="px-3 py-2 text-xs text-[#6B7280]">
+      <td className="px-3 py-2 text-xs text-fg-muted">
         {formatStandardWithTolerance(
           row.standardValue,
           row.toleranceUpper,
@@ -603,13 +603,13 @@ function DimRow({
           <button
             type="button"
             onClick={() => onOpenPhotos(row)}
-            className="inline-flex items-center gap-1 text-xs font-medium text-[#931B82] hover:underline"
+            className="inline-flex items-center gap-1 text-xs font-medium text-brand-fg hover:underline"
           >
             <Icon icon="solar:gallery-linear" width={14} height={14} />
             {t("approval.detail.photos")}
           </button>
         ) : (
-          <span className="text-xs text-[#9CA3AF]">-</span>
+          <span className="text-xs text-fg-subtle">-</span>
         )}
       </td>
     </tr>
@@ -649,26 +649,26 @@ function DimCard({
   const hasPhoto = !!(row.productionImageUrl || row.imageUrl);
 
   return (
-    <li className="rounded-xl border border-gray-200 p-3">
+    <li className="rounded-xl border border-line p-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold text-[#931B82]">
+        <span className="text-xs font-semibold text-brand-fg">
           DIM {row.dimNo}
           {row.dimName ? (
-            <span className="ml-1 text-[#6B7280]">({row.dimName})</span>
+            <span className="ml-1 text-fg-muted">({row.dimName})</span>
           ) : null}
         </span>
         {hasPhoto ? (
           <button
             type="button"
             onClick={() => onOpenPhotos(row)}
-            className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-[#931B82] hover:underline"
+            className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand-fg hover:underline"
           >
             <Icon icon="solar:gallery-linear" width={14} height={14} />
             {t("approval.detail.photos")}
           </button>
         ) : null}
       </div>
-      <div className="mt-1 text-xs text-[#6B7280]">
+      <div className="mt-1 text-xs text-fg-muted">
         {t("approval.detail.standardWithValue", {
           value: formatStandardWithTolerance(
             row.standardValue,
@@ -678,8 +678,8 @@ function DimCard({
         })}
       </div>
       <div className="mt-2 grid grid-cols-2 gap-2">
-        <div className="rounded-lg bg-[#F9FAFB] px-3 py-2">
-          <div className="text-[11px] text-[#6B7280]">
+        <div className="rounded-lg bg-canvas px-3 py-2">
+          <div className="text-[0.6875rem] text-fg-muted">
             {t("approval.detail.thProduction")}
           </div>
           <div className="mt-0.5 flex items-center gap-1.5">
@@ -691,8 +691,8 @@ function DimCard({
             </span>
           </div>
         </div>
-        <div className="rounded-lg bg-[#F9FAFB] px-3 py-2">
-          <div className="text-[11px] text-[#6B7280]">
+        <div className="rounded-lg bg-canvas px-3 py-2">
+          <div className="text-[0.6875rem] text-fg-muted">
             {patrolLabel}
           </div>
           <div className="mt-0.5 flex items-center gap-1.5">
@@ -708,25 +708,25 @@ function DimCard({
 }
 
 function colorOf(within: boolean | null): string {
-  if (within === null) return "text-[#A8A8A8]";
-  return within ? "text-[#15803D]" : "text-[#B91C1C]";
+  if (within === null) return "text-fg-subtle";
+  return within ? "text-success-fg" : "text-danger-fg";
 }
 
 function JudgmentChip({ within }: { within: boolean | null }) {
   const { t } = useTranslation("crossCheck");
   if (within === null) {
     return (
-      <span className="inline-flex shrink-0 items-center rounded-full border border-gray-200 bg-[#F3F4F6] px-1.5 py-0.5 text-[10px] font-semibold text-[#9CA3AF]">
+      <span className="inline-flex shrink-0 items-center rounded-full border border-line bg-surface-2 px-1.5 py-0.5 text-[0.625rem] font-semibold text-fg-subtle">
         -
       </span>
     );
   }
   return within ? (
-    <span className="inline-flex shrink-0 items-center rounded-full border border-[#BBF7D0] bg-[#DCFCE7] px-1.5 py-0.5 text-[10px] font-semibold text-[#15803D]">
+    <span className="inline-flex shrink-0 items-center rounded-full border border-success-line bg-success-soft px-1.5 py-0.5 text-[0.625rem] font-semibold text-success-fg">
       {t("judgment.pass")}
     </span>
   ) : (
-    <span className="inline-flex shrink-0 items-center rounded-full border border-[#FECACA] bg-[#FEE2E2] px-1.5 py-0.5 text-[10px] font-semibold text-[#B91C1C]">
+    <span className="inline-flex shrink-0 items-center rounded-full border border-danger-line bg-danger-soft px-1.5 py-0.5 text-[0.625rem] font-semibold text-danger-fg">
       {t("judgment.fail")}
     </span>
   );
@@ -743,10 +743,10 @@ function InfoLine({
 }) {
   return (
     <div
-      className={`flex items-center gap-1.5 text-[#6B7280] ${className ?? ""}`}
+      className={`flex items-center gap-1.5 text-fg-muted ${className ?? ""}`}
     >
       <span className="shrink-0">{label}</span>
-      <span className="ml-auto min-w-0 truncate text-right text-[#212121]">
+      <span className="ml-auto min-w-0 truncate text-right text-fg">
         {value}
       </span>
     </div>

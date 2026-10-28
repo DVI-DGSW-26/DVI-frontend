@@ -5,6 +5,7 @@ import Select, { type StylesConfig } from "react-select";
 import { useTranslation } from "react-i18next";
 import { useCreateUser } from "../api";
 import type { Role } from "../../auth/type/types";
+import { selectTheme } from "../../../lib/selectTheme";
 
 interface Props {
   open: boolean;
@@ -25,10 +26,10 @@ const selectStyles: StylesConfig<RoleOption, false> = {
     ...base,
     height: "44px",
     minHeight: "44px",
-    borderColor: state.isFocused ? "#931B82" : "#A8A8A8",
+    borderColor: state.isFocused ? "var(--color-brand)" : "var(--color-line-strong)",
     borderRadius: "6px",
-    boxShadow: state.isFocused ? "0 0 0 1px #931B82" : "none",
-    "&:hover": { borderColor: state.isFocused ? "#931B82" : "#A8A8A8" },
+    boxShadow: state.isFocused ? "0 0 0 1px var(--color-brand)" : "none",
+    "&:hover": { borderColor: state.isFocused ? "var(--color-brand)" : "var(--color-line-strong)" },
     fontSize: "14px",
   }),
   dropdownIndicator: (base) => ({ ...base, paddingRight: "12px" }),
@@ -38,15 +39,15 @@ const selectStyles: StylesConfig<RoleOption, false> = {
     ...base,
     fontSize: "14px",
     backgroundColor: state.isSelected
-      ? "#931B82"
+      ? "var(--color-brand)"
       : state.isFocused
-        ? "#F3E8F7"
-        : "white",
-    color: state.isSelected ? "white" : "#212121",
+        ? "var(--color-brand-soft)"
+        : "var(--color-surface)",
+    color: state.isSelected ? "var(--color-on-brand)" : "var(--color-fg)",
     cursor: "pointer",
   }),
-  placeholder: (base) => ({ ...base, color: "#A8A8A8", fontSize: "14px" }),
-  singleValue: (base) => ({ ...base, color: "#212121", fontSize: "14px" }),
+  placeholder: (base) => ({ ...base, color: "var(--color-fg-subtle)", fontSize: "14px" }),
+  singleValue: (base) => ({ ...base, color: "var(--color-fg)", fontSize: "14px" }),
 };
 
 export default function CreateUserModal({ open, onClose, onCreated }: Props) {
@@ -116,10 +117,10 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
+        className="w-full max-w-md rounded-2xl bg-surface p-5 shadow-xl border border-edge"
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-[#212121]">
+          <h2 className="text-base font-semibold text-fg">
             {t("createModal.title")}
           </h2>
           <button
@@ -127,7 +128,7 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
             onClick={handleClose}
             disabled={createUserMut.isPending}
             aria-label={t("actions.close", { ns: "common" })}
-            className="text-[#6B7280] transition-colors hover:text-[#212121] disabled:opacity-50"
+            className="text-fg-muted transition-colors hover:text-fg disabled:opacity-50"
           >
             <Icon icon="mdi:close" width={20} height={20} />
           </button>
@@ -141,7 +142,7 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
               onChange={(e) => setLoginId(e.target.value)}
               placeholder={t("createModal.loginIdPlaceholder")}
               autoComplete="off"
-              className="h-11 w-full rounded-md border border-[#A8A8A8] bg-white px-3 text-sm text-[#212121] placeholder:text-[#A8A8A8] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82]"
+              className="h-11 w-full rounded-md border border-line-strong bg-surface px-3 text-sm text-fg placeholder:text-fg-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
             />
           </Field>
 
@@ -153,12 +154,12 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={t("createModal.passwordPlaceholder")}
                 autoComplete="new-password"
-                className="h-11 w-full rounded-md border border-[#A8A8A8] bg-white px-3 pr-10 text-sm text-[#212121] placeholder:text-[#A8A8A8] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82]"
+                className="h-11 w-full rounded-md border border-line-strong bg-surface px-3 pr-10 text-sm text-fg placeholder:text-fg-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-[#A8A8A8] hover:text-[#931B82]"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-brand-fg"
                 aria-label={
                   showPassword
                     ? t("createModal.hidePassword")
@@ -179,12 +180,13 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t("createModal.namePlaceholder")}
-              className="h-11 w-full rounded-md border border-[#A8A8A8] bg-white px-3 text-sm text-[#212121] placeholder:text-[#A8A8A8] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82]"
+              className="h-11 w-full rounded-md border border-line-strong bg-surface px-3 text-sm text-fg placeholder:text-fg-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
             />
           </Field>
 
           <Field label={t("createModal.role")}>
             <Select<RoleOption, false>
+              theme={selectTheme}
               options={roleOptions}
               value={roleOptions.find((o) => o.value === role) ?? null}
               onChange={(opt) => setRole(opt?.value ?? "")}
@@ -196,7 +198,7 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
         </div>
 
         {error && (
-          <p className="mt-3 rounded-md bg-[#FEF2F2] px-3 py-2 text-xs text-[#B91C1C]">
+          <p className="mt-3 rounded-md bg-danger-soft px-3 py-2 text-xs text-danger-fg">
             {error}
           </p>
         )}
@@ -206,14 +208,14 @@ export default function CreateUserModal({ open, onClose, onCreated }: Props) {
             type="button"
             onClick={handleClose}
             disabled={createUserMut.isPending}
-            className="h-10 rounded-md border border-[#E5E7EB] bg-white px-4 text-sm font-medium text-[#6B7280] transition-colors hover:bg-[#F9FAFB] disabled:opacity-50"
+            className="h-10 rounded-md border border-line-strong bg-surface px-4 text-sm font-medium text-fg-muted transition-colors hover:bg-surface-2 disabled:opacity-50"
           >
             {t("actions.cancel", { ns: "common" })}
           </button>
           <button
             type="submit"
             disabled={!isValid || createUserMut.isPending}
-            className="h-10 rounded-md bg-[#931B82] px-4 text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D] disabled:cursor-not-allowed disabled:bg-[#D1D5DB]"
+            className="h-10 rounded-md bg-brand px-4 text-sm font-medium text-on-brand transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-surface-3"
           >
             {createUserMut.isPending
               ? t("createModal.submitting")
@@ -234,7 +236,7 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-xs font-medium text-[#6B7280]">{label}</span>
+      <span className="text-xs font-medium text-fg-muted">{label}</span>
       {children}
     </label>
   );

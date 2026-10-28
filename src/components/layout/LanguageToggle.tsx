@@ -15,7 +15,7 @@ const LanguageToggle = () => {
       type="button"
       onClick={() => i18n.changeLanguage(next)}
       aria-label={t("language")}
-      className="flex h-10 items-center gap-1 rounded-full px-2 text-sm font-semibold text-[#212121] transition-colors hover:bg-[#F3F4F6]"
+      className="flex h-10 items-center gap-1 rounded-full px-2 text-sm font-semibold text-fg transition-colors hover:bg-surface-2"
     >
       <Icon icon="mdi:web" width={20} height={20} />
       <span className="uppercase">{next}</span>

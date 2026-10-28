@@ -357,7 +357,7 @@ function DefectRow({ defect, now }: { defect: MonitorDefect; now: Date }) {
 
       <span
         className="inline-flex items-center gap-1.5 justify-self-start rounded-md px-2.5 py-1 text-base font-bold"
-        style={{ backgroundColor: T.error[700], color: T.neutral.white }}
+        style={{ backgroundColor: T.error[500], color: T.onSolid }}
         title={s.note}
       >
         <span aria-hidden>{s.mark}</span>
@@ -458,8 +458,8 @@ function TypeBreakdown({
                   aria-hidden
                   className="flex size-9 shrink-0 items-center justify-center rounded-md text-xl font-bold"
                   style={{
-                    backgroundColor: on ? T.error[700] : T.neutral.sub,
-                    color: on ? T.neutral.white : T.neutral.muted,
+                    backgroundColor: on ? T.error[500] : T.neutral.sub,
+                    color: on ? T.onSolid : T.neutral.muted,
                   }}
                 >
                   {s.mark}
@@ -528,9 +528,9 @@ const ACTION_COLOR: Record<ActionKind, string> = {
   // 조기종료는 결재를 거치지 않는다 — 작업자가 실행하는 즉시 그 지점까지 묶어
   // 보고서가 발행되고, 재검사용 새 초품이 새 작업지시로 자동 생성된다.
   // 품질·관리자에게는 정보성 알림만 간다.
-  TERMINATED: T.error[700],
-  INCOMPLETE: T.warning[700],
-  INCOMPLETE_APPROVED: T.success[700],
+  TERMINATED: T.error[500],
+  INCOMPLETE: T.warning[500],
+  INCOMPLETE_APPROVED: T.success[500],
   // 반려는 자주검사가 되돌아갔는지에 따라 다음 차례가 갈린다 — 줄마다 note 로 덮는다.
   // 여기 기본값은 어느 쪽인지 알 수 없을 때(오늘 자주검사 목록에 없을 때)만 쓰인다.
   CROSS_REJECTED: T.primary[500],
@@ -577,7 +577,7 @@ function ActionCard({ items, now }: { items: ActionItem[]; now: Date }) {
                 <div className="flex items-center gap-2">
                   <span
                     className="shrink-0 rounded-md px-3 py-1 text-xl font-bold"
-                    style={{ backgroundColor: bg, color: T.neutral.white }}
+                    style={{ backgroundColor: bg, color: T.onSolid }}
                   >
                     {t(`quality.actions.kind.${item.kind}.label`)}
                   </span>

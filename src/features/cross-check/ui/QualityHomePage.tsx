@@ -162,17 +162,17 @@ const QualityHomePage = () => {
   };
 
   return (
-    <div className="flex min-h-full flex-col gap-4 bg-[#F5F5F5] px-4 pb-21 pt-4">
+    <div className="flex min-h-full flex-col gap-4 bg-canvas px-4 pb-21 pt-4">
       <section className="flex items-center gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#F3F4F6] text-base font-semibold text-[#6B7280]">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-surface-2 text-base font-semibold text-fg-muted">
           {user?.name?.charAt(0) ?? "?"}
         </div>
-        <h1 className="text-lg font-bold text-[#212121]">
+        <h1 className="text-lg font-bold text-fg">
           {t("home.greeting", { name: user?.name ?? "" })}
         </h1>
       </section>
 
-      <section className="flex items-center justify-between rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
+      <section className="flex items-center justify-between rounded-2xl border border-edge bg-surface p-4 shadow-sm">
         <div className="flex items-center gap-3">
           <Icon
             icon={
@@ -180,13 +180,13 @@ const QualityHomePage = () => {
             }
             width={22}
             height={22}
-            style={{ color: delegation ? "#22C55E" : "#F59E0B" }}
+            style={{ color: delegation ? "var(--color-success-fg)" : "var(--color-warn-fg)" }}
           />
           <div className="flex flex-col">
-            <span className="text-sm font-semibold text-[#212121]">
+            <span className="text-sm font-semibold text-fg">
               {delegation ? t("home.delegationGranted") : t("home.adminAbsent")}
             </span>
-            <span className="text-xs text-[#6B7280]">
+            <span className="text-xs text-fg-muted">
               {delegation
                 ? t("home.delegator", { name: delegation.delegatorName })
                 : t("home.delegationNeeded")}
@@ -197,32 +197,32 @@ const QualityHomePage = () => {
           <button
             type="button"
             onClick={handleRequestDelegation}
-            className="rounded-full bg-[#931B82] px-3 py-1.5 text-xs font-medium text-white"
+            className="rounded-full bg-brand px-3 py-1.5 text-xs font-medium text-on-brand"
           >
             {t("home.requestDelegation")}
           </button>
         )}
       </section>
 
-      <section className="relative flex items-start gap-3 overflow-hidden rounded-2xl bg-[#FEF8E7] p-4 shadow-sm">
+      <section className="relative flex items-start gap-3 overflow-hidden rounded-2xl bg-warn-soft p-4 shadow-sm">
         <span
           aria-hidden
-          className="absolute left-0 top-0 h-full w-1.5 bg-[#F59E0B]"
+          className="absolute left-0 top-0 h-full w-1.5 bg-warn"
         />
         <Icon
           icon="solar:danger-triangle-bold"
           width={22}
           height={22}
-          className="ml-1 mt-0.5 shrink-0 text-[#F59E0B]"
+          className="ml-1 mt-0.5 shrink-0 text-warn-fg"
         />
         <div className="flex min-w-0 flex-1 flex-col">
-          <span className="text-xs font-medium text-[#F59E0B]">
+          <span className="text-xs font-medium text-warn-fg">
             {t("home.unprocessedTitle")}
           </span>
-          <span className="mt-1 text-2xl font-bold text-[#212121]">
+          <span className="mt-1 text-2xl font-bold text-fg">
             {t("home.unprocessedCount", { n: pendingCount })}
           </span>
-          <span className="mt-1 text-xs text-[#6B7280]">
+          <span className="mt-1 text-xs text-fg-muted">
             {t("home.checkImmediately")}
           </span>
         </div>
@@ -233,19 +233,19 @@ const QualityHomePage = () => {
         <button
           type="button"
           onClick={() => navigate("/missed-inspections")}
-          className="flex items-center gap-3 rounded-2xl border border-[#FECACA] bg-white p-4 text-left shadow-sm"
+          className="flex items-center gap-3 rounded-2xl border border-danger-line bg-surface p-4 text-left shadow-sm"
         >
           <Icon
             icon="mdi:clipboard-alert-outline"
             width={22}
             height={22}
-            className="shrink-0 text-[#EF4444]"
+            className="shrink-0 text-danger-fg"
           />
           <div className="min-w-0 flex-1">
-            <div className="text-sm font-semibold text-[#212121]">
+            <div className="text-sm font-semibold text-fg">
               {t("home.missedReasonTitle", { n: awaitingReason })}
             </div>
-            <div className="mt-0.5 text-xs text-[#6B7280]">
+            <div className="mt-0.5 text-xs text-fg-muted">
               {t("home.missedReasonHint")}
             </div>
           </div>
@@ -253,7 +253,7 @@ const QualityHomePage = () => {
             icon="mdi:chevron-right"
             width={20}
             height={20}
-            className="shrink-0 text-[#9CA3AF]"
+            className="shrink-0 text-fg-subtle"
           />
         </button>
       )}
@@ -262,7 +262,7 @@ const QualityHomePage = () => {
         type="button"
         onClick={handleResume}
         disabled={!latestDraft}
-        className="flex h-12 w-full items-center justify-center rounded-2xl bg-[#931B82] text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+        className="flex h-12 w-full items-center justify-center rounded-2xl bg-brand text-base font-semibold text-on-brand transition-opacity hover:opacity-90 disabled:opacity-40"
       >
         {t("home.resumeLastWork")}
       </button>
@@ -270,13 +270,13 @@ const QualityHomePage = () => {
       {actionable.length > 0 && (
         <section>
           <div className="mb-2 flex items-baseline justify-between">
-            <h2 className="text-sm font-semibold text-[#212121]">
+            <h2 className="text-sm font-semibold text-fg">
               {t("home.actionableTitle")}
             </h2>
             <button
               type="button"
               onClick={() => navigate("/cross-checks")}
-              className="text-xs font-medium text-[#931B82]"
+              className="text-xs font-medium text-brand-fg"
             >
               {t("home.viewAll")}
             </button>
@@ -293,7 +293,7 @@ const QualityHomePage = () => {
             ))}
           </ul>
           {startError && (
-            <p className="mt-2 rounded-md bg-[#FEF2F2] px-3 py-2 text-xs text-[#B91C1C]">
+            <p className="mt-2 rounded-md bg-danger-soft px-3 py-2 text-xs text-danger-fg">
               {startError}
             </p>
           )}
@@ -303,10 +303,10 @@ const QualityHomePage = () => {
       {rejectedCrossChecks.length > 0 && (
         <section>
           <div className="mb-2 flex items-baseline justify-between">
-            <h2 className="text-sm font-semibold text-[#212121]">
+            <h2 className="text-sm font-semibold text-fg">
               {t("home.rejectedTitle")}
             </h2>
-            <span className="text-xs font-medium text-[#B91C1C]">
+            <span className="text-xs font-medium text-danger-fg">
               {t("home.rejectedFixCount", { n: rejectedCrossChecks.length })}
             </span>
           </div>
@@ -316,24 +316,24 @@ const QualityHomePage = () => {
               return (
                 <li
                   key={cc.crossCheckId}
-                  className="rounded-2xl border border-[#FECACA] bg-[#FEF2F2] p-4 shadow-sm"
+                  className="rounded-2xl border border-danger-line bg-danger-soft p-4 shadow-sm"
                 >
                   <div className="flex items-start gap-2">
                     <Icon
                       icon="solar:close-circle-bold"
                       width={20}
                       height={20}
-                      className="mt-0.5 shrink-0 text-[#B91C1C]"
+                      className="mt-0.5 shrink-0 text-danger-fg"
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="wrap-break-word text-sm font-semibold text-[#212121]">
+                      <div className="wrap-break-word text-sm font-semibold text-fg">
                         {cc.product.name}
                       </div>
-                      <div className="mt-0.5 truncate text-xs text-[#6B7280]">
+                      <div className="mt-0.5 truncate text-xs text-fg-muted">
                         {cc.equipment.name} · {slotLabelText(cc.typeLabel)}
                       </div>
                     </div>
-                    <span className="shrink-0 text-[11px] text-[#9CA3AF]">
+                    <span className="shrink-0 text-[0.6875rem] text-fg-subtle">
                       {formatDateTime(cc.updatedAt)}
                     </span>
                   </div>
@@ -342,14 +342,14 @@ const QualityHomePage = () => {
                     바뀌어 되돌릴 수 없음)를 눌러야 사유가 보여서, 무엇부터 고칠지 고르려면
                     전부 열어봐야 했다. 사유를 아직 못 불러왔으면 예전 안내 문구로 둔다.
                   */}
-                  <div className="mt-2 rounded-md bg-white px-3 py-2">
-                    <div className="text-[11px] text-[#9CA3AF]">
+                  <div className="mt-2 rounded-md bg-surface px-3 py-2 border border-edge">
+                    <div className="text-[0.6875rem] text-fg-subtle">
                       {t("home.rejectReasonLabel")}
                       {/* 누가·언제 반려했는지 — 서버가 남긴 건만(옛 건은 null). */}
                       {rejectedMeta(cc.rejectedByName, cc.rejectedAt) &&
                         ` · ${rejectedMeta(cc.rejectedByName, cc.rejectedAt)}`}
                     </div>
-                    <div className="mt-0.5 wrap-break-word text-xs text-[#212121]">
+                    <div className="mt-0.5 wrap-break-word text-xs text-fg">
                       {cc.rejectReason?.trim() || t("home.rejectedNotice")}
                     </div>
                   </div>
@@ -357,7 +357,7 @@ const QualityHomePage = () => {
                     type="button"
                     onClick={() => handleReopen(cc)}
                     disabled={reopeningId !== null}
-                    className="mt-3 h-10 w-full rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+                    className="mt-3 h-10 w-full rounded-md bg-brand text-sm font-semibold text-on-brand transition-colors hover:bg-brand-hover disabled:bg-surface-3"
                   >
                     {isReopening ? t("home.preparing") : t("home.fix")}
                   </button>
@@ -366,7 +366,7 @@ const QualityHomePage = () => {
             })}
           </ul>
           {reopenError && (
-            <p className="mt-2 rounded-md bg-[#FEF2F2] px-3 py-2 text-xs text-[#B91C1C]">
+            <p className="mt-2 rounded-md bg-danger-soft px-3 py-2 text-xs text-danger-fg">
               {reopenError}
             </p>
           )}
@@ -374,11 +374,11 @@ const QualityHomePage = () => {
       )}
 
       <section>
-        <h2 className="mb-2 text-sm font-semibold text-[#212121]">
+        <h2 className="mb-2 text-sm font-semibold text-fg">
           {t("home.recentNotifications")}
         </h2>
         {recentNotifications.length === 0 ? (
-          <p className="rounded-2xl bg-white px-4 py-6 text-center text-sm text-[#A8A8A8]">
+          <p className="rounded-2xl bg-surface px-4 py-6 text-center text-sm text-fg-subtle border border-edge">
             {t("home.noNotifications")}
           </p>
         ) : (
@@ -387,7 +387,7 @@ const QualityHomePage = () => {
               <li
                 key={n.id}
                 onClick={() => handleNotificationClick(n)}
-                className="flex cursor-pointer items-start gap-3 rounded-2xl bg-white p-3 shadow-sm transition-colors hover:bg-[#F9FAFB]"
+                className="flex cursor-pointer items-start gap-3 rounded-2xl bg-surface p-3 shadow-sm transition-colors hover:bg-surface-2 border border-edge"
               >
                 <Icon
                   icon={
@@ -397,13 +397,13 @@ const QualityHomePage = () => {
                   }
                   width={18}
                   height={18}
-                  className={n.isRead ? "text-[#A8A8A8]" : "text-[#931B82]"}
+                  className={n.isRead ? "text-fg-subtle" : "text-brand-fg"}
                 />
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-sm font-medium text-[#212121]">
+                  <span className="truncate text-sm font-medium text-fg">
                     {notificationText(n).title}
                   </span>
-                  <span className="truncate text-xs text-[#A8A8A8]">
+                  <span className="truncate text-xs text-fg-subtle">
                     {formatDateTime(n.createdAt)}
                   </span>
                 </div>

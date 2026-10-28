@@ -88,14 +88,14 @@ const AdminUserSearchPageWeb = () => {
 
   return (
     <div className="flex flex-col gap-4 p-6">
-      <div className="rounded-2xl bg-white p-4 shadow-sm">
+      <div className="rounded-2xl bg-surface p-4 shadow-sm border border-edge">
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative flex-1 min-w-60">
             <Icon
               icon="solar:magnifer-linear"
               width={16}
               height={16}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A8A8]"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle"
             />
             <input
               type="text"
@@ -103,20 +103,20 @@ const AdminUserSearchPageWeb = () => {
               onChange={(e) => setKeyword(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={t("search.placeholder")}
-              className="h-10 w-full rounded-full border border-[#E5E7EB] bg-white pl-9 pr-3 text-sm text-[#212121] placeholder:text-[#A8A8A8] focus:border-[#931B82] focus:outline-none"
+              className="h-10 w-full rounded-full border border-line-strong bg-surface pl-9 pr-3 text-sm text-fg placeholder:text-fg-subtle focus:border-brand focus:outline-none"
             />
           </div>
           <button
             type="button"
             onClick={handleSearch}
-            className="h-10 rounded-full bg-[#931B82] px-6 text-sm font-medium text-white transition-colors hover:bg-[#6A0F5D]"
+            className="h-10 rounded-full bg-brand px-6 text-sm font-medium text-on-brand transition-colors hover:bg-brand-hover"
           >
             {t("actions.search", { ns: "common" })}
           </button>
           <button
             type="button"
             onClick={() => setCreateOpen(true)}
-            className="flex h-10 items-center gap-1 rounded-full border border-[#931B82] bg-white px-4 text-sm font-medium text-[#931B82] transition-colors hover:bg-[#F3E8F7]"
+            className="flex h-10 items-center gap-1 rounded-full border border-brand bg-surface px-4 text-sm font-medium text-brand-fg transition-colors hover:bg-brand-soft"
           >
             <Icon icon="mdi:plus" width={16} height={16} />
             {t("search.addUser")}
@@ -133,8 +133,8 @@ const AdminUserSearchPageWeb = () => {
                 onClick={() => setFilter(f.key)}
                 className={`h-8 rounded-full px-4 text-xs font-medium transition-colors ${
                   active
-                    ? "bg-[#931B82] text-white"
-                    : "border border-[#E5E7EB] bg-white text-[#6B7280] hover:border-[#931B82] hover:text-[#931B82]"
+                    ? "bg-brand text-on-brand"
+                    : "border border-line bg-surface text-fg-muted hover:border-brand hover:text-brand-fg"
                 }`}
               >
                 {t(f.labelKey)}
@@ -145,19 +145,19 @@ const AdminUserSearchPageWeb = () => {
       </div>
 
       {isLoading && (
-        <div className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+        <div className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
           {t("status.loading", { ns: "common" })}
         </div>
       )}
 
       {isError && (
-        <div className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
+        <div className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-danger-fg border border-edge">
           {t("list.loadFailed")}
         </div>
       )}
 
       {!isLoading && !isError && filtered.length === 0 && (
-        <div className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+        <div className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
           {t("list.empty")}
         </div>
       )}

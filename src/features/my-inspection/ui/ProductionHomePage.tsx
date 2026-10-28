@@ -316,16 +316,16 @@ export default function ProductionHomePage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-20">
+    <div className="flex min-h-dvh flex-col bg-canvas pb-20">
       <div className="px-4 pt-4">
-        <h1 className="text-lg font-semibold text-[#212121]">
+        <h1 className="text-lg font-semibold text-fg">
           {t("home.greeting", { name: user?.name ?? "" })}
         </h1>
 
         <WorkDayBanner />
 
         {(topIsDraft || topIsNext) && (
-          <div className="mt-4 text-xs font-semibold text-[#6B7280]">
+          <div className="mt-4 text-xs font-semibold text-fg-muted">
             {t("home.nextUp")}
           </div>
         )}
@@ -336,16 +336,16 @@ export default function ProductionHomePage() {
               <button
                 type="button"
                 onClick={() => handleResume(latestDraft)}
-                className="flex w-full items-center justify-between gap-3 rounded-xl bg-[#931B82] p-4 text-left text-white shadow-md ring-1 ring-[#6A0F5D]/30 transition-colors hover:bg-[#6A0F5D]"
+                className="flex w-full items-center justify-between gap-3 rounded-xl bg-brand p-4 text-left text-on-brand shadow-md ring-1 ring-brand-hover/30 transition-colors hover:bg-brand-hover"
               >
                 <div className="min-w-0">
-                  <div className="text-xs font-medium uppercase tracking-wide text-[#F3E8FF]">
+                  <div className="text-xs font-medium uppercase tracking-wide text-on-brand/85">
                     {t("home.resumeWork")}
                   </div>
-                  <div className="mt-1 wrap-break-word text-base font-semibold text-white">
+                  <div className="mt-1 wrap-break-word text-base font-semibold text-on-brand">
                     {latestDraft.product.name}
                   </div>
-                  <div className="mt-0.5 truncate text-xs text-[#F3E8FF]/90">
+                  <div className="mt-0.5 truncate text-xs text-on-brand/75">
                     {/* 내부 시점 코드(DAY_3)는 보이지 않는다 — 설비·차수만. */}
                     {latestDraft.equipment.name} ·{" "}
                     {slotLabelText(latestDraft.typeLabel) || latestDraft.type}
@@ -355,14 +355,14 @@ export default function ProductionHomePage() {
                   icon="solar:arrow-right-linear"
                   width={22}
                   height={22}
-                  className="shrink-0 text-white"
+                  className="shrink-0 text-on-brand"
                 />
               </button>
 
               <button
                 type="button"
                 onClick={() => handleAskSkipDraft(latestDraft)}
-                className="absolute right-2 top-2 rounded-md bg-white/15 px-2 py-1 text-[11px] font-medium text-white transition-colors hover:bg-white/25"
+                className="absolute right-2 top-2 rounded-md bg-on-brand/10 px-2 py-1 text-[0.6875rem] font-medium text-on-brand transition-colors hover:bg-on-brand/20"
               >
                 {t("home.skip")}
               </button>
@@ -378,13 +378,13 @@ export default function ProductionHomePage() {
             <button
               type="button"
               onClick={() => navigate("/my-orders")}
-              className="mt-2 flex w-full items-center justify-between gap-3 rounded-xl border border-[#E5E7EB] bg-white p-3 text-left text-[#212121] transition-colors hover:bg-gray-50"
+              className="mt-2 flex w-full items-center justify-between gap-3 rounded-xl border border-edge bg-surface p-3 text-left text-fg transition-colors hover:bg-surface-2"
             >
               <div className="min-w-0">
-                <div className="text-xs font-medium text-[#6B7280]">
+                <div className="text-xs font-medium text-fg-muted">
                   {t("home.newInspection")}
                 </div>
-                <div className="mt-0.5 text-sm text-[#212121]">
+                <div className="mt-0.5 text-sm text-fg">
                   {t("home.startFromAssigned")}
                 </div>
               </div>
@@ -392,7 +392,7 @@ export default function ProductionHomePage() {
                 icon="solar:clipboard-list-linear"
                 width={22}
                 height={22}
-                className="shrink-0 text-[#931B82]"
+                className="shrink-0 text-brand-fg"
               />
             </button>
           </>
@@ -415,13 +415,13 @@ export default function ProductionHomePage() {
             <button
               type="button"
               onClick={() => navigate("/my-orders")}
-              className="mt-2 flex w-full items-center justify-between gap-3 rounded-xl border border-[#E5E7EB] bg-white p-3 text-left text-[#212121] transition-colors hover:bg-gray-50"
+              className="mt-2 flex w-full items-center justify-between gap-3 rounded-xl border border-edge bg-surface p-3 text-left text-fg transition-colors hover:bg-surface-2"
             >
               <div className="min-w-0">
-                <div className="text-xs font-medium text-[#6B7280]">
+                <div className="text-xs font-medium text-fg-muted">
                   {t("home.newInspection")}
                 </div>
-                <div className="mt-0.5 text-sm text-[#212121]">
+                <div className="mt-0.5 text-sm text-fg">
                   {t("home.startFromAssigned")}
                 </div>
               </div>
@@ -429,7 +429,7 @@ export default function ProductionHomePage() {
                 icon="solar:clipboard-list-linear"
                 width={22}
                 height={22}
-                className="shrink-0 text-[#931B82]"
+                className="shrink-0 text-brand-fg"
               />
             </button>
           </>
@@ -438,16 +438,16 @@ export default function ProductionHomePage() {
           <button
             type="button"
             onClick={() => navigate("/my-orders")}
-            className="mt-3 flex w-full items-center justify-between gap-3 rounded-xl bg-[rgb(147,27,130)] p-4 text-left text-white shadow-md ring-1 ring-[#6A0F5D]/30 transition-colors hover:bg-[#6A0F5D]"
+            className="mt-3 flex w-full items-center justify-between gap-3 rounded-xl bg-brand p-4 text-left text-on-brand shadow-md ring-1 ring-brand-hover/30 transition-colors hover:bg-brand-hover"
           >
             <div className="min-w-0">
-              <div className="text-xs font-medium uppercase tracking-wide text-[#F3E8FF]">
+              <div className="text-xs font-medium uppercase tracking-wide text-on-brand/85">
                 {t("home.newInspection")}
               </div>
-              <div className="mt-1 truncate text-base font-semibold text-white">
+              <div className="mt-1 truncate text-base font-semibold text-on-brand">
                 {t("home.startFromAssignedLong")}
               </div>
-              <div className="mt-0.5 truncate text-xs text-[#F3E8FF]/90">
+              <div className="mt-0.5 truncate text-xs text-on-brand/75">
                 {t("home.orderThenSlot")}
               </div>
             </div>
@@ -455,7 +455,7 @@ export default function ProductionHomePage() {
               icon="solar:clipboard-list-bold"
               width={26}
               height={26}
-              className="shrink-0 text-white"
+              className="shrink-0 text-on-brand"
             />
           </button>
         )}
@@ -465,10 +465,10 @@ export default function ProductionHomePage() {
       {otherDrafts.length > 0 && (
         <section className="px-4 pt-6">
           <div className="mb-2 flex items-baseline justify-between">
-            <h2 className="text-sm font-semibold text-[#212121]">
+            <h2 className="text-sm font-semibold text-fg">
               {t("home.inProgressSection")}
             </h2>
-            <span className="text-xs font-medium text-[#931B82]">
+            <span className="text-xs font-medium text-brand-fg">
               {t("home.count", { n: otherDrafts.length })}
             </span>
           </div>
@@ -477,17 +477,17 @@ export default function ProductionHomePage() {
             {otherDrafts.map((i) => (
               <li
                 key={i.inspectionId}
-                className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm"
+                className="rounded-xl border border-edge bg-surface p-3 shadow-sm"
               >
                 <div className="min-w-0">
-                  <div className="wrap-break-word text-sm font-semibold text-[#212121]">
+                  <div className="wrap-break-word text-sm font-semibold text-fg">
                     {i.product.name}
                   </div>
-                  <div className="mt-0.5 truncate text-xs text-[#6B7280]">
+                  <div className="mt-0.5 truncate text-xs text-fg-muted">
                     {i.equipment.name} · {slotLabelText(i.typeLabel) || i.type}
                   </div>
                   {i.createdAt && (
-                    <div className="mt-0.5 truncate text-xs text-[#A8A8A8]">
+                    <div className="mt-0.5 truncate text-xs text-fg-subtle">
                       {t("home.startedAt", { date: formatDate(i.createdAt) })}
                     </div>
                   )}
@@ -496,7 +496,7 @@ export default function ProductionHomePage() {
                 <button
                   type="button"
                   onClick={() => handleResume(i)}
-                  className="mt-3 h-10 w-full rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D]"
+                  className="mt-3 h-10 w-full rounded-md bg-brand text-sm font-semibold text-on-brand transition-colors hover:bg-brand-hover"
                 >
                   {t("home.resume")}
                 </button>
@@ -516,18 +516,18 @@ export default function ProductionHomePage() {
           자동 생성하지 않으므로, 관리자에게 배정을 요청하도록 안내한다. */}
       {todaysOrders.length === 0 && (
         <section className="px-4 pt-6">
-          <div className="flex items-start gap-2.5 rounded-xl border border-[#FDE68A] bg-[#FFFBEB] px-3.5 py-3">
+          <div className="flex items-start gap-2.5 rounded-xl border border-warn-line bg-warn-soft px-3.5 py-3">
             <Icon
               icon="solar:info-circle-bold"
               width={18}
               height={18}
-              className="mt-0.5 shrink-0 text-[#B45309]"
+              className="mt-0.5 shrink-0 text-warn-fg"
             />
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-[#92400E]">
+              <div className="text-sm font-semibold text-warn-fg">
                 {t("home.noOrdersTitle")}
               </div>
-              <p className="mt-0.5 text-xs text-[#B45309]">
+              <p className="mt-0.5 text-xs text-warn-fg">
                 {t("home.noOrdersDesc")}
               </p>
             </div>
@@ -539,10 +539,10 @@ export default function ProductionHomePage() {
       {todaysOrders.length > 0 && (
         <section className="px-4 pt-6">
           <div className="mb-2 flex items-baseline justify-between">
-            <h2 className="text-sm font-semibold text-[#212121]">
+            <h2 className="text-sm font-semibold text-fg">
               {t("home.todaysOrdersSection")}
             </h2>
-            <span className="text-xs font-medium text-[#931B82]">
+            <span className="text-xs font-medium text-brand-fg">
               {t("home.count", { n: todaysOrders.length })}
             </span>
           </div>
@@ -553,21 +553,21 @@ export default function ProductionHomePage() {
                 <button
                   type="button"
                   onClick={() => handleStartOrder(order)}
-                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-3 text-left shadow-sm transition-colors hover:bg-gray-50"
+                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-edge bg-surface p-3 text-left shadow-sm transition-colors hover:bg-surface-2"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="wrap-break-word text-sm font-semibold text-[#212121]">
+                      <span className="wrap-break-word text-sm font-semibold text-fg">
                         {order.product?.name ?? "-"}
                       </span>
                       <ShiftBadge shift={order.shift} compact />
                     </div>
-                    <div className="mt-0.5 truncate text-xs text-[#6B7280]">
+                    <div className="mt-0.5 truncate text-xs text-fg-muted">
                       {order.customer?.name ?? "-"} ·{" "}
                       {order.equipment?.name ?? "-"}
                     </div>
                   </div>
-                  <span className="flex shrink-0 items-center gap-0.5 text-xs font-medium text-[#931B82]">
+                  <span className="flex shrink-0 items-center gap-0.5 text-xs font-medium text-brand-fg">
                     {t("home.startInspection")}
                     <Icon
                       icon="solar:arrow-right-linear"
@@ -586,10 +586,10 @@ export default function ProductionHomePage() {
       {nextEligible.length > 0 && (
         <section className="px-4 pt-4">
           <div className="mb-2 flex items-baseline justify-between">
-            <h2 className="text-sm font-semibold text-[#212121]">
+            <h2 className="text-sm font-semibold text-fg">
               {t("home.nextTodoSection")}
             </h2>
-            <span className="text-xs font-medium text-[#931B82]">
+            <span className="text-xs font-medium text-brand-fg">
               {t("home.count", { n: nextEligible.length })}
             </span>
           </div>
@@ -604,18 +604,18 @@ export default function ProductionHomePage() {
               return (
                 <li
                   key={previous.inspectionId}
-                  className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm"
+                  className="rounded-xl border border-edge bg-surface p-3 shadow-sm"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="wrap-break-word text-sm font-semibold text-[#212121]">
+                      <div className="wrap-break-word text-sm font-semibold text-fg">
                         {previous.product.name}
                       </div>
-                      <div className="mt-0.5 truncate text-xs text-[#6B7280]">
+                      <div className="mt-0.5 truncate text-xs text-fg-muted">
                         {previous.equipment.name}
                       </div>
                       {previous.createdAt && (
-                        <div className="mt-0.5 truncate text-xs text-[#A8A8A8]">
+                        <div className="mt-0.5 truncate text-xs text-fg-subtle">
                           {t("home.startedAt", {
                             date: formatDate(previous.createdAt),
                           })}
@@ -626,23 +626,23 @@ export default function ProductionHomePage() {
                       icon="solar:arrow-right-linear"
                       width={16}
                       height={16}
-                      className="shrink-0 text-[#9CA3AF]"
+                      className="shrink-0 text-fg-subtle"
                     />
                   </div>
-                  <div className="mt-2 flex items-center gap-1.5 text-xs text-[#6B7280]">
+                  <div className="mt-2 flex items-center gap-1.5 text-xs text-fg-muted">
                     <Icon
                       icon="solar:check-circle-bold"
                       width={14}
                       height={14}
-                      className="text-[#22C55E]"
+                      className="text-success-fg"
                     />
                     <span>
                       {t("home.typeCompleted", {
                         type: slotLabelText(previous.typeLabel) || previous.type,
                       })}
                     </span>
-                    <span className="text-[#D1D5DB]">›</span>
-                    <span className="font-medium text-[#931B82]">
+                    <span className="text-fg-faint">›</span>
+                    <span className="font-medium text-brand-fg">
                       {t("home.typeStart", { type: nextLabel })}
                     </span>
                   </div>
@@ -651,7 +651,7 @@ export default function ProductionHomePage() {
                       type="button"
                       onClick={() => handleStartNext(previous)}
                       disabled={startNextMutation.isPending}
-                      className="h-10 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+                      className="h-10 flex-1 rounded-md bg-brand text-sm font-semibold text-on-brand transition-colors hover:bg-brand-hover disabled:bg-surface-3"
                     >
                       {isPending ? t("home.starting") : t("home.startNext")}
                     </button>
@@ -659,7 +659,7 @@ export default function ProductionHomePage() {
                       type="button"
                       onClick={() => handleAskSkipNext(previous, nextType)}
                       disabled={startNextMutation.isPending}
-                      className="h-10 shrink-0 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-[#6B7280] transition-colors hover:bg-gray-50 disabled:opacity-50"
+                      className="h-10 shrink-0 rounded-md border border-line-strong bg-surface px-3 text-sm font-medium text-fg-muted transition-colors hover:bg-surface-2 disabled:opacity-50"
                     >
                       {t("home.skip")}
                     </button>
@@ -684,7 +684,7 @@ export default function ProductionHomePage() {
       {(incompleteInspections.length > 0 ||
         reopenableInspections.length > 0) && (
         <section className="px-4 pt-6">
-          <div className="divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="divide-y divide-line rounded-xl border border-edge bg-surface shadow-sm">
             <SummaryToggle
               label={t("home.incompleteSection")}
               count={incompleteInspections.length}
@@ -709,7 +709,7 @@ export default function ProductionHomePage() {
 
       {openSummary === "incomplete" && incompleteInspections.length > 0 && (
         <section className="px-4 pt-2">
-          <ul className="flex flex-col divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white shadow-sm">
+          <ul className="flex flex-col divide-y divide-line rounded-xl border border-edge bg-surface shadow-sm">
             {incompleteInspections.map((i) => {
               const badge = getStatusBadge(i.status);
               return (
@@ -721,16 +721,16 @@ export default function ProductionHomePage() {
                         state: { inspection: i },
                       })
                     }
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-gray-50"
+                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-surface-2"
                   >
                     <div className="min-w-0">
-                      <div className="wrap-break-word text-sm font-medium text-[#212121]">
+                      <div className="wrap-break-word text-sm font-medium text-fg">
                         {i.product.name}
                       </div>
-                      <div className="truncate text-xs text-[#6B7280]">
+                      <div className="truncate text-xs text-fg-muted">
                         {i.customer.name} · {i.equipment.name}
                       </div>
-                      <div className="mt-0.5 text-xs text-[#6B7280]">
+                      <div className="mt-0.5 text-xs text-fg-muted">
                         {slotLabelText(i.typeLabel)} · {formatSlotTime(i.inspectionTime)}
                       </div>
                     </div>
@@ -759,17 +759,17 @@ export default function ProductionHomePage() {
               return (
                 <li
                   key={i.inspectionId}
-                  className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm"
+                  className="rounded-xl border border-edge bg-surface p-3 shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="wrap-break-word text-sm font-semibold text-[#212121]">
+                      <div className="wrap-break-word text-sm font-semibold text-fg">
                         {i.product.name}
                       </div>
-                      <div className="mt-0.5 truncate text-xs text-[#6B7280]">
+                      <div className="mt-0.5 truncate text-xs text-fg-muted">
                         {i.equipment.name} · {i.typeLabel}
                       </div>
-                      <div className="mt-0.5 text-xs text-[#6B7280]">
+                      <div className="mt-0.5 text-xs text-fg-muted">
                         {t("home.incompleteApproved")}
                       </div>
                     </div>
@@ -778,7 +778,7 @@ export default function ProductionHomePage() {
                     type="button"
                     onClick={() => handleReopen(i)}
                     disabled={pendingReopenId !== null}
-                    className="mt-3 h-10 w-full rounded-md border border-[#931B82] bg-white text-sm font-semibold text-[#931B82] transition-colors hover:bg-[#F3E8F7] disabled:opacity-50"
+                    className="mt-3 h-10 w-full rounded-md border border-brand bg-surface text-sm font-semibold text-brand-fg transition-colors hover:bg-brand-soft disabled:opacity-50"
                   >
                     {isReopening ? t("home.preparing") : t("home.remeasure")}
                   </button>
@@ -831,16 +831,16 @@ function RemeasureNote({ inspection }: { inspection: MyInspection }) {
   if (!inspection.rejectReason?.trim()) return null;
   const when = formatShortDateTime(inspection.rejectedAt);
   return (
-    <div className="mt-2 rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-3 py-2">
-      <div className="text-xs font-semibold text-[#B91C1C]">
+    <div className="mt-2 rounded-lg border border-danger-line bg-danger-soft px-3 py-2">
+      <div className="text-xs font-semibold text-danger-fg">
         {inspection.rejectSource === "INCOMPLETE_REJECTED"
           ? t("home.remeasureNote.incompleteRejected")
           : t("home.remeasureNote.crossCheckRejected")}
         {when && (
-          <span className="ml-1 font-normal text-[#6B7280]">· {when}</span>
+          <span className="ml-1 font-normal text-fg-muted">· {when}</span>
         )}
       </div>
-      <div className="mt-0.5 wrap-break-word text-xs text-[#212121]">
+      <div className="mt-0.5 wrap-break-word text-xs text-fg">
         {inspection.rejectReason}
       </div>
     </div>
@@ -853,11 +853,11 @@ function WorkDayBanner() {
   const { start, end } = orderWorkDayRange(now);
   const leftMin = Math.max(0, Math.floor((end.getTime() - now.getTime()) / 60000));
   return (
-    <div className="mt-3 rounded-xl border border-[#BFDBFE] bg-[#EFF6FF] px-3.5 py-2.5">
-      <div className="text-xs font-semibold text-[#1E40AF]">
+    <div className="mt-3 rounded-xl border border-info-line bg-info-soft px-3.5 py-2.5">
+      <div className="text-xs font-semibold text-info-fg">
         {t("home.workDay.title")}
       </div>
-      <div className="mt-0.5 text-xs text-[#1D4ED8]">
+      <div className="mt-0.5 text-xs text-info-fg">
         {t("home.workDay.range", {
           start: formatKstShort(start),
           end: formatKstShort(end),
@@ -893,19 +893,19 @@ function SummaryToggle({
   const { t } = useTranslation("myInspection");
   const countColor =
     count === 0
-      ? "text-[#9CA3AF]"
+      ? "text-fg-subtle"
       : tone === "amber"
-        ? "text-[#B45309]"
-        : "text-[#931B82]";
+        ? "text-warn-fg"
+        : "text-brand-fg";
   return (
     <button
       type="button"
       onClick={onToggle}
       disabled={count === 0}
       aria-expanded={open}
-      className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-gray-50 disabled:cursor-default disabled:hover:bg-white"
+      className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-surface-2 disabled:cursor-default disabled:hover:bg-surface"
     >
-      <span className="text-sm text-[#212121]">{label}</span>
+      <span className="text-sm text-fg">{label}</span>
       <span className={`flex items-center gap-1 text-sm font-semibold ${countColor}`}>
         {t("home.count", { n: count })}
         {count > 0 && (
@@ -955,7 +955,7 @@ function TerminateButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="mt-2 h-10 w-full rounded-md border border-[#B45309] bg-white text-sm font-medium text-[#B45309] transition-colors hover:bg-[#FFFBEB] disabled:opacity-50"
+      className="mt-2 h-10 w-full rounded-md border border-warn bg-surface text-sm font-medium text-warn-fg transition-colors hover:bg-warn-soft disabled:opacity-50"
     >
       {t("home.terminateForQuality")}
     </button>

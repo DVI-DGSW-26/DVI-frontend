@@ -53,13 +53,13 @@ export const ASSIGNED_STATUS_BADGE: Record<
 > = {
   COMPLETED: {
     labelKey: "status.roundDone",
-    className: "bg-[#ECFEFF] text-[#0E7490]",
-    textClassName: "text-[#0E7490]",
+    className: "bg-info-soft text-info-fg",
+    textClassName: "text-info-fg",
   },
   PENDING_APPROVAL: {
     labelKey: "status.pendingApproval",
-    className: "bg-[#FEF3C7] text-[#B45309]",
-    textClassName: "text-[#B45309]",
+    className: "bg-warn-soft text-warn-fg",
+    textClassName: "text-warn-fg",
   },
 };
 

@@ -203,7 +203,7 @@ function QueueRow({
         product: item.productName,
         equipment: item.equipmentName,
       })}
-      className="flex w-full cursor-pointer items-center gap-3 overflow-hidden rounded-lg px-3 text-left hover:bg-neutral-100"
+      className="flex w-full cursor-pointer items-center gap-3 overflow-hidden rounded-lg px-3 text-left hover:bg-surface-2"
       style={{
         height: QUEUE_ROW_HEIGHT - 8,
         marginTop: 4,
@@ -220,7 +220,7 @@ function QueueRow({
             className="shrink-0 rounded px-1.5 text-base font-bold"
             style={{
               backgroundColor: active ? T.primary[500] : T.neutral.sub,
-              color: active ? T.neutral.white : T.inkSub,
+              color: active ? T.onSolid : T.inkSub,
             }}
           >
             {item.slotLabel ? slotText(item.slotLabel) : item.type}
@@ -333,7 +333,7 @@ function DetailHead({
       <div className="min-w-0">
         <div className="flex items-center gap-3">
           <h2 className="truncate text-3xl font-bold">{item.productName}</h2>
-          <Chip bg={T.primary[500]} fg={T.neutral.white} strong>
+          <Chip bg={T.primary[500]} fg={T.onSolid} strong>
             {slotText(detail?.typeLabel || item.slotLabel || item.type)}
           </Chip>
           <Chip bg={T.primary[100]} fg={T.primary[700]} strong>
@@ -395,7 +395,7 @@ function DetailHead({
           <Meter
             value={measured}
             total={total}
-            color={T.primary[500]}
+            color={T.primary[700]}
             width={160}
           />
         </div>

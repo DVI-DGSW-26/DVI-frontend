@@ -215,7 +215,7 @@ export default function CrossCheckMeasurePage() {
 
   if (detailQuery.isLoading || (!detail && !detailQuery.isError)) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
+      <div className="flex min-h-dvh items-center justify-center bg-canvas text-xs text-fg-subtle">
         {tCommon("status.loading")}
       </div>
     );
@@ -223,14 +223,14 @@ export default function CrossCheckMeasurePage() {
 
   if (!detail) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
-        <div className="text-sm font-medium text-[#212121]">
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-canvas px-6 text-center">
+        <div className="text-sm font-medium text-fg">
           {t("measure.notFound")}
         </div>
         <button
           type="button"
           onClick={() => navigate("/")}
-          className="mt-4 h-10 rounded-md bg-[#931B82] px-4 text-sm font-medium text-white hover:bg-[#6A0F5D]"
+          className="mt-4 h-10 rounded-md bg-brand px-4 text-sm font-medium text-on-brand hover:bg-brand-hover"
         >
           {t("goHome")}
         </button>
@@ -241,7 +241,7 @@ export default function CrossCheckMeasurePage() {
   // editMode 면 allDone 이어도 화면 유지 — dim 별 수정 가능.
   if (allDone && !editMode) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-[#F5F5F5] text-xs text-[#A8A8A8]">
+      <div className="flex min-h-dvh items-center justify-center bg-canvas text-xs text-fg-subtle">
         {t("measure.movingToResult")}
       </div>
     );
@@ -579,8 +579,8 @@ export default function CrossCheckMeasurePage() {
 
   if (totalSteps === 0) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-[#F5F5F5] px-6 text-center">
-        <div className="text-sm font-medium text-[#212121]">
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-canvas px-6 text-center">
+        <div className="text-sm font-medium text-fg">
           {t("measure.noItems")}
         </div>
       </div>
@@ -598,40 +598,40 @@ export default function CrossCheckMeasurePage() {
       : null;
   const productionValueColor =
     productionWithinTolerance === null
-      ? "text-[#212121]"
+      ? "text-fg"
       : productionWithinTolerance
-        ? "text-[#15803D]"
-        : "text-[#B91C1C]";
+        ? "text-success-fg"
+        : "text-danger-fg";
 
   const productionInspectorName = detail.production.name;
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#F5F5F5] pb-24">
+    <div className="flex min-h-dvh flex-col bg-canvas pb-24">
       <AutoReleaseNotice detail={detail} />
       {detail.rejectReason && (
-        <section className="border-b border-[#FECACA] bg-[#FEF2F2] px-4 py-3">
+        <section className="border-b border-danger-line bg-danger-soft px-4 py-3">
           <div className="flex items-start gap-2">
             <Icon
               icon="solar:danger-triangle-bold"
               width={18}
               height={18}
-              className="mt-0.5 shrink-0 text-[#B91C1C]"
+              className="mt-0.5 shrink-0 text-danger-fg"
             />
             <div className="min-w-0">
-              <div className="text-xs font-semibold text-[#B91C1C]">
+              <div className="text-xs font-semibold text-danger-fg">
                 {t("measure.prevRejectReason")}
                 {(detail.rejectedByName || detail.rejectedAt) && (
-                  <span className="ml-1 font-normal text-[#6B7280]">
+                  <span className="ml-1 font-normal text-fg-muted">
                     {[detail.rejectedByName, formatShortDateTime(detail.rejectedAt)]
                       .filter(Boolean)
                       .join(" · ")}
                   </span>
                 )}
               </div>
-              <div className="mt-0.5 whitespace-pre-wrap text-sm text-[#212121]">
+              <div className="mt-0.5 whitespace-pre-wrap text-sm text-fg">
                 {detail.rejectReason}
               </div>
-              <div className="mt-1 text-[11px] text-[#6B7280]">
+              <div className="mt-1 text-[0.6875rem] text-fg-muted">
                 {t("measure.fixAndResubmit")}
               </div>
             </div>
@@ -640,26 +640,26 @@ export default function CrossCheckMeasurePage() {
       )}
 
       {productionNg && (
-        <section className="border-b border-[#FECACA] bg-[#FEF2F2] px-4 py-3">
+        <section className="border-b border-danger-line bg-danger-soft px-4 py-3">
           <div className="flex items-center gap-2">
             <Icon
               icon="solar:danger-triangle-bold"
               width={18}
               height={18}
-              className="shrink-0 text-[#B91C1C]"
+              className="shrink-0 text-danger-fg"
             />
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-semibold text-[#B91C1C]">
+              <div className="text-xs font-semibold text-danger-fg">
                 {t("measure.productionNg")}
               </div>
-              <div className="mt-0.5 text-[11px] text-[#6B7280]">
+              <div className="mt-0.5 text-[0.6875rem] text-fg-muted">
                 {t("measure.productionNgHint")}
               </div>
             </div>
             <button
               type="button"
               onClick={() => setShowRejectModal(true)}
-              className="h-9 shrink-0 rounded-md bg-[#EF4444] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#DC2626]"
+              className="h-9 shrink-0 rounded-md bg-danger px-3 text-xs font-semibold text-white transition-colors hover:bg-danger"
             >
               {t("measure.rejectNow")}
             </button>
@@ -667,9 +667,9 @@ export default function CrossCheckMeasurePage() {
         </section>
       )}
 
-      <section className="border-b border-gray-200 bg-white px-4 py-4">
+      <section className="border-b border-line bg-surface px-4 py-4">
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-sm font-semibold text-[#212121]">
+          <span className="text-sm font-semibold text-fg">
             {t("measure.title")}
           </span>
         </div>
@@ -691,7 +691,7 @@ export default function CrossCheckMeasurePage() {
         </div>
       </section>
 
-      <section className="border-b border-gray-200 bg-white px-4 py-4">
+      <section className="border-b border-line bg-surface px-4 py-4">
         <StepProgress
           states={chipStates}
           currentIndex={stepIndex}
@@ -699,16 +699,16 @@ export default function CrossCheckMeasurePage() {
           disabled={isSaving}
         />
 
-        <div className="mt-4 rounded-lg bg-[#F9FAFB] p-3">
+        <div className="mt-4 rounded-lg bg-canvas p-3">
           <div className="flex items-center gap-2">
-            <span className="rounded-md bg-[#F3E8FF] px-2 py-0.5 text-xs font-semibold text-[#931B82]">
+            <span className="rounded-md bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-fg">
               DIM {currentDim.dimNo}
             </span>
-            <span className="text-sm font-medium text-[#212121]">
+            <span className="text-sm font-medium text-fg">
               {dimDisplayName(currentDim)}
             </span>
           </div>
-          <div className="mt-1 text-base font-semibold text-[#212121]">
+          <div className="mt-1 text-base font-semibold text-fg">
             {formatStandardWithTolerance(
               currentDim.standardValue,
               currentDim.toleranceUpper,
@@ -719,13 +719,13 @@ export default function CrossCheckMeasurePage() {
       </section>
 
       <section className="px-4 pt-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
-          <div className="text-xs font-medium text-[#6B7280]">
+        <div className="rounded-xl border border-edge bg-surface p-4">
+          <div className="text-xs font-medium text-fg-muted">
             {t("measure.productionRef")}
           </div>
 
           {currentDim.productionImageUrl ? (
-            <div className="mt-2 overflow-hidden rounded-lg border border-gray-200 bg-[#F9FAFB]">
+            <div className="mt-2 overflow-hidden rounded-lg border border-line bg-canvas">
               <img
                 src={toBackendImageUrl(currentDim.productionImageUrl)}
                 alt={t("measure.productionPhotoAlt", { n: currentDim.dimNo })}
@@ -733,12 +733,12 @@ export default function CrossCheckMeasurePage() {
               />
             </div>
           ) : (
-            <div className="mt-2 flex aspect-square w-full flex-col items-center justify-center rounded-lg border border-dashed border-[#D1D5DB] bg-[#F3F4F6] text-[#6B7280]">
+            <div className="mt-2 flex aspect-square w-full flex-col items-center justify-center rounded-lg border border-dashed border-line-strong bg-surface-2 text-fg-muted">
               <Icon
                 icon="solar:gallery-broken"
                 width={36}
                 height={36}
-                className="text-[#9CA3AF]"
+                className="text-fg-subtle"
               />
               <span className="mt-2 text-xs font-medium">
                 {t("measure.noProductionPhoto")}
@@ -746,8 +746,8 @@ export default function CrossCheckMeasurePage() {
             </div>
           )}
 
-          <div className="mt-3 flex items-baseline justify-between rounded-lg bg-[#F9FAFB] px-3 py-2">
-            <span className="text-xs text-[#6B7280]">
+          <div className="mt-3 flex items-baseline justify-between rounded-lg bg-canvas px-3 py-2">
+            <span className="text-xs text-fg-muted">
               {t("measure.workerValue")}
             </span>
             <span className={`text-base font-semibold ${productionValueColor}`}>
@@ -758,7 +758,7 @@ export default function CrossCheckMeasurePage() {
       </section>
 
       <section className="flex-1 px-4 pt-4">
-        <h3 className="mb-2 text-xs font-medium text-[#6B7280]">
+        <h3 className="mb-2 text-xs font-medium text-fg-muted">
           {t("measure.title")}
         </h3>
 
@@ -853,10 +853,10 @@ export default function CrossCheckMeasurePage() {
           type="button"
           onClick={() => setShowExitOptions((v) => !v)}
           aria-expanded={showExitOptions}
-          className="flex w-full items-center justify-center gap-1 text-xs text-[#6B7280]"
+          className="flex w-full items-center justify-center gap-1 text-xs text-fg-muted"
         >
           {t("measure.exit.prompt")}
-          <span className="font-semibold text-[#931B82]">
+          <span className="font-semibold text-brand-fg">
             {t("measure.exit.toggle")}
           </span>
           <Icon
@@ -867,20 +867,20 @@ export default function CrossCheckMeasurePage() {
             }
             width={14}
             height={14}
-            className="text-[#931B82]"
+            className="text-brand-fg"
           />
         </button>
         {showExitOptions && (
-          <div className="mt-2 divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white">
+          <div className="mt-2 divide-y divide-line rounded-lg border border-edge bg-surface">
             <button
               type="button"
               onClick={() => setShowRejectModal(true)}
-              className="flex w-full flex-col items-start gap-0.5 px-3 py-2.5 text-left hover:bg-[#F9FAFB]"
+              className="flex w-full flex-col items-start gap-0.5 px-3 py-2.5 text-left hover:bg-surface-2"
             >
-              <span className="text-sm font-semibold text-[#B91C1C]">
+              <span className="text-sm font-semibold text-danger-fg">
                 {t("measure.exit.reject")}
               </span>
-              <span className="text-xs text-[#6B7280]">
+              <span className="text-xs text-fg-muted">
                 {t("measure.exit.rejectHint")}
               </span>
             </button>
@@ -890,12 +890,12 @@ export default function CrossCheckMeasurePage() {
                 setCancelError(null);
                 setShowCancelModal(true);
               }}
-              className="flex w-full flex-col items-start gap-0.5 px-3 py-2.5 text-left hover:bg-[#F9FAFB]"
+              className="flex w-full flex-col items-start gap-0.5 px-3 py-2.5 text-left hover:bg-surface-2"
             >
-              <span className="text-sm font-semibold text-[#212121]">
+              <span className="text-sm font-semibold text-fg">
                 {t("measure.exit.handOver")}
               </span>
-              <span className="text-xs text-[#6B7280]">
+              <span className="text-xs text-fg-muted">
                 {t("measure.exit.handOverHint")}
               </span>
             </button>
@@ -914,12 +914,12 @@ export default function CrossCheckMeasurePage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-t-2xl bg-white p-5 sm:rounded-2xl"
+            className="w-full max-w-sm rounded-t-2xl bg-surface p-5 sm:rounded-2xl border border-edge"
           >
-            <h3 className="text-base font-semibold text-[#212121]">
+            <h3 className="text-base font-semibold text-fg">
               {t("measure.rejectModal.title")}
             </h3>
-            <p className="mt-1 text-xs text-[#6B7280]">
+            <p className="mt-1 text-xs text-fg-muted">
               {t("measure.rejectModal.body")}
             </p>
             <textarea
@@ -928,14 +928,14 @@ export default function CrossCheckMeasurePage() {
               placeholder={t("measure.rejectModal.placeholder")}
               rows={3}
               disabled={rejectMut.isPending}
-              className="mt-3 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#212121] placeholder:text-[#9CA3AF] focus:border-[#931B82] focus:outline-none focus:ring-1 focus:ring-[#931B82] disabled:bg-[#F3F4F6]"
+              className="mt-3 w-full resize-none rounded-md border border-line-strong bg-surface px-3 py-2 text-sm text-fg placeholder:text-fg-subtle focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:bg-surface-2"
             />
             <div className="mt-4 flex gap-2">
               <button
                 type="button"
                 onClick={() => setShowRejectModal(false)}
                 disabled={rejectMut.isPending}
-                className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-60"
+                className="h-11 flex-1 rounded-md border border-line-strong bg-surface text-sm font-medium text-fg-muted hover:bg-surface-2 disabled:opacity-60"
               >
                 {tCommon("actions.cancel")}
               </button>
@@ -943,7 +943,7 @@ export default function CrossCheckMeasurePage() {
                 type="button"
                 onClick={confirmReject}
                 disabled={rejectMut.isPending || rejectReason.trim() === ""}
-                className="h-11 flex-1 rounded-md bg-[#EF4444] text-sm font-semibold text-white transition-colors hover:bg-[#DC2626] disabled:bg-[#D1D5DB]"
+                className="h-11 flex-1 rounded-md bg-danger text-sm font-semibold text-white transition-colors hover:bg-danger disabled:bg-surface-3"
               >
                 {rejectMut.isPending
                   ? t("measure.rejectModal.processing")
@@ -963,16 +963,16 @@ export default function CrossCheckMeasurePage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-t-2xl bg-white p-5 sm:rounded-2xl"
+            className="w-full max-w-sm rounded-t-2xl bg-surface p-5 sm:rounded-2xl border border-edge"
           >
-            <h3 className="text-base font-semibold text-[#212121]">
+            <h3 className="text-base font-semibold text-fg">
               {t("measure.cancelModal.title")}
             </h3>
-            <p className="mt-1 text-xs text-[#6B7280]">
+            <p className="mt-1 text-xs text-fg-muted">
               {t("measure.cancelModal.body")}
             </p>
             {cancelError && (
-              <p className="mt-3 rounded-md bg-[#FEF2F2] px-3 py-2 text-xs font-medium text-[#B91C1C]">
+              <p className="mt-3 rounded-md bg-danger-soft px-3 py-2 text-xs font-medium text-danger-fg">
                 {cancelError}
               </p>
             )}
@@ -981,7 +981,7 @@ export default function CrossCheckMeasurePage() {
                 type="button"
                 onClick={closeCancelModal}
                 disabled={cancelMut.isPending}
-                className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-60"
+                className="h-11 flex-1 rounded-md border border-line-strong bg-surface text-sm font-medium text-fg-muted hover:bg-surface-2 disabled:opacity-60"
               >
                 {tCommon("actions.close")}
               </button>
@@ -989,7 +989,7 @@ export default function CrossCheckMeasurePage() {
                 type="button"
                 onClick={confirmCancel}
                 disabled={cancelMut.isPending}
-                className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+                className="h-11 flex-1 rounded-md bg-brand text-sm font-semibold text-on-brand transition-colors hover:bg-brand-hover disabled:bg-surface-3"
               >
                 {cancelMut.isPending
                   ? t("measure.cancelModal.canceling")
@@ -1017,8 +1017,8 @@ export default function CrossCheckMeasurePage() {
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center gap-1.5 text-xs">
-      <span className="shrink-0 text-[#6B7280]">{label}</span>
-      <span className="ml-auto min-w-0 truncate text-right text-sm font-medium text-[#212121]">
+      <span className="shrink-0 text-fg-muted">{label}</span>
+      <span className="ml-auto min-w-0 truncate text-right text-sm font-medium text-fg">
         {value}
       </span>
     </div>
@@ -1027,9 +1027,9 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-[#F9FAFB] px-3 py-2">
-      <div className="text-xs text-[#6B7280]">{label}</div>
-      <div className="mt-0.5 wrap-break-word text-sm font-semibold text-[#212121]">
+    <div className="rounded-lg bg-canvas px-3 py-2">
+      <div className="text-xs text-fg-muted">{label}</div>
+      <div className="mt-0.5 wrap-break-word text-sm font-semibold text-fg">
         {value}
       </div>
     </div>

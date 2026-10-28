@@ -14,9 +14,9 @@ import { resolveStageShift, type WorkShift } from "../lib/shift";
 import { slotLabelText } from "../../../lib/slotLabel";
 
 const STAGE_BADGE: Record<ReportStage, string> = {
-  INITIAL: "border-[#DBEAFE] bg-[#EFF6FF] text-[#1D4ED8]",
-  MIDDLE: "border-[#FEF3C7] bg-[#FFFBEB] text-[#B45309]",
-  FINAL: "border-[#FBCFE8] bg-[#FDF2F8] text-[#9D174D]",
+  INITIAL: "border-info-line bg-info-soft text-info-fg",
+  MIDDLE: "border-warn-line bg-warn-soft text-warn-fg",
+  FINAL: "border-brand-line bg-brand-soft text-danger-fg",
 };
 
 // 실제 검사 시각(inspectedAt) 우선. 없으면 예정 슬롯(inspectionTime)으로 폴백하되
@@ -32,12 +32,12 @@ function formatInspected(stage: ReportStageInfo, t: TFunction): string {
 
 function AppearanceMark({ value }: { value: AppearanceResult | null }) {
   if (value === "OK") {
-    return <span className="font-semibold text-[#15803D]">OK</span>;
+    return <span className="font-semibold text-success-fg">OK</span>;
   }
   if (value === "NG") {
-    return <span className="font-semibold text-[#B91C1C]">NG</span>;
+    return <span className="font-semibold text-danger-fg">NG</span>;
   }
-  return <span className="text-[#A8A8A8]">—</span>;
+  return <span className="text-fg-subtle">—</span>;
 }
 
 function StageBadge({ stage, label }: { stage: ReportStage; label: string }) {
@@ -49,12 +49,12 @@ function StageBadge({ stage, label }: { stage: ReportStage; label: string }) {
     <span className="inline-flex items-center gap-1.5">
       <span
         className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${
-          STAGE_BADGE[stage] ?? "border-[#E5E7EB] bg-[#F5F5F5] text-[#6B7280]"
+          STAGE_BADGE[stage] ?? "border-line bg-surface-2 text-fg-muted"
         }`}
       >
         {stageName}
       </span>
-      {text !== stageName && <span className="text-[#212121]">{text}</span>}
+      {text !== stageName && <span className="text-fg">{text}</span>}
     </span>
   );
 }
@@ -95,14 +95,14 @@ export default function ReportStagesSection({
         {ordered.map((s, idx) => (
           <li
             key={`${s.type}-${s.crossCheckId ?? idx}`}
-            className="flex flex-col gap-2 rounded-xl border border-[#E5E7EB] p-3"
+            className="flex flex-col gap-2 rounded-xl border border-line p-3"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="inline-flex items-center gap-1.5">
                 <StageBadge stage={s.stage} label={s.typeLabel} />
                 {mixedShift && <ShiftBadge shift={stageShifts[idx]} compact />}
               </span>
-              <span className="text-xs text-[#6B7280]">
+              <span className="text-xs text-fg-muted">
                 {formatInspected(s, t)}
               </span>
             </div>
@@ -125,7 +125,7 @@ export default function ReportStagesSection({
               )}
             </dl>
             {s.remarks && (
-              <p className="rounded-lg bg-[#F9FAFB] px-2.5 py-2 text-xs text-[#6B7280]">
+              <p className="rounded-lg bg-canvas px-2.5 py-2 text-xs text-fg-muted">
                 {s.remarks}
               </p>
             )}
@@ -139,7 +139,7 @@ export default function ReportStagesSection({
     <div className="overflow-x-auto">
       <table className="w-full min-w-[720px] text-sm">
         <thead>
-          <tr className="border-b border-[#E5E7EB] text-left text-xs text-[#A8A8A8]">
+          <tr className="border-b border-line text-left text-xs text-fg-subtle">
             <th className="pb-2 pr-3 font-medium">{t("stages.round")}</th>
             <th className="pb-2 pr-3 font-medium">{t("stages.inspectedAt")}</th>
             <th className="pb-2 pr-3 font-medium">{t("stages.worker")}</th>
@@ -156,7 +156,7 @@ export default function ReportStagesSection({
             <th className="pb-2 font-medium">{t("stages.remarks")}</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-[#F0F0F0]">
+        <tbody className="divide-y divide-line">
           {ordered.map((s, idx) => (
             <tr key={`${s.type}-${s.crossCheckId ?? idx}`} className="align-top">
               <td className="py-3 pr-3">
@@ -165,13 +165,13 @@ export default function ReportStagesSection({
                   {mixedShift && <ShiftBadge shift={stageShifts[idx]} compact />}
                 </span>
               </td>
-              <td className="py-3 pr-3 text-[#212121]">
+              <td className="py-3 pr-3 text-fg">
                 {formatInspected(s, t)}
               </td>
-              <td className="py-3 pr-3 text-[#212121]">
+              <td className="py-3 pr-3 text-fg">
                 {s.productionName || "—"}
               </td>
-              <td className="py-3 pr-3 text-[#212121]">
+              <td className="py-3 pr-3 text-fg">
                 {s.qualityName || "—"}
               </td>
               <td className="py-3 pr-3">
@@ -181,11 +181,11 @@ export default function ReportStagesSection({
                 <AppearanceMark value={s.qualityAppearanceResult} />
               </td>
               {hasHardness && (
-                <td className="py-3 pr-3 text-[#212121]">
+                <td className="py-3 pr-3 text-fg">
                   {s.qualityHardnessResult || "—"}
                 </td>
               )}
-              <td className="py-3 text-[#6B7280]">{s.remarks || "—"}</td>
+              <td className="py-3 text-fg-muted">{s.remarks || "—"}</td>
             </tr>
           ))}
         </tbody>
@@ -203,8 +203,8 @@ function Field({
 }) {
   return (
     <div className="flex items-center gap-1.5">
-      <span className="shrink-0 text-[#A8A8A8]">{label}</span>
-      <span className="ml-auto min-w-0 truncate text-right text-[#212121]">
+      <span className="shrink-0 text-fg-subtle">{label}</span>
+      <span className="ml-auto min-w-0 truncate text-right text-fg">
         {value || "—"}
       </span>
     </div>

@@ -57,13 +57,13 @@ const STATUS_BADGE: Record<
 > = {
   PENDING_APPROVAL: {
     labelKey: "status.pendingApproval",
-    bg: "#FEF3C7",
-    fg: "#B45309",
+    bg: "var(--color-warn-soft)",
+    fg: "var(--color-warn-fg)",
   },
-  COMPLETED: { labelKey: "status.completed", bg: "#ECFEFF", fg: "#0E7490" },
-  APPROVED: { labelKey: "status.approved", bg: "#ECFDF5", fg: "#15803D" },
-  REJECTED: { labelKey: "status.rejected", bg: "#FEF2F2", fg: "#B91C1C" },
-  DRAFT: { labelKey: "status.draft", bg: "#F3F4F6", fg: "#6B7280" },
+  COMPLETED: { labelKey: "status.completed", bg: "var(--color-info-soft)", fg: "var(--color-info-fg)" },
+  APPROVED: { labelKey: "status.approved", bg: "var(--color-success-soft)", fg: "var(--color-success-fg)" },
+  REJECTED: { labelKey: "status.rejected", bg: "var(--color-danger-soft)", fg: "var(--color-danger-fg)" },
+  DRAFT: { labelKey: "status.draft", bg: "var(--color-surface-2)", fg: "var(--color-fg-muted)" },
 };
 
 // 모르는 상태를 특정 배지로 폴백하면(예전엔 DRAFT="진행 중") 틀린 값이 그럴듯하게 보여
@@ -71,7 +71,7 @@ const STATUS_BADGE: Record<
 // 렌더 시 상태 코드를 그대로 표시).
 function statusBadge(status: string) {
   return (
-    STATUS_BADGE[status] ?? { labelKey: "", bg: "#F3F4F6", fg: "#6B7280" }
+    STATUS_BADGE[status] ?? { labelKey: "", bg: "var(--color-surface-2)", fg: "var(--color-fg-muted)" }
   );
 }
 
@@ -310,31 +310,31 @@ const CrossCheckPendingPage = () => {
   };
 
   return (
-    <div className="flex min-h-full flex-col gap-3 bg-[#F5F5F5] px-4 pb-21 pt-4">
+    <div className="flex min-h-full flex-col gap-3 bg-canvas px-4 pb-21 pt-4">
       {/* 요약 통계 — 미처리/완료/진행중. 클릭 시 해당 탭으로 이동. */}
       <section className="grid grid-cols-3 gap-2">
         <SummaryStat
           label={t("pending.statUnprocessed")}
           value={statCounts.pending}
           icon="solar:danger-triangle-bold"
-          accent="#931B82"
-          iconBg="#F3E8F7"
+          accent="var(--color-brand)"
+          iconBg="var(--color-brand-soft)"
           onClick={() => setTab("assigned")}
         />
         <SummaryStat
           label={t("pending.statDone")}
           value={statCounts.done}
           icon="solar:check-circle-bold"
-          accent="#22C55E"
-          iconBg="#DCFCE7"
+          accent="var(--color-success)"
+          iconBg="var(--color-success-soft)"
           onClick={() => setTab("history")}
         />
         <SummaryStat
           label={t("pending.statInProgress")}
           value={statCounts.draft}
           icon="solar:pen-bold"
-          accent="#3B82F6"
-          iconBg="#DBEAFE"
+          accent="var(--color-info)"
+          iconBg="var(--color-info-soft)"
           onClick={() => setTab("assigned")}
         />
       </section>
@@ -342,7 +342,7 @@ const CrossCheckPendingPage = () => {
       <div
         role="tablist"
         aria-label={t("pending.tablist")}
-        className="grid grid-cols-2 gap-1 rounded-xl bg-white p-1 shadow-sm"
+        className="grid grid-cols-2 gap-1 rounded-xl bg-surface p-1 shadow-sm border border-edge"
       >
         <TabButton
           active={tab === "assigned"}
@@ -362,7 +362,7 @@ const CrossCheckPendingPage = () => {
         <>
           {draftInProgress.length > 0 && (
             <section className="flex flex-col gap-2">
-              <h2 className="text-xs font-semibold text-[#6B7280]">
+              <h2 className="text-xs font-semibold text-fg-muted">
                 {t("pending.inProgressSection")}
               </h2>
               <ul className="flex flex-col gap-3">
@@ -380,10 +380,10 @@ const CrossCheckPendingPage = () => {
           )}
 
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-semibold text-[#6B7280]">
+            <h2 className="text-xs font-semibold text-fg-muted">
               {t("pending.newAssignments")}
             </h2>
-            <span className="inline-block rounded-full bg-[#F3F4F6] px-3 py-1 text-xs font-medium text-[#6B7280]">
+            <span className="inline-block rounded-full bg-surface-2 px-3 py-1 text-xs font-medium text-fg-muted">
               {t("pending.sortByWait")}
             </span>
           </div>
@@ -405,19 +405,19 @@ const CrossCheckPendingPage = () => {
           </div>
 
           {isLoading && (
-            <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+            <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
               {tCommon("status.loading")}
             </p>
           )}
 
           {isError && (
-            <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
+            <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-danger-fg border border-edge">
               {t("pending.listError")}
             </p>
           )}
 
           {!isLoading && !isError && sortedAssigned.length === 0 && (
-            <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+            <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
               {processFilter.length > 0
                 ? t("pending.emptyProcess")
                 : t("pending.emptyAssigned")}
@@ -428,7 +428,7 @@ const CrossCheckPendingPage = () => {
             !isError &&
             sortedAssigned.length > 0 &&
             filteredAssigned.length === 0 && (
-              <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+              <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
                 {isDateFilterActive(assignedFilter)
                   ? t("pending.emptyPeriod")
                   : t("pending.emptyAssigned")}
@@ -440,10 +440,10 @@ const CrossCheckPendingPage = () => {
               {assignedGroups.map((group) => (
                 <section key={group.process} className="flex flex-col gap-2">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-[#212121]">
+                    <h3 className="text-sm font-semibold text-fg">
                       {processLabel(group.process)}
                     </h3>
-                    <span className="inline-block rounded-full bg-[#F3E8F7] px-2 py-0.5 text-xs font-medium text-[#931B82]">
+                    <span className="inline-block rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand-fg">
                       {group.items.length}
                     </span>
                   </div>
@@ -472,29 +472,29 @@ const CrossCheckPendingPage = () => {
           )}
 
           {historyLoading && (
-            <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+            <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
               {tCommon("status.loading")}
             </p>
           )}
 
           {historyError && (
-            <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#EF4444]">
+            <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-danger-fg border border-edge">
               {t("pending.historyError")}
             </p>
           )}
 
           {!historyLoading && !historyError && history.length === 0 && (
-            <div className="flex flex-col items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-16 text-center">
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-edge bg-surface px-4 py-16 text-center">
               <Icon
                 icon="solar:document-text-linear"
                 width={36}
                 height={36}
-                className="text-[#A8A8A8]"
+                className="text-fg-subtle"
               />
-              <span className="text-sm font-medium text-[#212121]">
+              <span className="text-sm font-medium text-fg">
                 {t("pending.emptyHistoryTitle")}
               </span>
-              <span className="text-xs text-[#6B7280]">
+              <span className="text-xs text-fg-muted">
                 {t("pending.emptyHistoryHint")}
               </span>
             </div>
@@ -504,7 +504,7 @@ const CrossCheckPendingPage = () => {
             !historyError &&
             history.length > 0 &&
             filteredHistory.length === 0 && (
-              <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-[#A8A8A8]">
+              <p className="rounded-2xl bg-surface px-4 py-10 text-center text-sm text-fg-subtle border border-edge">
                 {isHistoryFilterActive(historyFilter)
                   ? t("pending.emptyHistoryFiltered")
                   : t("pending.emptyHistory")}
@@ -532,12 +532,12 @@ const CrossCheckPendingPage = () => {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-t-2xl bg-white p-5 sm:rounded-2xl"
+            className="w-full max-w-sm rounded-t-2xl bg-surface p-5 sm:rounded-2xl border border-edge"
           >
-            <h3 className="text-base font-semibold text-[#212121]">
+            <h3 className="text-base font-semibold text-fg">
               {t("pending.cancelModal.title")}
             </h3>
-            <p className="mt-1 text-xs text-[#6B7280]">
+            <p className="mt-1 text-xs text-fg-muted">
               <Trans
                 t={t}
                 i18nKey="pending.cancelModal.body"
@@ -546,12 +546,12 @@ const CrossCheckPendingPage = () => {
                   production: cancelTarget.production.name,
                 }}
                 components={{
-                  b: <span className="font-semibold text-[#212121]" />,
+                  b: <span className="font-semibold text-fg" />,
                 }}
               />
             </p>
             {cancelError && (
-              <p className="mt-3 rounded-md bg-[#FEF2F2] px-3 py-2 text-xs font-medium text-[#B91C1C]">
+              <p className="mt-3 rounded-md bg-danger-soft px-3 py-2 text-xs font-medium text-danger-fg">
                 {cancelError}
               </p>
             )}
@@ -560,7 +560,7 @@ const CrossCheckPendingPage = () => {
                 type="button"
                 onClick={closeCancel}
                 disabled={cancelMut.isPending}
-                className="h-11 flex-1 rounded-md border border-[#E5E7EB] bg-white text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-60"
+                className="h-11 flex-1 rounded-md border border-line-strong bg-surface text-sm font-medium text-fg-muted hover:bg-surface-2 disabled:opacity-60"
               >
                 {tCommon("actions.close")}
               </button>
@@ -568,7 +568,7 @@ const CrossCheckPendingPage = () => {
                 type="button"
                 onClick={confirmCancel}
                 disabled={cancelMut.isPending}
-                className="h-11 flex-1 rounded-md bg-[#931B82] text-sm font-semibold text-white transition-colors hover:bg-[#6A0F5D] disabled:bg-[#D1D5DB]"
+                className="h-11 flex-1 rounded-md bg-brand text-sm font-semibold text-on-brand transition-colors hover:bg-brand-hover disabled:bg-surface-3"
               >
                 {cancelMut.isPending
                   ? t("pending.cancelModal.canceling")
@@ -603,7 +603,7 @@ function SummaryStat({
     <button
       type="button"
       onClick={onClick}
-      className="flex flex-col gap-2 rounded-2xl bg-white px-3 py-3 text-left shadow-sm transition-transform active:scale-[0.98]"
+      className="flex flex-col gap-2 rounded-2xl bg-surface px-3 py-3 text-left shadow-sm transition-transform active:scale-[0.98] border border-edge"
     >
       <span
         className="flex h-8 w-8 items-center justify-center rounded-full"
@@ -611,8 +611,8 @@ function SummaryStat({
       >
         <Icon icon={icon} width={18} height={18} color={accent} />
       </span>
-      <span className="text-xs text-[#A8A8A8]">{label}</span>
-      <span className="text-2xl font-bold text-[#212121]">{value}</span>
+      <span className="text-xs text-fg-subtle">{label}</span>
+      <span className="text-2xl font-bold text-fg">{value}</span>
     </button>
   );
 }
@@ -636,13 +636,13 @@ function TabButton({
       onClick={onClick}
       className={`h-10 rounded-lg text-sm font-semibold transition-colors ${
         active
-          ? "bg-[#931B82] text-white"
-          : "bg-transparent text-[#6B7280] hover:bg-[#F3F4F6]"
+          ? "bg-brand text-on-brand"
+          : "bg-transparent text-fg-muted hover:bg-surface-2"
       }`}
     >
       {label}{" "}
       <span
-        className={`ml-1 text-xs ${active ? "text-white/80" : "text-[#9CA3AF]"}`}
+        className={`ml-1 text-xs ${active ? "text-on-brand/80" : "text-fg-subtle"}`}
       >
         {count}
       </span>
@@ -669,25 +669,25 @@ function DraftResumeCard({
       <button
         type="button"
         onClick={onClick}
-        className="flex w-full items-center gap-3 rounded-2xl border border-[#931B82] bg-[#FDF7FB] px-5 py-4 pr-14 text-left shadow-sm transition-colors hover:bg-[#F3E8FF]"
+        className="flex w-full items-center gap-3 rounded-2xl border border-brand bg-brand-soft px-5 py-4 pr-14 text-left shadow-sm transition-colors hover:bg-brand-soft"
       >
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             {stage && (
               <span
-                className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${STAGE_BADGE[stage]}`}
+                className={`shrink-0 rounded-full border px-2 py-0.5 text-[0.625rem] font-semibold ${STAGE_BADGE[stage]}`}
               >
                 {t(`stage.${stage}`)}
               </span>
             )}
-            <span className="wrap-break-word text-base font-bold text-[#212121]">
+            <span className="wrap-break-word text-base font-bold text-fg">
               {cc.product.name}
             </span>
-            <span className="rounded-md bg-[#931B82] px-2 py-0.5 text-[10px] font-semibold text-white">
+            <span className="rounded-md bg-brand px-2 py-0.5 text-[0.625rem] font-semibold text-on-brand">
               {t("card.resume")}
             </span>
             {needsHardnessInput(cc, hardnessTracked(cc.product.process)) && (
-              <span className="rounded-md bg-[#FEF3C7] px-2 py-0.5 text-[10px] font-semibold text-[#B45309]">
+              <span className="rounded-md bg-warn-soft px-2 py-0.5 text-[0.625rem] font-semibold text-warn-fg">
                 {t("card.hardnessNeeded")}
               </span>
             )}
@@ -697,19 +697,19 @@ function DraftResumeCard({
               icon="solar:user-circle-linear"
               width={16}
               height={16}
-              className="text-[#A8A8A8]"
+              className="text-fg-subtle"
             />
-            <span className="truncate text-sm text-[#6B7280]">
+            <span className="truncate text-sm text-fg-muted">
               {cc.production.name}
             </span>
           </div>
-          <span className="mt-2 block truncate text-xs text-[#A8A8A8]">
+          <span className="mt-2 block truncate text-xs text-fg-subtle">
             {t("card.roundLine", { label: slotLabelText(cc.typeLabel) })}
           </span>
-          <span className="mt-1 block truncate text-xs text-[#A8A8A8]">
+          <span className="mt-1 block truncate text-xs text-fg-subtle">
             {t("card.equipmentLine", { name: cc.equipment.name })}
           </span>
-          <span className="mt-1 block truncate text-xs text-[#A8A8A8]">
+          <span className="mt-1 block truncate text-xs text-fg-subtle">
             {t("card.startDateLine", { date: formatDate(cc.createdAt) })}
           </span>
         </div>
@@ -717,14 +717,14 @@ function DraftResumeCard({
           icon="solar:alt-arrow-right-linear"
           width={20}
           height={20}
-          className="shrink-0 text-[#931B82]"
+          className="shrink-0 text-brand-fg"
         />
       </button>
       <button
         type="button"
         onClick={onCancel}
         aria-label={t("card.cancelPatrol")}
-        className="absolute right-2 top-2 rounded-md border border-[#E5E7EB] bg-white/90 px-2 py-1 text-[11px] font-semibold text-[#6B7280] shadow-sm transition-colors hover:bg-[#F3F4F6]"
+        className="absolute right-2 top-2 rounded-md border border-line-strong bg-surface/90 px-2 py-1 text-[0.6875rem] font-semibold text-fg-muted shadow-sm transition-colors hover:bg-surface-2"
       >
         {t("card.handOver")}
       </button>
@@ -747,18 +747,18 @@ function HistoryCard({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-stretch gap-4 rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm transition-colors hover:border-[#931B82] hover:bg-[#FDF7FB]"
+      className="flex w-full items-stretch gap-4 rounded-2xl border border-edge bg-surface p-4 text-left shadow-sm transition-colors hover:border-brand hover:bg-brand-soft"
     >
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           {stage && (
             <span
-              className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${STAGE_BADGE[stage]}`}
+              className={`shrink-0 rounded-full border px-2 py-0.5 text-[0.625rem] font-semibold ${STAGE_BADGE[stage]}`}
             >
               {t(`stage.${stage}`)}
             </span>
           )}
-          <span className="wrap-break-word text-base font-semibold text-[#212121]">
+          <span className="wrap-break-word text-base font-semibold text-fg">
             {cc.product.name}
           </span>
           <span
@@ -786,7 +786,7 @@ function HistoryCard({
           />
         </dl>
       </div>
-      <div className="flex shrink-0 items-center text-[#931B82]">
+      <div className="flex shrink-0 items-center text-brand-fg">
         <Icon icon="solar:alt-arrow-right-linear" width={20} height={20} />
       </div>
     </button>
@@ -804,10 +804,10 @@ function InfoLine({
 }) {
   return (
     <div
-      className={`flex items-center gap-1.5 text-[#6B7280] ${className ?? ""}`}
+      className={`flex items-center gap-1.5 text-fg-muted ${className ?? ""}`}
     >
       <span className="shrink-0">{label}</span>
-      <span className="ml-auto min-w-0 truncate text-right text-[#212121]">
+      <span className="ml-auto min-w-0 truncate text-right text-fg">
         {value}
       </span>
     </div>
