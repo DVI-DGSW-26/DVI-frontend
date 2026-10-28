@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
 import { useTranslation } from "react-i18next";
@@ -6,6 +6,11 @@ import { useCreateProcess, useUpdateProcess } from "../api";
 import type { ProcessInfo } from "../api";
 
 import { useDiscardGuard } from "../../../components/shared/useDiscardGuard";
+import FieldError from "../../../components/shared/FieldError";
+import {
+  fieldBorder,
+  useFormError,
+} from "../../../components/shared/useFormError";
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -38,7 +43,8 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
     autoCopyNightCrossCheck: false,
   });
   const [isActive, setIsActive] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const formError = useFormError(formRef);
 
   const { mutate: create, isPending: isCreating } = useCreateProcess();
   const { mutate: update, isPending: isUpdating } = useUpdateProcess();
@@ -61,16 +67,16 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
         autoCopyNightCrossCheck: process?.autoCopyNightCrossCheck ?? false,
       });
       setIsActive(process?.isActive ?? true);
-      setError(null);
+      formError.clear();
     }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    formError.clear();
 
     const trimmedLabel = label.trim();
-    if (!trimmedLabel) return setError(t("form.labelRequired"));
+    if (!trimmedLabel) return formError.fail("label", t("form.labelRequired"));
 
     const handlers = {
       onSuccess: () => onClose(),
@@ -80,7 +86,7 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
           err instanceof AxiosError
             ? (err.response?.data as { message?: string } | undefined)?.message
             : undefined;
-        setError(
+        formError.setError(
           message ?? (isEdit ? t("form.updateError") : t("form.createError")),
         );
       },
@@ -100,9 +106,10 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
 
     const upperCode = code.trim().toUpperCase();
     const upperShort = shortCode.trim().toUpperCase();
-    if (!CODE_PATTERN.test(upperCode)) return setError(t("form.codeInvalid"));
+    if (!CODE_PATTERN.test(upperCode))
+      return formError.fail("code", t("form.codeInvalid"));
     if (!SHORT_CODE_PATTERN.test(upperShort))
-      return setError(t("form.shortCodeInvalid"));
+      return formError.fail("shortCode", t("form.shortCodeInvalid"));
 
     create(
       { code: upperCode, shortCode: upperShort, label: trimmedLabel, ...flags },
@@ -154,6 +161,7 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
         </header>
 
         <form
+          ref={formRef}
           onSubmit={handleSubmit}
           className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-5"
         >
@@ -168,8 +176,11 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 placeholder="INJECTION_MOLDING"
                 disabled={isEdit}
-                className="h-11 rounded-lg border border-line-strong px-3 text-sm focus:border-brand focus:outline-none disabled:bg-canvas disabled:text-fg-muted"
+                data-field="code"
+                aria-invalid={!!formError.errorFor("code") || undefined}
+                className={`h-11 rounded-lg border px-3 text-sm focus:border-brand focus:outline-none disabled:bg-canvas disabled:text-fg-muted ${fieldBorder(!!formError.errorFor("code"))}`}
               />
+              <FieldError message={formError.errorFor("code")} />
             </label>
             <label className="flex flex-col gap-1.5">
               <span className="text-sm font-medium text-fg">
@@ -182,8 +193,11 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
                 placeholder="IJ"
                 maxLength={4}
                 disabled={isEdit}
-                className="h-11 rounded-lg border border-line-strong px-3 text-sm focus:border-brand focus:outline-none disabled:bg-canvas disabled:text-fg-muted"
+                data-field="shortCode"
+                aria-invalid={!!formError.errorFor("shortCode") || undefined}
+                className={`h-11 rounded-lg border px-3 text-sm focus:border-brand focus:outline-none disabled:bg-canvas disabled:text-fg-muted ${fieldBorder(!!formError.errorFor("shortCode"))}`}
               />
+              <FieldError message={formError.errorFor("shortCode")} />
             </label>
           </div>
           <p className="-mt-3 text-xs text-fg-muted">
@@ -199,8 +213,11 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               placeholder={t("form.labelPlaceholder")}
-              className="h-11 rounded-lg border border-line-strong px-3 text-sm focus:border-brand focus:outline-none"
+              data-field="label"
+              aria-invalid={!!formError.errorFor("label") || undefined}
+              className={`h-11 rounded-lg border px-3 text-sm focus:border-brand focus:outline-none ${fieldBorder(!!formError.errorFor("label"))}`}
             />
+            <FieldError message={formError.errorFor("label")} />
           </label>
 
           <div className="flex flex-col gap-2">
@@ -251,9 +268,9 @@ export default function ProcessFormDrawer({ open, onClose, process }: Props) {
             </label>
           )}
 
-          {error && (
+          {formError.generalError && (
             <div className="rounded-md border border-danger-line bg-danger-soft px-3 py-2 text-xs text-danger-fg">
-              {error}
+              {formError.generalError}
             </div>
           )}
 

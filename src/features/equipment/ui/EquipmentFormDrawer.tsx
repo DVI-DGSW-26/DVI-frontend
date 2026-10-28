@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Icon } from "@iconify/react";
 import { useTranslation } from "react-i18next";
 import { useCreateEquipment, useUpdateEquipment } from "../api";
@@ -6,6 +6,11 @@ import type { Equipment, ProcessType } from "../api";
 import { useProcessOptions } from "../../process";
 
 import { useDiscardGuard } from "../../../components/shared/useDiscardGuard";
+import FieldError from "../../../components/shared/FieldError";
+import {
+  fieldBorder,
+  useFormError,
+} from "../../../components/shared/useFormError";
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -19,7 +24,8 @@ export default function EquipmentFormDrawer({ open, onClose, equipment }: Props)
   const [process, setProcess] = useState<ProcessType | "">("");
   // 수정 중인 값이 비활성 공정이어도 선택이 풀리지 않도록 옵션에 포함시킨다.
   const processOptions = useProcessOptions(process ? [process] : []);
-  const [error, setError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const formError = useFormError(formRef);
 
   const { mutate: create, isPending: isCreating } = useCreateEquipment();
   const { mutate: update, isPending: isUpdating } = useUpdateEquipment();
@@ -34,20 +40,23 @@ export default function EquipmentFormDrawer({ open, onClose, equipment }: Props)
       setName("");
       setProcess("");
     }
-    setError(null);
+    formError.clear();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, equipment]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    if (!name.trim()) return setError(t("form.errors.nameRequired"));
-    if (!process) return setError(t("form.errors.processRequired"));
+    formError.clear();
+    if (!name.trim())
+      return formError.fail("name", t("form.errors.nameRequired"));
+    if (!process)
+      return formError.fail("process", t("form.errors.processRequired"));
 
     const body = { name: name.trim(), process: process as ProcessType };
     const handlers = {
       onSuccess: () => onClose(),
       onError: () => {
-        setError(
+        formError.setError(
           isEdit
             ? t("form.errors.editFailed")
             : t("form.errors.createFailed"),
@@ -106,6 +115,7 @@ export default function EquipmentFormDrawer({ open, onClose, equipment }: Props)
         </header>
 
         <form
+          ref={formRef}
           onSubmit={handleSubmit}
           className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-5"
         >
@@ -116,8 +126,11 @@ export default function EquipmentFormDrawer({ open, onClose, equipment }: Props)
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t("form.namePlaceholder")}
-              className="h-11 rounded-lg border border-line-strong px-3 text-sm focus:border-brand focus:outline-none"
+              data-field="name"
+              aria-invalid={!!formError.errorFor("name") || undefined}
+              className={`h-11 rounded-lg border px-3 text-sm focus:border-brand focus:outline-none ${fieldBorder(!!formError.errorFor("name"))}`}
             />
+            <FieldError message={formError.errorFor("name")} />
           </label>
 
           <label className="flex flex-col gap-1.5">
@@ -125,7 +138,9 @@ export default function EquipmentFormDrawer({ open, onClose, equipment }: Props)
             <select
               value={process}
               onChange={(e) => setProcess(e.target.value as ProcessType | "")}
-              className="h-11 rounded-lg border border-line-strong bg-surface px-3 text-sm focus:border-brand focus:outline-none"
+              data-field="process"
+              aria-invalid={!!formError.errorFor("process") || undefined}
+              className={`h-11 rounded-lg border bg-surface px-3 text-sm focus:border-brand focus:outline-none ${fieldBorder(!!formError.errorFor("process"))}`}
             >
               <option value="">{t("form.processPlaceholder")}</option>
               {processOptions.map((opt) => (
@@ -134,11 +149,12 @@ export default function EquipmentFormDrawer({ open, onClose, equipment }: Props)
                 </option>
               ))}
             </select>
+            <FieldError message={formError.errorFor("process")} />
           </label>
 
-          {error && (
+          {formError.generalError && (
             <div className="rounded-md border border-danger-line bg-danger-soft px-3 py-2 text-xs text-danger-fg">
-              {error}
+              {formError.generalError}
             </div>
           )}
 

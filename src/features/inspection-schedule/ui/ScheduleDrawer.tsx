@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Icon } from "@iconify/react";
 import { useTranslation } from "react-i18next";
 import { MAX_SLOTS } from "../api";
@@ -12,6 +12,11 @@ import type {
 import type { ReactNode } from "react";
 
 import { useDiscardGuard } from "../../../components/shared/useDiscardGuard";
+import FieldError from "../../../components/shared/FieldError";
+import {
+  fieldBorder,
+  useFormError,
+} from "../../../components/shared/useFormError";
 /**
  * 검사 스케줄(시점) 편집 드로어.
  *
@@ -86,7 +91,8 @@ export default function ScheduleDrawer({
   const { t } = useTranslation(["inspectionSchedule", "common"]);
   const [scheduleType, setScheduleType] = useState<ScheduleType>("CHO_JUNG_JONG");
   const [slots, setSlots] = useState<SlotDraft[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const formError = useFormError(formRef);
 
   // 드로어가 열리거나 편집 대상이 바뀌면 서버 값으로 초기화한다.
   // effect 대신 "렌더 중 state 조정" — 빈 폼을 한 번 그린 뒤 다시 그리는 연쇄 렌더가 없다.
@@ -105,7 +111,7 @@ export default function ScheduleDrawer({
             nextDay: (s.dayOffset ?? 0) > 0,
           })),
       );
-      setError(null);
+      formError.clear();
     }
   }
 
@@ -139,18 +145,25 @@ export default function ScheduleDrawer({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    formError.clear();
 
-    if (slots.length === 0) return setError(t("drawer.errors.minSlots"));
+    if (slots.length === 0)
+      return formError.fail("slots", t("drawer.errors.minSlots"));
     if (slots.length > MAX_SLOTS)
-      return setError(t("drawer.errors.maxSlots", { n: MAX_SLOTS }));
+      return formError.fail(
+        "slots",
+        t("drawer.errors.maxSlots", { n: MAX_SLOTS }),
+      );
 
     const body: ScheduleSlotInput[] = [];
     for (let i = 0; i < slots.length; i += 1) {
       const s = slots[i];
       const label = s.label.trim();
       if (!label)
-        return setError(t("drawer.errors.slotNameRequired", { n: i + 1 }));
+        return formError.fail(
+          `slot-${i}`,
+          t("drawer.errors.slotNameRequired", { n: i + 1 }),
+        );
       body.push({
         label,
         shift: s.shift,
@@ -164,7 +177,9 @@ export default function ScheduleDrawer({
   };
 
   const nightCount = slots.filter((s) => s.shift === "NIGHT").length;
-  const shownError = error ?? submitError ?? null;
+  // 칸에 붙은 오류가 있으면 그쪽을 먼저 고치게 — 저장 실패 문구는 그 뒤에 보인다.
+  const shownError =
+    formError.generalError ?? (formError.hasError ? null : submitError ?? null);
 
   // 바깥 터치·닫기·취소로 닫을 때 입력이 있으면 한 번 묻는다(저장 성공 경로는 그대로 닫힘).
   const guard = useDiscardGuard(open, onClose);
@@ -213,6 +228,7 @@ export default function ScheduleDrawer({
           </div>
         ) : (
           <form
+            ref={formRef}
             onSubmit={handleSubmit}
             className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-5"
           >
@@ -260,6 +276,7 @@ export default function ScheduleDrawer({
                 <button
                   type="button"
                   onClick={addSlot}
+                  data-field="slots"
                   disabled={slots.length >= MAX_SLOTS}
                   className="flex items-center gap-1 rounded-md border border-brand px-2 py-1 text-xs font-medium text-brand-fg transition-colors hover:bg-brand-soft disabled:cursor-not-allowed disabled:opacity-40"
                 >
@@ -267,6 +284,8 @@ export default function ScheduleDrawer({
                   {t("drawer.addSlot")}
                 </button>
               </div>
+
+              <FieldError message={formError.errorFor("slots")} />
 
               {slots.length === 0 && (
                 <p className="rounded-lg border border-dashed border-line-strong bg-surface-2 px-3 py-6 text-center text-xs text-fg-muted">
@@ -292,7 +311,9 @@ export default function ScheduleDrawer({
                           ? t("drawer.slotPlaceholderNight")
                           : t("drawer.slotPlaceholderDay")
                       }
-                      className="h-9 min-w-0 flex-1 rounded-md border border-line-strong px-2.5 text-sm focus:border-brand focus:outline-none"
+                      data-field={`slot-${idx}`}
+                      aria-invalid={!!formError.errorFor(`slot-${idx}`) || undefined}
+                      className={`h-9 min-w-0 flex-1 rounded-md border px-2.5 text-sm focus:border-brand focus:outline-none ${fieldBorder(!!formError.errorFor(`slot-${idx}`))}`}
                     />
                     <div className="flex shrink-0 items-center">
                       <button
@@ -362,6 +383,9 @@ export default function ScheduleDrawer({
                       />
                       {t("drawer.nextDay")}
                     </label>
+                  </div>
+                  <div className="pl-8">
+                    <FieldError message={formError.errorFor(`slot-${idx}`)} />
                   </div>
                 </div>
               ))}
